@@ -173,11 +173,11 @@
   <div id="startScreen" class="overlay">
     <div class="card">
       <h1>MONSTER<br>LANE</h1>
-      <p>Gusari nadiru preko pristaništa. Pomeraj pirata levo-desno i ne daj im da stignu do baze.</p>
+      <p>Gusarski brod je pristao i posada silazi niz dasku. Pomeraj pirata levo-desno i ne daj im da stignu do baze.</p>
       <div class="legend">
         <div class="sw" style="background:#4aa3ff"></div><div><b>Leva staza — kapije</b>: razbij ih i dobiješ +1 cev, više štete ili bržu paljbu.</div>
         <div class="sw" style="background:#f4c95d"></div><div><b>Desna staza — specijalna oružja</b>: imaju mnogo HP-a, ali kad ih osvojiš dobijaš jače oružje.</div>
-        <div class="sw" style="background:#e63946"></div><div><b>Sredina — gusari</b>: mornari, grmalji i kapetani-bosovi sa 1000, 2000, 2500, 3000+ HP.</div>
+        <div class="sw" style="background:#e63946"></div><div><b>Sredina — gusari</b>: mornari, grmalji i kapetani-bosovi koji dozivaju posadu i pobesne na pola HP-a.</div>
       </div>
       <button class="play" id="startBtn">IGRAJ</button>
       <div class="keys">Miš / prst — pomeranje · A/D ili ←/→ · P — pauza</div>
@@ -224,22 +224,29 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 // =====================================================================
 const PLAYER_Z = 8;            // where the gun stands
 const DEFENSE_Z = 10.5;        // monsters crossing this line damage the base
-const SPAWN_Z = -58;          // where everything appears
-const SCROLL = 4;              // world scroll speed (gates, pedestals, ground)
-const ROAD_LEN = 100, ROAD_Z = -35;        // the pier runs from z=15 to the shore at z=-85
+// the pier runs from behind the player to PIER_END, where a gangplank climbs to the pirate ship's deck
+const WATER_Y = -0.6;
+const SHIP_SCALE = 1.75;
+const PIER_END = -38, RAMP_TOP_Z = -47.5;
+const DECK_Y = WATER_Y + 3.42 * SHIP_SCALE, RAMP_Y = WATER_Y + 4.1 * SHIP_SCALE;   // deck / bow-rail height
+const SHIP_Z = RAMP_TOP_Z - 4.0 * SHIP_SCALE;
+const SPAWN_Z = RAMP_TOP_Z - 0.5;   // pirates appear on the ship's deck and walk down the gangplank
+const ITEM_Z = PIER_END;       // gates / pedestals appear at the end of the side lanes
+const SCROLL = 4, PED_SPEED = 0.7;   // side-lane conveyor speed (gates; chests move at 70%)
+const ROAD_NEAR = 15, ROAD_LEN = ROAD_NEAR - PIER_END, ROAD_Z = (ROAD_NEAR + PIER_END) / 2;
 const FENCE_IN = 7.5, FENCE_OUT = 13;
 const UP_X = -(FENCE_IN + FENCE_OUT) / 2;    // upgrade lane center (left)
 const WPN_X = (FENCE_IN + FENCE_OUT) / 2;    // weapon lane center (right)
 const MOB_HALF = FENCE_IN - 0.8;                       // monsters walk in x ∈ [-MOB_HALF, MOB_HALF]
 const PLAYER_LIMIT = FENCE_OUT - 0.8;
 const MAX_BARRELS = 6, MAX_DMG_LVL = 15, MAX_RATE_LVL = 10;
-const MAX_MOBS = 1500, MAX_BULLETS = 2500, MAX_PARTS = 900;
+const MAX_MOBS = 1000, MAX_BULLETS = 2500, MAX_PARTS = 900;
 const BASE_HP = 100;
 
-const BOSS_HP = [1000, 2000, 2500, 3000, 4000, 5000, 6500, 8000, 10000];
+const BOSS_HP = [4000, 15000, 45000, 80000, 120000, 165000, 215000, 270000, 330000];
 const bossHpFor = w => w <= BOSS_HP.length
   ? BOSS_HP[w - 1]
-  : Math.round(BOSS_HP[BOSS_HP.length - 1] * Math.pow(1.25, w - BOSS_HP.length) / 100) * 100;
+  : Math.round(BOSS_HP[BOSS_HP.length - 1] * Math.pow(1.2, w - BOSS_HP.length) / 1000) * 1000;
 
 // capture = HP of the pedestal that must be shot down to get the weapon
 const WEAPONS = [
@@ -270,6 +277,13 @@ const BOSS_TYPES = [
 // =====================================================================
 const rand = (a, b) => a + Math.random() * (b - a);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const easeOutBack = t => 1 + 2.7 * Math.pow(t - 1, 3) + 1.7 * Math.pow(t - 1, 2);
+// walking surface height: pier (0) → gangplank → ship deck (the bow rail is a small step up)
+function groundY(z) {
+  if (z >= PIER_END) return 0;
+  if (z >= RAMP_TOP_Z) return (PIER_END - z) / (PIER_END - RAMP_TOP_Z) * RAMP_Y;
+  return Math.max(DECK_Y, RAMP_Y - (RAMP_TOP_Z - z) * 1.5);
+}
 const $ = id => document.getElementById(id);
 const FONT = '"Lilita One", "Arial Black", sans-serif';
 
@@ -557,23 +571,26 @@ scene.add(sky);
 const planks = makePlanks(512);
 planks.map.repeat.set(1, ROAD_LEN / 5);
 planks.normalMap.repeat.copy(planks.map.repeat);
+// clones share the pixels but have their own repeat/offset (side lanes scroll like conveyors)
+const cloneTex = (t, ry) => { const c = t.clone(); c.repeat.set(1, ry); c.needsUpdate = true; return c; };
+const plankSet = ry => ({ map: cloneTex(planks.map, ry), normalMap: cloneTex(planks.normalMap, ry) });
+const leftBelt = plankSet(ROAD_LEN / 5), rightBelt = plankSet(ROAD_LEN / 5);
 const sandT = makeSand(512);
-sandT.map.repeat.set(13, 18);
-sandT.normalMap.repeat.set(13, 18);
+sandT.map.repeat.set(13, 13);
+sandT.normalMap.repeat.set(13, 13);
 
 // island: a rounded box with a wobbly coastline that slopes under the water.
 // The ocean shader uses the same distance function for shallow water and surf foam.
-const ISLAND = { cx: 0, cz: -20, hx: 45, hz: 70, r: 16 };
+const ISLAND = { cx: 0, cz: 6.5, hx: 45, hz: 43.5, r: 16 };
 const coastNoise = (x, z) => 2.5 * Math.sin(x * 0.07 + 0.5) + 2.0 * Math.sin(z * 0.09 + 1.3) + 1.2 * Math.sin((x + z) * 0.17);
 function islandSdf(x, z) {
   const qx = Math.abs(x - ISLAND.cx) - (ISLAND.hx - ISLAND.r), qz = Math.abs(z - ISLAND.cz) - (ISLAND.hz - ISLAND.r);
   return Math.hypot(Math.max(qx, 0), Math.max(qz, 0)) + Math.min(Math.max(qx, qz), 0) - ISLAND.r + coastNoise(x, z);
 }
-const WATER_Y = -0.6;
 {
-  const geo = new THREE.PlaneGeometry(130, 180, 130, 180);
+  const geo = new THREE.PlaneGeometry(130, 130, 100, 100);
   geo.rotateX(-Math.PI / 2);
-  geo.translate(0, 0, -20);
+  geo.translate(0, 0, 6);
   const pos = geo.attributes.position;
   for (let i = 0; i < pos.count; i++) {
     const d = islandSdf(pos.getX(i), pos.getZ(i));
@@ -623,13 +640,10 @@ const oceanMat = new THREE.ShaderMaterial({
       // anime surf: crisp foam rings rolling toward the beach + a white edge
       float bands = step(0.88, fract(d * 0.09 - time * 0.3)) * (1.0 - smoothstep(4.0, 24.0, d));
       float surf = 1.0 - smoothstep(0.6, 2.8, d);
-      // open-sea wave strokes and sparkles
+      col = mix(col, foam, max(bands, surf));
+      // soft darker swell bands on the open sea
       vec2 q = p * 0.045;
-      float w1 = sin(q.x * 2.3 + sin(q.y * 1.7 + time * 0.5) * 2.0 + time * 0.6);
-      float w2 = sin(q.y * 3.1 - time * 0.7 + sin(q.x * 1.3) * 1.5);
-      float strokes = step(0.955, w1 * w2);
-      col = mix(col, foam, max(max(bands, surf), strokes * 0.8));
-      col = mix(col, col * 0.82, step(0.5, fract(q.y * 1.6 + sin(q.x * 2.0 + time * 0.3) * 0.3)) * (1.0 - shore) * 0.5);
+      col = mix(col, col * 0.85, step(0.5, fract(q.y * 1.6 + sin(q.x * 2.0 + time * 0.3) * 0.3)) * (1.0 - shore) * 0.5);
       gl_FragColor = vec4(col, 1.0);
       #include <fog_fragment>
       #include <tonemapping_fragment>
@@ -638,26 +652,26 @@ const oceanMat = new THREE.ShaderMaterial({
 });
 oceanMat.uniforms.time = uTimeShared;
 {
-  const geo = new THREE.PlaneGeometry(1600, 1600, 200, 200);
+  const geo = new THREE.PlaneGeometry(1200, 1200, 48, 48);
   geo.rotateX(-Math.PI / 2);
   const ocean = new THREE.Mesh(geo, oceanMat);
   ocean.position.set(0, WATER_Y, -300);
   scene.add(ocean);
 }
 
-function lanePlane(x0, x1, color, bump) {
+function lanePlane(x0, x1, color, bump, tex = planks) {
   const mesh = new THREE.Mesh(
     new THREE.PlaneGeometry(x1 - x0, ROAD_LEN),
-    toon({ color, map: planks.map, normalMap: planks.normalMap, normalScale: new THREE.Vector2(bump, bump) })
+    toon({ color, map: tex.map, normalMap: tex.normalMap, normalScale: new THREE.Vector2(bump, bump) })
   );
   mesh.rotation.x = -Math.PI / 2;
   mesh.position.set((x0 + x1) / 2, 0.01, ROAD_Z);
   mesh.receiveShadow = true;
   scene.add(mesh);
 }
-lanePlane(-FENCE_OUT, -FENCE_IN, 0x7cc4ff, 0.6);    // painted planks
-lanePlane(-FENCE_IN, FENCE_IN, 0xc8915a, 1.0);      // bare wood pier
-lanePlane(FENCE_IN, FENCE_OUT, 0xffd35c, 0.6);
+lanePlane(-FENCE_OUT, -FENCE_IN, 0x7cc4ff, 0.6, leftBelt);    // painted conveyor planks
+lanePlane(-FENCE_IN, FENCE_IN, 0xc8915a, 1.0);                // bare wood pier (static)
+lanePlane(FENCE_IN, FENCE_OUT, 0xffd35c, 0.6, rightBelt);
 
 for (const x of [0.35 - FENCE_IN, FENCE_IN - 0.35]) {
   const line = new THREE.Mesh(new THREE.PlaneGeometry(0.18, ROAD_LEN), toonMat(0xf1f1f1));
@@ -671,14 +685,37 @@ defLine.rotation.x = -Math.PI / 2;
 defLine.position.set(0, 0.03, DEFENSE_Z);
 scene.add(defLine);
 
-// fences: scrolling posts + static rails
+// fences: posts (static, set once) + rails
 const woodMat = toonMat(0x8b5a2b);
 const FENCE_XS = [-FENCE_OUT, -FENCE_IN, FENCE_IN, FENCE_OUT];
-const POST_STEP = 2, POSTS_PER = 51;
+const POST_STEP = 2, POSTS_PER = Math.floor(ROAD_LEN / POST_STEP) + 1;
 const postGeo = new THREE.BoxGeometry(0.28, 1.0, 0.28); postGeo.translate(0, 0.5, 0);
 const posts = new THREE.InstancedMesh(postGeo, woodMat, FENCE_XS.length * POSTS_PER);
-posts.castShadow = true; posts.frustumCulled = false;
+posts.castShadow = true;
 scene.add(posts);
+{
+  const d = new THREE.Object3D();
+  let k = 0;
+  for (const x of FENCE_XS) for (let j = 0; j < POSTS_PER; j++) {
+    d.position.set(x, 0, PIER_END + 0.2 + j * POST_STEP);
+    d.updateMatrix();
+    posts.setMatrixAt(k++, d.matrix);
+  }
+  posts.computeBoundingSphere();
+}
+// dock head: pilings under the end of the pier + a thick edge beam
+{
+  const pileMat = toonMat(0x6b4226);
+  const pileGeo = new THREE.CylinderGeometry(0.32, 0.36, 4, 10); pileGeo.translate(0, -1.9, 0);
+  const g = new THREE.Group();
+  for (const x of [...FENCE_XS, -2.5, 2.5]) for (const z of [PIER_END + 0.4, PIER_END + 5]) {
+    const p = new THREE.Mesh(pileGeo, pileMat); p.position.set(x, 0, z); g.add(p);
+  }
+  const beam = new THREE.Mesh(new THREE.BoxGeometry(FENCE_OUT * 2 + 1, 0.45, 0.6), woodMat);
+  beam.position.set(0, -0.15, PIER_END - 0.1); g.add(beam);
+  addOutline(g, 0.05);
+  scene.add(g);
+}
 for (const x of FENCE_XS) for (const y of [0.45, 0.85]) {
   const rail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, ROAD_LEN), woodMat);
   rail.position.set(x, y, ROAD_Z);
@@ -687,19 +724,73 @@ for (const x of FENCE_XS) for (const y of [0.45, 0.85]) {
 }
 
 // ---- merged vertex-colored geometry helper ----
+// every part carries a `limb` attribute: (swing multiplier, pivot height) read by the walk shader
 function geoBuilder() {
   const parts = [];
+  let limb = [0, 0];
   return {
+    limb(swing = 0, pivotY = 0) { limb = [swing, pivotY]; },
     add(geo, color, x = 0, y = 0, z = 0, rx = 0, ry = 0, rz = 0) {
       if (rx) geo.rotateX(rx);
       if (ry) geo.rotateY(ry);
       if (rz) geo.rotateZ(rz);
       geo.translate(x, y, z);
-      parts.push(colored(geo, color));
+      colored(geo, color);
+      const n = geo.attributes.position.count, arr = new Float32Array(n * 2);
+      for (let i = 0; i < n; i++) { arr[i * 2] = limb[0]; arr[i * 2 + 1] = limb[1]; }
+      geo.setAttribute('limb', new THREE.BufferAttribute(arr, 2));
+      parts.push(geo);
       return geo;
     },
     build() { return mergeGeometries(parts); },
   };
+}
+
+// walk cycle in the vertex shader: legs/arms rotate around their pivot (x axis) by sin(phase).
+// Instanced meshes read the phase per instance (aWalk), single meshes from a uniform (uWalk).
+const WALK_GLSL = /* glsl */`
+  attribute vec2 limb;
+  #ifdef USE_INSTANCING
+    attribute float aWalk;
+    #define WALK_PHASE aWalk
+  #else
+    uniform float uWalk;
+    #define WALK_PHASE uWalk
+  #endif
+  vec3 walkRot(vec3 p, float a, float py) {
+    p.y -= py;
+    float c = cos(a), s = sin(a);
+    return vec3(p.x, p.y * c - p.z * s + py, p.y * s + p.z * c);
+  }`;
+const WALK_ANGLE = 'float walkA = sin(WALK_PHASE) * 0.75 * limb.x;';
+function addWalk(mat, walkU) {
+  const prev = mat.onBeforeCompile, prevKey = mat.customProgramCacheKey;
+  mat.onBeforeCompile = (sh, r) => {
+    prev.call(mat, sh, r);
+    if (walkU) sh.uniforms.uWalk = walkU;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\n' + WALK_GLSL)
+      .replace('#include <beginnormal_vertex>', `#include <beginnormal_vertex>
+        ${WALK_ANGLE}
+        objectNormal = walkRot(objectNormal, walkA, 0.0);`)
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        transformed = walkRot(transformed, walkA, limb.y);`);
+  };
+  mat.customProgramCacheKey = () => prevKey.call(mat) + '_walk' + (walkU ? 'U' : 'I');
+  return mat;
+}
+// ink outline that follows the walk cycle
+function walkOutlineMaterial(width, walkU) {
+  const m = new THREE.MeshBasicMaterial({ color: 0x1a1022, side: THREE.BackSide });
+  m.onBeforeCompile = sh => {
+    if (walkU) sh.uniforms.uWalk = walkU;
+    sh.vertexShader = sh.vertexShader
+      .replace('#include <common>', '#include <common>\n' + WALK_GLSL)
+      .replace('#include <begin_vertex>', `${WALK_ANGLE}
+        vec3 transformed = walkRot(position, walkA, limb.y) + walkRot(normal, walkA, 0.0) * ${width.toFixed(3)};`);
+  };
+  m.customProgramCacheKey = () => 'walkOutline_' + width + (walkU ? 'U' : 'I');
+  return m;
 }
 const vcToon = () => toon({ vertexColors: true });
 
@@ -733,9 +824,18 @@ palms.mesh.castShadow = rocks.mesh.castShadow = true;
 palms.mesh.count = palms.ol.count = 26;
 rocks.mesh.count = rocks.ol.count = 30;
 const decor = [];
-function sideX() { const s = Math.random() < 0.5 ? -1 : 1; return s * rand(FENCE_OUT + 2.5, 38); }
-for (let i = 0; i < 26; i++) decor.push({ mesh: palms.mesh, i, x: sideX(), z: rand(-85, 25), s: rand(0.9, 1.4), ry: rand(0, 6) });
-for (let i = 0; i < 30; i++) decor.push({ mesh: rocks.mesh, i, x: sideX(), z: rand(-85, 25), s: rand(0.3, 1.1), ry: rand(0, 6) });
+function sideX() { const s = Math.random() < 0.5 ? -1 : 1; return s * rand(FENCE_OUT + 2.5, 36); }
+for (let i = 0; i < 26; i++) decor.push({ mesh: palms.mesh, i, x: sideX(), z: rand(-30, 25), s: rand(0.9, 1.4), ry: rand(0, 6) });
+for (let i = 0; i < 30; i++) decor.push({ mesh: rocks.mesh, i, x: sideX(), z: rand(-32, 25), s: rand(0.3, 1.1), ry: rand(0, 6) });
+{
+  const d = new THREE.Object3D();
+  for (const o of decor) {
+    d.position.set(o.x, o.mesh === rocks.mesh ? o.s * 0.3 : 0, o.z);
+    d.rotation.set(0, o.ry, 0); d.scale.setScalar(o.s);
+    d.updateMatrix();
+    o.mesh.setMatrixAt(o.i, d.matrix);
+  }
+}
 
 // ---- ships on the horizon ----
 function jollyRoger(bg, ink, strawHat) {
@@ -785,22 +885,29 @@ function buildShip(o) {
   const mastMat = toonMat(0x7a4a21);
   const sailTex = jollyRoger(o.sail, o.ink, o.strawHat);
   const sailMat = toon({ map: sailTex, side: THREE.DoubleSide });
+  // o.along: sails parallel to the keel, so a ship seen broadside shows its jolly roger
   const makeSail = (w, h, x, y) => {
-    const sg = new THREE.PlaneGeometry(w, h, 10, 8); sg.rotateY(Math.PI / 2);
+    const sg = new THREE.PlaneGeometry(w, h, 10, 8);
     const sp = sg.attributes.position;
     for (let i = 0; i < sp.count; i++) {
-      sp.setX(i, 1.4 * Math.cos(sp.getZ(i) / w * Math.PI) * Math.cos(sp.getY(i) / h * Math.PI));
+      sp.setZ(i, 1.4 * Math.cos(sp.getX(i) / w * Math.PI) * Math.cos(sp.getY(i) / h * Math.PI));
     }
+    if (!o.along) sg.rotateY(Math.PI / 2);
     sg.computeVertexNormals();
-    mesh(sg, sailMat, x + 0.5, y, 0);
-    mesh(new THREE.BoxGeometry(0.25, 0.25, w + 0.6), mastMat, x, y + h / 2, 0);
+    if (o.along) {
+      mesh(sg, sailMat, x, y, 0.5);
+      mesh(new THREE.BoxGeometry(w + 0.6, 0.25, 0.25), mastMat, x, y + h / 2, 0);
+    } else {
+      mesh(sg, sailMat, x + 0.5, y, 0);
+      mesh(new THREE.BoxGeometry(0.25, 0.25, w + 0.6), mastMat, x, y + h / 2, 0);
+    }
   };
   mesh(new THREE.CylinderGeometry(0.28, 0.38, 17, 10), mastMat, 0, 11.5, 0);
   makeSail(9, 7.5, 0, 12);
   mesh(new THREE.CylinderGeometry(0.9, 0.7, 0.8, 12), mastMat, 0, 17.6, 0);    // crow's nest
   if (!o.lion) { mesh(new THREE.CylinderGeometry(0.22, 0.3, 12, 10), mastMat, 5.5, 9.5, 0); makeSail(6.5, 5, 5.5, 10.5); }
-  const flag = new THREE.PlaneGeometry(2.4, 1.6); flag.rotateY(Math.PI / 2);
-  mesh(flag, toon({ map: jollyRoger('#111111', '#f5f5f5', o.strawHat), side: THREE.DoubleSide }), 0.02, 20.3, 1.2);
+  const flag = new THREE.PlaneGeometry(2.4, 1.6); if (!o.along) flag.rotateY(Math.PI / 2);
+  mesh(flag, toon({ map: jollyRoger('#111111', '#f5f5f5', o.strawHat), side: THREE.DoubleSide }), o.along ? 1.2 : 0.02, 20.3, o.along ? 0.02 : 1.2);
   if (o.lion) {
     // lion figurehead at the bow
     const lion = new THREE.Group();
@@ -825,67 +932,76 @@ function buildShip(o) {
   return g;
 }
 const sunnyShip = buildShip({ hull: 0xd0782f, stripe: 0xf7e1b5, deck: 0x6cc24a, cabin: 0xf2c26b, sail: '#f7f3e8', ink: '#1a1a1a', strawHat: true, lion: true });
-sunnyShip.position.set(-36, WATER_Y, -122);
+sunnyShip.position.set(-62, WATER_Y, -105);
 sunnyShip.scale.setScalar(1.5);
 sunnyShip.rotation.y = -0.45;
-const enemyShip = buildShip({ hull: 0x3b2a22, stripe: 0xb3122b, deck: 0x6b4a2e, cabin: 0x4a3326, sail: '#1d1d22', ink: '#e8e8e8', strawHat: false, lion: false });
-enemyShip.position.set(42, WATER_Y, -135);
-enemyShip.scale.setScalar(1.4);
-enemyShip.rotation.y = Math.PI + 0.5;
+// the pirate ship is moored broadside at the end of the pier; the crew comes down the gangplank
+const enemyShip = buildShip({ hull: 0x3b2a22, stripe: 0xb3122b, deck: 0x6b4a2e, cabin: 0x4a3326, sail: '#1d1d22', ink: '#e8e8e8', strawHat: false, lion: false, along: true });
+enemyShip.position.set(0, WATER_Y, SHIP_Z);
+enemyShip.scale.setScalar(SHIP_SCALE);
 scene.add(sunnyShip, enemyShip);
+
+// gangplank from the ship's rail down to the pier
+{
+  const run = PIER_END - RAMP_TOP_Z, len = Math.hypot(run, RAMP_Y);
+  const width = FENCE_IN * 2 - 0.6;
+  const ramp = new THREE.Group();
+  ramp.position.set(0, RAMP_Y / 2, (PIER_END + RAMP_TOP_Z) / 2);
+  ramp.rotation.x = Math.atan2(RAMP_Y, run);        // far (-z) end rises to the deck
+  const tex = plankSet(len / 5);
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(width, 0.3, len),
+    toon({ color: 0xb07a45, map: tex.map, normalMap: tex.normalMap }));
+  deck.position.y = -0.15; deck.receiveShadow = true; ramp.add(deck);
+  const slatGeo = new THREE.BoxGeometry(width - 0.3, 0.09, 0.16);
+  for (let z = -len / 2 + 0.5; z < len / 2; z += 0.9) {
+    const s = new THREE.Mesh(slatGeo, woodMat); s.position.set(0, 0.04, z); ramp.add(s);
+  }
+  const railGeo = new THREE.BoxGeometry(0.14, 0.14, len), postG = new THREE.BoxGeometry(0.18, 1.0, 0.18);
+  for (const x of [-width / 2, width / 2]) {
+    const r = new THREE.Mesh(railGeo, woodMat); r.position.set(x, 0.95, 0); ramp.add(r);
+    for (let z = -len / 2 + 0.3; z <= len / 2; z += len / 4) {
+      const p = new THREE.Mesh(postG, woodMat); p.position.set(x, 0.45, z); ramp.add(p);
+    }
+  }
+  ramp.traverse(o => { if (o.isMesh) o.castShadow = true; });
+  addOutline(ramp, 0.04);
+  scene.add(ramp);
+}
 
 // puffy anime clouds near the horizon
 {
+  // all puffs merged into one geometry: 2 draw calls instead of ~130
   const cloudMat = toon({ color: 0xffffff, emissive: 0x4f6f99, emissiveIntensity: 0.35, fog: false });
+  const puffs = [];
   for (let c = 0; c < 9; c++) {
-    const cloud = new THREE.Group();
+    const cx = rand(-260, 260), cy = rand(8, 24), cz = rand(-330, -460);
     const n = 5 + Math.floor(Math.random() * 4);
     for (let j = 0; j < n; j++) {
-      const r = rand(6, 12);
-      const puff = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), cloudMat);
-      puff.position.set((j - n / 2) * rand(6, 9), rand(0, 5), rand(-4, 4));
-      puff.scale.y = 0.75;
-      cloud.add(puff);
+      const puff = new THREE.SphereGeometry(rand(6, 12), 12, 8);
+      puff.scale(1, 0.75, 1);
+      puff.translate(cx + (j - n / 2) * rand(6, 9), cy + rand(0, 5), cz + rand(-4, 4));
+      puffs.push(puff);
     }
-    cloud.position.set(rand(-260, 260), rand(8, 24), rand(-330, -460));
-    addOutline(cloud, 0.3);
-    scene.add(cloud);
   }
+  const clouds = new THREE.Mesh(mergeGeometries(puffs), cloudMat);
+  addOutline(clouds, 0.3);
+  scene.add(clouds);
 }
 
 const dummy = new THREE.Object3D();
 let scrollDist = 0;
 
 function updateEnv(dt) {
+  // the world is static; only the side lanes run like conveyors, carrying gates and chests
   scrollDist += SCROLL * dt;
-  planks.map.offset.y = planks.normalMap.offset.y = scrollDist / 5;
-  sandT.map.offset.y = sandT.normalMap.offset.y = scrollDist / 10;
-  const off = scrollDist % POST_STEP;
-  let k = 0;
-  for (const x of FENCE_XS) {
-    for (let j = 0; j < POSTS_PER; j++) {
-      dummy.position.set(x, 0, -85 + j * POST_STEP + off);
-      dummy.rotation.set(0, 0, 0); dummy.scale.set(1, 1, 1);
-      dummy.updateMatrix();
-      posts.setMatrixAt(k++, dummy.matrix);
-    }
-  }
-  posts.instanceMatrix.needsUpdate = true;
-  for (const d of decor) {
-    d.z += SCROLL * dt;
-    if (d.z > 25) { d.z -= 110; d.x = sideX(); }
-    dummy.position.set(d.x, d.mesh === rocks.mesh ? d.s * 0.3 : 0, d.z);
-    dummy.rotation.set(0, d.ry, 0); dummy.scale.setScalar(d.s);
-    dummy.updateMatrix();
-    d.mesh.setMatrixAt(d.i, dummy.matrix);
-  }
-  palms.mesh.instanceMatrix.needsUpdate = rocks.mesh.instanceMatrix.needsUpdate = true;
-  // ships ride the swell
+  leftBelt.map.offset.y = leftBelt.normalMap.offset.y = scrollDist / 5;
+  rightBelt.map.offset.y = rightBelt.normalMap.offset.y = scrollDist * PED_SPEED / 5;
   const t = uTimeShared.value;
   sunnyShip.position.y = WATER_Y + Math.sin(t * 0.8) * 0.3;
   sunnyShip.rotation.z = Math.sin(t * 0.6) * 0.03;
-  enemyShip.position.y = WATER_Y + Math.sin(t * 0.7 + 2) * 0.3;
-  enemyShip.rotation.z = Math.sin(t * 0.5 + 1) * 0.035;
+  // moored ship: tiny sway so the gangplank stays attached
+  enemyShip.position.y = WATER_Y + Math.sin(t * 0.7 + 2) * 0.05;
+  enemyShip.rotation.x = Math.sin(t * 0.5 + 1) * 0.006;
 }
 
 // =====================================================================
@@ -897,21 +1013,26 @@ function buildPirateGeo(variant) {
   const skin = 0xf0b98a, dark = 0x2b1d14;
   const [stripeA, stripeB, pants] = variant === 0 ? [0xf4f4f4, 0x1f4e9c, 0x4a3526] : [0xf4f4f4, 0xc1121f, 0x2d2d3a];
   for (const s of [-1, 1]) {
+    b.limb(s, 0.58);
     b.add(new THREE.CylinderGeometry(0.1, 0.09, 0.42, 8), pants, s * 0.12, 0.36, 0);
     b.add(new THREE.BoxGeometry(0.16, 0.14, 0.26), dark, s * 0.12, 0.08, 0.04);
   }
+  b.limb();
   b.add(new THREE.CylinderGeometry(0.22, 0.21, 0.16, 12), pants, 0, 0.6, 0);
   b.add(new THREE.CylinderGeometry(0.235, 0.235, 0.07, 12), 0x4a2c17, 0, 0.7, 0);
   b.add(new THREE.BoxGeometry(0.1, 0.08, 0.03), 0xffd23f, 0, 0.7, 0.235);
   for (let i = 0; i < 4; i++) b.add(new THREE.CylinderGeometry(0.235 - i * 0.004, 0.235, 0.1, 12), i % 2 ? stripeB : stripeA, 0, 0.78 + i * 0.1, 0);
   b.add(new THREE.SphereGeometry(0.235, 10, 5, 0, Math.PI * 2, 0, Math.PI / 2), stripeB, 0, 1.12, 0);
-  // left arm hangs, right arm raises a cutlass
+  // left arm swings opposite the left leg, right arm chops with the cutlass
+  b.limb(-0.9, 1.08);
   b.add(new THREE.CylinderGeometry(0.065, 0.06, 0.4, 8), skin, -0.29, 0.9, 0.02, 0, 0, -0.2);
   b.add(new THREE.SphereGeometry(0.07, 8, 6), skin, -0.33, 0.68, 0.02);
+  b.limb(0.45, 1.05);
   b.add(new THREE.CylinderGeometry(0.065, 0.06, 0.4, 8), skin, 0.29, 1.17, 0.15, 1.1, 0, 0);
   b.add(new THREE.SphereGeometry(0.07, 8, 6), skin, 0.29, 1.26, 0.33);
   b.add(new THREE.BoxGeometry(0.035, 0.6, 0.1), 0xdfe4ea, 0.29, 1.6, 0.35, 0.25, 0, 0);
   b.add(new THREE.BoxGeometry(0.16, 0.04, 0.12), 0xffd23f, 0.29, 1.3, 0.34);
+  b.limb();
   // head
   b.add(new THREE.CylinderGeometry(0.07, 0.08, 0.08, 8), skin, 0, 1.2, 0);
   b.add(new THREE.SphereGeometry(0.2, 10, 8), skin, 0, 1.38, 0);
@@ -940,19 +1061,23 @@ function buildBruteGeo() {
   const b = geoBuilder();
   const skin = 0xe8a878;
   for (const s of [-1, 1]) {
+    b.limb(s * 0.8, 0.56);
     b.add(new THREE.CylinderGeometry(0.14, 0.12, 0.4, 8), 0x6b1f1f, s * 0.17, 0.34, 0);
     b.add(new THREE.BoxGeometry(0.22, 0.16, 0.3), 0x2b1d14, s * 0.17, 0.08, 0.04);
   }
+  b.limb();
   const belly = new THREE.SphereGeometry(0.42, 16, 12); belly.scale(1, 0.95, 0.9);
   b.add(belly, skin, 0, 0.88, 0.02);
   b.add(new THREE.CylinderGeometry(0.44, 0.44, 0.09, 14), 0x4a2c17, 0, 0.62, 0.02);
   // open brown vest over the belly (back + sides)
   b.add(new THREE.CylinderGeometry(0.44, 0.45, 0.62, 16, 1, true, 0.9, Math.PI * 2 - 1.8), 0x7a4a21, 0, 0.95, 0);
   for (const s of [-1, 1]) {
+    b.limb(s * -0.6, 1.18);
     b.add(new THREE.CylinderGeometry(0.11, 0.1, 0.5, 8), skin, s * 0.5, 0.95, 0.05, 0, 0, s * 0.35);
     b.add(new THREE.SphereGeometry(0.11, 8, 6), skin, s * 0.6, 0.72, 0.08);
+    if (s > 0) b.add(new THREE.CylinderGeometry(0.09, 0.15, 0.9, 8), 0x6b4226, 0.62, 1.0, 0.25, 0.5, 0, 0);   // club
   }
-  b.add(new THREE.CylinderGeometry(0.09, 0.15, 0.9, 8), 0x6b4226, 0.62, 1.0, 0.25, 0.5, 0, 0);        // club
+  b.limb();
   b.add(new THREE.SphereGeometry(0.24, 12, 10), skin, 0, 1.45, 0);
   b.add(new THREE.SphereGeometry(0.2, 10, 8, 0, Math.PI * 2, Math.PI / 2.2, Math.PI / 2), 0x181818, 0, 1.4, 0.07);  // big beard
   b.add(new THREE.SphereGeometry(0.245, 14, 6, 0, Math.PI * 2, 0, Math.PI / 2.6), 0x2a9a3c, 0, 1.47, 0);             // green bandana
@@ -969,9 +1094,11 @@ function buildCaptainGeo(t) {
   const b = geoBuilder();
   const skin = 0xf0b98a;
   for (const s of [-1, 1]) {
+    b.limb(s * 0.7, 0.55);
     b.add(new THREE.CylinderGeometry(0.11, 0.1, 0.38, 8), 0x2b2b3a, s * 0.13, 0.36, 0);
     b.add(new THREE.CylinderGeometry(0.13, 0.12, 0.3, 8), 0x111111, s * 0.13, 0.17, 0.01);
   }
+  b.limb();
   b.add(new THREE.CylinderGeometry(0.27, 0.38, 0.78, 16), t.coat, 0, 0.74, 0);                       // long coat
   b.add(new THREE.CylinderGeometry(0.385, 0.385, 0.05, 16), t.trim, 0, 0.37, 0);
   b.add(new THREE.BoxGeometry(0.16, 0.5, 0.05), 0xf4f4f4, 0, 0.88, 0.27);
@@ -980,11 +1107,15 @@ function buildCaptainGeo(t) {
   for (const s of [-1, 1]) {
     const ep = new THREE.SphereGeometry(0.11, 10, 6); ep.scale(1, 0.5, 1);
     b.add(ep, t.trim, s * 0.3, 1.12, 0);
+    b.limb(s * -0.55, 1.1);
     b.add(new THREE.CylinderGeometry(0.08, 0.075, 0.46, 8), t.coat, s * 0.34, 0.9, 0.04, 0, 0, s * 0.18);
+    if (s > 0) b.add(new THREE.TorusGeometry(0.07, 0.018, 6, 12, Math.PI * 1.3), 0xd0d4da, 0.4, 0.62, 0.08, 0, 0, Math.PI);   // hook hand
+    else {
+      b.add(new THREE.SphereGeometry(0.07, 8, 6), skin, -0.39, 0.66, 0.05);
+      b.add(new THREE.BoxGeometry(0.04, 0.7, 0.1), 0xdfe4ea, -0.4, 0.95, 0.2, 0.35, 0, 0);           // saber
+    }
+    b.limb();
   }
-  b.add(new THREE.TorusGeometry(0.07, 0.018, 6, 12, Math.PI * 1.3), 0xd0d4da, 0.4, 0.62, 0.08, 0, 0, Math.PI);   // hook hand
-  b.add(new THREE.SphereGeometry(0.07, 8, 6), skin, -0.39, 0.66, 0.05);
-  b.add(new THREE.BoxGeometry(0.04, 0.7, 0.1), 0xdfe4ea, -0.4, 0.95, 0.2, 0.35, 0, 0);               // saber
   b.add(new THREE.CylinderGeometry(0.08, 0.09, 0.08, 8), skin, 0, 1.2, 0);
   b.add(new THREE.SphereGeometry(0.22, 16, 12), skin, 0, 1.38, 0);
   const beard = new THREE.SphereGeometry(0.2, 12, 10, 0, Math.PI * 2, Math.PI / 2.4, Math.PI / 2); beard.scale(1, 1.3, 0.9);
@@ -1211,9 +1342,19 @@ function rebuildGun() {
 
 // ---------------- shared instanced meshes ----------------
 // three pirate kinds share one toon material; each has an outline instanced mesh
-const mobMat = addRim(toon({ vertexColors: true }), 0xfff2d0, 3.0, 0.25);
+const mobMat = addWalk(addRim(toon({ vertexColors: true }), 0xfff2d0, 3.0, 0.25));
+const mobOutline = walkOutlineMaterial(0.03);
 const MOB_KINDS = [buildPirateGeo(0), buildPirateGeo(1), buildBruteGeo()].map(geo => {
-  const k = outlinedInstances(geo, mobMat, MAX_MOBS, 0.03);
+  const walk = new THREE.InstancedBufferAttribute(new Float32Array(MAX_MOBS), 1);
+  walk.setUsage(THREE.DynamicDrawUsage);
+  geo.setAttribute('aWalk', walk);
+  const mesh = new THREE.InstancedMesh(geo, mobMat, MAX_MOBS);
+  const ol = new THREE.InstancedMesh(geo, mobOutline, MAX_MOBS);
+  ol.instanceMatrix = mesh.instanceMatrix;
+  mesh.frustumCulled = ol.frustumCulled = false;
+  mesh.count = ol.count = 0;
+  scene.add(mesh, ol);
+  const k = { mesh, ol, walk };
   k.mesh.castShadow = true;
   const white = new THREE.Color(1, 1, 1);
   for (let i = 0; i < MAX_MOBS; i++) k.mesh.setColorAt(i, white);
@@ -1267,7 +1408,8 @@ function gateMaterial(tex, tint) {
       varying vec2 vUv; varying vec3 vN; varying vec3 vV;
       void main() {
         vec4 t = texture2D(map, vUv);
-        float fres = pow(1.0 - abs(dot(normalize(vN), normalize(vV))), 2.0);
+        // clamp: pow() of a (rounding-error) negative base is NaN, and bloom smears NaN into black blocks
+        float fres = pow(max(1.0 - abs(dot(normalize(vN), normalize(vV))), 0.0), 2.0);
         float band = fract(vUv.x * 0.7 + vUv.y * 0.5 - time * 0.35 + seed);
         float shine = smoothstep(0.07, 0.0, abs(band - 0.5));
         float ex = min(vUv.x, 1.0 - vUv.x), ey = min(vUv.y, 1.0 - vUv.y);
@@ -1555,14 +1697,14 @@ function drawBoss(b) {
 function spawnMonster(x, z, brute) {
   if (monsters.length >= MAX_MOBS) return;
   const w = state.wave;
-  const baseHp = Math.round(10 * Math.pow(1.45, w - 1)) + (w - 1) * 6;
+  const baseHp = Math.round(10 * Math.pow(1.65, w - 1)) + (w - 1) * 4;
   const s = brute ? rand(2.2, 2.6) : rand(1.4, 1.6);
-  const hp = brute ? baseHp * 10 : baseHp;
+  const hp = brute ? baseHp * 12 : baseHp;
   monsters.push({
     kind: 'mob', x, z, hp, maxHp: hp, s,
     hw: 0.5 * s, hd: 0.45 * s,
-    speed: (brute ? 0.7 : 1) * Math.min(6.5, rand(3.0, 3.9) + w * 0.12),
-    phase: rand(0, 6.28), flash: 0, dead: false, brute,
+    speed: (brute ? 0.7 : 1) * Math.min(6.5, rand(3.0, 3.9) + w * 0.15),
+    phase: rand(0, 6.28), walk: rand(0, 6.28), flash: 0, dead: false, brute,
     dmg: brute ? 10 : 3, score: brute ? 60 : 10,
     variant: brute ? 2 : (Math.random() < 0.5 ? 0 : 1),
   });
@@ -1570,18 +1712,19 @@ function spawnMonster(x, z, brute) {
 
 function spawnCluster(scale = 1) {
   const w = state.wave;
-  const size = Math.max(4, Math.round(Math.min(60, 3 + w * 6) * scale * rand(0.8, 1.2)));
+  const size = Math.max(5, Math.round(Math.min(60, 3 + w * 4 + w * w * 2) * scale * rand(0.8, 1.2)));   // 9, 19, 33, 51, 60…
   const cx = rand(-MOB_HALF + 1.5, MOB_HALF - 1.5);
   for (let i = 0; i < size; i++) {
-    spawnMonster(clamp(cx + rand(-2.8, 2.8), -MOB_HALF, MOB_HALF), SPAWN_Z - rand(0, 7), false);
+    spawnMonster(clamp(cx + rand(-3.2, 3.2), -MOB_HALF, MOB_HALF), SPAWN_Z - rand(0, 7), false);
   }
-  if (Math.random() < 0.05 + w * 0.08) spawnMonster(cx, SPAWN_Z - 8, true);
+  const brutes = Math.random() < w * 0.12 ? 1 + Math.floor(w / 3) : 0;
+  for (let i = 0; i < brutes; i++) spawnMonster(clamp(cx + rand(-2, 2), -MOB_HALF, MOB_HALF), SPAWN_Z - 7 - i * 1.5, true);
 }
 
 // a wall of monsters across the whole lane: forces the player to sweep instead of camping
 function spawnWall() {
   const w = state.wave;
-  const rows = Math.min(5, 2 + Math.floor(w / 2));
+  const rows = Math.min(5, 1 + w);
   const cols = Math.round(MOB_HALF * 2 / 0.85);
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
@@ -1596,7 +1739,7 @@ function spawnGate() {
   if (!types.length) return;   // fully upgraded
   const type = types[Math.floor(Math.random() * types.length)];
   const def = GATE_DEFS[type];
-  const hp = Math.round((15 + state.wave * 12) * Math.pow(1.13, state.upgradesTaken));
+  const hp = Math.round((20 + state.wave * 15) * Math.pow(1.17, state.upgradesTaken));
 
   const group = new THREE.Group();
   const postMat = toonMat(0xeef6ff, 0, 0.2, 0.6);
@@ -1611,10 +1754,11 @@ function spawnGate() {
   const panel = new THREE.Mesh(gatePanelGeo, gateMaterial(lbl.tex, def.color));
   panel.position.y = 1.95;
   group.add(panel);
-  group.position.set(UP_X, 0, SPAWN_Z);
+  group.position.set(UP_X, 0, ITEM_Z);
+  group.scale.setScalar(0.01);
   scene.add(group);
 
-  const g = { kind: 'gate', type, def, x: UP_X, z: SPAWN_Z, hw: 2.35, hd: 0.6, hp, maxHp: hp,
+  const g = { kind: 'gate', type, def, x: UP_X, z: ITEM_Z, hw: 2.35, hd: 0.6, hp, maxHp: hp, age: 0,
               group, panel, lbl, dirty: false, flash: 0, dead: false, gone: false };
   drawGate(g);
   gates.push(g);
@@ -1645,11 +1789,12 @@ function spawnPedestal() {
   const beam = new THREE.Mesh(pedBeamGeo, beamMaterial(w.color));
   beam.position.y = 4.1;
   group.add(base, top, label, model, beam);
-  group.position.set(WPN_X, 0, SPAWN_Z);
+  group.position.set(WPN_X, 0, ITEM_Z);
+  group.scale.setScalar(0.01);
   scene.add(group);
 
-  const hp = Math.round(w.capture * (1 + 0.25 * (state.wave - 1)) / 10) * 10;
-  const p = { kind: 'ped', tier, w, x: WPN_X, z: SPAWN_Z, hw: 2.1, hd: 1.5, hp, maxHp: hp,
+  const hp = Math.round(w.capture * (1 + 0.5 * (state.wave - 1)) / 10) * 10;
+  const p = { kind: 'ped', tier, w, x: WPN_X, z: ITEM_Z, hw: 2.1, hd: 1.5, hp, maxHp: hp, age: 0,
               group, lbl, model, beam, dirty: false, flash: 0, dead: false, gone: false };
   drawPed(p);
   pedestals.push(p);
@@ -1661,12 +1806,13 @@ function spawnBoss() {
   const hp = bossHpFor(w);
   const s = Math.min(4 + w * 0.4, 7);
   const pal = (w - 1) % BOSS_TYPES.length;
-  const mat = addRim(toon({ vertexColors: true, emissive: 0xffffff, emissiveIntensity: 0 }), 0xfff0c0, 2.5, 0.35);
+  const walkU = { value: 0 };
+  const mat = addWalk(addRim(toon({ vertexColors: true, emissive: 0xffffff, emissiveIntensity: 0 }), 0xfff0c0, 2.5, 0.35), walkU);
   const body = new THREE.Mesh(bossGeos[pal], mat);
   body.castShadow = true;
+  body.add(new THREE.Mesh(bossGeos[pal], walkOutlineMaterial(0.02, walkU)));
   const inner = new THREE.Group();
   inner.add(body);
-  addOutline(inner, 0.02);
   inner.scale.setScalar(s);
 
   const lbl = canvasTex(256, 96);
@@ -1676,13 +1822,13 @@ function spawnBoss() {
 
   const group = new THREE.Group();
   group.add(inner, sprite);
-  group.position.set(0, 0, SPAWN_Z);
+  group.position.set(0, groundY(SPAWN_Z), SPAWN_Z);
   scene.add(group);
 
   const b = { kind: 'boss', name: BOSS_TYPES[pal].name, x: 0, z: SPAWN_Z, hp, maxHp: hp, s,
-              speed: Math.min(2, 1.1 + w * 0.06), hw: 0.55 * s, hd: 0.5 * s,
-              group, inner, mat, lbl, sprite, flash: 0, dirty: false, lastDraw: 0,
-              dead: false, gone: false, phase: 0 };
+              speed: Math.min(1.6, 0.9 + w * 0.06), hw: 0.55 * s, hd: 0.5 * s,
+              group, inner, mat, lbl, sprite, walkU, flash: 0, dirty: false, lastDraw: 0,
+              dead: false, gone: false, phase: 0, summon: 2, enraged: false };
   drawBoss(b);
   bosses.push(b);
   banner('KAPETAN!', `${b.name} · ${hp} HP`, 2400);
@@ -1728,7 +1874,7 @@ function updateParts(dt) {
   for (const p of parts) {
     dummy.position.set(p.x, p.y, p.z);
     dummy.rotation.set(p.rot, p.rot * 0.7, 0);
-    dummy.scale.setScalar(p.s * Math.min(1, p.life / p.max * 1.5));
+    dummy.scale.setScalar(p.s * Math.max(0.05, Math.min(1, p.life / p.max * 1.5)));
     dummy.updateMatrix();
     partMesh.setMatrixAt(n, dummy.matrix);
     partMesh.setColorAt(n, p.c);
@@ -1890,7 +2036,7 @@ function updateBullets(dt) {
   }
   let n = 0;
   for (const b of bullets) {
-    dummy.position.set(b.x, 1.2 + 1.0 * Math.exp((b.z - PLAYER_Z + 2.2) / 4), b.z);
+    dummy.position.set(b.x, groundY(b.z) + 1.2 + 1.0 * Math.exp((b.z - PLAYER_Z + 2.2) / 4), b.z);
     dummy.rotation.set(0, Math.atan2(b.vx, b.vz), 0);
     dummy.scale.set(b.size, b.size, b.size * b.len);
     dummy.updateMatrix();
@@ -1925,18 +2071,22 @@ function updateMonsters(dt) {
     m.z += m.speed * dt;
     m.flash -= dt;
     if (m.z > DEFENSE_Z) { m.dead = true; hurtBase(m.dmg, m.x, m.z); continue; }
-    dummy.position.set(m.x, 0.04, m.z);
+    // stride-matched walk: phase advances with distance so feet don't slide
+    m.walk += m.speed * dt * (m.brute ? 2.0 : 2.6) / (m.s / 1.5);
+    const gy = groundY(m.z);
+    dummy.position.set(m.x, gy + 0.04, m.z);
     dummy.rotation.set(0, 0, 0);
     dummy.scale.setScalar(m.s);
     dummy.updateMatrix();
     blobMesh.setMatrixAt(n++, dummy.matrix);
-    const t = state.time * 9 + m.phase;
-    dummy.position.set(m.x, Math.abs(Math.sin(t)) * 0.15 * m.s, m.z);
-    dummy.rotation.set(0, Math.sin(t * 0.5) * 0.15, Math.sin(t) * 0.1);
+    const sw = Math.sin(m.walk);
+    dummy.position.set(m.x, gy + Math.abs(Math.cos(m.walk)) * 0.06 * m.s, m.z);
+    dummy.rotation.set(m.brute ? 0.05 : 0.12, Math.sin(m.phase + state.time) * 0.08, sw * (m.brute ? 0.09 : 0.05));
     dummy.updateMatrix();
     const kind = MOB_KINDS[m.variant], i = kindCounts[m.variant]++;
     kind.mesh.setMatrixAt(i, dummy.matrix);
     kind.mesh.setColorAt(i, m.flash > 0 ? flashColor : plainColor);
+    kind.walk.array[i] = m.walk;
   }
   blobMesh.count = n;
   blobMesh.instanceMatrix.needsUpdate = true;
@@ -1944,6 +2094,7 @@ function updateMonsters(dt) {
     k.mesh.count = k.ol.count = kindCounts[v];
     k.mesh.instanceMatrix.needsUpdate = true;
     k.mesh.instanceColor.needsUpdate = true;
+    k.walk.needsUpdate = true;
   });
 }
 
@@ -1952,11 +2103,29 @@ function updateBosses(dt) {
     if (b.dead) continue;
     b.z += b.speed * dt;
     b.flash -= dt;
-    b.phase += dt * 3.2;
-    b.group.position.set(b.x, 0, b.z);
-    b.inner.position.y = Math.abs(Math.sin(b.phase)) * 0.35;
-    b.inner.rotation.z = Math.sin(b.phase) * 0.07;
-    b.mat.emissiveIntensity = b.flash > 0 ? 0.55 : 0;
+    b.phase += dt * b.speed * 2.2 / (b.s / 4);
+    b.walkU.value = b.phase;
+    b.group.position.set(b.x, groundY(b.z), b.z);
+    b.inner.position.y = Math.abs(Math.cos(b.phase)) * 0.25;
+    b.inner.rotation.z = Math.sin(b.phase) * 0.05;
+    b.inner.rotation.x = 0.06;
+    b.mat.emissiveIntensity = b.flash > 0 ? 0.55 : b.enraged ? 0.12 + 0.1 * Math.sin(state.time * 10) : 0;
+    if (b.enraged) b.mat.emissive.setRGB(1, 0.2, 0.1);
+    // the captain keeps calling his crew off the ship
+    b.summon -= dt;
+    if (b.summon <= 0) {
+      const w = state.wave, n = 4 + w * 2;
+      for (let i = 0; i < n; i++) spawnMonster(clamp(b.x + rand(-4, 4), -MOB_HALF, MOB_HALF), SPAWN_Z - rand(0, 4), false);
+      if (w >= 2) spawnMonster(clamp(b.x + rand(-3, 3), -MOB_HALF, MOB_HALF), SPAWN_Z - 5, true);
+      b.summon = Math.max(1.8, (b.enraged ? 2.4 : 3.4) - w * 0.15);
+    }
+    if (!b.enraged && b.hp < b.maxHp * 0.5) {
+      b.enraged = true;
+      b.speed *= 1.5;
+      banner('KAPETAN BESNI!', 'Brži je i zove još posade', 1800);
+      state.shake = Math.max(state.shake, 0.5);
+      sfx.boss();
+    }
     if (b.dirty && state.time - b.lastDraw > 0.05) { drawBoss(b); b.dirty = false; b.lastDraw = state.time; }
     if (b.z > DEFENSE_Z - b.hd) {
       b.dead = true;
@@ -1972,7 +2141,9 @@ function updateGates(dt) {
     if (g.dead) continue;
     g.z += SCROLL * dt;
     g.flash -= dt;
+    g.age += dt;
     g.group.position.z = g.z;
+    if (g.age < 0.5) g.group.scale.setScalar(Math.max(0.01, easeOutBack(Math.min(1, g.age / 0.45))));
     const pulse = g.flash > 0 ? 1.06 : 1;
     g.panel.scale.set(pulse, pulse, 1);
     g.panel.material.uniforms.flash.value = g.flash > 0 ? 0.35 : 0;
@@ -1984,9 +2155,11 @@ function updateGates(dt) {
 function updatePedestals(dt) {
   for (const p of pedestals) {
     if (p.dead) continue;
-    p.z += SCROLL * 0.7 * dt;
+    p.z += SCROLL * PED_SPEED * dt;
     p.flash -= dt;
+    p.age += dt;
     p.group.position.z = p.z;
+    if (p.age < 0.5) p.group.scale.setScalar(Math.max(0.01, easeOutBack(Math.min(1, p.age / 0.45))));
     p.model.rotation.y += dt * 1.6;
     p.model.position.y = 3.6 + Math.sin(state.time * 3) * 0.2;
     p.model.scale.setScalar(p.flash > 0 ? 1.65 : 1.5);
@@ -2009,7 +2182,7 @@ function startWave() {
   state.waveTime = 0;
   state.bossSpawned = false;
   state.clusterTimer = 1;
-  state.wallTimer = state.wave === 1 ? 18 : 7;
+  state.wallTimer = state.wave === 1 ? 16 : 6;
   banner(`TALAS ${state.wave}`, `Boss na kraju: ${bossHpFor(state.wave)} HP`);
 }
 
@@ -2027,14 +2200,14 @@ function updateWave(dt) {
     if (state.clusterTimer <= 0) {
       const ramp = 0.5 + 0.5 * Math.min(1, state.waveTime / 25);   // each wave starts softer
       spawnCluster(ramp);
-      state.clusterTimer = Math.max(0.35, 1.8 - state.wave * 0.2) * rand(0.8, 1.2);
+      state.clusterTimer = Math.max(0.3, 1.7 - state.wave * 0.2) * rand(0.8, 1.2);
     }
     state.wallTimer -= dt;
-    if (state.wallTimer <= 0) { spawnWall(); state.wallTimer = Math.max(5, 10 - state.wave) * rand(0.9, 1.1); }
+    if (state.wallTimer <= 0) { spawnWall(); state.wallTimer = Math.max(3.5, 10 - state.wave) * rand(0.9, 1.1); }
     if (state.waveTime >= waveDuration(state.wave)) spawnBoss();
   } else {
     // lighter escort while the boss walks in
-    if (state.clusterTimer <= 0) { spawnCluster(0.6); state.clusterTimer = rand(2, 2.8); }
+    if (state.clusterTimer <= 0) { spawnCluster(0.7); state.clusterTimer = rand(1.6, 2.4); }
     if (bosses.length === 0) {
       state.bossSpawned = false;
       state.betweenWaves = 4;
@@ -2050,10 +2223,11 @@ function updateSpawners(dt) {
   state.pedTimer -= dt;
   if (state.pedTimer <= 0 && pedestals.length === 0) {
     if (state.weaponTier < WEAPONS.length - 1) spawnPedestal();
-    state.pedTimer = 22;
+    state.pedTimer = 26;
   }
 }
 
+let heroStep = 0;
 function updatePlayer(dt) {
   let dir = 0;
   if (keys.has('ArrowLeft') || keys.has('KeyA')) dir -= 1;
@@ -2063,13 +2237,17 @@ function updatePlayer(dt) {
   player.position.x = state.playerX;
   const vx = state.targetX - state.playerX;
   player.rotation.z = clamp(vx * -0.05, -0.25, 0.25);
-  // run cycle (the world scrolls toward him) + a lean when strafing
-  const walk = state.time * 10;
-  hero.hips[0].rotation.x = Math.sin(walk) * 0.6;
-  hero.hips[1].rotation.x = -Math.sin(walk) * 0.6;
-  hero.torso.position.y = 1.05 + Math.abs(Math.cos(walk)) * 0.05;
-  hero.torso.rotation.y = Math.sin(walk) * 0.05;
-  hero.head.rotation.z = Math.sin(walk) * -0.04;
+  // standing guard: breathing idle, quick side-steps while strafing
+  const move = clamp(Math.abs(vx) * 0.5, 0, 1);
+  heroStep += dt * (3 + 11 * move);
+  const step = Math.sin(heroStep) * 0.55 * move;
+  hero.hips[0].rotation.x = step;
+  hero.hips[1].rotation.x = -step;
+  hero.hips[0].rotation.z = -Math.abs(step) * 0.4;
+  hero.hips[1].rotation.z = Math.abs(step) * 0.4;
+  hero.torso.position.y = 1.05 + Math.abs(Math.cos(heroStep)) * 0.05 * move + Math.sin(state.time * 2.2) * 0.012;
+  hero.torso.rotation.y = Math.sin(heroStep) * 0.05 * move;
+  hero.head.rotation.z = Math.sin(heroStep) * -0.04 * move;
 
   state.fireTimer -= dt;
   const interval = 1 / curRate();
@@ -2220,12 +2398,29 @@ const GradeShader = {
     }`,
 };
 
+// safety net before bloom: drop NaN/Inf and clamp extreme HDR values, otherwise one bad pixel
+// gets blurred through bloom's low-res mips into a huge black rectangle
+const SanitizeShader = {
+  uniforms: { tDiffuse: { value: null } },
+  vertexShader: /* glsl */`
+    varying vec2 vUv;
+    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+  fragmentShader: /* glsl */`
+    uniform sampler2D tDiffuse; varying vec2 vUv;
+    void main() {
+      vec4 c = texture2D(tDiffuse, vUv);
+      bool bad = any(isnan(c)) || any(isinf(c));
+      gl_FragColor = bad ? vec4(0.0, 0.0, 0.0, 1.0) : min(c, vec4(32.0));
+    }`,
+};
+const sanitizePass = new ShaderPass(SanitizeShader);
 const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.6, 0.5, 1.7);
 const gradePass = new ShaderPass(GradeShader);
 {
   const size = renderer.getDrawingBufferSize(new THREE.Vector2());
   composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 }));
   composer.addPass(new RenderPass(scene, camera));
+  composer.addPass(sanitizePass);
   composer.addPass(bloomPass);
   composer.addPass(new OutputPass());
   composer.addPass(gradePass);
@@ -2245,7 +2440,7 @@ function applyQuality(level) {
   const pr = Math.min(devicePixelRatio, q.pr);
   renderer.setPixelRatio(pr);
   composer.setPixelRatio(pr);
-  bloomPass.enabled = q.bloom;
+  bloomPass.enabled = sanitizePass.enabled = q.bloom;
   for (const k of MOB_KINDS) { k.ol.visible = q.mobOutline; k.mesh.castShadow = q.mobShadow; }
   if (sun.shadow.mapSize.x !== q.shadow) {
     sun.shadow.mapSize.set(q.shadow, q.shadow);
@@ -2304,11 +2499,18 @@ if (qs.has('auto')) {
   if (qs.has('q')) applyQuality(Number(qs.get('q')));
   if (qs.has('closeup')) { debugCloseup = true; resize(); }
   startGame();
-  const sim = Number(qs.get('sim') || 0);
+  // bot: alternates between the upgrade gates, the weapon chest and sweeping the crowd
+  const sim = Number(qs.get('sim') || 0), log = [];
+  let lastWave = 0, bossAt = 0;
   for (let t = 0; t < sim && state.running; t += 1 / 60) {
-    state.targetX = Math.sin(t * 0.5) * 8;
+    const c = t % 10;
+    state.targetX = c < 3 && gates.length ? UP_X : c < 5 && pedestals.length ? WPN_X : Math.sin(t * 0.9) * 6;
     update(1 / 60);
+    if (state.wave !== lastWave) { lastWave = state.wave; log.push(`w${state.wave}@${t.toFixed(0)}s dps=${Math.round(curDmg() * curShots() * curRate())} hp=${Math.ceil(state.baseHp)}`); }
+    if (bosses.length && !bossAt) bossAt = t;
+    if (!bosses.length && bossAt) { log.push(`  boss${state.wave} ${(t - bossAt).toFixed(1)}s`); bossAt = 0; }
   }
+  window.simLog = log;
   if (debugCloseup) resize();
   document.title = `wave=${state.wave} hp=${Math.ceil(state.baseHp)} score=${state.score} tier=${state.weaponTier} barrels=${state.barrels} dmgLvl=${state.dmgLvl} rateLvl=${state.rateLvl} dps=${Math.round(curDmg()*curShots()*curRate())} kills=${state.kills} mobs=${monsters.length} running=${state.running}`;
 }

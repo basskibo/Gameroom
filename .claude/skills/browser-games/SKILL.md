@@ -52,8 +52,16 @@ SHOT=hero  node cover.mjs <slug> '...' '...'
 ```
 
 Akcije: `click:<sel>`, `key:<taster>:<ms>`, `wait:<ms>`. Uvek otvori dobijenu sliku i proveri da nema zaostalog UI-ja i da scena izgleda zanimljivo (u igri, ne start ekran; za kolekcije popuni scenu pa slikaj). Primeri koji rade:
-- monster-lane: hide `#ui`, akcije `click:#startBtn;key:d:1500;key:a:2500;key:d:1200;wait:6000`
+- monster-lane: hide `#ui`, akcije `click:#startBtn;key:d:3000;wait:16000` (igrač stoji desno pa se na pristaništu skupi gomila)
 - surprizi: hide `#topbar,#tabs,#open-panel,#progress-pill,#reveal-modal,#toast,#info-panel,#showroom-hint`, 5× `click:#open-btn;wait:3500;click:#reveal-close;wait:800`, pa `click:.tab-btn[data-mode=showroom];wait:3000`
+
+## Balans i testiranje igre
+
+- Igre imaju debug parametre u URL-u: monster-lane `?auto&q=0&sim=600` odmah startuje, bot odigra N sekundi (gađa kapije, kovčeg, pa gomilu), a rezultat piše u `document.title` i `window.simLog` (DPS po talasu, trajanje bossa). Za nove igre napravi isto — balans se meri simulacijom, ne pogađanjem.
+- Bot je bimodalan ako ne gađa upgrade-e; pusti 4–5 simulacija i gledaj raspon, ne jedan rezultat.
+- Monster Lane referentna kriva (posle rebalansa): bot stiže do talasa 5–6 za ~6 min, bossovi traju 17–50 s, broj mobova ≤ ~1000. Ne vraćati na lakše — korisnik je tražio težu igru.
+- Pazi na performanse: kolizija je metci × mete, pa težinu diži HP-om, a ne beskonačnim brojem mobova.
+- Bloom + NaN: bilo koji `pow()` sa bazom koja može biti < 0 daje NaN, a bloom ga razmaže u crni pravougaonik (bug „pola ekrana crno“ na MQ/HQ). Uvek `pow(max(x, 0.0), y)`; monster-lane ima i sanitize pass pre blooma.
 
 ## Konvencije za samu igru
 
