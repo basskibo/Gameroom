@@ -46,19 +46,22 @@ Skripta `.claude/skills/browser-games/scripts/cover.mjs` otvara igru u headless 
 
 ```bash
 python3 -m http.server 8765 &     # iz root-a repoa
-# playwright-core instaliraj u scratchpad (ne u repo), pa pokreni kopiju skripte odatle
+# alati za testiranje idu u .cache/tools/ (gitignored + vercelignored): npm i playwright-core tamo, pa kopiraj skriptu
 SHOT=cover node cover.mjs <slug> '<css selektori UI-ja, zarezom>' 'click:#startBtn;key:d:1500;wait:5000'
 SHOT=hero  node cover.mjs <slug> '...' '...'
 ```
 
 Akcije: `click:<sel>`, `key:<taster>:<ms>`, `wait:<ms>`. Uvek otvori dobijenu sliku i proveri da nema zaostalog UI-ja i da scena izgleda zanimljivo (u igri, ne start ekran; za kolekcije popuni scenu pa slikaj). Primeri koji rade:
 - monster-lane: hide `#ui`, akcije `click:#startBtn;key:d:3000;wait:16000` (igrač stoji desno pa se na pristaništu skupi gomila)
+- kamp-tajkun: `QUERY='?auto&sim=1500&bot'` (bot 25 min razvija kamp, pa se slika živ kamp), hide `#ui`, akcije `wait:2500`
 - surprizi: hide `#topbar,#tabs,#open-panel,#progress-pill,#reveal-modal,#toast,#info-panel,#showroom-hint`, 5× `click:#open-btn;wait:3500;click:#reveal-close;wait:800`, pa `click:.tab-btn[data-mode=showroom];wait:3000`
 
 ## Balans i testiranje igre
 
 - Igre imaju debug parametre u URL-u: monster-lane `?auto&q=0&sim=600` odmah startuje, bot odigra N sekundi (gađa kapije, kovčeg, pa gomilu), a rezultat piše u `document.title` i `window.simLog` (DPS po talasu, trajanje bossa). Za nove igre napravi isto — balans se meri simulacijom, ne pogađanjem.
 - Bot je bimodalan ako ne gađa upgrade-e; pusti 4–5 simulacija i gledaj raspon, ne jedan rezultat.
+- Kamp Tajkun: `?auto&sim=1800` (bot igra 30 min; `&bot` ostavlja bota da vozi i posle), `window.simLog` = vreme svake kupovine. Referentna kriva: pilana ~1 min, tezga za daske ~2 min, pomoćnik/Koliba ~7–8 min, obor+roštilj+tezga ~9–10 min, Kuća ~25 min. Bot štedi za zgrade (alat kupuje samo ako je ≤ 50% sledeće zgrade) i ne sme da pokupi robu koja nema gde da se proda — isto pravilo važi za pomoćnika.
+- Tycoon igre: novi objekat mora odmah imati gde da proda svoju robu (pilana bez tezge za daske = rupa u progresiji).
 - Monster Lane referentna kriva (posle rebalansa): bot stiže do talasa 5–6 za ~6 min, bossovi traju 17–50 s, broj mobova ≤ ~1000. Ne vraćati na lakše — korisnik je tražio težu igru.
 - Cene upgrade-a (kapije, kovčezi) veži za trenutni DPS igrača (par sekundi njegove vatre), ne za talas — inače igrač koji propusti par boostova više nikad ne može da ih stigne. Test: `&nogates=25` (bot ignoriše upgrade-e N sekundi) pa proveri da `ups` posle raste.
 - Ne dozvoli spawn-kill: neprijatelji su neranjivi dok ne izađu iz svog spawn prostora (monster-lane: paluba broda iza ograde), a upgrade objekti dok „iskaču“.

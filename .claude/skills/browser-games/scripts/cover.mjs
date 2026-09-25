@@ -19,7 +19,8 @@ const shot = process.env.SHOT || 'cover';
 const [width, height] = SIZES[shot];
 const page = await browser.newPage({ viewport: { width, height } });
 page.on('pageerror', e => console.log('pageerror:', e.message));
-await page.goto(`http://localhost:${process.env.PORT || 8765}/games/${slug}/index.html`);
+// QUERY: optional URL params, e.g. QUERY='?auto&sim=1500&bot' to shoot a developed game
+await page.goto(`http://localhost:${process.env.PORT || 8765}/games/${slug}/index.html${process.env.QUERY || ''}`);
 await page.waitForTimeout(2500);
 
 for (const step of actions.split(';').filter(Boolean)) {
