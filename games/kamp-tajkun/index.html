@@ -32,6 +32,7 @@
   .pill.money.bump { animation: bump .25s; }
   @keyframes bump { 50% { transform: scale(1.12); } }
   .pill.cap.full { background: #c0392bdd; }
+  .pill.order { color: #ffe8a0; font-size: 18px; }
   .btns { display: flex; gap: 6px; }
   .btns button {
     pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800; color: #fff; background: #2a1b3dd9;
@@ -103,6 +104,7 @@
     <div class="hud-left">
       <div class="pill money stroke" id="moneyPill"><span class="ic">💰</span><span id="money">0</span></div>
       <div class="pill cap stroke" id="capPill"><span class="ic">🎒</span><span id="cap">0/6</span></div>
+      <div class="pill order stroke" id="orderPill" style="display:none"><span class="ic">🚚</span><span id="orderTxt"></span></div>
     </div>
     <div class="btns">
       <button id="muteBtn" title="Zvuk">♪</button>
@@ -116,12 +118,14 @@
   <div id="startScreen" class="overlay">
     <div class="card">
       <h1>KAMP<br>TAJKUN</h1>
-      <p>Kreneš sa šatorom i sekirom. Skupljaj, preradi, prodaj — i pretvori kamp u pravo imanje.</p>
+      <p>Kreneš sa šatorom i sekirom. Skupljaj, preradi, prodaj — i pretvori kamp u dvorac.</p>
       <div class="steps">
         <span>🪓</span><span>Priđi drvetu da ga sečeš, svinji u oboru za meso — stvari se slažu na leđa.</span>
         <span>🪚</span><span>Ostavi drva u pilani, meso na roštilju, pa pokupi gotovu robu.</span>
         <span>🏪</span><span>Napuni tezge — mušterije dolaze, kupuju i ostavljaju pare.</span>
         <span>🏠</span><span>Stani na krug sa cenom da platiš: nove zgrade, alati, radnici i veća baza.</span>
+        <span>👷</span><span>Zaposli drvoseče, mesare, berače, ribare i nosače — kamp počinje da radi sam.</span>
+        <span>🚚</span><span>Kamion porudžbina plaća duplo, ali samo ti možeš da ga utovariš — i to na vreme!</span>
       </div>
       <button class="play" id="startBtn">IGRAJ</button><br>
       <button class="link hidden" id="newBtn">Nova igra (briše napredak)</button>
@@ -158,16 +162,17 @@ const SAVE_KEY = 'kamp-tajkun:save';
 const qs = new URLSearchParams(location.search);
 const AUTO = qs.has('auto');                  // debug: fresh game, no save
 const ROAD_Z = 21;
-const BOUNDS = { x0: -34, x1: 29, z0: -22, z1: 19 };
+const BOUNDS = { x0: -46, x1: 29, z0: -22, z1: 19 };
 const BASE_POS = new THREE.Vector3(4, 0, -10);
 
 const BAG = [8, 12, 16, 22, 28, 36], BAG_COST = [20, 60, 140, 300, 600];
 const AXE = [0.5, 0.42, 0.35, 0.29, 0.23], AXE_COST = [30, 90, 220, 480];
 const BOOTS = [5.8, 6.6, 7.4, 8.2, 9.0], BOOTS_COST = [35, 100, 240, 520];
-const BASE_NAMES = ['Šator', 'Koliba', 'Kuća', 'Vila'];
-const BASE_COST = [150, 550, 1500];
-const BASE_REQ = [['sawmill'], ['grill'], ['meatStand', 'worker']];
-const PRICE = { log: 4, plank: 10, steak: 18 };
+const BASE_NAMES = ['Šator', 'Koliba', 'Kuća', 'Vila', 'Dvorac'];
+const BASE_COST = [150, 550, 2000, 9000];
+const BASE_REQ = [['sawmill'], ['grill'], ['juiceStand'], ['fishStand']];
+const PRICE = { log: 4, plank: 10, steak: 18, juice: 26, smoked: 38 };
+const WORKER_BAG = [4, 6, 8, 11, 14], WBAG_COST = [150, 400, 1200, 3000];
 const TREE_HP = 3, TREE_REGROW = 9;
 
 const ITEMS = {
@@ -175,6 +180,10 @@ const ITEMS = {
   plank: { h: 0.14, color: 0xe9c27f, icon: '🪚', name: 'Daske' },
   meat:  { h: 0.30, color: 0xef6b73, icon: '🥩', name: 'Meso' },
   steak: { h: 0.16, color: 0x8e3a1e, icon: '🍖', name: 'Roštilj' },
+  apple: { h: 0.30, color: 0xe53935, icon: '🍎', name: 'Jabuke' },
+  juice: { h: 0.38, color: 0xffa726, icon: '🧃', name: 'Sok' },
+  fish:  { h: 0.22, color: 0x78a6c8, icon: '🐟', name: 'Riba' },
+  smoked:{ h: 0.22, color: 0xc0772e, icon: '🍣', name: 'Dimljena riba' },
   cash:  { h: 0.11, color: 0x57c26a, icon: '💵', name: 'Pare' },
 };
 
@@ -186,15 +195,39 @@ const PLOTS = [
   { id: 'pen',        name: 'Obor sa svinjama',  icon: '🐷', cost: 150, at: [21, -9],  req: ['plankStand'] },
   { id: 'grill',      name: 'Roštilj',           icon: '🔥', cost: 120, at: [11, 2],   req: ['pen'] },
   { id: 'meatStand',  name: 'Tezga za roštilj',  icon: '🍖', cost: 100, at: [9, 12],   req: ['grill'] },
-  { id: 'worker',     name: 'Pomoćnik drvoseča', icon: '👷', cost: 300, at: [-6, -2],  req: ['plankStand'] },
   { id: 'cashier',    name: 'Kasir',             icon: '🧾', cost: 450, at: [3, 6],    req: ['meatStand'] },
+  { id: 'orders',     name: 'Utovar porudžbina', icon: '🚚', cost: 200, at: [26, 16.3], req: ['plankStand'] },
+  { id: 'orchard',    name: 'Voćnjak',           icon: '🍎', cost: 400, at: [21.5, 1.8], req: ['meatStand'] },
+  { id: 'press',      name: 'Presa za sok',      icon: '🧃', cost: 350, at: [23.5, 7.5], req: ['orchard'] },
+  { id: 'juiceStand', name: 'Tezga za sok',      icon: '🧃', cost: 250, at: [18, 12],   req: ['press'] },
+  { id: 'pond',       name: 'Ribnjak',           icon: '🎣', cost: 1800, at: [-40, -8],  req: ['juiceStand'] },
+  { id: 'smokehouse', name: 'Pušnica',           icon: '🔥', cost: 1400, at: [-38, 4],   req: ['pond'] },
+  { id: 'fishStand',  name: 'Tezga za ribu',     icon: '🐟', cost: 900, at: [-21, 12],  req: ['smokehouse'] },
+  // carriers: haul finished goods from a station to its stand (after the station + stand exist)
+  { id: 'carry_sawmill', name: 'Nosač dasaka',   icon: '🛒', cost: 300,  at: [-9.3, 6.3], req: ['sawmill', 'plankStand'] },
+  { id: 'carry_grill',   name: 'Nosač roštilja', icon: '🛒', cost: 500,  at: [13.7, 5],   req: ['grill', 'meatStand'] },
+  { id: 'carry_press',   name: 'Nosač soka',     icon: '🛒', cost: 1500, at: [26.2, 10.5], req: ['press', 'juiceStand'] },
+  { id: 'carry_smoke',   name: 'Nosač ribe',     icon: '🛒', cost: 3500, at: [-35.3, 7.5], req: ['smokehouse', 'fishStand'] },
 ];
+// hired helpers per resource (repeatable: each level = one more worker)
+const JOBS = {
+  lumberjacks: { res: 'log',   interval: 0.8, look: { shirt: 0xf39c12, pants: 0x34495e, hat: 'helmet', hatColor: 0xf1c40f, axe: true } },
+  butchers:    { res: 'meat',  interval: 0.9, look: { shirt: 0xffffff, pants: 0x6d4c41, hat: 'beanie', hatColor: 0xc0392b, axe: true } },
+  pickers:     { res: 'apple', interval: 0.6, look: { shirt: 0x27ae60, pants: 0x6d4c41, hat: 'straw' } },
+  fishers:     { res: 'fish',  interval: 2.0, look: { shirt: 0x2980b9, pants: 0x2d3436, hat: 'beanie', hatColor: 0x2c3e50 } },
+};
 // repeatable upgrades in front of the base
 const UPGRADES = [
   { id: 'bag',   name: 'Veći ranac',     icon: '🎒', at: [-1, -4.3], costs: BAG_COST },
   { id: 'axe',   name: 'Oštrija sekira', icon: '🪓', at: [4, -4.3], costs: AXE_COST },
   { id: 'boots', name: 'Brže čizme',     icon: '👟', at: [9, -4.3], costs: BOOTS_COST },
   { id: 'base',  name: lv => BASE_NAMES[lv + 1], icon: '🏠', at: [-3.5, -10], costs: BASE_COST, req: lv => BASE_REQ[lv] },
+  { id: 'lumberjacks', name: 'Drvoseča', icon: '👷', at: [-6, -2],     costs: [250, 700, 2400], req: () => ['plankStand'] },
+  { id: 'butchers',    name: 'Mesar',    icon: '🔪', at: [12.5, -6.5], costs: [450, 1100],      req: () => ['meatStand'] },
+  { id: 'pickers',     name: 'Berač',    icon: '🧺', at: [14.5, -1.8], costs: [1200, 2800],     req: () => ['juiceStand'] },
+  { id: 'fishers',     name: 'Ribar',    icon: '🎣', at: [-32, -12],   costs: [3000, 6000],     req: () => ['fishStand'] },
+  { id: 'wbag',        name: 'Ranac radnika', icon: '🎒', at: [12, -10.5], costs: WBAG_COST,
+    req: () => S.lv.lumberjacks + S.lv.butchers + S.lv.pickers + S.lv.fishers > 0 },
 ];
 
 // =====================================================================
@@ -212,7 +245,7 @@ function seeded(seed) {
   return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
 }
 let instant = false;
-let botOn = false;      // debug bot drives the player (simulation / ?bot)   // true while the debug simulation fast-forwards (skips visual-only work)
+let botOn = false;      // debug bot drives the player (simulation / ?bot)
 
 // =====================================================================
 // RENDERER / SCENE
@@ -273,6 +306,7 @@ function mesh(geo, color, parent, x = 0, y = 0, z = 0) {
   return m;
 }
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
+function roofGeo(w, h, d) { const g = new THREE.ConeGeometry(0.72, 1, 4).rotateY(Math.PI / 4); g.scale(w, h, d); return g; }
 const cyl = (rt, rb, h, s = 12) => new THREE.CylinderGeometry(rt, rb, h, s);
 
 function canvas(w, h) {
@@ -316,7 +350,7 @@ const colliders = [];      // { x, z, r }
   const flat = (geo, x, z, mat = dirt, y = 0.012) => { const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); m.receiveShadow = true; scene.add(m); return m; };
   flat(new THREE.CircleGeometry(8, 40), BASE_POS.x, BASE_POS.z - 1);
   flat(new THREE.PlaneGeometry(3.4, 30), 2, 5.5);
-  flat(new THREE.PlaneGeometry(34, 5), -2, 10.5);
+  flat(new THREE.PlaneGeometry(50, 5), -1.5, 10.5);
   flat(new THREE.PlaneGeometry(240, 5), 0, ROAD_Z, M(0xc9a676), 0.014);
   flat(new THREE.PlaneGeometry(240, 0.4), 0, ROAD_Z - 2.6, M(0xa88a5c), 0.016);
   flat(new THREE.PlaneGeometry(240, 0.4), 0, ROAD_Z + 2.6, M(0xa88a5c), 0.016);
@@ -324,8 +358,8 @@ const colliders = [];      // { x, z, r }
   // decoration: grass tufts, flowers, border forest (instanced, set once)
   const r = seeded(7), d = new THREE.Object3D();
   const onDirt = (x, z) => Math.hypot(x - BASE_POS.x, z - BASE_POS.z + 1) < 8.3 || (Math.abs(x - 2) < 2 && z > -10 && z < 21) ||
-    (Math.abs(x + 2) < 17.3 && Math.abs(z - 10.5) < 2.8) || Math.abs(z - ROAD_Z) < 3;
-  const spot = () => { let x, z; do { x = lerp(-40, 36, r()); z = lerp(-28, 18, r()); } while (onDirt(x, z)); return [x, z]; };
+    (Math.abs(x + 1.5) < 25.3 && Math.abs(z - 10.5) < 2.8) || Math.abs(z - ROAD_Z) < 3 || Math.hypot(x + 40, z + 8) < 5.6;
+  const spot = () => { let x, z; do { x = lerp(-50, 36, r()); z = lerp(-28, 18, r()); } while (onDirt(x, z)); return [x, z]; };
   const tuft = new THREE.InstancedMesh(new THREE.ConeGeometry(0.12, 0.45, 4), M(0x5fae42), 500);
   for (let i = 0; i < 500; i++) {
     const [x, z] = spot(); d.position.set(x, 0.2, z); d.rotation.set(0, r() * 6, (r() - 0.5) * 0.4);
@@ -339,16 +373,16 @@ const colliders = [];      // { x, z, r }
     flowers.setMatrixAt(i, d.matrix); flowers.setColorAt(i, fc[i % 4]);
   }
   scene.add(flowers);
-  const N = 110;
+  const N = 130;
   const trunks = new THREE.InstancedMesh(cyl(0.25, 0.32, 1.4, 6), M(0x7a4a24), N);
   const crowns = new THREE.InstancedMesh(new THREE.ConeGeometry(1.6, 3.6, 7), M(0x3f8f3a), N);
   for (let i = 0; i < N; i++) {
     let x, z;
     const side = i % 4, t = r();
-    if (side === 0) { x = lerp(-44, 40, t); z = -26 - r() * 10; }
-    else if (side === 1) { x = -38 - r() * 10; z = lerp(-34, 16, t); }
+    if (side === 0) { x = lerp(-56, 40, t); z = -26 - r() * 10; }
+    else if (side === 1) { x = -50 - r() * 10; z = lerp(-34, 16, t); }
     else if (side === 2) { x = 33 + r() * 10; z = lerp(-34, 16, t); }
-    else { x = lerp(-44, 40, t); z = ROAD_Z + 5 + r() * 12; }
+    else { x = lerp(-56, 40, t); z = ROAD_Z + 5 + r() * 12; }
     const s = 0.9 + r() * 0.7;
     d.position.set(x, 0.7 * s, z); d.rotation.set(0, r() * 6, 0); d.scale.setScalar(s); d.updateMatrix(); trunks.setMatrixAt(i, d.matrix);
     d.position.y = 2.9 * s; d.updateMatrix(); crowns.setMatrixAt(i, d.matrix);
@@ -365,6 +399,10 @@ const ITEM_GEO = {
   plank: box(0.9, 0.13, 0.34),
   meat: new THREE.SphereGeometry(0.24, 10, 8).scale(1.25, 0.85, 1),
   steak: box(0.56, 0.15, 0.4),
+  apple: new THREE.SphereGeometry(0.16, 10, 8),
+  juice: cyl(0.13, 0.15, 0.36, 10),
+  fish: new THREE.SphereGeometry(0.22, 10, 8).scale(1.7, 0.55, 0.75),
+  smoked: new THREE.SphereGeometry(0.22, 10, 8).scale(1.7, 0.55, 0.75),
   cash: box(0.5, 0.1, 0.26),
 };
 function makeItem(type) {
@@ -617,8 +655,14 @@ function turn(root, angle, dt, rate = 12) {
   d = Math.atan2(Math.sin(d), Math.cos(d));
   root.rotation.y += d * Math.min(1, dt * rate);
 }
+// colliders are circles { x, z, r } or boxes { x, z, hx, hz } (boxes slide cleanly along their edges)
 function resolve(pos, r = 0.4) {
   for (const c of colliders) {
+    if (c.hx) {
+      const dx = pos.x - c.x, dz = pos.z - c.z, px = c.hx + r - Math.abs(dx), pz = c.hz + r - Math.abs(dz);
+      if (px > 0 && pz > 0) { if (px < pz) pos.x += (dx < 0 ? -1 : 1) * px; else pos.z += (dz < 0 ? -1 : 1) * pz; }
+      continue;
+    }
     const dx = pos.x - c.x, dz = pos.z - c.z, d = Math.hypot(dx, dz), min = c.r + r;
     if (d < min && d > 1e-4) { pos.x = c.x + dx / d * min; pos.z = c.z + dz / d * min; }
   }
@@ -631,17 +675,23 @@ function moveAgent(agent, target, speed, dt, solid = true) {
   if (d < 0.05) return 0;
   const step = Math.min(d, speed * dt);
   const ox = agent.pos.x, oz = agent.pos.z;
-  agent.pos.x += dx / d * step; agent.pos.z += dz / d * step;
+  let ux = dx / d, uz = dz / d;
+  if (agent.detour > 0) { agent.detour -= dt; [ux, uz] = [ux * 0.3 - uz * agent.side, uz * 0.3 + ux * agent.side]; }
+  agent.pos.x += ux * step; agent.pos.z += uz * step;
   if (solid) resolve(agent.pos);
-  turn(agent.c.root, Math.atan2(dx, dz), dt);
-  return Math.hypot(agent.pos.x - ox, agent.pos.z - oz);
+  const moved = Math.hypot(agent.pos.x - ox, agent.pos.z - oz);
+  // blocked by something: walk sideways for a moment
+  if (solid && moved < step * 0.25) { agent.stuck = (agent.stuck || 0) + dt; if (agent.stuck > 0.4) { agent.stuck = 0; agent.detour = 0.7; agent.side = Math.random() < 0.5 ? -1 : 1; } }
+  else agent.stuck = 0;
+  turn(agent.c.root, Math.atan2(ux, uz), dt);
+  return moved;
 }
 
 // =====================================================================
 // GAME STATE
 // =====================================================================
 const freshState = () => ({
-  money: 0, unlocked: new Set(['logStand']), paid: {}, lv: { bag: 0, axe: 0, boots: 0, base: 0 },
+  money: 0, unlocked: new Set(['logStand']), paid: {}, lv: { bag: 0, axe: 0, boots: 0, base: 0, lumberjacks: 0, butchers: 0, pickers: 0, fishers: 0, wbag: 0 },
   time: 0, running: false, paused: false, earned: 0,
 });
 let S = freshState();
@@ -649,7 +699,11 @@ const cap = () => BAG[S.lv.bag];
 const priceMult = () => 1 + 0.25 * S.lv.base;
 const zones = [];          // interaction areas: deposit / pickup / cash / buy
 const stands = [], stations = [], trees = [], pigs = [], customers = [], pads = [];
-let worker = null, cashier = null;
+const appleTrees = [], docks = [], workers = [], carriers = [];
+let cashier = null;
+const wcap = () => WORKER_BAG[S.lv.wbag];
+const agentCap = a => a.capFn ? a.capFn() : cap();
+const hasStand = item => stands.some(s => s.item === item);
 
 // =====================================================================
 // AUDIO
@@ -800,7 +854,7 @@ function hitPig(p, agent) {
   burst(p.pos.clone().setY(0.8), [0xf4a3b4, 0xffffff], 4, 3);
   if (p.hp <= 0) {
     p.alive = false; p.g.visible = false; p.respawn = 6;
-    for (let i = 0; i < 2 && agent.pile.length < cap(); i++) agent.pile.add('meat', p.pos.clone().setY(0.8));
+    for (let i = 0; i < 2 && agent.pile.length < agentCap(agent); i++) agent.pile.add('meat', p.pos.clone().setY(0.8));
     burst(p.pos.clone().setY(0.6), [0xf4a3b4, 0xef6b73], 10, 4);
   }
 }
@@ -824,6 +878,93 @@ const nearestPig = (pos, max = Infinity) => {
   for (const p of pigs) if (p.alive) { const d = dist2(pos, p.pos); if (d < bd) { bd = d; best = p; } }
   return best;
 };
+
+// =====================================================================
+// ORCHARD (apples regrow on the tree) + POND (fishing from docks)
+// =====================================================================
+const AG = { trunk: cyl(0.2, 0.28, 1.6, 8), crown: new THREE.IcosahedronGeometry(1.3, 0), apple: new THREE.SphereGeometry(0.17, 8, 6) };
+function addAppleTree(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rand(0, 6); scene.add(g);
+  mesh(AG.trunk, 0x8b5a2b, g, 0, 0.8, 0);
+  const crown = mesh(AG.crown, 0x57b04a, g, 0, 2.2, 0); crown.scale.set(1, 0.85, 1);
+  const apples = [];
+  for (let i = 0; i < 4; i++) { const a = i / 4 * Math.PI * 2 + 0.4; apples.push(mesh(AG.apple, 0xe53935, g, Math.cos(a) * 1.05, 1.85 + (i % 2) * 0.55, Math.sin(a) * 1.05)); }
+  const t = { pos: V(x, 0, z), g, crown, apples, count: 4, timer: 0, shake: 0 };
+  appleTrees.push(t);
+  colliders.push({ x, z, r: 0.45 });
+  pop(g);
+}
+function pickApple(t, agent) {
+  t.count--; t.shake = 1;
+  const a = t.apples[t.count];
+  a.visible = false;
+  agent.pile.add('apple', a.getWorldPosition(V()));
+  if (agent === player) sfx.pick();
+  if (t.count <= 0) t.timer = 8;
+}
+function updateApples(dt) {
+  for (const t of appleTrees) {
+    if (t.shake > 0) { t.shake -= dt * 4; t.crown.rotation.z = Math.sin(t.shake * 30) * 0.06 * Math.max(0, t.shake); }
+    if (t.count <= 0) {
+      t.timer -= dt;
+      if (t.timer <= 0) { t.count = 4; for (const a of t.apples) { a.visible = true; pop(a, 0.4); } }
+    }
+  }
+}
+
+const POND = { x: -40, z: -8, r: 4.5 };
+const pondFish = [];
+function buildPond() {
+  const g = new THREE.Group(); g.position.set(POND.x, 0, POND.z); scene.add(g);
+  const rim = new THREE.Mesh(new THREE.RingGeometry(POND.r - 0.1, POND.r + 0.7, 48), M(0xdcc08c)); rim.rotation.x = -Math.PI / 2; rim.position.y = 0.02; g.add(rim);
+  const water = new THREE.Mesh(new THREE.CircleGeometry(POND.r, 48), new THREE.MeshToonMaterial({ color: 0x3fa9f5, gradientMap: ramp })); water.rotation.x = -Math.PI / 2; water.position.y = 0.03; g.add(water);
+  for (let i = 0; i < 4; i++) {
+    const f = new THREE.Mesh(new THREE.CircleGeometry(0.35, 12), new THREE.MeshBasicMaterial({ color: 0x1f5f94, transparent: true, opacity: 0.6, depthWrite: false }));
+    f.rotation.x = -Math.PI / 2; f.scale.set(1.8, 0.7, 1); f.position.y = 0.04; f.userData = { r: rand(1.2, 3), a: rand(0, 6), s: rand(0.4, 0.8) * (i % 2 ? 1 : -1) };
+    g.add(f); pondFish.push(f);
+  }
+  for (let i = 0; i < 6; i++) { const a = i * 1.05; mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.1, 5), 0x6aa84f, g, Math.cos(a) * (POND.r + 0.3), 0.55, Math.sin(a) * (POND.r + 0.3)); }
+  // three docks: player / fishers stand at the land end
+  for (const [dx, dz] of [[1, 0], [0, -1], [0, 1]]) {
+    const dock = new THREE.Group(); dock.position.set(dx * (POND.r - 0.6), 0, dz * (POND.r - 0.6)); dock.rotation.y = Math.atan2(dx, dz); g.add(dock);
+    mesh(box(1.3, 0.14, 2.6), 0xb07a45, dock, 0, 0.14, 0);
+    for (const x of [-0.55, 0.55]) mesh(cyl(0.08, 0.08, 0.8, 6), 0x7a4a24, dock, x, 0.1, -1.1);
+    const pos = V(POND.x + dx * (POND.r + 1.0), 0, POND.z + dz * (POND.r + 1.0));
+    docks.push({ pos, water: V(POND.x + dx * (POND.r - 2.2), 0.2, POND.z + dz * (POND.r - 2.2)), user: null });
+  }
+  colliders.push({ x: POND.x, z: POND.z, r: POND.r - 0.2 });
+  pop(g);
+}
+function catchFish(d, agent) {
+  agent.pile.add('fish', d.water.clone());
+  burst(d.water, [0x9fd8ff, 0xffffff], 6, 2.5);
+  if (agent === player) sfx.pick();
+}
+function updatePond(dt) {
+  for (const f of pondFish) {
+    const u = f.userData; u.a += dt * u.s;
+    f.position.set(Math.cos(u.a) * u.r, 0.04, Math.sin(u.a) * u.r);
+    f.rotation.z = -u.a + (u.s > 0 ? -Math.PI / 2 : Math.PI / 2);
+  }
+}
+
+// every gatherable resource: where it comes from, reach, speed factor and what one "hit" does
+const SOURCES = {
+  log:   { list: () => trees.filter(t => t.state === 'alive'), reach: 1.95, mul: 1,   hit: (s, a) => hitTree(s, a, a === player) },
+  meat:  { list: () => pigs.filter(p => p.alive),              reach: 1.9,  mul: 1.3, hit: (s, a) => hitPig(s, a) },
+  apple: { list: () => appleTrees.filter(t => t.count > 0),    reach: 2.0,  mul: 0.7, hit: (s, a) => pickApple(s, a) },
+  fish:  { list: () => docks,                                  reach: 1.1,  mul: 2.4, hit: (s, a) => catchFish(s, a) },
+};
+function nearestSource(res, pos, max = Infinity, agent = null) {
+  let best = null, bd = max;
+  for (const s of SOURCES[res].list()) {
+    if (res === 'fish' && s.user && s.user !== agent && agent !== player) continue;
+    const d = dist2(pos, s.pos);
+    if (d < bd) { bd = d; best = s; }
+  }
+  return best;
+}
+const facePos = (res, s) => res === 'fish' ? s.water : s.pos;
 
 // =====================================================================
 // STANDS (sell to customers) + STATIONS (process goods)
@@ -854,9 +995,10 @@ function makeStand(id, item, at, color) {
   const shelf = new Pile(g, V(0, 1.1, 0), gridLayout(4, 2, 0.78, 0.5));
   groundPad(g, 0, -2.0, ITEMS[item].icon, '#ffffff', 2.2);
   const st = { id, item, g, pos: V(at[0], 0, at[1]), shelf, queue: [], sign, cash: new CashPile(V(at[0] + 2.6, 0, at[1] - 1.8)) };
-  zones.push({ kind: 'deposit', pos: V(at[0], 0, at[1] - 2.0), r: 1.5, pile: shelf, accepts: item, cap: 30, owner: st });
+  st.zone = { kind: 'deposit', pos: V(at[0], 0, at[1] - 2.0), r: 1.5, pile: shelf, accepts: item, cap: 30, owner: st };
+  zones.push(st.zone);
   zones.push({ kind: 'cash', pos: st.cash.pos, r: 1.3, cash: st.cash });
-  colliders.push({ x: at[0] - 0.9, z: at[1], r: 0.9 }, { x: at[0] + 0.9, z: at[1], r: 0.9 });
+  colliders.push({ x: at[0], z: at[1], hx: 1.7, hz: 0.7 });
   drawSign(st);
   labelsToRedraw.push(() => drawSign(st));
   stands.push(st);
@@ -876,7 +1018,7 @@ function makeStation(id, at, input, output, interval, build) {
   st.inZone = { kind: 'deposit', pos: V(at[0] - 2.7, 0, at[1]), r: 1.4, pile: inP, accepts: input, cap: 30, owner: st };
   st.outZone = { kind: 'pickup', pos: V(at[0] + 2.7, 0, at[1]), r: 1.4, pile: outP, owner: st };
   zones.push(st.inZone, st.outZone);
-  colliders.push({ x: at[0], z: at[1], r: 1.5 });
+  colliders.push(id === 'press' ? { x: at[0], z: at[1], r: 1.2 } : { x: at[0], z: at[1], hx: 1.6, hz: 1.0 });
   stations.push(st);
   pop(g);
   return st;
@@ -906,6 +1048,44 @@ function buildSawmill(g) {
   return (dt, working) => { if (working) blade.rotation.y += dt * 20; };
 }
 const SMOKE_GEO = new THREE.SphereGeometry(0.22, 8, 6);
+function smoke(g, x, y, z) {
+  const puffs = [];
+  for (let i = 0; i < 6; i++) {
+    const m = new THREE.Mesh(SMOKE_GEO, new THREE.MeshBasicMaterial({ color: 0xdddddd, transparent: true, opacity: 0.6, depthWrite: false }));
+    m.userData.t = i / 6; g.add(m); puffs.push(m);
+  }
+  return (dt, on) => {
+    for (const m of puffs) {
+      m.visible = on;
+      m.userData.t = (m.userData.t + dt * 0.5) % 1;
+      const t = m.userData.t;
+      m.position.set(x + Math.sin(t * 6) * 0.15, y + t * 2.2, z);
+      m.scale.setScalar(0.6 + t * 1.5); m.material.opacity = 0.55 * (1 - t);
+    }
+  };
+}
+function buildPress(g) {
+  mesh(cyl(0.9, 0.8, 1.1, 14), 0x8d5a2b, g, 0, 0.55, 0);
+  for (const y of [0.2, 0.9]) mesh(cyl(0.93, 0.93, 0.08, 14), 0x555555, g, 0, y, 0);
+  for (let i = 0; i < 5; i++) mesh(AG.apple, 0xe53935, g, Math.cos(i) * 0.45, 1.15, Math.sin(i) * 0.45);
+  for (const x of [-1, 1]) mesh(box(0.2, 2.4, 0.2), 0x7a4a24, g, x, 1.2, 0);
+  mesh(box(2.3, 0.25, 0.3), 0x7a4a24, g, 0, 2.4, 0);
+  const screw = new THREE.Group(); screw.position.y = 1.7; g.add(screw);
+  mesh(cyl(0.08, 0.08, 1.4, 8), 0x95a5a6, screw, 0, 0, 0);
+  mesh(box(1.4, 0.08, 0.08), 0x95a5a6, screw, 0, 0.5, 0);
+  mesh(cyl(0.12, 0.12, 0.5, 8), 0xffa726, g, 1.1, 0.25, 0.8);
+  return (dt, working) => { if (working) { screw.rotation.y += dt * 3; screw.position.y = 1.65 + Math.sin(S.time * 3) * 0.08; } };
+}
+function buildSmokehouse(g) {
+  mesh(box(2.4, 2.0, 1.8), 0x5d4037, g, 0, 1.0, 0);
+  for (let y = 0.3; y < 2; y += 0.45) mesh(box(2.46, 0.07, 1.86), 0x4e342e, g, 0, y, 0);
+  mesh(roofGeo(3.0, 1.2, 2.4), 0x37474f, g, 0, 2.6, 0);
+  mesh(box(0.4, 1.2, 0.4), 0x455a64, g, 0.7, 3.0, -0.3);
+  mesh(box(1.0, 1.3, 0.06), 0x3e2723, g, 0, 0.7, 0.92);
+  for (let i = 0; i < 3; i++) { const f = mesh(ITEM_GEO.smoked, ITEMS.smoked.color, g, -0.8 + i * 0.8, 1.7, 1.0); f.rotation.z = Math.PI / 2; }
+  const puff = smoke(g, 0.7, 3.6, -0.3);
+  return (dt, working) => puff(dt, working);
+}
 function buildGrill(g) {
   for (const x of [-0.8, 0.8]) for (const z of [-0.4, 0.4]) mesh(cyl(0.05, 0.05, 0.9, 6), 0x2d3436, g, x, 0.45, z);
   const barrel = mesh(new THREE.CylinderGeometry(0.55, 0.55, 2.0, 16, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).rotateX(Math.PI), 0x34495e, g, 0, 1.0, 0);
@@ -914,21 +1094,8 @@ function buildGrill(g) {
   const coals = mesh(box(1.8, 0.1, 0.9), 0xff6b1a, g, 0, 0.8, 0);
   for (let i = 0; i < 3; i++) mesh(ITEM_GEO.steak, ITEMS.steak.color, g, -0.6 + i * 0.6, 1.12, 0);
   mesh(cyl(0.1, 0.1, 1.4, 8), 0x2d3436, g, 0.8, 1.6, -0.35);
-  const smoke = [];
-  for (let i = 0; i < 6; i++) {
-    const m = new THREE.Mesh(SMOKE_GEO, new THREE.MeshBasicMaterial({ color: 0xdddddd, transparent: true, opacity: 0.6, depthWrite: false }));
-    m.userData.t = i / 6; g.add(m); smoke.push(m);
-  }
-  return (dt, working) => {
-    coals.material = M(working ? 0xff6b1a : 0x7a3b1a);
-    for (const m of smoke) {
-      m.visible = working;
-      m.userData.t = (m.userData.t + dt * 0.5) % 1;
-      const t = m.userData.t;
-      m.position.set(0.8 + Math.sin(t * 6) * 0.15, 2.3 + t * 2.2, -0.35);
-      m.scale.setScalar(0.6 + t * 1.5); m.material.opacity = 0.55 * (1 - t);
-    }
-  };
+  const puff = smoke(g, 0.8, 2.3, -0.35);
+  return (dt, working) => { coals.material = M(working ? 0xff6b1a : 0x7a3b1a); puff(dt, working); };
 }
 
 // =====================================================================
@@ -1015,48 +1182,189 @@ function updateCustomers(dt) {
 }
 
 // =====================================================================
-// WORKER (auto lumberjack) + CASHIER
+// WORKERS (gather → fill the bag → deliver everything), CARRIERS, CASHIER
 // =====================================================================
-function spawnWorker(at) {
-  const c = makeCharacter({ shirt: 0xf39c12, pants: 0x34495e, hat: 'helmet', hatColor: 0xf1c40f, axe: true });
+function spawnWorker(job) {
+  const J = JOBS[job];
+  const home = pads.find(p => p.def.id === job).pos;
+  const c = makeCharacter(J.look);
   scene.add(c.root);
-  worker = { c, pos: V(at[0], 0, at[1]), pile: null, chopT: 0, dep: 0 };
-  worker.pile = new Pile(c.back, V(), stackLayout);
-  c.root.position.copy(worker.pos);
+  const w = { job, res: J.res, interval: J.interval, c, pos: V(home.x + rand(-1, 1), 0, home.z + rand(-1, 1)), state: 'gather', chopT: 0, dep: 0, dock: null, capFn: wcap };
+  w.pile = new Pile(c.back, V(), stackLayout);
+  c.root.position.copy(w.pos);
+  workers.push(w);
   pop(c.root);
 }
-function logDropZone(pos) {
-  const saw = stations.find(s => s.id === 'sawmill');
-  if (saw && S.unlocked.has('plankStand') && saw.inP.length < saw.inZone.cap) return saw.inZone;
-  const z = zones.find(z => z.kind === 'deposit' && z.accepts === 'log' && z.pile.length < z.cap);
-  return z || null;
+// where a worker drops a resource: the station that processes it (if its goods can be sold), else a stand
+function dropZoneFor(res) {
+  const st = stations.find(s => s.input === res);
+  if (st && hasStand(st.output) && st.inP.length < st.inZone.cap) return st.inZone;
+  return zones.find(z => z.kind === 'deposit' && z.accepts === res && !z.owner.input && z.pile.length < z.cap) || null;
 }
-function updateWorker(dt) {
-  if (!worker) return;
-  const w = worker, CAP = 8;
-  let target = null, chopping = null;
-  const tree = nearestTree(w.pos);
-  if (w.pile.length >= CAP || (w.pile.length && !tree)) {
-    const z = logDropZone(w.pos);
-    if (z) {
+function releaseDock(w) { if (w.dock) { w.dock.user = null; w.dock = null; } }
+function updateWorker(w, dt) {
+  let target = null, work = null;
+  if (w.state === 'gather') {
+    const src = nearestSource(w.res, w.pos, Infinity, w);
+    if (w.pile.length >= wcap() || (w.pile.length && !src)) w.state = 'deliver';
+    else if (src) {
+      if (w.res === 'fish' && w.dock !== src) { releaseDock(w); src.user = w; w.dock = src; }
+      if (dist2(w.pos, src.pos) < SOURCES[w.res].reach * 0.85) work = src; else target = src.pos;
+    }
+  }
+  if (w.state === 'deliver') {
+    releaseDock(w);
+    const z = w.pile.length ? dropZoneFor(w.res) : null;
+    if (!w.pile.length) w.state = 'gather';
+    else if (z) {
       if (dist2(w.pos, z.pos) < z.r * 0.7) {
         w.dep += dt;
-        while (w.dep > 0.08) { w.dep -= 0.08; if (z.pile.length >= z.cap) break; const r = w.pile.take('log'); if (!r) break; z.pile.add('log', r.pos); }
+        while (w.dep > 0.08) { w.dep -= 0.08; if (z.pile.length >= z.cap) break; const r = w.pile.take(w.res); if (!r) break; z.pile.add(r.type, r.pos); }
       } else target = z.pos;
     }
-  } else if (tree) {
-    if (dist2(w.pos, tree.pos) < 1.7) chopping = tree; else target = tree.pos;
   }
   const moved = target ? moveAgent(w, target, 4.2, dt) : 0;
-  if (chopping) {
-    turn(w.c.root, Math.atan2(chopping.pos.x - w.pos.x, chopping.pos.z - w.pos.z), dt);
-    w.chopT += dt / 0.8;
-    if (w.chopT >= 1) { w.chopT = 0; hitTree(chopping, w, false); }
+  if (work) {
+    const f = facePos(w.res, work);
+    turn(w.c.root, Math.atan2(f.x - w.pos.x, f.z - w.pos.z), dt);
+    w.chopT += dt / w.interval;
+    if (w.chopT >= 1) { w.chopT = 0; SOURCES[w.res].hit(work, w); }
   } else w.chopT = 0;
-  w.c.chop = chopping ? w.chopT : -1;
+  w.c.chop = work ? w.chopT : -1;
   w.c.root.position.copy(w.pos);
   animateChar(w.c, dt, moved / Math.max(dt, 1e-4));
 }
+
+function spawnCarrier(stationId) {
+  const st = stations.find(s => s.id === stationId);
+  const c = makeCharacter({ shirt: 0xecf0f1, pants: 0x2d3436, hat: 'beanie', hatColor: 0x8e44ad });
+  scene.add(c.root);
+  const k = { st, c, pos: st.outZone.pos.clone().add(V(0, 0, 1.6)), state: 'fetch', dep: 0, idle: 0, capFn: () => wcap() + 2 };
+  k.pile = new Pile(c.back, V(), stackLayout);
+  c.root.position.copy(k.pos);
+  carriers.push(k);
+  pop(c.root);
+}
+function updateCarrier(k, dt) {
+  const stand = stands.find(s => s.item === k.st.output);
+  let target = null;
+  if (stand && k.state === 'fetch') {
+    const room = stand.shelf.length + k.pile.length < stand.zone.cap;
+    if (k.pile.length >= k.capFn() || (k.pile.length && (!room || k.idle > 1.2))) k.state = 'deliver';
+    else if (room) {
+      if (dist2(k.pos, k.st.outZone.pos) < 1.0) {
+        if (!k.st.outP.length) k.idle += dt;
+        k.dep += dt;
+        while (k.dep > 0.08) { k.dep -= 0.08; if (k.pile.length >= k.capFn()) break; const r = k.st.outP.take(); if (!r) break; k.pile.add(r.type, r.pos); k.idle = 0; }
+      } else target = k.st.outZone.pos;
+    }
+  }
+  if (stand && k.state === 'deliver') {
+    if (!k.pile.length) { k.state = 'fetch'; k.idle = 0; }
+    else if (dist2(k.pos, stand.zone.pos) < stand.zone.r * 0.7) {
+      k.dep += dt;
+      while (k.dep > 0.08) { k.dep -= 0.08; if (stand.shelf.length >= stand.zone.cap) break; const r = k.pile.take(); if (!r) break; stand.shelf.add(r.type, r.pos); }
+    } else target = stand.zone.pos;
+  }
+  const moved = target ? moveAgent(k, target, 4.6, dt) : 0;
+  k.c.root.position.copy(k.pos);
+  animateChar(k.c, dt, moved / Math.max(dt, 1e-4));
+}
+
+// ---------------- orders: a truck comes for a bulk order, only the player can load it ----------------
+const ORDER_POS = V(26, 0, 16.3);
+let truck = null, order = null, orderWait = 6, orderDrawT = 0;
+function buildOrders() {
+  groundPad(scene, ORDER_POS.x, ORDER_POS.z, '🚚', '#ffd84a', 2.6);
+  const g = new THREE.Group(); scene.add(g);
+  const body = new THREE.Group(); g.add(body);
+  mesh(box(1.9, 1.7, 2.1), 0xe74c3c, body, -2.4, 1.25, 0);
+  mesh(box(0.1, 0.8, 1.7), 0x9fe3ff, body, -3.36, 1.55, 0);
+  mesh(box(3.6, 2.3, 2.2), 0xf5f5f5, body, 0.5, 1.55, 0);
+  mesh(box(3.62, 0.3, 2.22), 0x2ecc71, body, 0.5, 0.9, 0);
+  const wheels = [];
+  for (const x of [-2.4, 1.6]) for (const z of [-1.1, 1.1]) { const w = mesh(cyl(0.45, 0.45, 0.3, 12), 0x222222, g, x, 0.45, z); w.rotation.x = Math.PI / 2; wheels.push(w); }
+  const lbl = makeLabel(320, 230, 2.6); lbl.sp.position.set(0.5, 4.4, 0); g.add(lbl.sp);
+  g.visible = false;
+  truck = { g, body, wheels, lbl };
+  zones.push({ kind: 'order', pos: ORDER_POS, r: 1.7 });
+}
+function newOrder() {
+  // processed goods only (raw logs just while nothing else exists)
+  let prods = stands.map(s => s.item).filter(t => t !== 'log');
+  if (!prods.length) prods = ['log'];
+  prods.sort(() => Math.random() - 0.5);
+  const n = Math.min(prods.length, prods.length >= 3 ? (Math.random() < 0.5 ? 2 : 3) : prods.length >= 2 ? 2 : 1);
+  const needs = {}, got = {};
+  let value = 0;
+  for (const t of prods.slice(0, n)) {
+    needs[t] = Math.max(3, Math.round(rand(4, 9) * (1 + 0.3 * S.lv.base) * Math.sqrt(10 / PRICE[t])));   // pricier goods: smaller counts
+    got[t] = 0;
+    value += needs[t] * PRICE[t] * priceMult();
+  }
+  const total = Object.values(needs).reduce((a, b) => a + b, 0);
+  order = { needs, got, reward: Math.round(value * 2.2 / 5) * 5, time: Math.round(45 + total * 3.5), state: 'arriving', x: 60 };
+  truck.g.visible = true;
+  drawOrder();
+}
+function orderLeft(t) { return order.needs[t] - order.got[t]; }
+function drawOrder() {
+  const { ctx, w, h } = truck.lbl;
+  panel(ctx, w, h, order.state === 'done' ? '#7ed957' : '#ffd84a');
+  ctx.textBaseline = 'middle'; ctx.textAlign = 'left';
+  let y = 44;
+  for (const t in order.needs) {
+    ctx.font = '40px sans-serif'; ctx.fillText(ITEMS[t].icon, 24, y + 2);
+    ctx.font = `800 36px ${FONT}`; ctx.fillStyle = orderLeft(t) <= 0 ? '#7ed957' : '#ffffff';
+    ctx.fillText(`${order.got[t]}/${order.needs[t]}`, 80, y + 4);
+    y += 50;
+  }
+  ctx.font = `800 34px ${FONT}`; ctx.fillStyle = '#ffd84a'; ctx.textAlign = 'right';
+  ctx.fillText(`💰${fmt(order.reward)}`, w - 22, 48);
+  ctx.fillStyle = order.time < 20 ? '#ff7675' : '#ffffff';
+  ctx.fillText(`⏱${Math.ceil(order.time)}s`, w - 22, 98);
+  truck.lbl.tex.needsUpdate = true;
+}
+function loadOrder(xfers) {
+  if (!order || order.state !== 'waiting') return;
+  for (let k = 0; k < xfers; k++) {
+    const t = Object.keys(order.needs).find(t => orderLeft(t) > 0 && player.pile.count(t));
+    if (!t) break;
+    const r = player.pile.take(t);
+    order.got[t]++;
+    sfx.drop();
+    if (!instant) { const m = makeItem(t); fly(m, r.pos, () => truck.g.position.clone().add(V(0.5, 1.5, 0)), 0.3, () => scene.remove(m)); }
+  }
+  if (Object.keys(order.needs).every(t => orderLeft(t) <= 0)) {
+    order.state = 'done';
+    addMoney(order.reward, ORDER_POS.clone().setY(3));
+    toast('🚚 Porudžbina isporučena!', `+${order.reward} 💰`);
+    burst(ORDER_POS.clone().setY(1.5), [0xffd84a, 0x7ed957, 0xffffff], 30, 6);
+    sfx.unlock();
+    simEvents.push(`order+${order.reward}@${S.time.toFixed(0)}`);
+    drawOrder();
+  }
+}
+function updateOrders(dt) {
+  if (!truck) return;
+  if (!order) { orderWait -= dt; if (orderWait <= 0) newOrder(); return; }
+  const o = order;
+  if (o.state === 'arriving') {
+    o.x = Math.max(ORDER_POS.x, o.x - 14 * dt);
+    if (o.x === ORDER_POS.x) { o.state = 'waiting'; toast('🚚 Stigla porudžbina!', 'Donesi robu kamionu kod utovara'); }
+  } else if (o.state === 'waiting') {
+    o.time -= dt;
+    if (o.time <= 0) { simEvents.push(`orderFAIL@${S.time.toFixed(0)} ` + Object.keys(o.needs).map(t => `${t}:${o.got[t]}/${o.needs[t]}`).join(',')); o.state = 'failed'; toast('🚚 Kamion je otišao', 'Porudžbina nije stigla na vreme'); }
+  } else {
+    o.x -= 14 * dt;
+    if (o.x < -60) { order = null; truck.g.visible = false; orderWait = rand(20, 35); return; }
+  }
+  truck.g.position.set(o.x, 0, ROAD_Z);
+  if (o.state === 'arriving' || o.state === 'done' || o.state === 'failed') for (const w of truck.wheels) w.rotation.y += dt * 12;
+  orderDrawT -= dt;
+  if (o.state === 'waiting' && orderDrawT <= 0) { orderDrawT = 0.25; drawOrder(); }
+}
+
 function spawnCashier(at) {
   const g = new THREE.Group(); g.position.set(at[0], 0, at[1]); scene.add(g);
   mesh(box(1.8, 0.9, 0.9), 0x6ab04c, g, 0, 0.45, 0.5);
@@ -1065,7 +1373,7 @@ function spawnCashier(at) {
   mesh(new THREE.ConeGeometry(0.85, 0.45, 10), 0xe84393, g, -0.7, 2.75, 0.5);
   const c = makeCharacter({ shirt: 0x2ecc71, pants: 0x2d3436, hair: 0x1a1a1a });
   c.root.position.set(0, 0, -0.2); g.add(c.root);
-  colliders.push({ x: at[0], z: at[1] + 0.3, r: 1.1 });
+  colliders.push({ x: at[0], z: at[1] + 0.5, hx: 1.0, hz: 0.55 });
   cashier = { g, c, pos: V(at[0], 0, at[1]), t: 0 };
   pop(g);
 }
@@ -1087,7 +1395,6 @@ function updateCashier(dt) {
 let baseGroup = null, flame = null;
 const baseCollider = { x: BASE_POS.x, z: BASE_POS.z, r: 2 };
 colliders.push(baseCollider);
-function roofGeo(w, h, d) { const g = new THREE.ConeGeometry(0.72, 1, 4).rotateY(Math.PI / 4); g.scale(w, h, d); return g; }
 function windowAt(g, x, y, z, ry = 0) { const w = mesh(box(0.7, 0.7, 0.08), 0x9fe3ff, g, x, y, z); w.rotation.y = ry; mesh(box(0.84, 0.1, 0.12), 0xffffff, g, x, y - 0.4, z).rotation.y = ry; }
 function buildBase(lv) {
   const g = new THREE.Group();
@@ -1117,6 +1424,21 @@ function buildBase(lv) {
     mesh(box(3.2, 0.2, 1.4), 0xb07a45, g, 0, 0.1, 2.9);
     for (const x of [-1.5, 1.5]) mesh(cyl(0.08, 0.08, 2.4, 6), 0xffffff, g, x, 1.2, 3.5);
     mesh(box(3.4, 0.12, 1.5), 0xa93226, g, 0, 2.45, 2.95);
+  } else if (lv === 4) {
+    const stone = 0xb8b3a8, dark = 0x8d877c, roof = 0xc0392b;
+    for (const z of [-3.6, 3.6]) mesh(box(8.4, 2.6, 0.6), stone, g, 0, 1.3, z);
+    for (const x of [-4.2, 4.2]) mesh(box(0.6, 2.6, 7.2), stone, g, x, 1.3, 0);
+    for (let x = -3.9; x <= 4; x += 0.9) for (const z of [-3.6, 3.6]) mesh(box(0.45, 0.45, 0.66), dark, g, x, 2.8, z);
+    mesh(box(1.8, 2.0, 0.2), 0x5a2d0c, g, 0, 1.0, 3.95);
+    mesh(box(4, 5.2, 3.6), stone, g, 0, 2.6, -0.4);
+    mesh(roofGeo(5.2, 2.6, 4.8), roof, g, 0, 6.5, -0.4);
+    for (const x of [-1.1, 1.1]) windowAt(g, x, 3.6, 1.42);
+    for (const x of [-4.2, 4.2]) for (const z of [-3.6, 3.6]) {
+      mesh(cyl(0.95, 1.05, 4.6, 12), stone, g, x, 2.3, z);
+      mesh(new THREE.ConeGeometry(1.25, 2.2, 12), roof, g, x, 5.7, z);
+      mesh(cyl(0.03, 0.03, 1.2, 5), 0x555555, g, x, 7.3, z);
+      mesh(box(0.7, 0.42, 0.04), 0xffd84a, g, x + 0.36, 7.65, z);
+    }
   } else {
     mesh(box(7, 3.4, 5), 0xf6f1e7, g, 0, 1.7, 0);
     mesh(box(5, 2.6, 4), 0xf6f1e7, g, -0.6, 4.7, -0.2);
@@ -1140,7 +1462,7 @@ function setBase(lv, animate) {
   baseGroup.position.copy(BASE_POS);
   scene.add(baseGroup);
   if (animate) pop(baseGroup, 0.6);
-  baseCollider.r = [2.0, 2.6, 3.4, 4.2][lv];
+  baseCollider.r = [2.0, 2.6, 3.4, 4.2, 4.8][lv];
   for (const f of labelsToRedraw) f();
 }
 
@@ -1166,9 +1488,12 @@ const padLv = p => S.lv[p.def.id];
 const padKey = p => p.upgrade ? `${p.def.id}:${padLv(p)}` : p.def.id;
 const padCost = p => p.upgrade ? p.def.costs[padLv(p)] : p.def.cost;
 const padRemaining = p => padCost(p) - (S.paid[padKey(p)] || 0);
-const padActive = p => p.upgrade
-  ? padLv(p) < p.def.costs.length && reqOk(p.def.req ? p.def.req(padLv(p)) : [])
-  : !S.unlocked.has(p.def.id) && reqOk(p.def.req);
+function padActive(p) {
+  const lv = padLv(p);
+  if (p.upgrade ? lv >= p.def.costs.length : S.unlocked.has(p.def.id)) return false;
+  const req = p.upgrade ? (p.def.req ? p.def.req(lv) : []) : p.def.req;
+  return typeof req === 'boolean' ? req : reqOk(req);
+}
 function padName(p) {
   if (!p.upgrade) return p.def.name;
   if (typeof p.def.name === 'function') return p.def.name(padLv(p));
@@ -1225,6 +1550,7 @@ function completePad(p) {
   const name = padName(p);
   if (p.upgrade) {
     S.lv[id]++;
+    if (JOBS[id]) spawnWorker(id);
     if (id === 'base') {
       setBase(S.lv.base, true);
       toast(`🏠 ${BASE_NAMES[S.lv.base]}!`, S.lv.base === 3 ? 'Kamp je postao pravo imanje! 🎉' : 'Više mušterija i veće cene');
@@ -1251,8 +1577,18 @@ const BUILD = {
   sawmill: () => makeStation('sawmill', [-12, 3], 'log', 'plank', 1.0, buildSawmill),
   grill: () => makeStation('grill', [11, 2], 'meat', 'steak', 1.3, buildGrill),
   forest2: silent => spawnForest(22, -33, -21, -5, 9, 9, silent),
-  worker: () => spawnWorker([-6, -2]),
   cashier: () => spawnCashier([3, 6]),
+  juiceStand: () => makeStand('juiceStand', 'juice', [18, 12], '#27ae60'),
+  fishStand: () => makeStand('fishStand', 'smoked', [-21, 12], '#2980b9'),
+  press: () => makeStation('press', [23.5, 7.5], 'apple', 'juice', 1.1, buildPress),
+  smokehouse: () => makeStation('smokehouse', [-38, 4], 'fish', 'smoked', 1.2, buildSmokehouse),
+  orchard: () => { for (const x of [18, 21.5, 25]) for (const z of [0, 3.6]) addAppleTree(x + rand(-0.3, 0.3), z + rand(-0.3, 0.3)); },
+  pond: () => buildPond(),
+  orders: () => buildOrders(),
+  carry_sawmill: () => spawnCarrier('sawmill'),
+  carry_grill: () => spawnCarrier('grill'),
+  carry_press: () => spawnCarrier('press'),
+  carry_smoke: () => spawnCarrier('smokehouse'),
   pen: () => {
     const g = new THREE.Group(); g.position.set(PEN.x, 0, PEN.z); scene.add(g);
     const mud = new THREE.Mesh(new THREE.PlaneGeometry(PEN.hx * 2 + 1, PEN.hz * 2 + 1), M(0xb08a5a)); mud.rotation.x = -Math.PI / 2; mud.position.y = 0.015; mud.receiveShadow = true; g.add(mud);
@@ -1314,16 +1650,20 @@ function updatePlayer(dt) {
   const moved = Math.hypot(player.pos.x - ox, player.pos.z - oz);
   player.full = player.pile.length >= cap();
 
-  // gathering: trees and pigs within reach
-  let target = null, isPig = false;
+  // gathering: whatever source is closest and within reach (tree, pig, apple tree, dock)
+  let target = null, tres = null;
   if (!player.full) {
-    target = nearestPig(player.pos, 1.9);
-    if (target) isPig = true; else target = nearestTree(player.pos, 1.95);
+    let bd = Infinity;
+    for (const res in SOURCES) {
+      const src = nearestSource(res, player.pos, SOURCES[res].reach, player);
+      if (src && dist2(player.pos, src.pos) < bd) { bd = dist2(player.pos, src.pos); target = src; tres = res; }
+    }
   }
   if (target) {
-    turn(player.c.root, Math.atan2(target.pos.x - player.pos.x, target.pos.z - player.pos.z), dt, 14);
-    player.chopT += dt / (AXE[S.lv.axe] * (isPig ? 1.3 : 1));
-    if (player.chopT >= 1) { player.chopT = 0; if (isPig) hitPig(target, player); else hitTree(target, player, true); }
+    const f = facePos(tres, target);
+    turn(player.c.root, Math.atan2(f.x - player.pos.x, f.z - player.pos.z), dt, 14);
+    player.chopT += dt / (AXE[S.lv.axe] * SOURCES[tres].mul);
+    if (player.chopT >= 1) { player.chopT = 0; SOURCES[tres].hit(target, player); }
   } else player.chopT = Math.max(0, player.chopT - dt * 3);
   player.c.chop = target ? player.chopT : -1;
 
@@ -1335,7 +1675,8 @@ function updatePlayer(dt) {
     const inside = dist2(player.pos, z.pos) < z.r;
     if (z.kind === 'buy') { z.pad.ring.scale.setScalar(inside && z.pad.g.visible ? 1.08 + Math.sin(S.time * 10) * 0.04 : 1); if (inside && z.pad.g.visible) payPad(z.pad, dt); continue; }
     if (!inside) continue;
-    if (z.kind === 'deposit') {
+    if (z.kind === 'order') loadOrder(xfers);
+    else if (z.kind === 'deposit') {
       for (let k = 0; k < xfers && z.pile.length < z.cap; k++) {
         const r = player.pile.take(z.accepts);
         if (!r) break;
@@ -1375,10 +1716,24 @@ function botTarget() {
   }
   if (best) return best;
   const full = player.pile.length >= cap();
+  // 1b. a truck is waiting: bring what it needs (from station outputs, or chop logs)
+  if (order && order.state === 'waiting' && order.time > 12) {
+    const need = Object.keys(order.needs).filter(t => orderLeft(t) > 0);
+    if (need.some(t => player.pile.count(t))) return ORDER_POS;
+    if (!full) {
+      for (const t of need) {
+        const st = stations.find(s => s.output === t && s.outP.length > 0);
+        if (st) consider(st.outZone.pos);
+      }
+      if (best) return best;
+      if (need.includes('log')) { const src = nearestSource('log', player.pos, Infinity, player); if (src) return src.pos; }
+    }
+  }
   // 2. deliver what we carry (logs prefer the sawmill)
   if (player.pile.length) {
     for (const z of zones) if (z.kind === 'deposit' && z.pile.length < z.cap && player.pile.count(z.accepts))
-      consider(z.pos, z.owner.id === 'sawmill' && S.unlocked.has('plankStand') ? 8 : z.owner.id === 'sawmill' ? -30 : 0);
+      consider(z.pos, z.owner.input ? (hasStand(z.owner.output) ? 8 : -30) : 0);
+    if (order && order.state === 'waiting' && Object.keys(order.needs).some(t => orderLeft(t) > 0 && player.pile.count(t))) consider(ORDER_POS, 12);
     if (best && (full || !gatherTarget())) return best;
     best = null; bd = Infinity;
   }
@@ -1395,16 +1750,27 @@ function botTarget() {
   return best;
 }
 function gatherTarget() {
-  const grill = stations.find(s => s.id === 'grill');
-  const needMeat = grill && grill.inP.length + player.pile.count('meat') < 14;
-  if (needMeat && pigs.length) return nearestPig(player.pos);
-  return nearestTree(player.pos);
+  // feed the most valuable station that runs low (fewer trips needed when helpers already work it)
+  for (const res of ['fish', 'apple', 'meat']) {
+    const st = stations.find(s => s.input === res);
+    if (!st || !hasStand(st.output)) continue;
+    const helpers = workers.filter(w => w.res === res).length;
+    if (st.inP.length + player.pile.count(res) < 14 - helpers * 5) { const src = nearestSource(res, player.pos, Infinity, player); if (src) return src; }
+  }
+  return nearestSource('log', player.pos, Infinity, player);
 }
 function botDrive() {
   const t = botTarget();
   if (!t) { input.set(0, 0, 0); return; }
   const dx = t.x - player.pos.x, dz = t.z - player.pos.z, d = Math.hypot(dx, dz);
-  if (d < 0.5) input.set(0, 0, 0); else input.set(dx / d, 0, dz / d);
+  if (d < 0.5) { input.set(0, 0, 0); return; }
+  let ux = dx / d, uz = dz / d;
+  const p = player;
+  if (p.detour > 0) { p.detour -= 1 / 30; [ux, uz] = [ux * 0.3 - uz * p.side, uz * 0.3 + ux * p.side]; }
+  else if (p.lastBot && dist2(p.lastBot, p.pos) < 0.02) { p.stuck = (p.stuck || 0) + 1 / 30; if (p.stuck > 0.4) { p.stuck = 0; p.detour = 0.7; p.side = Math.random() < 0.5 ? -1 : 1; } }
+  else p.stuck = 0;
+  p.lastBot = (p.lastBot || V()).copy(p.pos);
+  input.set(ux, 0, uz);
 }
 // tutorial arrow: points at what the bot would do next, until the first few things are built
 const arrow = new THREE.Mesh(new THREE.ConeGeometry(0.4, 0.9, 4).rotateX(Math.PI), new THREE.MeshBasicMaterial({ color: 0xffd84a }));
@@ -1436,6 +1802,8 @@ function buildWorld(data) {
   if (data) {
     S.money = data.money || 0; S.paid = data.paid || {}; S.earned = data.earned || 0;
     Object.assign(S.lv, data.lv || {});
+    // v1 saves had a single one-off lumberjack plot
+    if ((data.unlocked || []).includes('worker')) S.lv.lumberjacks = Math.max(1, S.lv.lumberjacks);
   }
   instant = true;
   spawnForest(11, -22, -9, -19, -7, 8, true);
@@ -1444,6 +1812,7 @@ function buildWorld(data) {
   unlock('logStand', false);
   // build unlocks in PLOTS order so dependent pieces exist
   for (const p of PLOTS) if (data && (data.unlocked || []).includes(p.id)) unlock(p.id, false);
+  for (const job in JOBS) for (let i = 0; i < S.lv[job]; i++) spawnWorker(job);
   setBase(S.lv.base, false);
   instant = false;
   refreshPads(true);
@@ -1520,6 +1889,9 @@ function updateHud(dt) {
   if (setHud('money', fmt(shownMoney)) && S.money > shownMoney) { const p = $('moneyPill'); p.classList.remove('bump'); void p.offsetWidth; p.classList.add('bump'); }
   setHud('cap', `${player.pile.length}/${cap()}`);
   $('capPill').classList.toggle('full', player.full);
+  const showOrder = order && order.state === 'waiting';
+  $('orderPill').style.display = showOrder ? '' : 'none';
+  if (showOrder) setHud('orderTxt', `${Math.ceil(order.time)}s · 💰${fmt(order.reward)}`);
   const tag = $('maxTag');
   tag.style.display = player.full && S.running ? 'block' : 'none';
   if (player.full) {
@@ -1537,7 +1909,11 @@ function update(dt) {
   updatePigs(dt);
   updateStations(dt);
   updateCustomers(dt);
-  updateWorker(dt);
+  updateApples(dt);
+  if (docks.length) updatePond(dt);
+  for (const w of workers) updateWorker(w, dt);
+  for (const k of carriers) updateCarrier(k, dt);
+  updateOrders(dt);
   updateCashier(dt);
   padRefreshT -= dt;
   if (padRefreshT <= 0) { padRefreshT = 0.12; refreshPads(); }
@@ -1577,13 +1953,24 @@ if (AUTO) {
   const sim = Number(qs.get('sim') || 0);
   instant = true;
   botOn = true;
-  for (let t = 0; t < sim; t += 1 / 30) update(1 / 30);
+  let last = player.pos.clone(), stillT = 0, reported = false;
+  for (let t = 0; t < sim; t += 1 / 30) {
+    update(1 / 30);
+    if (dist2(last, player.pos) > 0.3) { last.copy(player.pos); stillT = 0; reported = false; }
+    else if ((stillT += 1 / 30) > 20 && !reported) {
+      reported = true;
+      const tg = botTarget();
+      simEvents.push(`STUCK@${t.toFixed(0)} pos=${player.pos.x.toFixed(1)},${player.pos.z.toFixed(1)} target=${tg ? tg.x.toFixed(1) + ',' + tg.z.toFixed(1) : '-'} pile=${player.pile.length}/${cap()} money=${Math.floor(S.money)}`);
+    }
+  }
   instant = false;
   botOn = qs.has('bot');
   for (const it of flights) scene.remove(it.m);
   flights.length = 0;
+  if (qs.has('at')) { const [x, z] = qs.get('at').split(',').map(Number); player.pos.set(x, 0, z); player.c.root.position.copy(player.pos); }
   camera.position.copy(player.pos).add(camOff);
   window.simLog = simEvents;
+  { const t = botTarget(); simEvents.push(`END pos=${player.pos.x.toFixed(1)},${player.pos.z.toFixed(1)} target=${t ? t.x.toFixed(1) + ',' + t.z.toFixed(1) : '-'} pile=${player.pile.length}`); }
   document.title = `t=${S.time.toFixed(0)} money=${Math.floor(S.money)} earned=${Math.floor(S.earned)} base=${S.lv.base} bag=${S.lv.bag} axe=${S.lv.axe} boots=${S.lv.boots} unlocked=${S.unlocked.size} customers=${customers.length}`;
 }
 </script>
