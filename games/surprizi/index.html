@@ -3,27 +3,33 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SURPRIZI — Otvori. Skupljaj. Izloži.</title>
+<title>SuperUkiz — Otvori. Skupljaj. Izloži.</title>
 <link rel="icon" href="data:,">
 <style>
-/* ===================== SURPRIZI — kolekcionarska igra ===================== */
-@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&display=swap');
+/* ===================== SuperUkiz — crtaći kolekcionarski UI ===================== */
+@import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Lilita+One&family=Nunito:wght@600;700;800&display=swap');
 
 :root{
-  --bg: #0f0b1e;
-  --panel: rgba(20, 14, 40, 0.82);
-  --panel-light: rgba(255,255,255,0.06);
-  --accent-cyan: #53e6ff;
-  --accent-pink: #ff8fd6;
-  --accent-gold: #ffd24a;
-  --accent-purple: #9d7bff;
-  --common: #8fe3a0;
-  --rare: #6fc3ff;
-  --legendary: #ffcf4a;
-  --text: #f4f1ff;
-  --text-dim: #c9c2e8;
-  --radius: 18px;
-  --shadow: 0 10px 30px rgba(0,0,0,0.45);
+  --bg: #ffd9f2;
+  --ink: #2a1450;
+  --cream: #fffdf6;
+  --pink: #ff4d9a;
+  --yellow: #ffe14d;
+  --cyan: #5ad8ff;
+  --purple: #8a5cff;
+  --panel: var(--cream);
+  --accent-cyan: #5ad8ff;
+  --accent-pink: #ff4d9a;
+  --accent-gold: #ffe14d;
+  --accent-purple: #8a5cff;
+  --common: #3ecf6e;
+  --rare: #2f9dff;
+  --legendary: #f0a000;
+  --text: #2a1450;
+  --text-dim: #6d548c;
+  --radius: 22px;
+  --stroke: 3px solid #2a1450;
+  --shadow: 4px 4px 0 #2a1450;
 }
 
 *{ box-sizing: border-box; }
@@ -40,13 +46,12 @@ html, body{
 #canvas-holder{ position: absolute; inset: 0; }
 #canvas-holder canvas{ display:block; width:100%; height:100%; touch-action:none; }
 
-.font-title{ font-family: 'Baloo 2', cursive; }
+.font-title{ font-family: 'Lilita One', 'Baloo 2', cursive; }
 
-/* ---------- Top bar ---------- */
 #topbar{
   position: absolute; top: 0; left: 0; right: 0;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px;
+  padding: 14px 20px 14px 72px;
   z-index: 20;
   pointer-events: none;
 }
@@ -54,112 +59,189 @@ html, body{
 
 .brand{ display:flex; align-items:center; gap:10px; }
 .brand .logo-badge{
-  width: 42px; height: 42px; border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent-pink), var(--accent-cyan));
+  width: 48px; height: 48px; border-radius: 16px;
+  background: linear-gradient(160deg, #ff8ad4, #ffe14d);
   display:flex; align-items:center; justify-content:center;
-  font-size: 22px; box-shadow: var(--shadow);
-  transform: rotate(-6deg);
+  font-size: 24px;
+  border: var(--stroke);
+  box-shadow: 3px 3px 0 #2a1450;
+  transform: rotate(-8deg);
 }
-.brand .name{ font-family:'Baloo 2',cursive; font-size: 22px; font-weight: 800; letter-spacing: 0.5px;
-  background: linear-gradient(90deg, var(--accent-cyan), var(--accent-pink));
-  -webkit-background-clip: text; background-clip:text; color: transparent;
+.brand .name{
+  font-family:'Lilita One', cursive; font-size: 26px; font-weight: 400; letter-spacing: 0.5px;
+  color: #1f5eff;
+  text-shadow:
+    -2px -2px 0 #ffe14d, 2px -2px 0 #ffe14d, -2px 2px 0 #ffe14d, 2px 2px 0 #ffe14d,
+    4px 4px 0 #e10600;
 }
-.brand .tagline{ font-size: 11px; color: var(--text-dim); margin-top: -2px; }
+.brand .tagline{ font-size: 12px; color: #2a1450; font-weight: 800; margin-top: -2px; }
 
 .topbar-right{ display:flex; align-items:center; gap:10px; }
 
 .pill{
-  background: var(--panel); backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.08);
+  background: var(--cream);
+  color: var(--ink);
+  border: var(--stroke);
   border-radius: 999px; padding: 8px 14px;
   display:flex; align-items:center; gap:8px;
-  box-shadow: var(--shadow); font-weight:700; font-size:14px;
+  box-shadow: 3px 3px 0 #ff4d9a;
+  font-weight:800; font-size:14px;
 }
 .pill .icon{ font-size:16px; }
 
 #token-pill{ position: relative; overflow: hidden; min-width: 128px; }
-#token-count{ font-family:'Baloo 2',cursive; font-size:16px; }
+#token-count{ font-family:'Lilita One', cursive; font-size:18px; color: var(--ink); }
 #token-bar-bg{
-  position:absolute; left:0; bottom:0; height: 3px; width:100%;
-  background: rgba(255,255,255,0.08);
+  position:absolute; left:6px; right:6px; bottom:4px; height: 5px;
+  background: #efe6d6; border-radius: 999px;
 }
-#token-bar-fill{ height:100%; width:0%; background: linear-gradient(90deg,var(--accent-gold),var(--accent-pink)); transition: width .2s linear; }
+#token-bar-fill{ height:100%; width:0%; background: linear-gradient(90deg,#ffe14d,#ff4d9a); border-radius: 999px; transition: width .2s linear; }
 
 .icon-btn{
-  background: var(--panel); border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px; width: 40px; height: 40px; display:flex; align-items:center; justify-content:center;
-  cursor: pointer; font-size: 17px; box-shadow: var(--shadow); color: var(--text);
-  transition: transform .15s ease, background .15s ease;
+  background: var(--cream); border: var(--stroke);
+  border-radius: 14px; width: 42px; height: 42px; display:flex; align-items:center; justify-content:center;
+  cursor: pointer; font-size: 18px; color: var(--ink);
+  box-shadow: 3px 3px 0 #8a5cff;
+  transition: transform .12s ease;
 }
-.icon-btn:hover{ transform: translateY(-2px) scale(1.05); background: rgba(255,255,255,0.12); }
-.icon-btn:active{ transform: translateY(0) scale(0.96); }
+.icon-btn:hover{ transform: translateY(-2px) rotate(-3deg); }
+.icon-btn:active{ transform: translateY(2px); box-shadow: 1px 1px 0 #8a5cff; }
 
-/* ---------- Tabs ---------- */
+#settings{
+  position:absolute; inset:0; z-index:50;
+  background: rgba(42, 20, 80, 0.35);
+  display:flex; align-items:flex-end; justify-content:center;
+  padding: 16px;
+}
+#settings-card{
+  width: min(420px, 100%);
+  background: var(--cream);
+  color: var(--ink);
+  border: 4px solid #2a1450;
+  border-radius: 28px;
+  padding: 16px 16px 18px;
+  box-shadow: 8px 8px 0 #ff4d9a;
+  margin-bottom: max(8px, env(safe-area-inset-bottom));
+}
+#settings-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
+#settings-head h2{ margin:0; font-family:'Lilita One',cursive; font-size:26px; color: var(--ink); }
+#settings-close{
+  border: var(--stroke); background: #ffe14d; color: var(--ink);
+  width:38px; height:38px; border-radius:14px; font-size:16px; cursor:pointer;
+  box-shadow: 2px 2px 0 #2a1450;
+}
+#settings-note{ margin:6px 0 12px; color: var(--text-dim); font-size:14px; font-weight:800; }
+.series-toggle{
+  display:flex; align-items:center; gap:12px;
+  background: #fff4c8;
+  border: var(--stroke);
+  border-radius: 18px; padding: 8px 12px 8px 8px;
+  margin-bottom: 8px; cursor:pointer;
+  box-shadow: 3px 3px 0 #8a5cff;
+}
+.series-toggle img{
+  width: 54px; height: 76px; object-fit: cover; border-radius: 10px;
+  border: 2px solid #2a1450;
+  background: #ffe9f6; flex: none;
+}
+.series-toggle .meta{ flex:1; min-width:0; }
+.series-toggle .meta b{ display:block; font-family:'Lilita One',cursive; font-size:18px; color: var(--ink); }
+.series-toggle .meta small{ color: var(--text-dim); font-weight:800; }
+.series-toggle input{ width: 26px; height: 26px; accent-color: #ff4d9a; flex: none; }
+#settings-io{
+  display:flex; gap:8px; margin-top:12px;
+}
+#settings-io button{
+  flex:1; font-family:'Lilita One',cursive; font-size:16px; color:#2a1450;
+  background:#fff4c8; border:3px solid #2a1450; border-radius:16px;
+  padding:10px 8px; cursor:pointer; box-shadow:3px 3px 0 #8a5cff;
+}
+#settings-io button:active{ transform: translateY(2px); box-shadow:1px 1px 0 #8a5cff; }
+
 #tabs{
   position:absolute; top: 78px; left: 50%; transform: translateX(-50%);
-  display:flex; gap: 6px; background: var(--panel); backdrop-filter: blur(10px);
-  border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 5px; z-index: 20;
-  box-shadow: var(--shadow);
+  display:flex; gap: 6px; background: var(--cream);
+  border: var(--stroke); border-radius: 999px; padding: 5px; z-index: 20;
+  box-shadow: 4px 4px 0 #5ad8ff;
 }
 .tab-btn{
-  border: none; background: transparent; color: var(--text-dim);
-  font-family: 'Baloo 2', cursive; font-size: 14px; font-weight: 700;
-  padding: 9px 18px; border-radius: 999px; cursor: pointer;
+  border: 3px solid transparent; background: transparent; color: var(--text-dim);
+  font-family: 'Lilita One', cursive; font-size: 16px; font-weight: 400;
+  padding: 8px 18px; border-radius: 999px; cursor: pointer;
   display:flex; align-items:center; gap:6px;
-  transition: all .2s ease;
 }
 .tab-btn.active{
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
-  color: #140b2e; box-shadow: 0 4px 14px rgba(157,123,255,0.5);
+  background: #ffe14d;
+  color: #2a1450;
+  border-color: #2a1450;
+  box-shadow: 0 3px 0 #e0a800;
 }
 
-/* ---------- Bottom open button ---------- */
 #open-panel{
   position:absolute; left:50%; bottom: 34px; transform: translateX(-50%);
   z-index: 20; display:flex; flex-direction:column; align-items:center; gap:10px;
 }
 #open-btn{
-  font-family:'Baloo 2',cursive; font-size: 22px; font-weight: 800;
-  color: #1a0f36; background: linear-gradient(135deg, var(--accent-gold), var(--accent-pink));
-  border: none; border-radius: 999px; padding: 16px 40px;
-  cursor: pointer; box-shadow: 0 12px 30px rgba(255,140,200,0.35), inset 0 -4px 0 rgba(0,0,0,0.15);
+  font-family:'Lilita One',cursive; font-size: 26px; font-weight: 400;
+  color: #2a1450; background: #ffe14d;
+  border: var(--stroke); border-radius: 20px; padding: 14px 36px;
+  cursor: pointer;
+  box-shadow: 0 6px 0 #ff4d9a, 0 9px 0 #2a1450;
   letter-spacing: 0.5px;
-  transition: transform .15s ease, filter .15s ease;
 }
-#open-btn:hover:not(:disabled){ transform: translateY(-3px) scale(1.03); }
-#open-btn:active:not(:disabled){ transform: translateY(0) scale(0.98); }
-#open-btn:disabled{ filter: grayscale(0.75) brightness(0.7); cursor: not-allowed; }
-#open-hint{ font-size: 12px; color: var(--text-dim); font-weight: 700; min-height: 16px; }
+#open-btn:hover:not(:disabled){ transform: translateY(-2px) rotate(-1deg); }
+#open-btn:active:not(:disabled){ transform: translateY(4px); box-shadow: 0 2px 0 #ff4d9a, 0 4px 0 #2a1450; }
+#open-btn:disabled{ filter: grayscale(0.4); cursor: not-allowed; box-shadow: 0 4px 0 #b9a88a; }
+#open-hint{ font-size: 13px; color: #2a1450; font-weight: 800; min-height: 16px;
+  background: #fffdf6; border: 2px solid #2a1450; border-radius: 999px; padding: 2px 10px; }
 
-/* ---------- Collection progress (open mode) ---------- */
-#progress-pill{ position:absolute; left: 20px; bottom: 34px; z-index: 20; }
+#progress-pill{ position:absolute; left: 20px; top: 132px; bottom: auto; z-index: 20; background:#b8ff9a; box-shadow: 3px 3px 0 #2a1450; }
+body.reveal-open #progress-pill,
+body.reveal-open #open-panel,
+body.reveal-open #gameroom-back{ display:none !important; }
 
-/* ---------- Showroom info panel ---------- */
 #info-panel{
   position:absolute; right: 20px; top: 140px; width: 280px;
-  background: var(--panel); backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius);
-  padding: 18px; box-shadow: var(--shadow); z-index: 20;
-  opacity:0; transform: translateX(20px); pointer-events:none;
+  background: var(--cream); color: var(--ink);
+  border: 4px solid #2a1450; border-radius: 24px;
+  padding: 18px; box-shadow: 6px 6px 0 #8a5cff; z-index: 20;
+  opacity:0; transform: translateX(20px) rotate(1deg); pointer-events:none;
   transition: opacity .25s ease, transform .25s ease;
 }
-#info-panel.show{ opacity:1; transform:none; pointer-events:auto; }
+#info-panel.show{ opacity:1; transform: rotate(-1deg); pointer-events:auto; }
 .rarity-tag{
-  display:inline-block; font-size:11px; font-weight:800; padding: 3px 10px; border-radius:999px;
+  display:inline-block; font-size:12px; font-weight:800; padding: 3px 10px; border-radius:999px;
   text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;
+  border: 2px solid #2a1450; color: #2a1450;
 }
-#info-name{ font-family:'Baloo 2',cursive; font-size: 22px; margin: 2px 0 4px; }
-#info-faction{ font-size: 12px; color: var(--text-dim); font-weight: 700; margin-bottom: 10px; }
-#info-desc{ font-size: 13.5px; line-height: 1.5; color: var(--text); opacity: 0.92; }
-#info-count{ margin-top: 12px; font-size: 12px; color: var(--text-dim); font-weight: 700; }
+#info-name{ font-family:'Lilita One',cursive; font-size: 26px; margin: 2px 0 4px; color: var(--ink); }
+#info-faction{ font-size: 13px; color: var(--text-dim); font-weight: 800; margin-bottom: 10px; }
+#info-desc{ font-size: 14px; line-height: 1.45; color: var(--ink); font-weight: 700; }
+#info-count{ margin-top: 12px; font-size: 13px; color: var(--text-dim); font-weight: 800; }
+#info-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; }
+#info-head span{ font-family:'Lilita One',cursive; font-size:15px; letter-spacing:0.4px; color:#ff4d9a; }
+#info-back{
+  font-family:'Lilita One',cursive; font-size:15px; color:#2a1450; cursor:pointer;
+  background:#ffe14d; border:3px solid #2a1450; border-radius:12px; padding:4px 12px;
+  box-shadow:2px 2px 0 #2a1450;
+}
+#info-back:active{ transform: translateY(2px); box-shadow: none; }
 
-#showroom-hint{
-  position:absolute; left:50%; bottom: 26px; transform: translateX(-50%);
-  z-index: 20; font-size: 12px; color: var(--text-dim); font-weight: 700;
-  background: var(--panel); padding: 8px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.08);
+#series-bar{
+  position:absolute; top: auto; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+  z-index: 21; display:flex; gap:6px; max-width: 94vw;
+  background: var(--cream); border: var(--stroke);
+  border-radius: 999px; padding: 4px; box-shadow: 4px 4px 0 #ff4d9a;
+}
+#series-bar button{
+  border: 3px solid transparent; background:transparent; color: var(--text-dim); cursor:pointer;
+  font-family:'Lilita One',cursive; font-weight:400; font-size:15px;
+  padding: 6px 14px; border-radius: 999px; white-space: nowrap;
+}
+#series-bar button.active{
+  background: #ffe14d; color:#2a1450; border-color:#2a1450;
 }
 
-/* ---------- Reveal modal ---------- */
 #reveal-modal{
   position:absolute; inset:0; display:flex; align-items:flex-end; justify-content:center;
   z-index: 30; pointer-events:none;
@@ -168,50 +250,52 @@ html, body{
   pointer-events:none;
   width: min(420px, 88vw);
   margin-bottom: 44px;
-  background: linear-gradient(180deg, #1f1440 0%, #150d2e 60%, #0e0920 100%);
-  border-radius: 22px; padding: 22px 24px 20px;
-  border: 2px solid rgba(255,255,255,0.12);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.55);
+  background: var(--cream);
+  color: var(--ink);
+  border-radius: 28px; padding: 22px 24px 20px;
+  border: 4px solid #2a1450;
+  box-shadow: 8px 8px 0 #ff4d9a;
   text-align:center;
-  opacity:0; transform: translateY(40px) scale(0.92);
+  opacity:0; transform: translateY(40px) scale(0.92) rotate(-2deg);
   transition: opacity .35s cubic-bezier(.2,.9,.3,1.3), transform .35s cubic-bezier(.2,.9,.3,1.3);
 }
-#reveal-card.show{ opacity:1; transform:none; pointer-events:auto; }
-#reveal-card.legendary{ border-color: var(--legendary); box-shadow: 0 0 60px rgba(255,207,74,0.45), 0 20px 60px rgba(0,0,0,0.55); }
-#reveal-card.rare{ border-color: var(--rare); box-shadow: 0 0 40px rgba(111,195,255,0.35), 0 20px 60px rgba(0,0,0,0.55); }
-#reveal-badge{ font-family:'Baloo 2',cursive; font-size: 13px; font-weight:800; letter-spacing:1px; text-transform:uppercase; }
-#reveal-name{ font-family:'Baloo 2',cursive; font-size: 30px; margin: 6px 0 2px; }
-#reveal-faction{ font-size: 13px; color: var(--text-dim); font-weight:700; margin-bottom:10px; }
-#reveal-desc{ font-size: 14px; color: var(--text); opacity:0.9; line-height:1.5; margin-bottom: 6px; }
-#reveal-dup{ font-size: 12.5px; color: var(--accent-gold); font-weight: 800; margin-bottom: 10px; min-height: 16px; }
+#reveal-card.show{ opacity:1; transform: rotate(-1deg); pointer-events:auto; }
+#reveal-card.legendary{ box-shadow: 8px 8px 0 #f0a000, 0 0 0 4px #ffe14d; }
+#reveal-card.rare{ box-shadow: 8px 8px 0 #2f9dff; }
+#reveal-badge{ font-family:'Lilita One',cursive; font-size: 16px; letter-spacing:1px; text-transform:uppercase; color: var(--ink); }
+#reveal-name{ font-family:'Lilita One',cursive; font-size: 36px; margin: 6px 0 2px; color: var(--ink); }
+#reveal-faction{ font-size: 14px; color: var(--text-dim); font-weight:800; margin-bottom:10px; }
+#reveal-desc{ font-size: 15px; color: var(--ink); font-weight: 700; line-height:1.45; margin-bottom: 6px; }
+#reveal-dup{ font-size: 13px; color: #d07a00; font-weight: 800; margin-bottom: 10px; min-height: 16px; }
 #reveal-close{
-  margin-top: 10px; font-family:'Baloo 2',cursive; font-weight:800; font-size:16px;
-  background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
-  color: #140b2e; border:none; border-radius: 999px; padding: 11px 34px; cursor:pointer;
-  box-shadow: 0 8px 22px rgba(157,123,255,0.4);
+  margin-top: 10px; font-family:'Lilita One',cursive; font-size:20px;
+  background: #5ad8ff;
+  color: #2a1450; border: var(--stroke); border-radius: 16px; padding: 10px 34px; cursor:pointer;
+  box-shadow: 0 4px 0 #2a1450;
 }
+#reveal-close:active{ transform: translateY(3px); box-shadow: 0 1px 0 #2a1450; }
 
-/* ---------- Toast ---------- */
 #toast{
-  position:absolute; top: 78px; left: 50%; transform: translateX(-50%) translateY(-10px);
-  background: var(--panel); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px;
-  padding: 10px 18px; font-size: 13px; font-weight:700; z-index: 40;
+  position:absolute; top: 78px; left: 50%; transform: translateX(-50%) translateY(-10px) rotate(-2deg);
+  background: #ffe14d; color: var(--ink); border: var(--stroke); border-radius: 16px;
+  padding: 10px 18px; font-size: 14px; font-weight:800; z-index: 40;
+  box-shadow: 4px 4px 0 #2a1450;
   opacity:0; transition: opacity .25s ease, transform .25s ease; pointer-events:none;
 }
-#toast.show{ opacity:1; transform: translateX(-50%) translateY(0); }
+#toast.show{ opacity:1; transform: translateX(-50%) rotate(-1deg); }
 
-/* ---------- Loading ---------- */
 #loading{
-  position:absolute; inset:0; background: var(--bg); z-index: 100;
+  position:absolute; inset:0; z-index: 100;
+  background: linear-gradient(180deg, #ffd0f0 0%, #ffe9a0 50%, #b9ecff 100%);
   display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;
 }
 #loading .spinner{
-  width: 46px; height: 46px; border-radius: 50%;
-  border: 4px solid rgba(255,255,255,0.12); border-top-color: var(--accent-pink);
-  animation: spin 0.9s linear infinite;
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 5px solid #2a1450; border-top-color: #ff4d9a; border-right-color: #ffe14d;
+  animation: spin 0.8s linear infinite;
 }
 @keyframes spin{ to{ transform: rotate(360deg); } }
-#loading .ltext{ font-family:'Baloo 2',cursive; font-size: 16px; color: var(--text-dim); }
+#loading .ltext{ font-family:'Lilita One',cursive; font-size: 20px; color: #2a1450; }
 #loading.hide{ opacity:0; pointer-events:none; transition: opacity .4s ease; }
 
 #fx-flash{
@@ -219,38 +303,52 @@ html, body{
 }
 #rarity-pop{
   position:absolute; left:50%; top:36%; z-index:28; pointer-events:none; opacity:0;
-  font-family:'Baloo 2',cursive; font-weight:800; font-size: clamp(28px, 8vw, 52px);
+  font-family:'Lilita One',cursive; font-size: clamp(32px, 8vw, 56px);
   letter-spacing: 1px; white-space: nowrap;
-  text-shadow: 0 4px 0 #2a1245, 0 0 28px currentColor;
+  -webkit-text-stroke: 6px #2a1450;
+  paint-order: stroke fill;
+  text-shadow: 6px 6px 0 #ff4d9a;
   transform: translate(-50%,-50%) scale(0.4);
 }
 #rarity-pop.rare{ color:#7fd0ff; }
-#rarity-pop.legendary{ color:#ffd24a; }
+#rarity-pop.legendary{ color:#ffe14d; }
 #rarity-pop.show{ animation: rarityIn .9s cubic-bezier(.2,1.3,.3,1) forwards; }
 @keyframes rarityIn{
   0%{ opacity:0; transform:translate(-50%,-30%) scale(.35) rotate(-8deg); }
-  35%{ opacity:1; transform:translate(-50%,-50%) scale(1.12) rotate(3deg); }
-  60%{ transform:translate(-50%,-50%) scale(1) rotate(-1deg); }
+  35%{ opacity:1; transform:translate(-50%,-50%) scale(1.12) rotate(4deg); }
+  60%{ transform:translate(-50%,-50%) scale(1) rotate(-2deg); }
   100%{ opacity:0; transform:translate(-50%,-80%) scale(1.05); }
 }
 
-/* ---------- misc ---------- */
 .hidden{ display:none !important; }
 
 @media (max-width: 640px){
+  #topbar{ padding: 8px 10px 0 50px; gap: 6px; align-items: center; }
+  .brand{ gap: 6px; min-width: 0; }
   .brand .tagline{ display:none; }
-  #info-panel{ width: 230px; right: 10px; padding: 14px; }
-  #tabs{ top: 70px; }
-  .brand .name{ font-size: 18px; }
-  #reveal-name{ font-size: 24px; }
+  .brand .logo-badge{ width: 34px; height: 34px; font-size: 16px; border-radius: 12px; flex: none; }
+  .brand .name{ font-size: 18px; text-shadow: -1px -1px 0 #ffe14d, 1px -1px 0 #ffe14d, -1px 1px 0 #ffe14d, 1px 1px 0 #ffe14d, 3px 3px 0 #e10600; }
+  .topbar-right{ gap: 6px; flex: none; }
+  #token-pill{ min-width: 0; padding: 6px 10px; }
+  #token-count{ font-size: 15px; }
+  .icon-btn{ width: 34px; height: 34px; border-radius: 12px; font-size: 15px; box-shadow: 2px 2px 0 #8a5cff; }
+  #tabs{ top: 48px; }
+  .tab-btn{ font-size: 14px; padding: 6px 12px; }
+  #series-bar{ top: auto; bottom: max(14px, env(safe-area-inset-bottom)); }
+  #series-bar button{ font-size: 12px; padding: 6px 8px; }
+  #toast{ top: 148px; }
+  #info-panel{ top: auto; bottom: max(14px, env(safe-area-inset-bottom)); left: 10px; right: 10px; width: auto; padding: 14px; }
+  #progress-pill{ left: 10px; top: 124px; bottom: auto; padding: 6px 10px; font-size: 12px; }
+  #open-panel{ bottom: max(16px, env(safe-area-inset-bottom)); }
+  #open-btn{ font-size: 20px; padding: 12px 26px; }
+  #reveal-name{ font-size: 28px; }
 }
-
 </style>
 </head>
 <body>
 <div id="loading">
   <div class="spinner"></div>
-  <div class="ltext">Učitavanje sveta SURPRIZI...</div>
+  <div class="ltext">Učitavanje sveta SuperUkiz...</div>
 </div>
 
 <div id="app">
@@ -260,7 +358,7 @@ html, body{
     <div class="brand">
       <div class="logo-badge">🎁</div>
       <div>
-        <div class="name font-title">SURPRIZI</div>
+        <div class="name font-title">SuperUkiz</div>
         <div class="tagline">Otvori. Skupljaj. Izloži.</div>
       </div>
     </div>
@@ -270,9 +368,7 @@ html, body{
         <span id="token-count">5 / 5</span>
         <div id="token-bar-bg"><div id="token-bar-fill"></div></div>
       </div>
-      <button class="icon-btn" id="save-btn" title="Sačuvaj napredak">💾</button>
-      <button class="icon-btn" id="load-btn" title="Učitaj napredak">📂</button>
-      <input type="file" id="load-input" accept="application/json" class="hidden">
+      <button class="icon-btn" id="settings-btn" title="Podešavanja">⚙️</button>
     </div>
   </div>
 
@@ -283,7 +379,7 @@ html, body{
 
   <div id="toast"></div>
 
-  <div id="progress-pill" class="pill">🧩 <span id="progress-text">0 / 30 skupljeno</span></div>
+  <div id="progress-pill" class="pill">🧩 <span id="progress-text">0 / 90 skupljeno</span></div>
 
   <div id="open-panel">
     <button id="open-btn">OTVORI KESICU</button>
@@ -293,9 +389,30 @@ html, body{
   <div id="fx-flash"></div>
   <div id="rarity-pop"></div>
 
-  <div id="showroom-hint" class="hidden">Prevuci da gledaš police • Uštipni ili skroluj da zumiraš • Tapni figuru</div>
+  <div id="series-bar" class="hidden">
+    <button type="button" data-series="slatko" class="active">🍬 Slatki svet</button>
+    <button type="button" data-series="garaza">🚗 Garaža</button>
+    <button type="button" data-series="more">🌊 More</button>
+  </div>
+
+  <div id="settings" class="hidden">
+    <div id="settings-card">
+      <div id="settings-head">
+        <h2>Podešavanja</h2>
+        <button type="button" id="settings-close" aria-label="Zatvori">✕</button>
+      </div>
+      <p id="settings-note">Čekirane serije ulaze u izvlačenje.</p>
+      <div id="series-toggles"></div>
+      <div id="settings-io">
+        <button type="button" id="save-btn">💾 Sačuvaj</button>
+        <button type="button" id="load-btn">📂 Uvezi</button>
+        <input type="file" id="load-input" accept="application/json" class="hidden">
+      </div>
+    </div>
+  </div>
 
   <div id="info-panel">
+    <div id="info-head"><span>Detalji</span><button type="button" id="info-back">Nazad</button></div>
     <div class="rarity-tag" id="info-rarity">Obično</div>
     <div id="info-name" class="font-title">—</div>
     <div id="info-faction">—</div>
@@ -339,7 +456,6 @@ if(!CanvasRenderingContext2D.prototype.roundRect){
   };
 }
 
-'use strict';
 /* =========================================================================
    SURPRIZI — kolekcionarska 3D igra (originalni likovi, Three.js r128 inline)
    Folijska kesica -> cepanje gornjeg dela -> figura sa efektima po retkosti
@@ -356,8 +472,48 @@ const FACTIONS = {
   divljaci:  { id:'divljaci',  name:'Divljaci',  emoji:'🍃', color:0x5ecb4a },
   slatkisi:  { id:'slatkisi',  name:'Slatkiši',  emoji:'🍭', color:0xff7fc2 },
   vockice:   { id:'vockice',   name:'Voćkice',   emoji:'🍓', color:0xff5a6e },
+  bolidi:    { id:'bolidi',    name:'Bolidi',     emoji:'🏎️', color:0xe10600 },
+  gradiliste:{ id:'gradiliste',name:'Gradilište', emoji:'🚧', color:0xff9f1a },
+  letelice:  { id:'letelice',  name:'Letelice',   emoji:'✈️', color:0x1aa3ff },
+  brodice:   { id:'brodice',   name:'Brodice',    emoji:'⛵', color:0x0b6bcb },
+  masine:    { id:'masine',    name:'Mašine',     emoji:'🚂', color:0x222222 },
+  ribice:    { id:'ribice',    name:'Ribice',     emoji:'🐠', color:0x1e90ff },
+  rakovi:    { id:'rakovi',    name:'Rakovi',     emoji:'🦀', color:0xff4d2e },
+  mekusi:    { id:'mekusi',    name:'Mekušci',    emoji:'🐙', color:0xc44dff },
+  sisari:    { id:'sisari',    name:'Sisari',     emoji:'🐬', color:0x14c4e0 },
+  zvezde:    { id:'zvezde',    name:'Zvezde',     emoji:'⭐', color:0xff5f9a },
 };
-const FACTION_ORDER = ['blistavci','mrakoni','divljaci','slatkisi','vockice'];
+const SERIES = {
+  slatko: {
+    id:'slatko', name:'Slatki svet', badge:'SERIJA 1 · SLATKI SVET',
+    factions:['blistavci','mrakoni','divljaci','slatkisi','vockice'],
+    stops:['#fff27a','#ff8ad8','#8a5cff','#1fc8ff'],
+    back:['#ff8ad8','#a67bff','#39d3ff'],
+    band:'#2a1245', ink:'#ffe14d', sticker:'#d6246e',
+  },
+  garaza: {
+    id:'garaza', name:'Garaža', badge:'SERIJA 2 · GARAŽA',
+    factions:['bolidi','gradiliste','letelice','brodice','masine'],
+    stops:['#ffe566','#ff8a1e','#e10600','#142033'],
+    back:['#ffb020','#ff4d1a','#1b3a6b'],
+    band:'#1a1208', ink:'#fff4c2', sticker:'#ff4d00',
+  },
+  more: {
+    id:'more', name:'More', badge:'SERIJA 3 · MORE',
+    factions:['ribice','rakovi','mekusi','sisari','zvezde'],
+    stops:['#b8f4ff','#3ec6ff','#1a6bff','#0a2a78'],
+    back:['#7ee8ff','#1f6bff','#0c2f86'],
+    band:'#06204a', ink:'#e8fbff', sticker:'#ffd24a',
+  },
+};
+let pouchSeries = 'slatko';
+let showroomSeries = 'slatko';
+const enabledSeries = {};
+Object.keys(SERIES).forEach(id=>{ enabledSeries[id] = true; });
+function activeSeriesIds(){
+  const ids = Object.keys(SERIES).filter(id=> enabledSeries[id] !== false);
+  return ids.length ? ids : [Object.keys(SERIES)[0]];
+}
 
 const RARITY = {
   common:    { id:'common',    label:'Obično',     color:'#8fe3a0', hex:0x8fe3a0, weight:14 },
@@ -401,6 +557,76 @@ const CHARACTERS = [
   C('ananas',        'Ananas Aca',     'vockice','rare',      0xffc233,0x4cc95a,0xe89a1c,'Nosi krunu od lišća i ponaša se kao kralj plaže.'),
   C('tresnjice',     'Trešnjice',      'vockice','rare',      0xff2d55,0x55c95a,0x7a4a24,'Blizanke koje sve rade zajedno.'),
   C('zlatna-jabuka', 'Zlatna Jabuka',  'vockice','legendary', 0xffd24a,0xfff6a0,0x7fe36a,'Kaže se da ispunjava jednu želju dnevno.'),
+
+  C('brzinko',     'Brzinko',        'bolidi','common',    0xe10600,0xffd000,0x1a1a1a,'Nizak, širok i uvek prvi na startu.'),
+  C('zutko',       'Žutko',          'bolidi','common',    0xffcc00,0x1a1a1a,0xffffff,'Taksi koji peva dok čeka zeleno.'),
+  C('plavko',      'Plavko',         'bolidi','common',    0x1464f0,0xffffff,0xff2d2d,'Okrugao kao buba i isto tako uporan.'),
+  C('munjeviti',   'Munjeviti',      'bolidi','rare',      0x6a1bff,0xffe14d,0xffffff,'Ostavlja munju umesto traga.'),
+  C('roze-kart',   'Roze Kart',      'bolidi','rare',      0xff2d8a,0x1a1a1a,0xffe14d,'Mali kart sa ogromnim zadnjim točkovima.'),
+  C('zlatni-bolid','Zlatni Bolid',   'bolidi','legendary', 0xffb000,0xfff3b0,0x1a1a1a,'Šampion koji se nikad ne osvrće.'),
+
+  C('bagerko',     'Bagerko',        'gradiliste','common',    0xffb000,0x222222,0xffe14d,'Kopa rovove i pravi dvorce od peska.'),
+  C('kiper',       'Kiper',          'gradiliste','common',    0xf25c05,0x222222,0xffd000,'Kada podigne prikolicu, sve poleti.'),
+  C('valjak',      'Valjak',         'gradiliste','common',    0xf2c200,0x333333,0xeeeeee,'Pegla put dok ne postane ogledalo.'),
+  C('dizalica',    'Dizalica',       'gradiliste','rare',      0xffd000,0x111111,0xe10600,'Dohvata oblake da okači zastavu.'),
+  C('mikser',      'Mikser',         'gradiliste','rare',      0xffc400,0x1a1a1a,0xff4d00,'Bubanj mu se vrti i kad spava.'),
+  C('kralj-grad',  'Kralj Gradilišta','gradiliste','legendary',0xff6a00,0xffe14d,0x111111,'Najveći kamion, najglasnija sirena.'),
+
+  C('avioncic',    'Aviončić',       'letelice','common',    0x1aa3ff,0xffffff,0xe10600,'Pravi krugove iznad igrališta.'),
+  C('heliko',      'Heliko',         'letelice','common',    0xff3b30,0xffffff,0x222222,'Lebdi na mestu samo da mahne.'),
+  C('dronko',      'Dronko',         'letelice','common',    0x14c8e0,0x111111,0xffe14d,'Četiri elise i nijedna ne miruje.'),
+  C('raketica',    'Raketica',       'letelice','rare',      0xf4f6fb,0xe10600,0x2255ff,'Broji 3, 2, 1 — pa se sama uplaši.'),
+  C('mlaznjak',    'Mlaznjak',       'letelice','rare',      0x2233aa,0xffe14d,0xe10600,'Brži od zvuka, sporiji od užine.'),
+  C('zvezdani-satl','Zvezdani Šatl', 'letelice','legendary', 0xffd24a,0xffffff,0x5b4dff,'Vraća se iz svemira sa suvenirima.'),
+
+  C('camac',       'Čamac',          'brodice','common',    0x1ec8ff,0xffffff,0x0b3a66,'Vesla polako i pevuši.'),
+  C('jedrilica',   'Jedrilica',      'brodice','common',    0x0b3a66,0xffffff,0xe10600,'Jedro joj je uvek puno vetra.'),
+  C('podmornica',  'Podmornica',     'brodice','common',    0xffc107,0x111111,0xe10600,'Gleda svet kroz periskop.'),
+  C('gliser',      'Gliser',         'brodice','rare',      0xff2d55,0xffffff,0x111111,'Samo vrhovi talasa mu dotiču trup.'),
+  C('feribot',     'Feribot',        'brodice','rare',      0x2f6bff,0xffe14d,0xffffff,'Prevozi prijatelje s obale na obalu.'),
+  C('zlatna-jahta','Zlatna Jahta',   'brodice','legendary', 0xffd000,0xffffff,0x0a2340,'Na palubi uvek ima mesta za još jednog.'),
+
+  C('vozic',       'Vozić',          'masine','common',    0xe10600,0xffd000,0x111111,'Puši oblačiće u obliku srca.'),
+  C('traktor',     'Traktor',        'masine','common',    0x18b83a,0xffd000,0x111111,'Veliki zadnji točkovi, malo strpljenja.'),
+  C('kamionce',    'Kamionče',       'masine','common',    0x2255ee,0xffffff,0xff7a00,'U prikolici nosi tuđe snove.'),
+  C('busko',       'Busko',          'masine','rare',      0xffe14d,0xe10600,0x111111,'Staje na svakoj stanici, čak i izmišljenoj.'),
+  C('robot-ruka',  'Robot-ruka',     'masine','rare',      0x7a4dff,0xffe14d,0x222222,'Hvata, okreće i nikad ne ispusti.'),
+  C('lokomotiva',  'Parna Lokomotiva','masine','legendary',0x1a1a1a,0xe10600,0xffd000,'Starija od pruge kojom vozi.'),
+
+  C('klavnko',      'Klavnko',        'ribice','common',    0xff6a1a,0xffffff,0x1a1a1a,'Narančast i uvek smeje u anemomi.'),
+  C('plavica',      'Plavica',        'ribice','common',    0x1a7bff,0xffe14d,0xffffff,'Najbrža plava u čitavom grebenu.'),
+  C('prugica',      'Prugica',        'ribice','common',    0xffe14d,0x1a1a1a,0xffffff,'Pruge joj broje talase.'),
+  C('napuhko',      'Napuhko',        'ribice','rare',      0xffd23d,0xffffff,0x3a8f4a,'Kad se uplaši, postane lopta.'),
+  C('ajkulica',     'Ajkulica',       'ribice','rare',      0x4a5568,0xffffff,0xe10600,'Velika je, ali se plaši meduza.'),
+  C('zlatna-ribica','Zlatna Ribica',  'ribice','legendary', 0xffc107,0xfff6c8,0xff4d6d,'Ispunjava želje, ako ih šapućeš.'),
+
+  C('krabko',       'Krabko',         'rakovi','common',    0xff4d2e,0xffe14d,0xffffff,'Hoda u stranu i to mu je stil.'),
+  C('jastog',       'Jastog',         'rakovi','common',    0xe10600,0xffd000,0x1a1a1a,'Klešta mu sviraju na kamenju.'),
+  C('skamp',        'Škamp',          'rakovi','common',    0xff7aa2,0xffffff,0xff4d6d,'Savitljiv i uvek gladan.'),
+  C('samac',        'Samac',          'rakovi','rare',      0xffb13d,0x1a6bff,0xffffff,'Kućica mu je najlepša školjka.'),
+  C('makaze',       'Makaze',         'rakovi','rare',      0xff2d55,0xffe14d,0x1a1a1a,'Jedna klešta veća, druga brža.'),
+  C('kralj-rak',    'Kralj Rak',      'rakovi','legendary', 0xff3b1a,0xffd24a,0xffffff,'Najširi osmeh na dnu mora.'),
+
+  C('oktopod',      'Oktopod',        'mekusi','common',    0xc44dff,0xff7ad9,0xffffff,'Osam ruku, a i dalje zagrli sve.'),
+  C('meduza',       'Meduza',         'mekusi','common',    0xff7ad9,0x7df9ff,0xffffff,'Lebdi kao kišobran od svetlosti.'),
+  C('skoljkica',    'Školjkica',      'mekusi','common',    0xffd6e8,0xff5fa2,0xffffff,'Unutra čuva jedan biser i jednu tajnu.'),
+  C('lignja',       'Lignja',         'mekusi','rare',      0xff4d8d,0xffffff,0x1a1a1a,'Crta oblake mastila u obliku srca.'),
+  C('nautko',       'Nautko',         'mekusi','rare',      0xfff3c4,0xff7a3d,0x1a4dff,'Spiralna kućica, pravi kompas.'),
+  C('kraljica-pipaka','Kraljica Pipaka','mekusi','legendary',0x9b3dff,0xffd24a,0xffffff,'Pipci joj svetle kao lanterne.'),
+
+  C('delfinko',     'Delfinko',       'sisari','common',    0x3ec6ff,0xffffff,0x1a4dff,'Skače kroz obruče od mehurića.'),
+  C('fokica',       'Fokica',         'sisari','common',    0x8fd4ff,0x1a1a1a,0xffffff,'Plješće perajima kad je srećna.'),
+  C('vidrica',      'Vidrica',        'sisari','common',    0x8a5a3a,0xffe14d,0xffffff,'Drži kamenčić kao blago.'),
+  C('kitko',        'Kitko',          'sisari','rare',      0x2f6bff,0xffffff,0x7df9ff,'Najveći, a peva najtiše.'),
+  C('narvalko',     'Narvalko',       'sisari','rare',      0xd7f6ff,0xffd24a,0x1a4dff,'Rog mu je od čistog svetla.'),
+  C('orka',         'Orka',           'sisari','legendary', 0x1a1a1a,0xffffff,0xff4d6d,'Crno-bela kraljica talasa.'),
+
+  C('zvezdica',     'Zvezdica',       'zvezde','common',    0xff4d6d,0xffe14d,0xffffff,'Pet krakova i pet razloga za osmeh.'),
+  C('morski-konj',  'Morski Konj',    'zvezde','common',    0xffb13d,0xff5fa2,0xffffff,'Stoji uspravno i maše repom.'),
+  C('kornjaca',     'Kornjača',       'zvezde','common',    0x3fd07a,0xffd23d,0x8a5a2b,'Oklop joj je mapa ostrva.'),
+  C('morski-jez',   'Morski Jež',     'zvezde','rare',      0x7a4dff,0xffe14d,0xffffff,'Bodlje mu svetle kad se nasmeje.'),
+  C('raza',         'Raža',           'zvezde','rare',      0x14c8e0,0xffffff,0x1a4dff,'Klizi kao senka preko peska.'),
+  C('koral-kralj',  'Koral Kralj',    'zvezde','legendary', 0xff5fa2,0xffd24a,0x3ec6ff,'Kruna mu je ceo greben.'),
 ];
 const CHAR_BY_ID = {}; CHARACTERS.forEach(c => CHAR_BY_ID[c.id] = c);
 
@@ -421,10 +647,12 @@ function easeOutBounce(t){
 }
 
 function weightedRandomCharacter(){
-  const total = CHARACTERS.reduce((s,c)=>s+RARITY[c.rarity].weight,0);
+  const fac = SERIES[pouchSeries].factions;
+  const pool = CHARACTERS.filter(c=>fac.includes(c.faction));
+  const total = pool.reduce((s,c)=>s+RARITY[c.rarity].weight,0);
   let r = Math.random()*total;
-  for(const c of CHARACTERS){ const w = RARITY[c.rarity].weight; if(r<w) return c; r-=w; }
-  return CHARACTERS[CHARACTERS.length-1];
+  for(const c of pool){ const w = RARITY[c.rarity].weight; if(r<w) return c; r-=w; }
+  return pool[pool.length-1];
 }
 
 function pillMesh(radius, totalLength, mat, segments){
@@ -572,53 +800,301 @@ function starShape(ctx, x, y, r, color){
   ctx.closePath(); ctx.fill();
 }
 
-function makePouchFrontTexture(){
-  return srgb(makeCanvasTexture((ctx,W,H)=>{
-    const cy = H*0.55;
-    const g = ctx.createRadialGradient(W/2, cy, 10, W/2, cy, H*0.75);
-    g.addColorStop(0,'#fff27a'); g.addColorStop(0.22,'#ff8ad8'); g.addColorStop(0.55,'#8a5cff'); g.addColorStop(1,'#1fc8ff');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    // sunburst
-    ctx.save(); ctx.translate(W/2, cy); ctx.globalAlpha = 0.2; ctx.fillStyle = '#ffffff';
-    for(let i=0;i<28;i+=2){ const a0=i/28*Math.PI*2, a1=(i+1)/28*Math.PI*2; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a0)*H,Math.sin(a0)*H); ctx.lineTo(Math.cos(a1)*H,Math.sin(a1)*H); ctx.fill(); }
-    ctx.restore();
-    // konfete i zvezdice
-    const conf = ['#ffffff','#fff27a','#7df9ff','#ff5ad1','#9dff5a','#ffb13d'];
-    for(let i=0;i<60;i++){
-      const x = Math.random()*W, y = H*0.12 + Math.random()*H*0.8;
-      if(i%3===0) starShape(ctx, x, y, rand(5,11), conf[i%conf.length]);
-      else { ctx.fillStyle = conf[i%conf.length]; ctx.globalAlpha = 0.85; ctx.beginPath(); ctx.arc(x,y,rand(2,5),0,Math.PI*2); ctx.fill(); ctx.globalAlpha = 1; }
+const glyphCache = {};
+function comicGlyph(ch, size, fill){
+  const key = ch+'|'+size+'|'+fill;
+  if(glyphCache[key]) return glyphCache[key];
+  const c = document.createElement('canvas');
+  c.width = Math.ceil(size*1.55); c.height = Math.ceil(size*1.7);
+  const g = c.getContext('2d');
+  g.font = '900 '+size+'px "Lilita One", "Arial Black", Arial';
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+  const x = c.width/2, y = c.height/2 + size*0.02;
+  g.lineWidth = size*0.26; g.strokeStyle = '#c41212'; g.strokeText(ch, x+size*0.03, y+size*0.05);
+  g.lineWidth = size*0.18; g.strokeStyle = '#ff2d2d'; g.strokeText(ch, x, y);
+  g.lineWidth = size*0.09; g.strokeStyle = '#ffe566'; g.strokeText(ch, x, y-size*0.02);
+  g.fillStyle = fill; g.fillText(ch, x, y);
+  g.globalCompositeOperation = 'source-atop';
+  const hg = g.createLinearGradient(0, y-size*0.55, 0, y+size*0.15);
+  hg.addColorStop(0, 'rgba(255,255,255,0.7)');
+  hg.addColorStop(0.42, 'rgba(255,255,255,0)');
+  g.fillStyle = hg; g.fillRect(0, 0, c.width, c.height);
+  glyphCache[key] = c;
+  return c;
+}
+function comicLogo(ctx, text, x, y, size, fill){
+  fill = fill || '#1f5eff';
+  ctx.save(); ctx.translate(x, y);
+  ctx.font = '900 '+size+'px "Lilita One", "Arial Black", Arial';
+  const chars = [...text];
+  const widths = chars.map(ch => ctx.measureText(ch===' ' ? ' ' : ch).width);
+  const gap = size*0.01;
+  const total = widths.reduce((a,b)=>a+b,0) + gap*Math.max(0, chars.length-1);
+  let cx = -total/2;
+  chars.forEach((ch,i)=>{
+    const t = chars.length<2 ? 0 : i/(chars.length-1)-0.5;
+    if(ch!==' '){
+      const glyph = comicGlyph(ch, size, fill);
+      ctx.save();
+      ctx.translate(cx+widths[i]/2, -Math.cos(t*Math.PI)*size*0.14);
+      ctx.rotate(t*0.42);
+      ctx.drawImage(glyph, -glyph.width/2, -glyph.height/2);
+      ctx.restore();
     }
-    // veliki upitnik u "mehuru"
+    cx += widths[i]+gap;
+  });
+  ctx.restore();
+}
+function pouchBurst(ctx, W, H, pack){
+  const g = ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0, pack.a); g.addColorStop(0.45, pack.b); g.addColorStop(1, pack.c);
+  ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+  ctx.save(); ctx.translate(W/2, H*0.5); ctx.globalAlpha = 0.28; ctx.fillStyle = '#fff6b0';
+  for(let i=0;i<24;i+=2){
+    const a0 = i/24*Math.PI*2, a1 = (i+0.7)/24*Math.PI*2;
+    ctx.beginPath(); ctx.moveTo(0,0);
+    ctx.lineTo(Math.cos(a0)*H, Math.sin(a0)*H);
+    ctx.lineTo(Math.cos(a1)*H, Math.sin(a1)*H);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+function inkPath(ctx, w){
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.lineWidth = w || 5; ctx.strokeStyle = '#241433'; ctx.stroke();
+}
+function cartoonEye(ctx, x, y, r){
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(x, y, r*1.05, r*1.2, 0, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 3);
+  ctx.fillStyle = '#1a1430';
+  ctx.beginPath(); ctx.arc(x+r*0.12, y+r*0.08, r*0.48, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(x+r*0.32, y-r*0.28, r*0.2, 0, Math.PI*2); ctx.fill();
+}
+function cartoonGrin(ctx, x, y, r){
+  ctx.fillStyle = '#2a1450';
+  ctx.beginPath(); ctx.ellipse(x, y+r*0.15, r, r*0.55, 0, 0, Math.PI); ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(x-r*0.72, y-r*0.05, r*1.44, r*0.38);
+  ctx.strokeStyle = '#241433'; ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(x, y-r*0.02); ctx.lineTo(x, y+r*0.32); ctx.stroke();
+}
+function stickLimb(ctx, x1, y1, x2, y2, color, w){
+  ctx.strokeStyle = color; ctx.lineWidth = w || 10; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.strokeStyle = '#241433'; ctx.lineWidth = (w||10)+4;
+  ctx.globalCompositeOperation = 'destination-over';
+  ctx.stroke();
+  ctx.globalCompositeOperation = 'source-over';
+}
+function sketchDonut(ctx){
+  stickLimb(ctx, -28, 6, -40, -18, '#ffd27a', 9);
+  stickLimb(ctx, 26, 8, 42, 22, '#ffd27a', 9);
+  stickLimb(ctx, -16, 28, -22, 48, '#ffd27a', 9);
+  stickLimb(ctx, 14, 30, 20, 50, '#ffd27a', 9);
+  ctx.fillStyle = '#ff4d8d';
+  ctx.beginPath(); ctx.arc(0, 4, 34, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 5);
+  ctx.save();
+  ctx.beginPath(); ctx.arc(0, 4, 13, 0, Math.PI*2); ctx.clip();
+  ctx.clearRect(-40,-40,80,80);
+  ctx.restore();
+  ctx.beginPath(); ctx.arc(0, 4, 13, 0, Math.PI*2); inkPath(ctx, 4);
+  ctx.fillStyle = '#ff9ad2';
+  ctx.beginPath(); ctx.ellipse(0, -6, 28, 14, 0, Math.PI, 0); ctx.fill();
+  ['#fff','#ffe14d','#5ad1ff','#7dff8a'].forEach((c,i)=>{
+    const a = -0.8 + i*0.7;
+    ctx.fillStyle = c; ctx.fillRect(Math.cos(a)*20-3, Math.sin(a)*16-8, 7, 3);
+  });
+  cartoonEye(ctx, -16, -6, 7); cartoonEye(ctx, 16, -6, 7);
+  cartoonGrin(ctx, 0, 12, 9);
+}
+function sketchCone(ctx){
+  stickLimb(ctx, -18, 0, -36, 10, '#ff8ab8', 8);
+  stickLimb(ctx, 16, 2, 34, -8, '#8ef0c8', 8);
+  ctx.fillStyle = '#e7b15a';
+  ctx.beginPath(); ctx.moveTo(-16, 8); ctx.lineTo(16, 8); ctx.lineTo(0, 52); ctx.closePath(); ctx.fill(); inkPath(ctx, 4);
+  ctx.strokeStyle = '#c4893a'; ctx.lineWidth = 2;
+  for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(-12+i*2, 16+i*10); ctx.lineTo(12-i*2, 16+i*10); ctx.stroke(); }
+  ctx.fillStyle = '#ff8ab8';
+  ctx.beginPath(); ctx.arc(0, 2, 20, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 4);
+  ctx.fillStyle = '#8ef0c8';
+  ctx.beginPath(); ctx.arc(2, -16, 15, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 4);
+  ctx.fillStyle = '#ff2d55';
+  ctx.beginPath(); ctx.arc(4, -30, 6, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 3);
+  cartoonEye(ctx, -7, 0, 5); cartoonEye(ctx, 8, 0, 5);
+  cartoonGrin(ctx, 1, 10, 6);
+}
+function sketchBerry(ctx){
+  stickLimb(ctx, -16, 8, -32, 22, '#ff3d5a', 8);
+  stickLimb(ctx, 14, 10, 30, 24, '#ff3d5a', 8);
+  ctx.fillStyle = '#3ecf6e';
+  ctx.beginPath(); ctx.ellipse(-6, -28, 8, 14, -0.6, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 3);
+  ctx.beginPath(); ctx.ellipse(8, -30, 8, 14, 0.5, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 3);
+  ctx.fillStyle = '#ff3d5a';
+  ctx.beginPath(); ctx.moveTo(0, -22); ctx.bezierCurveTo(28, -18, 26, 22, 0, 36); ctx.bezierCurveTo(-26, 22, -28, -18, 0, -22); ctx.fill(); inkPath(ctx, 4);
+  ctx.fillStyle = '#ffe14d';
+  [[-8,-4],[6,-2],[-2,10],[10,12],[-10,14]].forEach(p=>{ ctx.beginPath(); ctx.ellipse(p[0], p[1], 2.2, 3.2, 0.4, 0, Math.PI*2); ctx.fill(); });
+  cartoonEye(ctx, -8, 2, 6); cartoonEye(ctx, 8, 2, 6);
+  cartoonGrin(ctx, 0, 14, 7);
+}
+function sketchCar(ctx){
+  ctx.fillStyle = '#222';
+  [[-24,18,16], [16,18,16]].forEach(w=>{
+    ctx.beginPath(); ctx.arc(w[0], w[1], w[2], 0, Math.PI*2); ctx.fill(); inkPath(ctx, 4);
+    ctx.fillStyle = '#d7dbe3'; ctx.beginPath(); ctx.arc(w[0], w[1], 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = '#222';
+  });
+  ctx.fillStyle = '#e10600';
+  ctx.beginPath(); ctx.roundRect(-40, -8, 80, 32, 12); ctx.fill(); inkPath(ctx, 5);
+  ctx.fillStyle = '#ffd000';
+  ctx.fillRect(-36, 4, 72, 6);
+  ctx.fillStyle = '#9fd7ff';
+  ctx.beginPath(); ctx.roundRect(-16, -28, 36, 22, 8); ctx.fill(); inkPath(ctx, 4);
+  cartoonEye(ctx, -6, -18, 5); cartoonEye(ctx, 10, -18, 5);
+  ctx.fillStyle = '#ffe14d';
+  ctx.beginPath(); ctx.roundRect(-42, 2, 10, 8, 3); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(32, 2, 10, 8, 3); ctx.fill();
+  cartoonGrin(ctx, 2, 8, 8);
+}
+function sketchDigger(ctx){
+  ctx.strokeStyle = '#333'; ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(8, -6); ctx.lineTo(28, -28); ctx.lineTo(40, -10); ctx.stroke();
+  ctx.fillStyle = '#ffb000';
+  ctx.beginPath(); ctx.roundRect(28, -18, 18, 14, 3); ctx.fill(); inkPath(ctx, 3);
+  ctx.fillStyle = '#222';
+  ctx.beginPath(); ctx.arc(-8, 22, 12, 0, Math.PI*2); ctx.arc(16, 22, 12, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ffb000';
+  ctx.beginPath(); ctx.roundRect(-28, -8, 46, 28, 6); ctx.fill(); inkPath(ctx, 4);
+  ctx.fillStyle = '#7ecbff';
+  ctx.fillRect(-22, -4, 22, 12);
+  cartoonEye(ctx, -16, 0, 4); cartoonEye(ctx, -4, 0, 4);
+}
+function sketchPlane(ctx){
+  ctx.fillStyle = '#1aa3ff';
+  ctx.beginPath(); ctx.moveTo(-10, 4); ctx.lineTo(-36, 18); ctx.lineTo(-8, 14); ctx.closePath(); ctx.fill(); inkPath(ctx, 3);
+  ctx.beginPath(); ctx.moveTo(6, 0); ctx.lineTo(34, -16); ctx.lineTo(10, 8); ctx.closePath(); ctx.fill(); inkPath(ctx, 3);
+  ctx.beginPath(); ctx.roundRect(-28, -8, 58, 20, 10); ctx.fill(); inkPath(ctx, 4);
+  ctx.fillStyle = '#e10600';
+  ctx.beginPath(); ctx.moveTo(28, -4); ctx.lineTo(40, -16); ctx.lineTo(30, 2); ctx.closePath(); ctx.fill(); inkPath(ctx, 3);
+  cartoonEye(ctx, -8, 0, 5); cartoonEye(ctx, 6, 0, 5);
+  cartoonGrin(ctx, -1, 8, 5);
+}
+function sketchFish(ctx){
+  ctx.fillStyle = '#ff6a1a';
+  ctx.beginPath(); ctx.moveTo(34, 2); ctx.lineTo(52, -14); ctx.lineTo(48, 2); ctx.lineTo(52, 18); ctx.closePath(); ctx.fill(); inkPath(ctx, 4);
+  ctx.beginPath(); ctx.ellipse(-4, 2, 36, 22, 0, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 5);
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.ellipse(-8, 2, 8, 16, 0, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(10, 2, 7, 14, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = '#ff6a1a';
+  ctx.beginPath(); ctx.moveTo(-2, -16); ctx.lineTo(8, -30); ctx.lineTo(12, -12); ctx.closePath(); ctx.fill(); inkPath(ctx, 3);
+  cartoonEye(ctx, -14, -2, 7);
+  cartoonGrin(ctx, -16, 10, 6);
+}
+function sketchCrab(ctx){
+  stickLimb(ctx, -22, -4, -40, -22, '#ff4d2e', 8);
+  stickLimb(ctx, 22, -4, 40, -22, '#ff4d2e', 8);
+  ctx.fillStyle = '#ff4d2e';
+  ctx.beginPath(); ctx.ellipse(-40, -28, 10, 7, -0.4, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 3);
+  ctx.beginPath(); ctx.ellipse(40, -28, 10, 7, 0.4, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 3);
+  ctx.beginPath(); ctx.ellipse(0, 8, 26, 18, 0, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 5);
+  ctx.strokeStyle = '#ff4d2e'; ctx.lineWidth = 5;
+  [[-16,22,-22,36],[-6,24,-8,38],[8,24,10,38],[18,22,24,36]].forEach(p=>{
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]); ctx.stroke();
+  });
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(-10, -8, 5, 0, Math.PI*2); ctx.arc(10, -8, 5, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 2);
+  ctx.fillStyle = '#1a1430';
+  ctx.beginPath(); ctx.arc(-9, -7, 2, 0, Math.PI*2); ctx.arc(11, -7, 2, 0, Math.PI*2); ctx.fill();
+  cartoonGrin(ctx, 0, 6, 7);
+}
+function sketchJelly(ctx){
+  ctx.strokeStyle = '#7df9ff'; ctx.lineWidth = 5; ctx.lineCap = 'round';
+  [[-16,16,-22,46],[-6,20,-4,50],[6,20,8,48],[16,16,22,44]].forEach(p=>{
+    ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.quadraticCurveTo(p[2]-6, (p[1]+p[3])/2, p[2], p[3]); ctx.stroke();
+  });
+  ctx.fillStyle = '#ff7ad9';
+  ctx.beginPath(); ctx.ellipse(0, 0, 30, 22, 0, Math.PI, 0); ctx.lineTo(28, 8); ctx.lineTo(-28, 8); ctx.closePath(); ctx.fill(); inkPath(ctx, 4);
+  cartoonEye(ctx, -10, -4, 6); cartoonEye(ctx, 10, -4, 6);
+  cartoonGrin(ctx, 0, 6, 6);
+}
+const PACK_CAST = {
+  slatko: [sketchBerry, sketchDonut, sketchCone],
+  garaza: [sketchDigger, sketchCar, sketchPlane],
+  more: [sketchFish, sketchCrab, sketchJelly],
+};
+function drawPackCast(ctx, seriesId, W, H){
+  const cast = PACK_CAST[seriesId] || PACK_CAST.slatko;
+  const spots = [
+    { x:0.22, y:0.54, s:1.65, rot:-0.18 },
+    { x:0.50, y:0.52, s:1.9, rot:0.03 },
+    { x:0.78, y:0.54, s:1.55, rot:0.16 },
+  ];
+  cast.forEach((draw, i)=>{
+    const c = document.createElement('canvas');
+    c.width = 200; c.height = 200;
+    const g = c.getContext('2d');
+    g.translate(100, 90);
+    draw(g);
+    const p = spots[i];
     ctx.save();
-    ctx.fillStyle = 'rgba(255,255,255,0.28)'; ctx.beginPath(); ctx.arc(W/2, cy, W*0.26, 0, Math.PI*2); ctx.fill();
-    ctx.lineWidth = 8; ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.stroke();
+    ctx.translate(W*p.x, H*p.y);
+    ctx.rotate(p.rot);
+    ctx.scale(p.s, p.s);
+    ctx.drawImage(c, -100, -90);
     ctx.restore();
-    bubbleText(ctx, '?', W/2, cy+6, W*0.36, ['#fff27a'], -0.08);
-    // ikonice grupa oko mehura
-    const icons = FACTION_ORDER.map(f=>FACTIONS[f].emoji);
-    icons.forEach((e,i)=>{
-      const a = -Math.PI*0.95 + i/(icons.length-1)*Math.PI*0.9 + Math.PI;
-      const x = W/2 + Math.cos(a)*W*0.37, y = cy + Math.sin(a)*W*0.37 + W*0.02;
-      ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(x,y,30,0,Math.PI*2); ctx.fill();
-      ctx.lineWidth = 5; ctx.strokeStyle = '#2a1245'; ctx.stroke();
-      ctx.font = '34px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(e, x, y+2);
-    });
-    // logo
-    bubbleText(ctx, 'SURPRIZI', W/2, H*0.255, 84, ['#ff4d6d','#ffb13d','#ffe14d','#5ee06b','#4db8ff','#a46bff','#ff5ad1','#ff4d6d'], -0.05);
-    // traka na dnu
-    ctx.save(); ctx.translate(W/2, H*0.86); ctx.rotate(-0.03);
-    ctx.fillStyle = '#2a1245'; ctx.beginPath(); ctx.roundRect(-190,-30,380,60,30); ctx.fill();
-    ctx.fillStyle = '#ffe14d'; ctx.font = '800 32px "Baloo 2", Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('SERIJA 2 · '+CHARACTERS.length+' LIKOVA', 0, 3);
+  });
+}
+function pouchSplash(ctx, x, y, color){
+  ctx.save(); ctx.translate(x,y);
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  for(let i=0;i<12;i++){
+    const a = -Math.PI/2 + i/12*Math.PI*2;
+    const r = i%2 ? 78 : 48;
+    const px = Math.cos(a)*r, py = Math.sin(a)*r*0.62;
+    if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.lineWidth = 6; ctx.strokeStyle = '#ffffff'; ctx.stroke();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 86px "Lilita One", "Arial Black", Arial';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('1', 0, -6);
+  ctx.fillStyle = '#ffe14d';
+  ctx.font = '900 22px "Lilita One", "Arial Black", Arial';
+  ctx.lineWidth = 5; ctx.strokeStyle = '#1a3f9a';
+  ctx.strokeText('IGRAČKA', 0, 40);
+  ctx.fillText('IGRAČKA', 0, 40);
+  ctx.restore();
+}
+const PACK_LOOK = {
+  slatko: { a:'#ffe14d', b:'#ff8a1a', c:'#ff4d6d', splash:'#1d4dff' },
+  garaza: { a:'#ffe566', b:'#ff7a00', c:'#e10600', splash:'#142033' },
+  more:   { a:'#fff4a8', b:'#3ec6ff', c:'#1a4dff', splash:'#0a2a78' },
+};
+
+function makePouchFrontTexture(series){
+  const theme = series || SERIES.slatko;
+  const pack = PACK_LOOK[theme.id] || PACK_LOOK.slatko;
+  return srgb(makeCanvasTexture((ctx,W,H)=>{
+    pouchBurst(ctx, W, H, pack);
+    drawPackCast(ctx, theme.id, W, H);
+    pouchSplash(ctx, W/2, H*0.74, pack.splash);
+    comicLogo(ctx, 'SuperUkiz', W/2, H*0.22, 58, '#1f5eff');
+    ctx.save(); ctx.translate(W/2, H*0.325); ctx.rotate(-0.06);
+    ctx.font = '900 34px "Lilita One", "Arial Black", Arial';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+    ctx.lineWidth = 10; ctx.strokeStyle = '#1a4fd0'; ctx.strokeText(theme.name.toUpperCase(), 2, 3);
+    ctx.lineWidth = 6; ctx.strokeStyle = '#0b2e86'; ctx.strokeText(theme.name.toUpperCase(), 0, 0);
+    ctx.fillStyle = '#ffe14d'; ctx.fillText(theme.name.toUpperCase(), 0, 0);
     ctx.restore();
-    // nalepnica
-    starShape(ctx, W*0.84, H*0.36, 46, '#ffe14d');
-    ctx.save(); ctx.translate(W*0.84, H*0.36); ctx.rotate(0.25);
-    ctx.fillStyle = '#d6246e'; ctx.font = '800 24px "Baloo 2", Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('NOVO!', 0, 2);
+    ctx.save(); ctx.translate(W*0.16, H*0.4); ctx.rotate(-0.2);
+    ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0,0,42,0,Math.PI*2); ctx.fill();
+    ctx.lineWidth = 5; ctx.strokeStyle = '#1f5eff'; ctx.stroke();
+    ctx.fillStyle = '#e10600'; ctx.font = '900 16px "Lilita One", Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText('SAKUPI', 0, -6); ctx.fillText('SVE', 0, 12);
     ctx.restore();
-    // varovi, linija cepanja, nazubljene ivice
     crimp(ctx, 0, H*0.1, W);
     crimp(ctx, H*0.935, H, W);
     tearLine(ctx, W, H);
@@ -626,14 +1102,14 @@ function makePouchFrontTexture(){
   }, ART_W, ART_H));
 }
 
-function makePouchBackTexture(){
+function makePouchBackTexture(series){
+  const theme = series || SERIES.slatko;
+  const pack = PACK_LOOK[theme.id] || PACK_LOOK.slatko;
   return srgb(makeCanvasTexture((ctx,W,H)=>{
-    const g = ctx.createLinearGradient(0,0,0,H);
-    g.addColorStop(0,'#ff8ad8'); g.addColorStop(0.5,'#a67bff'); g.addColorStop(1,'#39d3ff');
-    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
-    bubbleText(ctx, 'SAKUPI SVE!', W/2, H*0.2, 56, ['#ffe14d','#ffffff','#7df9ff'], 0);
+    pouchBurst(ctx, W, H, pack);
+    comicLogo(ctx, 'SAKUPI SVE', W/2, H*0.22, 42, '#1f5eff');
     const cols = 6, cell = 70, x0 = W/2 - cols*cell/2 + cell/2, y0 = H*0.32;
-    FACTION_ORDER.forEach((f,row)=>{
+    theme.factions.forEach((f,row)=>{
       for(let c=0;c<cols;c++){
         const x = x0 + c*cell, y = y0 + row*cell*0.95;
         ctx.fillStyle = 'rgba(255,255,255,0.85)'; ctx.beginPath(); ctx.arc(x,y,26,0,Math.PI*2); ctx.fill();
@@ -669,7 +1145,7 @@ function initThree(){
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.outputEncoding = THREE.sRGBEncoding;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.1;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 0.92;
   canvasHolder.appendChild(renderer.domElement);
   clock = new THREE.Clock();
 
@@ -677,7 +1153,7 @@ function initThree(){
   showroomRoot = new THREE.Group();
   showroomRoot.visible = false;
   scene.add(openRoot, showroomRoot);
-  scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+  scene.add(new THREE.AmbientLight(0xffffff, 0.22));
 
   // šareno "okruženje" za odsjaj folije (PMREM iz male gradijentne scene)
   const envScene = new THREE.Scene();
@@ -702,12 +1178,25 @@ function onResize(){
 
 /* ============================= CARTOON MATERIJALI ============================= */
 
+function punchColor(color){
+  const c = new THREE.Color(color);
+  const hsl = { h:0, s:0, l:0 };
+  c.getHSL(hsl);
+  if(hsl.s < 0.08) return c;
+  hsl.s = Math.min(1, hsl.s * 1.25 + 0.18);
+  hsl.l = Math.max(0.36, Math.min(0.5, hsl.l));
+  c.setHSL(hsl.h, hsl.s, hsl.l);
+  return c;
+}
 function toonMat(color, extra){
-  return new THREE.MeshToonMaterial(Object.assign({ color, gradientMap: TOON_RAMP }, extra||{}));
+  extra = Object.assign({}, extra||{});
+  if(extra.emissive!==undefined) extra.emissive = punchColor(extra.emissive);
+  if(extra.emissiveIntensity!==undefined && extra.emissiveIntensity < 0.4) extra.emissiveIntensity = 0.05;
+  return new THREE.MeshToonMaterial(Object.assign({ color: punchColor(color), gradientMap: TOON_RAMP }, extra));
 }
 function makeToonRamp(){
   const tex = makeCanvasTexture((ctx,w)=>{
-    ['#8a8a8a','#c4c4c4','#f0f0f0','#ffffff'].forEach((c,i)=>{ ctx.fillStyle = c; ctx.fillRect(i,0,1,1); });
+    ['#1c1c1c','#454545','#7a7a7a','#c4c4c4'].forEach((c,i)=>{ ctx.fillStyle = c; ctx.fillRect(i,0,1,1); });
   }, 4, 1);
   tex.minFilter = tex.magFilter = THREE.NearestFilter;
   tex.generateMipmaps = false;
@@ -716,7 +1205,7 @@ function makeToonRamp(){
 function makeOutlineMat(){
   const m = new THREE.MeshBasicMaterial({ color:0x2a1440, side:THREE.BackSide });
   m.onBeforeCompile = sh => {
-    sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', 'vec3 transformed = position + normal * 0.011;');
+    sh.vertexShader = sh.vertexShader.replace('#include <begin_vertex>', 'vec3 transformed = position + normal * 0.014;');
   };
   m.userData.shared = true;
   return m;
@@ -725,7 +1214,7 @@ function makeOutlineMat(){
 function addOutlines(root){
   const list = [];
   root.traverse(o=>{
-    if(!o.isMesh || o.userData.isOutline || o.material.transparent) return;
+    if(!o.isMesh || o.userData.isOutline || o.userData.noOutline || o.material.transparent) return;
     const t = o.geometry.type;
     if(t==='CircleGeometry' || t==='PlaneGeometry') return;
     if(!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
@@ -746,9 +1235,10 @@ function makeEyePair(parent, opts){
   const r = (opts.r!==undefined?opts.r:0.036)*1.15;
   const irisColor = opts.irisColor!==undefined?opts.irisColor:0x2a2044;
   [-1,1].forEach(side=>{
-    const sclera = new THREE.Mesh(new THREE.SphereGeometry(r*1.15,14,14), whiteMat);
-    sclera.scale.set(1,1.2,0.5);
+    const sclera = new THREE.Mesh(new THREE.SphereGeometry(r*1.25,14,14), whiteMat);
+    sclera.scale.set(1,1.15,0.45);
     sclera.position.set(side*spacing, y, z-0.008);
+    sclera.userData.noOutline = true;
     parent.add(sclera);
     const iris = new THREE.Mesh(new THREE.CircleGeometry(r*0.78,16), new THREE.MeshBasicMaterial({ color:irisColor }));
     iris.position.set(side*spacing, y-r*0.05, z+0.012);
@@ -1459,6 +1949,420 @@ function buildZlatnaJabuka(char, baseMat, accentMat, trimMat){
   return g;
 }
 
+/* ============================= FIGURE: GARAŽA (vozila i mašine) ============================= */
+
+function rubberMat(){
+  if(!rubberMat.m){ rubberMat.m = toonMat(0x141414); rubberMat.m.userData.shared = true; }
+  return rubberMat.m;
+}
+function hubMat(){
+  if(!hubMat.m){ hubMat.m = toonMat(0xdedede); hubMat.m.userData.shared = true; }
+  return hubMat.m;
+}
+function putBox(g, w, h, d, mat, x, y, z){
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w,h,d), mat);
+  m.position.set(x,y,z); g.add(m); return m;
+}
+function addWheel(g, x, y, z, r){
+  const tire = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.048, 12), rubberMat());
+  tire.rotation.z = Math.PI/2; tire.position.set(x,y,z); g.add(tire);
+  const hub = new THREE.Mesh(new THREE.CylinderGeometry(r*0.42, r*0.42, 0.052, 8), hubMat());
+  hub.rotation.z = Math.PI/2; hub.position.set(x,y,z); g.add(hub);
+}
+function axle(g, y, z, r, span){ [-1,1].forEach(s=> addWheel(g, s*span, y, z, r)); }
+function windshield(g, y, z, s){
+  const f = new THREE.Group(); f.position.set(0,y,z);
+  makeEyePair(f, { spacing:0.042*s, r:0.024*s, z:0.002, y:0 });
+  g.add(f);
+}
+
+function buildGarage(id, base, accent, trim){
+  const g = new THREE.Group();
+  const R = 0.062;
+  if(id==='brzinko'){
+    putBox(g, 0.3, 0.07, 0.48, base, 0, 0.12, 0);
+    putBox(g, 0.24, 0.06, 0.16, accent, 0, 0.17, 0.04);
+    putBox(g, 0.28, 0.02, 0.07, trim, 0, 0.2, -0.2);
+    axle(g, R, 0.15, R, 0.16); axle(g, R, -0.15, R, 0.16);
+    windshield(g, 0.18, 0.14, 1);
+  } else if(id==='zutko'){
+    putBox(g, 0.26, 0.1, 0.4, base, 0, 0.14, 0);
+    putBox(g, 0.24, 0.12, 0.2, accent, 0, 0.24, 0.02);
+    putBox(g, 0.1, 0.04, 0.08, trim, 0, 0.32, 0);
+    axle(g, R, 0.12, R, 0.15); axle(g, R, -0.12, R, 0.15);
+    windshield(g, 0.26, 0.12, 1.05);
+  } else if(id==='plavko'){
+    const body = new THREE.Mesh(new THREE.SphereGeometry(0.16, 18, 14), base);
+    body.scale.set(1.15, 0.85, 1.55); body.position.y = 0.16; g.add(body);
+    putBox(g, 0.16, 0.06, 0.1, accent, 0, 0.24, 0.02);
+    axle(g, R, 0.1, R, 0.16); axle(g, R, -0.1, R, 0.16);
+    windshield(g, 0.2, 0.14, 1);
+  } else if(id==='munjeviti'){
+    putBox(g, 0.26, 0.06, 0.5, base, 0, 0.11, 0);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.16, 4), accent);
+    nose.rotation.x = Math.PI/2; nose.position.set(0, 0.14, 0.3); g.add(nose);
+    putBox(g, 0.04, 0.14, 0.04, trim, 0.08, 0.2, 0);
+    axle(g, R, 0.14, R*0.9, 0.15); axle(g, R, -0.16, R, 0.16);
+    windshield(g, 0.16, 0.08, 0.9);
+  } else if(id==='roze-kart'){
+    putBox(g, 0.2, 0.04, 0.32, base, 0, 0.08, 0);
+    putBox(g, 0.12, 0.08, 0.1, accent, 0, 0.12, 0.04);
+    axle(g, 0.05, 0.1, 0.05, 0.12); axle(g, 0.09, -0.12, 0.09, 0.14);
+    windshield(g, 0.16, 0.08, 0.85);
+  } else if(id==='zlatni-bolid'){
+    putBox(g, 0.18, 0.06, 0.55, base, 0, 0.1, 0);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.18, 8), accent);
+    nose.rotation.x = Math.PI/2; nose.position.set(0, 0.12, 0.34); g.add(nose);
+    putBox(g, 0.32, 0.015, 0.08, trim, 0, 0.16, -0.22);
+    putBox(g, 0.28, 0.012, 0.16, accent, 0, 0.1, 0.02);
+    axle(g, 0.05, 0.16, 0.05, 0.11); axle(g, 0.055, -0.16, 0.055, 0.12);
+    windshield(g, 0.15, 0.06, 0.8);
+  } else if(id==='bagerko'){
+    putBox(g, 0.22, 0.1, 0.26, base, 0, 0.14, -0.04);
+    putBox(g, 0.16, 0.08, 0.12, accent, 0, 0.22, -0.02);
+    putBox(g, 0.04, 0.04, 0.28, trim, 0, 0.22, 0.16);
+    putBox(g, 0.12, 0.08, 0.08, accent, 0, 0.14, 0.3);
+    axle(g, R, 0.06, R, 0.14); axle(g, R, -0.1, R, 0.14);
+    windshield(g, 0.24, 0.06, 0.9);
+  } else if(id==='kiper'){
+    putBox(g, 0.2, 0.1, 0.16, base, 0, 0.14, 0.12);
+    putBox(g, 0.24, 0.1, 0.26, accent, 0, 0.18, -0.1);
+    putBox(g, 0.16, 0.08, 0.1, trim, 0, 0.22, 0.12);
+    axle(g, R, 0.1, R, 0.13); axle(g, R, -0.06, R, 0.14); axle(g, R, -0.16, R, 0.14);
+    windshield(g, 0.22, 0.18, 0.9);
+  } else if(id==='valjak'){
+    const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.28, 16), base);
+    roll.rotation.z = Math.PI/2; roll.position.set(0, 0.1, 0.12); g.add(roll);
+    putBox(g, 0.16, 0.1, 0.14, accent, 0, 0.16, -0.08);
+    axle(g, R, -0.12, R, 0.12);
+    windshield(g, 0.2, -0.02, 0.85);
+  } else if(id==='dizalica'){
+    putBox(g, 0.2, 0.08, 0.32, base, 0, 0.1, 0);
+    putBox(g, 0.06, 0.42, 0.06, accent, -0.04, 0.32, -0.08);
+    putBox(g, 0.04, 0.04, 0.36, trim, 0.08, 0.5, 0.06);
+    axle(g, R, 0.08, R, 0.12); axle(g, R, -0.1, R, 0.12);
+    windshield(g, 0.16, 0.1, 0.75);
+  } else if(id==='mikser'){
+    putBox(g, 0.18, 0.1, 0.16, base, 0, 0.14, 0.14);
+    const drum = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.26, 14), accent);
+    drum.rotation.x = Math.PI/2; drum.position.set(0, 0.2, -0.06); g.add(drum);
+    putBox(g, 0.14, 0.08, 0.1, trim, 0, 0.22, 0.14);
+    axle(g, R, 0.1, R, 0.12); axle(g, R, -0.08, R, 0.13); axle(g, R, -0.16, R, 0.13);
+    windshield(g, 0.22, 0.2, 0.85);
+  } else if(id==='kralj-grad'){
+    putBox(g, 0.26, 0.12, 0.2, base, 0, 0.16, 0.14);
+    putBox(g, 0.28, 0.14, 0.32, accent, 0, 0.2, -0.1);
+    putBox(g, 0.08, 0.06, 0.08, trim, 0, 0.28, 0.14);
+    const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.035, 10, 8), toonMat(0xffe14d, { emissive:0xffe14d, emissiveIntensity:0.6 }));
+    beacon.position.set(0, 0.34, 0.14); g.add(beacon);
+    axle(g, R, 0.12, 0.07, 0.15); axle(g, R, -0.04, R, 0.16); axle(g, R, -0.16, R, 0.16);
+    windshield(g, 0.24, 0.22, 1);
+  } else if(id==='avioncic'){
+    putBox(g, 0.1, 0.08, 0.4, base, 0, 0.16, 0);
+    putBox(g, 0.42, 0.02, 0.12, accent, 0, 0.16, 0.02);
+    putBox(g, 0.04, 0.1, 0.08, trim, 0, 0.22, -0.16);
+    const prop = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.16, 0.02), trim);
+    prop.position.set(0, 0.16, 0.22); g.add(prop);
+    windshield(g, 0.2, 0.08, 0.8);
+  } else if(id==='heliko'){
+    putBox(g, 0.14, 0.1, 0.28, base, 0, 0.14, 0);
+    putBox(g, 0.03, 0.03, 0.18, accent, 0, 0.16, -0.2);
+    const rotor = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.015, 0.04), trim);
+    rotor.position.set(0, 0.26, 0); g.add(rotor);
+    axle(g, 0.04, 0.04, 0.04, 0.1);
+    windshield(g, 0.18, 0.08, 0.9);
+  } else if(id==='dronko'){
+    const core = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 10), base);
+    core.position.y = 0.16; g.add(core);
+    [[0.12,0.1],[-0.12,0.1],[0.12,-0.1],[-0.12,-0.1]].forEach(([x,z])=>{
+      putBox(g, 0.02, 0.015, 0.14, accent, x*0.5, 0.16, z*0.5);
+      const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.01, 10), trim);
+      rotor.position.set(x, 0.2, z); g.add(rotor);
+    });
+    windshield(g, 0.16, 0.08, 0.7);
+  } else if(id==='raketica'){
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.32, 12), base);
+    body.position.y = 0.24; g.add(body);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.14, 12), accent);
+    nose.position.y = 0.46; g.add(nose);
+    [0,2,4].forEach(i=>{
+      const fin = putBox(g, 0.02, 0.1, 0.08, trim, 0, 0.12, 0);
+      fin.position.x = Math.cos(i)*0.1; fin.position.z = Math.sin(i)*0.1;
+    });
+    windshield(g, 0.32, 0.1, 0.75);
+  } else if(id==='mlaznjak'){
+    putBox(g, 0.1, 0.07, 0.48, base, 0, 0.14, 0);
+    putBox(g, 0.36, 0.015, 0.14, accent, 0, 0.14, 0.02);
+    putBox(g, 0.08, 0.08, 0.08, trim, 0, 0.18, -0.18);
+    const flame = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.1, 8), toonMat(0xff5a1a, { emissive:0xff5a1a, emissiveIntensity:0.5 }));
+    flame.rotation.x = -Math.PI/2; flame.position.set(0, 0.14, -0.28); g.add(flame);
+    windshield(g, 0.18, 0.1, 0.75);
+  } else if(id==='zvezdani-satl'){
+    putBox(g, 0.16, 0.08, 0.28, base, 0, 0.14, 0.04);
+    putBox(g, 0.4, 0.02, 0.22, accent, 0, 0.12, -0.02);
+    putBox(g, 0.08, 0.1, 0.1, trim, 0, 0.2, -0.12);
+    windshield(g, 0.2, 0.12, 0.85);
+  } else if(id==='camac'){
+    const hull = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), base);
+    hull.scale.set(1.1, 0.45, 1.7); hull.position.y = 0.1; g.add(hull);
+    putBox(g, 0.12, 0.06, 0.1, accent, 0, 0.16, 0);
+    windshield(g, 0.18, 0.06, 0.85);
+  } else if(id==='jedrilica'){
+    const hull = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10), base);
+    hull.scale.set(0.7, 0.4, 1.9); hull.position.y = 0.08; g.add(hull);
+    putBox(g, 0.02, 0.32, 0.02, trim, 0, 0.26, 0);
+    putBox(g, 0.02, 0.22, 0.14, accent, 0.06, 0.28, 0);
+    windshield(g, 0.14, 0.08, 0.7);
+  } else if(id==='podmornica'){
+    const hull = new THREE.Mesh(new THREE.SphereGeometry(0.12, 16, 12), base);
+    hull.scale.set(1, 1, 2.1); hull.position.y = 0.14; g.add(hull);
+    putBox(g, 0.08, 0.05, 0.1, accent, 0, 0.24, 0.02);
+    putBox(g, 0.015, 0.1, 0.015, trim, 0, 0.3, 0.04);
+    windshield(g, 0.16, 0.12, 0.7);
+  } else if(id==='gliser'){
+    putBox(g, 0.16, 0.06, 0.46, base, 0, 0.1, 0);
+    const bow = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.14, 4), base);
+    bow.rotation.x = Math.PI/2; bow.position.set(0, 0.1, 0.26); g.add(bow);
+    putBox(g, 0.14, 0.06, 0.1, accent, 0, 0.15, -0.02);
+    windshield(g, 0.17, 0.06, 0.8);
+  } else if(id==='feribot'){
+    putBox(g, 0.32, 0.08, 0.4, base, 0, 0.1, 0);
+    putBox(g, 0.26, 0.1, 0.22, accent, 0, 0.18, 0);
+    putBox(g, 0.22, 0.06, 0.16, trim, 0, 0.25, 0);
+    windshield(g, 0.2, 0.12, 0.9);
+  } else if(id==='zlatna-jahta'){
+    const hull = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), base);
+    hull.scale.set(1, 0.4, 1.8); hull.position.y = 0.1; g.add(hull);
+    putBox(g, 0.16, 0.1, 0.16, accent, 0, 0.18, -0.02);
+    putBox(g, 0.012, 0.16, 0.012, trim, 0, 0.32, -0.08);
+    windshield(g, 0.22, 0.06, 0.85);
+  } else if(id==='vozic'){
+    putBox(g, 0.18, 0.14, 0.28, base, 0, 0.16, 0);
+    putBox(g, 0.16, 0.08, 0.12, accent, 0, 0.26, 0.04);
+    const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.1, 8), trim);
+    stack.position.set(0, 0.28, -0.06); g.add(stack);
+    axle(g, 0.07, 0.08, 0.07, 0.12); axle(g, 0.07, -0.08, 0.07, 0.12);
+    windshield(g, 0.22, 0.12, 0.85);
+  } else if(id==='traktor'){
+    putBox(g, 0.18, 0.1, 0.22, base, 0, 0.16, 0.02);
+    putBox(g, 0.14, 0.08, 0.1, accent, 0, 0.24, 0.04);
+    axle(g, 0.045, 0.1, 0.045, 0.12);
+    axle(g, 0.09, -0.08, 0.09, 0.14);
+    const exhaust = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.1, 6), trim);
+    exhaust.position.set(0.08, 0.28, -0.04); g.add(exhaust);
+    windshield(g, 0.26, 0.08, 0.8);
+  } else if(id==='kamionce'){
+    putBox(g, 0.2, 0.12, 0.16, base, 0, 0.16, 0.14);
+    putBox(g, 0.22, 0.16, 0.28, accent, 0, 0.18, -0.1);
+    axle(g, R, 0.12, R, 0.13); axle(g, R, -0.06, R, 0.14); axle(g, R, -0.16, R, 0.14);
+    windshield(g, 0.22, 0.2, 0.9);
+  } else if(id==='busko'){
+    putBox(g, 0.22, 0.16, 0.48, base, 0, 0.18, 0);
+    putBox(g, 0.23, 0.06, 0.4, accent, 0, 0.2, 0);
+    axle(g, R, 0.14, R, 0.13); axle(g, R, -0.14, R, 0.13);
+    windshield(g, 0.22, 0.2, 1);
+  } else if(id==='robot-ruka'){
+    const baseCyl = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.08, 12), base);
+    baseCyl.position.y = 0.06; g.add(baseCyl);
+    putBox(g, 0.05, 0.22, 0.05, accent, 0, 0.18, 0);
+    putBox(g, 0.05, 0.05, 0.2, trim, 0, 0.28, 0.08);
+    putBox(g, 0.08, 0.04, 0.06, base, 0, 0.26, 0.18);
+    windshield(g, 0.18, 0.08, 0.7);
+  } else if(id==='lokomotiva'){
+    putBox(g, 0.2, 0.16, 0.36, base, 0, 0.18, 0);
+    putBox(g, 0.18, 0.04, 0.3, accent, 0, 0.16, 0.02);
+    const stack = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.12, 8), trim);
+    stack.position.set(0, 0.32, 0.06); g.add(stack);
+    putBox(g, 0.16, 0.06, 0.06, accent, 0, 0.08, 0.2);
+    axle(g, 0.08, 0.08, 0.08, 0.13); axle(g, 0.08, -0.06, 0.08, 0.13); axle(g, 0.07, -0.16, 0.07, 0.12);
+    windshield(g, 0.24, 0.1, 0.9);
+  }
+  return g;
+}
+const GARAGE = {};
+['brzinko','zutko','plavko','munjeviti','roze-kart','zlatni-bolid','bagerko','kiper','valjak','dizalica','mikser','kralj-grad','avioncic','heliko','dronko','raketica','mlaznjak','zvezdani-satl','camac','jedrilica','podmornica','gliser','feribot','zlatna-jahta','vozic','traktor','kamionce','busko','robot-ruka','lokomotiva'].forEach(id=>{ GARAGE[id] = true; });
+
+function seaFace(g, y, z, s){
+  const f = new THREE.Group(); f.position.set(0, y, z);
+  makeEyePair(f, { spacing:0.05*s, r:0.026*s, z:0.01, y:0 });
+  g.add(f);
+}
+function blob(g, mat, sx, sy, sz, y, z){
+  const m = new THREE.Mesh(new THREE.SphereGeometry(0.16, 16, 12), mat);
+  m.scale.set(sx, sy, sz); m.position.set(0, y, z||0); g.add(m); return m;
+}
+function buildSea(id, base, accent, trim){
+  const g = new THREE.Group();
+  if(id==='klavnko' || id==='plavica' || id==='prugica' || id==='zlatna-ribica'){
+    blob(g, base, 0.85, 0.7, 1.35, 0.24, 0);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.16, 4), accent);
+    tail.rotation.x = -Math.PI/2; tail.position.set(0, 0.24, -0.24); g.add(tail);
+    putBox(g, id==='prugica'?0.16:0.03, 0.1, 0.06, trim, 0, 0.34, 0);
+    if(id==='klavnko') putBox(g, 0.02, 0.14, 0.02, trim, 0, 0.24, 0.02);
+    seaFace(g, 0.26, 0.14, 1);
+  } else if(id==='napuhko'){
+    blob(g, base, 1.15, 1.05, 1.15, 0.26, 0);
+    for(let i=0;i<8;i++){
+      const a = i/8*Math.PI*2;
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.07, 5), trim);
+      sp.position.set(Math.cos(a)*0.16, 0.26+Math.sin(a)*0.08, Math.sin(a)*0.12);
+      sp.rotation.z = -a; g.add(sp);
+    }
+    seaFace(g, 0.28, 0.14, 1);
+  } else if(id==='ajkulica'){
+    blob(g, base, 0.7, 0.55, 1.7, 0.22, 0);
+    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.16, 4), accent);
+    fin.position.set(0, 0.36, -0.02); g.add(fin);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.07, 0.14, 4), trim);
+    tail.rotation.z = Math.PI/2; tail.position.set(0, 0.24, -0.28); g.add(tail);
+    seaFace(g, 0.24, 0.18, 0.9);
+  } else if(id==='krabko' || id==='kralj-rak' || id==='makaze'){
+    blob(g, base, 1.35, 0.55, 1.05, 0.16, 0);
+    [-1,1].forEach(s=>{
+      const claw = new THREE.Mesh(new THREE.SphereGeometry(id==='makaze'&&s>0?0.07:0.05, 10, 8), accent);
+      claw.position.set(s*0.22, 0.16, 0.12); g.add(claw);
+    });
+    seaFace(g, 0.22, 0.12, id==='kralj-rak'?1.15:0.9);
+    if(id==='kralj-rak'){
+      const crown = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.08, 5), trim);
+      crown.position.set(0, 0.32, 0); g.add(crown);
+    }
+  } else if(id==='jastog' || id==='skamp'){
+    blob(g, base, 0.55, 0.45, 1.6, 0.16, 0);
+    [-1,1].forEach(s=>{
+      const claw = putBox(g, 0.05, 0.04, 0.1, accent, s*0.1, 0.18, 0.18);
+      claw.rotation.x = -0.4;
+    });
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.12, 6), trim);
+    tail.rotation.x = Math.PI/2; tail.position.set(0, 0.14, -0.22); g.add(tail);
+    seaFace(g, 0.18, 0.16, 0.75);
+  } else if(id==='samac'){
+    const shell = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.2, 10), accent);
+    shell.rotation.z = 0.6; shell.position.set(-0.02, 0.18, -0.02); g.add(shell);
+    blob(g, base, 0.45, 0.4, 0.7, 0.12, 0.08);
+    seaFace(g, 0.14, 0.14, 0.7);
+  } else if(id==='oktopod' || id==='kraljica-pipaka'){
+    blob(g, base, 1.05, 0.9, 1.05, 0.28, 0);
+    for(let i=0;i<6;i++){
+      const a = i/6*Math.PI*2;
+      const leg = pillMesh(0.02, 0.16, accent);
+      leg.position.set(Math.cos(a)*0.1, 0.08, Math.sin(a)*0.1);
+      leg.rotation.z = Math.cos(a)*0.6; g.add(leg);
+    }
+    seaFace(g, 0.32, 0.12, id==='kraljica-pipaka'?1.2:1);
+    if(id==='kraljica-pipaka'){
+      const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.04, 0), trim);
+      gem.position.set(0, 0.44, 0); g.add(gem);
+    }
+  } else if(id==='meduza'){
+    const dome = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10, 0, Math.PI*2, 0, Math.PI/2), base);
+    dome.position.y = 0.28; g.add(dome);
+    for(let i=0;i<5;i++){
+      const tent = pillMesh(0.012, 0.2, accent);
+      tent.position.set((i-2)*0.04, 0.14, 0); g.add(tent);
+    }
+    seaFace(g, 0.3, 0.1, 0.85);
+  } else if(id==='skoljkica'){
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10, 0, Math.PI*2, 0, Math.PI/2), base);
+    top.position.y = 0.16; g.add(top);
+    const bot = new THREE.Mesh(new THREE.SphereGeometry(0.14, 14, 10, 0, Math.PI*2, Math.PI/2, Math.PI/2), accent);
+    bot.position.y = 0.16; g.add(bot);
+    const pearl = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), trim);
+    pearl.position.set(0, 0.16, 0.08); g.add(pearl);
+    seaFace(g, 0.2, 0.12, 0.7);
+  } else if(id==='lignja'){
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.1, 0.22, 10), base);
+    head.position.y = 0.32; g.add(head);
+    for(let i=0;i<4;i++){
+      const leg = pillMesh(0.015, 0.16, accent);
+      leg.position.set((i-1.5)*0.04, 0.12, 0.02); g.add(leg);
+    }
+    seaFace(g, 0.28, 0.08, 0.8);
+  } else if(id==='nautko'){
+    const shell = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.045, 8, 16), base);
+    shell.position.y = 0.2; g.add(shell);
+    blob(g, accent, 0.4, 0.35, 0.55, 0.16, 0.1);
+    seaFace(g, 0.18, 0.16, 0.65);
+  } else if(id==='delfinko' || id==='orka' || id==='narvalko'){
+    blob(g, base, 0.65, 0.55, 1.75, 0.22, 0);
+    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.12, 4), accent);
+    fin.position.set(0, 0.32, 0); g.add(fin);
+    const tail = putBox(g, 0.14, 0.02, 0.05, trim, 0, 0.22, -0.28);
+    if(id==='narvalko'){
+      const horn = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.22, 6), trim);
+      horn.rotation.x = Math.PI/2; horn.position.set(0, 0.26, 0.28); g.add(horn);
+    }
+    if(id==='orka') putBox(g, 0.08, 0.06, 0.1, accent, 0, 0.28, 0.08);
+    seaFace(g, 0.24, 0.18, 0.9);
+    void tail;
+  } else if(id==='fokica'){
+    blob(g, base, 0.9, 0.7, 1.15, 0.18, 0);
+    [-1,1].forEach(s=>{
+      const flip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 8, 6), accent);
+      flip.scale.set(1.4, 0.4, 0.8); flip.position.set(s*0.14, 0.08, 0.08); g.add(flip);
+    });
+    seaFace(g, 0.24, 0.12, 1);
+  } else if(id==='vidrica'){
+    blob(g, base, 0.7, 0.55, 1.2, 0.16, 0);
+    const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.04, 0), trim);
+    rock.position.set(0.08, 0.12, 0.14); g.add(rock);
+    seaFace(g, 0.22, 0.12, 0.85);
+  } else if(id==='kitko'){
+    blob(g, base, 0.9, 0.7, 1.9, 0.24, 0);
+    const spout = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.1, 6), accent);
+    spout.position.set(0, 0.38, 0.08); g.add(spout);
+    seaFace(g, 0.26, 0.2, 0.8);
+  } else if(id==='zvezdica'){
+    for(let i=0;i<5;i++){
+      const a = i/5*Math.PI*2 - Math.PI/2;
+      const arm = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.18, 4), i%2?accent:base);
+      arm.position.set(Math.cos(a)*0.08, 0.16, Math.sin(a)*0.08);
+      arm.rotation.z = -a + Math.PI/2; arm.rotation.y = 0.2; g.add(arm);
+    }
+    seaFace(g, 0.18, 0.06, 0.7);
+  } else if(id==='morski-konj'){
+    blob(g, base, 0.45, 0.7, 0.4, 0.28, 0);
+    blob(g, base, 0.35, 0.4, 0.35, 0.4, 0.02);
+    const snout = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.08, 8), accent);
+    snout.rotation.x = Math.PI/2; snout.position.set(0, 0.38, 0.08); g.add(snout);
+    const curl = new THREE.Mesh(new THREE.TorusGeometry(0.04, 0.012, 6, 10, Math.PI), trim);
+    curl.position.set(0, 0.12, -0.02); g.add(curl);
+    seaFace(g, 0.42, 0.06, 0.7);
+  } else if(id==='kornjaca'){
+    const shell = new THREE.Mesh(new THREE.SphereGeometry(0.13, 14, 10, 0, Math.PI*2, 0, Math.PI/2), base);
+    shell.position.y = 0.16; g.add(shell);
+    putBox(g, 0.16, 0.03, 0.18, accent, 0, 0.12, 0);
+    blob(g, trim, 0.3, 0.28, 0.35, 0.14, 0.12);
+    seaFace(g, 0.16, 0.16, 0.65);
+  } else if(id==='morski-jez'){
+    blob(g, base, 1, 0.85, 1, 0.2, 0);
+    for(let i=0;i<10;i++){
+      const a = i/10*Math.PI*2;
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.018, 0.09, 4), i%2?accent:trim);
+      sp.position.set(Math.cos(a)*0.12, 0.28, Math.sin(a)*0.12);
+      g.add(sp);
+    }
+    seaFace(g, 0.22, 0.12, 0.75);
+  } else if(id==='raza'){
+    blob(g, base, 1.7, 0.22, 1.15, 0.14, 0);
+    const tail = pillMesh(0.012, 0.22, accent);
+    tail.rotation.x = Math.PI/2; tail.position.set(0, 0.12, -0.22); g.add(tail);
+    seaFace(g, 0.16, 0.1, 0.7);
+  } else if(id==='koral-kralj'){
+    blob(g, base, 0.8, 1.1, 0.8, 0.28, 0);
+    for(let i=0;i<5;i++){
+      const a = i/5*Math.PI*2;
+      const branch = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.028, 0.16, 6), i%2?accent:trim);
+      branch.position.set(Math.cos(a)*0.08, 0.46, Math.sin(a)*0.08);
+      branch.rotation.z = Math.cos(a)*0.3; g.add(branch);
+    }
+    seaFace(g, 0.32, 0.1, 1);
+  }
+  return g;
+}
+const SEA = {};
+['klavnko','plavica','prugica','napuhko','ajkulica','zlatna-ribica','krabko','jastog','skamp','samac','makaze','kralj-rak','oktopod','meduza','skoljkica','lignja','nautko','kraljica-pipaka','delfinko','fokica','vidrica','kitko','narvalko','orka','zvezdica','morski-konj','kornjaca','morski-jez','raza','koral-kralj'].forEach(id=>{ SEA[id] = true; });
+
 const SHAPE_BUILDERS = {
   'iskrica': buildIskrica, 'zumby': buildZumby, 'oblacko': buildOblacko, 'kapetan-sjaj': buildKapetanSjaj, 'munjica': buildMunjica, 'zvezdana': buildZvezdana,
   'zupko': buildZupko, 'kiselko': buildKiselko, 'robotic': buildRobotic, 'lord-mrak': buildLordMrak, 'magnetko': buildMagnetko, 'kraljica-senki': buildKraljicaSenki,
@@ -1467,13 +2371,229 @@ const SHAPE_BUILDERS = {
   'jagodica': buildJagodica, 'kruskica': buildKruskica, 'lubenica': buildLubenica, 'ananas': buildAnanas, 'tresnjice': buildTresnjice, 'zlatna-jabuka': buildZlatnaJabuka,
 };
 
+function toyHash(id){
+  let h = 2166136261;
+  for(let i=0;i<id.length;i++){ h ^= id.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+
+function toyEyes(g, char){
+  const y = 0.55, z = 0.2;
+  [-1,1].forEach(side=>{
+    const r = 0.055;
+    const sclera = new THREE.Mesh(new THREE.SphereGeometry(r, 16, 12), whiteMat);
+    sclera.scale.set(1, 1.15, 0.45);
+    sclera.position.set(side*0.066, y, z);
+    sclera.userData.noOutline = true;
+    g.add(sclera);
+    const iris = new THREE.Mesh(new THREE.CircleGeometry(r*0.55, 14), new THREE.MeshBasicMaterial({ color: char.accent }));
+    iris.position.set(side*0.066, y, z+0.02);
+    g.add(iris);
+    const pupil = new THREE.Mesh(new THREE.CircleGeometry(r*0.28, 10), blackMat);
+    pupil.position.set(side*0.066, y-0.002, z+0.022);
+    g.add(pupil);
+    const hi = new THREE.Mesh(new THREE.CircleGeometry(r*0.14, 8), whiteMat);
+    hi.position.set(side*0.066+0.014, y+0.016, z+0.024);
+    g.add(hi);
+  });
+}
+
+function toyGrin(g){
+  const y = 0.45, z = 0.195;
+  const smile = new THREE.Mesh(new THREE.TorusGeometry(0.058, 0.013, 6, 16, Math.PI), mouthMat);
+  smile.rotation.z = Math.PI;
+  smile.position.set(0, y, z);
+  smile.userData.noOutline = true;
+  g.add(smile);
+  const teeth = new THREE.Mesh(new THREE.BoxGeometry(0.086, 0.026, 0.014), whiteMat);
+  teeth.position.set(0, y+0.018, z+0.006);
+  teeth.userData.noOutline = true;
+  g.add(teeth);
+  const gap = new THREE.Mesh(new THREE.BoxGeometry(0.006, 0.026, 0.006), blackMat);
+  gap.position.set(0, y+0.018, z+0.012);
+  g.add(gap);
+}
+
+function toyArm(g, from, to, mat, gloveMat){
+  const dir = new THREE.Vector3().subVectors(to, from);
+  const len = dir.length();
+  const arm = pillMesh(0.034, Math.max(0.08, len), mat);
+  arm.position.copy(from).lerp(to, 0.5);
+  arm.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), dir.normalize());
+  g.add(arm);
+  const glove = new THREE.Mesh(new THREE.SphereGeometry(0.046, 12, 10), gloveMat);
+  glove.position.copy(to);
+  g.add(glove);
+}
+
+function addToyExtra(g, char, base, accent, trim){
+  const id = char.id, fac = char.faction;
+  const green = toonMat(0x3ecf6e);
+  const gold = toonMat(0xffd24a);
+  if(id==='krofnica'){
+    const donut = new THREE.Mesh(new THREE.TorusGeometry(0.055, 0.022, 8, 16), accent);
+    donut.rotation.x = Math.PI/2; donut.position.set(0, 0.7, 0); g.add(donut);
+  } else if(id==='sladoledko' || id==='torta' || id==='kolacic'){
+    const scoop = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), accent);
+    scoop.position.set(0, 0.68, 0); g.add(scoop);
+    const scoop2 = new THREE.Mesh(new THREE.SphereGeometry(0.04, 10, 8), trim);
+    scoop2.position.set(0.02, 0.75, 0); g.add(scoop2);
+  } else if(id==='lizalica' || id==='bombocic'){
+    const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.02, 16), accent);
+    disc.position.set(0, 0.72, 0); g.add(disc);
+    const stick = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.08, 6), trim);
+    stick.position.set(0, 0.66, 0); g.add(stick);
+  } else if(id==='ananas' || id==='kornjaca'){
+    for(let i=0;i<5;i++){
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.09, 4), green);
+      leaf.position.set(Math.cos(i)*0.03, 0.68, Math.sin(i)*0.03);
+      leaf.rotation.z = (i-2)*0.25; g.add(leaf);
+    }
+  } else if(id==='heliko' || id==='dronko'){
+    const rotor = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.012, 0.04), trim);
+    rotor.position.set(0, 0.7, 0); g.add(rotor);
+  } else if(id==='raketica' || id==='mlaznjak' || id==='zvezdani-satl'){
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.12, 8), accent);
+    nose.position.set(0, 0.7, 0); g.add(nose);
+  } else if(fac==='bolidi' || fac==='gradiliste' || fac==='masine'){
+    const visor = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.032, 0.03), accent);
+    visor.position.set(0, 0.545, 0.15); g.add(visor);
+    [-1,1].forEach(side=>{
+      const w = new THREE.Mesh(new THREE.TorusGeometry(0.042, 0.014, 6, 12), trim);
+      w.position.set(side*0.15, 0.1, 0); g.add(w);
+    });
+    if(fac==='gradiliste'){
+      const hat = new THREE.Mesh(new THREE.SphereGeometry(0.09, 12, 8, 0, Math.PI*2, 0, Math.PI/2), gold);
+      hat.position.set(0, 0.64, 0); g.add(hat);
+    }
+  } else if(fac==='letelice'){
+    [-1,1].forEach(side=>{
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.018, 0.07), accent);
+      wing.position.set(side*0.26, 0.32, -0.02);
+      wing.rotation.z = side*-0.35; g.add(wing);
+    });
+  } else if(fac==='brodice'){
+    const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.01, 0.01, 0.16, 6), trim);
+    mast.position.set(0, 0.68, -0.02); g.add(mast);
+    const sail = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.12, 3), accent);
+    sail.position.set(0.03, 0.7, -0.02); g.add(sail);
+  } else if(fac==='ribice' || fac==='sisari'){
+    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.11, 4), accent);
+    fin.position.set(0, 0.68, -0.01); g.add(fin);
+    const tail = new THREE.Mesh(new THREE.ConeGeometry(0.055, 0.1, 4), accent);
+    tail.rotation.x = Math.PI/2; tail.position.set(0, 0.28, -0.16); g.add(tail);
+  } else if(fac==='rakovi'){
+    [-1,1].forEach(side=>{
+      const claw = new THREE.Mesh(new THREE.SphereGeometry(0.055, 10, 8), accent);
+      claw.scale.set(1.4, 0.65, 0.8);
+      claw.position.set(side*0.24, 0.22, 0.08); g.add(claw);
+    });
+  } else if(fac==='mekusi'){
+    for(let i=0;i<4;i++){
+      const t = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 6), accent);
+      t.scale.set(1, 2.4, 1);
+      t.position.set((i-1.5)*0.045, 0.06, 0.04);
+      t.rotation.z = (i-1.5)*0.35; g.add(t);
+    }
+  } else if(fac==='zvezde'){
+    for(let i=0;i<5;i++){
+      const a = i/5*Math.PI*2 - Math.PI/2;
+      const sp = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.09, 4), i%2 ? accent : gold);
+      sp.position.set(Math.cos(a)*0.12, 0.58, Math.sin(a)*0.05); g.add(sp);
+    }
+  } else if(fac==='slatkisi' || fac==='vockice'){
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.055, 12, 10), accent);
+    top.position.set(0, 0.68, 0); g.add(top);
+    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.07, 4), green);
+    leaf.position.set(0.04, 0.74, 0); leaf.rotation.z = -0.7; g.add(leaf);
+  } else if(fac==='blistavci'){
+    const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.055, 0), accent);
+    star.position.set(0, 0.7, 0); g.add(star);
+  } else if(fac==='mrakoni'){
+    const hornL = new THREE.Mesh(new THREE.ConeGeometry(0.028, 0.1, 6), accent);
+    hornL.position.set(-0.06, 0.66, 0); hornL.rotation.z = 0.4; g.add(hornL);
+    const hornR = hornL.clone(); hornR.position.x = 0.06; hornR.rotation.z = -0.4; g.add(hornR);
+  } else if(fac==='divljaci'){
+    const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), green);
+    leaf.scale.set(0.45, 1.6, 0.25);
+    leaf.position.set(0.05, 0.68, 0); leaf.rotation.z = -0.4; g.add(leaf);
+  }
+  if(char.rarity==='legendary'){
+    const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.045, 5), gold);
+    crown.position.y = 0.66; g.add(crown);
+  }
+}
+
+function buildSuperToy(char){
+  const g = new THREE.Group();
+  const h = toyHash(char.id);
+  const base = toonMat(char.base);
+  const accent = toonMat(char.accent);
+  const trim = toonMat(char.trim!==undefined ? char.trim : 0xffffff);
+  const bootMat = toonMat(0x241433);
+  const waveSide = (h & 1) ? 1 : -1;
+
+  [-1,1].forEach(side=>{
+    const kicked = side===1 && (h & 2);
+    const hip = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 10), base);
+    hip.position.set(side*0.072, kicked ? 0.17 : 0.125, kicked ? 0.03 : 0);
+    g.add(hip);
+    const boot = new THREE.Mesh(new THREE.SphereGeometry(0.052, 12, 10), side===waveSide ? accent : bootMat);
+    boot.scale.set(1.15, 0.68, 1.45);
+    boot.position.set(side*0.078, kicked ? 0.1 : 0.042, kicked ? 0.07 : 0.03);
+    g.add(boot);
+  });
+
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.155, 18, 14), base);
+  body.scale.set(1.22, 0.98, 0.9);
+  body.position.set(0, 0.28, 0);
+  g.add(body);
+  const belly = new THREE.Mesh(new THREE.CircleGeometry(0.05, 16), accent);
+  belly.position.set(0, 0.26, 0.132);
+  g.add(belly);
+  const gem = new THREE.Mesh(new THREE.CircleGeometry(0.02, 10), trim);
+  gem.position.set(0, 0.26, 0.136);
+  g.add(gem);
+
+  [-1,1].forEach(side=>{
+    const up = side===waveSide;
+    const from = new THREE.Vector3(side*0.14, 0.34, 0.02);
+    const to = up
+      ? new THREE.Vector3(side*0.2, 0.5, 0.08)
+      : new THREE.Vector3(side*0.24, 0.18, 0.06);
+    toyArm(g, from, to, base, trim);
+  });
+
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.172, 22, 16), base);
+  head.scale.set(1.08, 1.02, 0.95);
+  head.position.set(0, 0.52, 0.02);
+  g.add(head);
+  [-1,1].forEach(side=>{
+    const cheek = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 6), cheekMat);
+    cheek.scale.set(1.3, 0.75, 0.35);
+    cheek.position.set(side*0.105, 0.46, 0.15);
+    g.add(cheek);
+  });
+  if(char.rarity!=='common'){
+    const mask = new THREE.Mesh(new THREE.SphereGeometry(0.1, 12, 8), accent);
+    mask.scale.set(1.7, 0.48, 0.32);
+    mask.position.set(0, 0.545, 0.09);
+    g.add(mask);
+  }
+  toyEyes(g, char);
+  toyGrin(g);
+  if((h % 3)!==2) addCape(g, char.accent, { w:0.38, h:0.4, y:0.4, z:-0.11 });
+  addToyExtra(g, char, base, accent, trim);
+  return g;
+}
+
 function buildFigureModel(char){
   const group = new THREE.Group();
   group.name = char.id;
   const baseMat = toonMat(char.base);
-  const accentMat = toonMat(char.accent, { emissive:char.accent, emissiveIntensity:0.15 });
+  const accentMat = toonMat(char.accent, { emissive:char.accent, emissiveIntensity:0.12 });
   const trimMat = toonMat(char.trim!==undefined ? char.trim : 0xffffff);
-  const body = (SHAPE_BUILDERS[char.id] || buildIskrica)(char, baseMat, accentMat, trimMat);
+  const body = SEA[char.id] ? buildSea(char.id, baseMat, accentMat, trimMat) : (GARAGE[char.id] ? buildGarage(char.id, baseMat, accentMat, trimMat) : (SHAPE_BUILDERS[char.id] || buildIskrica)(char, baseMat, accentMat, trimMat));
   group.add(body);
   addOutlines(body);
 
@@ -1523,10 +2643,19 @@ function pouchPart(v0, v1, back){
   return geo;
 }
 
+const pouchTex = {};
+function buildAllPouchTex(){
+  Object.keys(glyphCache).forEach(k=>{ delete glyphCache[k]; });
+  Object.keys(SERIES).forEach(id=>{
+    pouchTex[id] = { front: makePouchFrontTexture(SERIES[id]), back: makePouchBackTexture(SERIES[id]) };
+  });
+}
+
 function buildPouch(){
+  const tex = pouchTex[pouchSeries] || pouchTex.slatko;
   const group = new THREE.Group();
-  const matF = new THREE.MeshStandardMaterial({ map:pouchFrontTex, metalness:0.35, roughness:0.28, alphaTest:0.5, envMapIntensity:1.3 });
-  const matB = new THREE.MeshStandardMaterial({ map:pouchBackTex,  metalness:0.35, roughness:0.28, alphaTest:0.5, envMapIntensity:1.3 });
+  const matF = new THREE.MeshStandardMaterial({ map:tex.front, metalness:0.35, roughness:0.28, alphaTest:0.5, envMapIntensity:1.3 });
+  const matB = new THREE.MeshStandardMaterial({ map:tex.back,  metalness:0.35, roughness:0.28, alphaTest:0.5, envMapIntensity:1.3 });
   const body = new THREE.Group();
   body.add(new THREE.Mesh(pouchPart(0, TEAR_V, false), matF), new THREE.Mesh(pouchPart(0, TEAR_V, true), matB));
   group.add(body);
@@ -1711,7 +2840,50 @@ const sfx = (()=>{
 const state = { tokens: 5, maxTokens: 5, tokenTimer: 0, tokenInterval: 22, collection: {} };
 
 function saveLocal(){
-  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({ v:2, tokens:state.tokens, tokenTimer:state.tokenTimer, collection:state.collection, t:Date.now() })); }catch(e){}
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify({ v:3, tokens:state.tokens, tokenTimer:state.tokenTimer, collection:state.collection, enabled:enabledSeries, t:Date.now() })); }catch(e){}
+}
+function applyEnabled(raw){
+  if(!raw || typeof raw!=='object') return;
+  Object.keys(SERIES).forEach(id=>{ if(typeof raw[id]==='boolean') enabledSeries[id] = raw[id]; });
+  if(!Object.keys(SERIES).some(id=> enabledSeries[id]!==false)) enabledSeries[Object.keys(SERIES)[0]] = true;
+}
+function renderSeriesSettings(){
+  const root = document.getElementById('series-toggles');
+  if(!root) return;
+  root.innerHTML = '';
+  Object.keys(SERIES).forEach(id=>{
+    const s = SERIES[id];
+    const row = document.createElement('label');
+    row.className = 'series-toggle';
+    const img = document.createElement('img');
+    const canvas = pouchTex[id] && pouchTex[id].front && pouchTex[id].front.image;
+    if(canvas && canvas.toDataURL) img.src = canvas.toDataURL('image/jpeg', 0.8);
+    img.alt = s.name;
+    const meta = document.createElement('span');
+    meta.className = 'meta';
+    meta.innerHTML = '<b>'+s.name+'</b><small>'+s.badge+'</small>';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = enabledSeries[id] !== false;
+    input.addEventListener('change', ()=>{
+      if(!input.checked && activeSeriesIds().filter(k=>k!==id).length===0){
+        input.checked = true;
+        showToast('Bar jedna kesica mora da ostane uključena.');
+        return;
+      }
+      enabledSeries[id] = input.checked;
+      saveLocal();
+      if(phase==='idle') spawnPouch(true);
+    });
+    row.append(img, meta, input);
+    root.appendChild(row);
+  });
+}
+function setupSettings(){
+  const panel = document.getElementById('settings');
+  document.getElementById('settings-btn').addEventListener('click', ()=>{ renderSeriesSettings(); panel.classList.remove('hidden'); });
+  document.getElementById('settings-close').addEventListener('click', ()=> panel.classList.add('hidden'));
+  panel.addEventListener('click', e=>{ if(e.target===panel) panel.classList.add('hidden'); });
 }
 function loadLocal(){
   try{
@@ -1719,6 +2891,7 @@ function loadLocal(){
     if(!d || !d.collection) return;
     state.collection = {};
     for(const id in d.collection) if(CHAR_BY_ID[id]) state.collection[id] = d.collection[id];
+    applyEnabled(d.enabled);
     state.tokens = clamp(d.tokens|0, 0, state.maxTokens);
     state.tokenTimer = d.tokenTimer || 0;
     // tokeni se pune i dok igra nije otvorena
@@ -1749,19 +2922,23 @@ function buildOpenScene(){
   const rim = new THREE.Mesh(new THREE.TorusGeometry(1.72,0.04,12,64), new THREE.MeshStandardMaterial({ color:0xffd24a, emissive:0xffd24a, emissiveIntensity:0.6, metalness:0.6, roughness:0.3 }));
   rim.rotation.x = Math.PI/2; rim.position.y = 0.005;
   openRoot.add(rim);
-  const key = new THREE.SpotLight(0xffffff, 1.6, 12, Math.PI/5, 0.4, 1.2);
+  const key = new THREE.SpotLight(0xffffff, 0.85, 12, Math.PI/5, 0.4, 1.2);
   key.position.set(2.2,4.2,2.6); key.castShadow = true; key.shadow.mapSize.set(1024,1024);
   key.target.position.set(0,0.4,0);
   openRoot.add(key, key.target);
-  const rimLight1 = new THREE.PointLight(0x4fd8ff, 0.9, 8); rimLight1.position.set(-2.4,1.6,-1.6);
-  const rimLight2 = new THREE.PointLight(0xff8fd6, 0.8, 8); rimLight2.position.set(2.2,1.2,-2);
-  const front = new THREE.DirectionalLight(0xffffff, 0.6); front.position.set(0,1,4);
+  const rimLight1 = new THREE.PointLight(0x4fd8ff, 0.35, 8); rimLight1.position.set(-2.4,1.6,-1.6);
+  const rimLight2 = new THREE.PointLight(0xff8fd6, 0.3, 8); rimLight2.position.set(2.2,1.2,-2);
+  const front = new THREE.DirectionalLight(0xffffff, 0.32); front.position.set(0,1,4);
   openRoot.add(rimLight1, rimLight2, front);
   buildFx();
   spawnPouch();
 }
 
-function spawnPouch(){
+function spawnPouch(keepSeries){
+  const ids = activeSeriesIds();
+  if(!keepSeries || ids.indexOf(pouchSeries)<0){
+    pouchSeries = ids[Math.floor(Math.random()*ids.length)];
+  }
   if(pouch){ openRoot.remove(pouch.group); pouch.group.traverse(o=>{ if(o.isMesh) o.geometry.dispose(); }); }
   pouch = buildPouch();
   pouch.group.position.set(0, 0.46, 0);
@@ -1798,7 +2975,8 @@ function enterPhase(name){
     if(activeFigure) openRoot.remove(activeFigure);
     activeFigure = buildFigureModel(ch);
     activeFigure.position.set(0, 0.6, 0);
-    activeFigure.rotation.y = 0.35;
+    activeFigure.rotation.y = 0;
+    openCamGoal.theta = 0; openCam.theta = 0;
     activeFigure.scale.setScalar(0.0001);
     openRoot.add(activeFigure);
     const top = new THREE.Vector3(0, pouch.group.position.y + POUCH_H*0.35, 0.05);
@@ -1889,7 +3067,7 @@ function updateOpenSequence(dt){
       const bs = activeFigure.userData.baseScale;
       if(t<0.45){ const k = easeOutCubic(t/0.45); activeFigure.position.y = lerp(0.6, 1.05, k); activeFigure.scale.setScalar(lerp(0.25, 1.15, k)*bs); }
       else { const k = clamp((t-0.45)/0.6,0,1); activeFigure.position.y = lerp(1.05, 0.12, easeOutBounce(k)); activeFigure.scale.setScalar(lerp(1.15,1,k)*bs); }
-      activeFigure.rotation.y += dt*(ch.rarity==='common' ? 3 : 6)*(1-clamp(t/1.05,0,1));
+      activeFigure.rotation.y = lerp(activeFigure.rotation.y, 0, Math.min(1, dt*8));
     }
     const lvl = ch.rarity==='legendary' ? 2 : ch.rarity==='rare' ? 1 : 0;
     if(lvl>0){
@@ -1900,7 +3078,7 @@ function updateOpenSequence(dt){
     if(t>=1.05){ pouch.group.visible = false; enterPhase('result'); }
   }
   else if(phase==='result'){
-    if(activeFigure){ activeFigure.position.y = 0.12 + Math.abs(Math.sin(clock.elapsedTime*2.2))*0.03; activeFigure.rotation.y += dt*0.5; }
+    if(activeFigure){ activeFigure.position.y = 0.12 + Math.abs(Math.sin(clock.elapsedTime*2.2))*0.03; activeFigure.rotation.y = lerp(activeFigure.rotation.y, 0, Math.min(1, dt*8)); }
     beamCone.material.opacity = Math.max(0, beamCone.material.opacity-dt*0.4);
     raysMat.opacity = Math.max(pendingCharacter.rarity==='legendary' ? 0.45 : pendingCharacter.rarity==='rare' ? 0.25 : 0, raysMat.opacity - dt*0.5);
   }
@@ -1917,14 +3095,25 @@ const showroomCamTarget = new THREE.Vector3(-0.25,1.95,-0.9);
 const camSpherical = { theta:0, phi:1.45, radius:7 }, camTargetSpherical = { theta:0, phi:1.45, radius:7 };
 let showroomMinR = 2.2, showroomMaxR = 9;
 
+let showroomPan = 0;
+let shelfHome = { y:1.95, radius:7, phi:1.45 };
+let shelfFocus = null;
 function fitCameras(){
   const aspect = window.innerWidth/window.innerHeight, halfT = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
   // otvaranje: fiksna udaljenost (bez zuma) — dovoljno da kesica/figura stanu i na uskom ekranu
   openCamGoal.radius = openCam.radius = Math.max(2.7, 0.62/(halfT*aspect));
-  // showroom: početni pogled obuhvata celu širinu polica; zum dozvoljen samo ovde
-  const fitR = Math.max(4.6/halfT*0.5, 2.9/(halfT*aspect));
-  showroomMaxR = fitR*1.15;
-  camTargetSpherical.radius = camSpherical.radius = fitR;
+  // showroom: na uskom ekranu bliži kadar (figure se vide), širina se gleda prevlačenjem
+  const wide = Math.max(4.6/halfT*0.5, 2.6/(halfT*Math.max(aspect, 0.55)));
+  const portrait = aspect < 0.9;
+  const fitR = portrait ? Math.min(wide, Math.max(7.2, 2.3/halfT)) : wide;
+  showroomMinR = portrait ? 3.4 : 2.2;
+  showroomMaxR = Math.max(wide, fitR) * 1.08;
+  shelfHome = { y: portrait ? 2.55 : 1.95, radius: fitR, phi: portrait ? 1.38 : 1.45 };
+  if(!shelfFocus){
+    camTargetSpherical.radius = camSpherical.radius = fitR;
+    camTargetSpherical.phi = camSpherical.phi = shelfHome.phi;
+    showroomCamTarget.y = shelfHome.y;
+  }
 }
 function sphericalToCartesian(s, center){
   return new THREE.Vector3(center.x + s.radius*Math.sin(s.phi)*Math.sin(s.theta), center.y + s.radius*Math.cos(s.phi), center.z + s.radius*Math.sin(s.phi)*Math.cos(s.theta));
@@ -1939,6 +3128,10 @@ function updateOpenCamera(dt){
 }
 function updateShowroomCamera(dt){
   const k = 1-Math.pow(0.0008, dt);
+  const goal = shelfFocus || { x: -0.25 + showroomPan, y: shelfHome.y, z: -0.9 };
+  showroomCamTarget.x = lerp(showroomCamTarget.x, goal.x, k);
+  showroomCamTarget.y = lerp(showroomCamTarget.y, goal.y, k);
+  showroomCamTarget.z = lerp(showroomCamTarget.z, goal.z, k);
   camSpherical.theta = lerp(camSpherical.theta, camTargetSpherical.theta, k);
   camSpherical.phi = lerp(camSpherical.phi, camTargetSpherical.phi, k);
   camSpherical.radius = lerp(camSpherical.radius, camTargetSpherical.radius, k);
@@ -1948,37 +3141,105 @@ function updateShowroomCamera(dt){
 
 /* ============================= SHOWROOM ============================= */
 
-let shelfFigures = {}, selectableRoots = [];
+let shelfFigures = {}, selectableRoots = [], shelfSpinId = null;
 const SHELF_Y = [3.55, 2.75, 1.95, 1.15, 0.35];
 const SLOT_X = [-1.6,-0.9,-0.2,0.5,1.2,1.9];
 
+function paintSweetWall(ctx, s){
+  const g = ctx.createLinearGradient(0,0,0,s);
+  g.addColorStop(0,'#3a2d86'); g.addColorStop(0.55,'#2f6cb8'); g.addColorStop(1,'#1d4e86');
+  ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
+  ctx.globalAlpha=0.55;
+  for(let i=0;i<70;i++){ ctx.fillStyle = ['#ffffff','#fff27a','#ff9ad5','#7df9ff'][i%4]; starShape(ctx, Math.random()*s, Math.random()*s, rand(3,8), ctx.fillStyle); }
+  ctx.globalAlpha=1;
+}
+function paintGarageWall(ctx, s){
+  const g = ctx.createLinearGradient(0,0,0,s);
+  g.addColorStop(0,'#7ecbff'); g.addColorStop(0.5,'#d7f1ff'); g.addColorStop(0.78,'#ffe7a0'); g.addColorStop(1,'#ffb020');
+  ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
+  ctx.fillStyle='#ffe14d';
+  ctx.beginPath(); ctx.arc(s*0.8, s*0.16, s*0.07, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.95)';
+  [[0.16,0.2,0.06],[0.34,0.14,0.045],[0.5,0.26,0.05]].forEach(([x,y,r])=>{
+    ctx.beginPath(); ctx.arc(x*s, y*s, r*s, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x*s+r*s*0.9, y*s+r*s*0.1, r*s*0.7, 0, Math.PI*2); ctx.fill();
+  });
+  ctx.fillStyle='#3d4d6e';
+  for(let i=0;i<16;i++){
+    const w = s*0.055, h = s*(0.07+((i*5)%4)*0.025);
+    ctx.fillRect(i*w*1.12, s*0.72-h*0.15, w*0.85, h);
+  }
+}
+function paintSeaWall(ctx, s){
+  const g = ctx.createLinearGradient(0,0,0,s);
+  g.addColorStop(0,'#c8fbff'); g.addColorStop(0.28,'#3ec6ff'); g.addColorStop(0.7,'#1466d6'); g.addColorStop(1,'#07285f');
+  ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
+  ctx.globalAlpha=0.22; ctx.fillStyle='#ffffff';
+  for(let i=0;i<5;i++){
+    ctx.beginPath();
+    ctx.moveTo(s*(0.12+i*0.18), 0);
+    ctx.lineTo(s*(0.2+i*0.18), s);
+    ctx.lineTo(s*(0.08+i*0.18), s);
+    ctx.fill();
+  }
+  ctx.globalAlpha=0.7;
+  for(let i=0;i<18;i++){
+    ctx.fillStyle='rgba(255,255,255,0.85)';
+    ctx.beginPath(); ctx.arc(Math.random()*s, Math.random()*s, rand(4,14), 0, Math.PI*2); ctx.fill();
+  }
+  ctx.globalAlpha=1; ctx.strokeStyle='#1f9a5c'; ctx.lineWidth=8; ctx.lineCap='round';
+  for(let i=0;i<7;i++){
+    const x = s*(0.08+i*0.14);
+    ctx.beginPath(); ctx.moveTo(x, s); ctx.quadraticCurveTo(x+20, s*0.82, x-8, s*0.7); ctx.stroke();
+  }
+}
+function paintSweetFloor(ctx, s){
+  for(let i=0;i<8;i++){ ctx.fillStyle = i%2 ? '#e39a4a' : '#c47b32'; ctx.fillRect(0,i*s/8,s,s/8); }
+}
+function paintGarageFloor(ctx, s){
+  for(let y=0;y<8;y++) for(let x=0;x<8;x++){
+    ctx.fillStyle = (x+y)%2 ? '#d7dbe3' : '#b4bac6';
+    ctx.fillRect(x*s/8, y*s/8, s/8, s/8);
+  }
+  ctx.fillStyle='#ffb020'; ctx.fillRect(0,0,s,s*0.08); ctx.fillRect(0,s*0.92,s,s*0.08);
+}
+function paintSeaFloor(ctx, s){
+  ctx.fillStyle='#f0d08a'; ctx.fillRect(0,0,s,s);
+  for(let i=0;i<90;i++){
+    ctx.fillStyle = i%2 ? '#e2b86a' : '#fff3c4';
+    ctx.beginPath(); ctx.arc(Math.random()*s, Math.random()*s, rand(2,7), 0, Math.PI*2); ctx.fill();
+  }
+}
+const ROOM_BACKDROP = {
+  slatko: ['#2f6dff','#6a3dff','#ff5fa8'],
+  garaza: ['#7ecbff','#ffe7a0','#ffb020'],
+  more: ['#7fe7ff','#1470e0','#07285f']
+};
+function showroomBackdrop(){
+  return makeGradientTexture(ROOM_BACKDROP[showroomSeries] || ROOM_BACKDROP.slatko);
+}
+
 function buildShowroomScene(){
-  const wallTex = srgb(makeCanvasTexture((ctx,s)=>{
-    const g = ctx.createLinearGradient(0,0,0,s);
-    g.addColorStop(0,'#ffd6f0'); g.addColorStop(0.5,'#d9c9ff'); g.addColorStop(1,'#b9ecff');
-    ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
-    ctx.globalAlpha=0.35;
-    for(let i=0;i<70;i++){ ctx.fillStyle = ['#ffffff','#fff27a','#ff9ad5','#7df9ff'][i%4]; starShape(ctx, Math.random()*s, Math.random()*s, rand(3,8), ctx.fillStyle); }
-  }, 512));
+  const wallPaint = showroomSeries==='garaza' ? paintGarageWall : showroomSeries==='more' ? paintSeaWall : paintSweetWall;
+  const floorPaint = showroomSeries==='garaza' ? paintGarageFloor : showroomSeries==='more' ? paintSeaFloor : paintSweetFloor;
+  const wallTex = srgb(makeCanvasTexture(wallPaint, 512));
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(9,5.4), new THREE.MeshStandardMaterial({ map:wallTex, roughness:0.9 }));
   wall.position.set(-0.25,2.3,-1.3); wall.receiveShadow = true;
   showroomRoot.add(wall);
-  const floorTex = srgb(makeCanvasTexture((ctx,s)=>{
-    for(let i=0;i<8;i++){ ctx.fillStyle = i%2 ? '#f5d6a8' : '#ebc38e'; ctx.fillRect(0,i*s/8,s,s/8); }
-  }, 256));
+  const floorTex = srgb(makeCanvasTexture(floorPaint, 256));
   floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping; floorTex.repeat.set(3,3);
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(10,7), new THREE.MeshStandardMaterial({ map:floorTex, roughness:0.8 }));
   floor.rotation.x=-Math.PI/2; floor.receiveShadow = true;
   showroomRoot.add(floor);
 
-  const key = new THREE.DirectionalLight(0xffffff, 0.9);
+  const key = new THREE.DirectionalLight(0xffffff, 0.85);
   key.position.set(2,6,5); key.castShadow = true; key.shadow.mapSize.set(1024,1024);
   Object.assign(key.shadow.camera, { left:-4, right:4, top:4.5, bottom:-1 });
   key.target.position.set(0,2,-0.9);
   showroomRoot.add(key, key.target);
-  showroomRoot.add(new THREE.HemisphereLight(0xffffff, 0xffd6f0, 0.7));
+  showroomRoot.add(new THREE.HemisphereLight(0xd7ecff, 0x6a4a88, 0.55));
 
-  FACTION_ORDER.forEach((fid,idx)=> buildShelf(fid, SHELF_Y[idx]));
+  SERIES[showroomSeries].factions.forEach((fid,idx)=> buildShelf(fid, SHELF_Y[idx]));
 }
 
 function buildShelf(factionId, y){
@@ -2024,12 +3285,15 @@ function buildSlot(char, pos){
 
 function buildLockedGhost(char){
   const g = new THREE.Group();
-  const mat = new THREE.MeshBasicMaterial({ color:FACTIONS[char.faction].color, transparent:true, opacity:0.25, depthWrite:false });
-  const body = new THREE.Mesh(new THREE.SphereGeometry(0.17,14,12), mat);
-  body.scale.set(1,1.2,1); body.position.y = 0.2;
+  const mat = new THREE.MeshBasicMaterial({ color:FACTIONS[char.faction].color, transparent:true, opacity:0.88, depthWrite:false });
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.16,14,12), mat);
+  body.scale.set(1,1.25,1); body.position.y = 0.2;
   g.add(body);
-  const q = new THREE.Sprite(new THREE.SpriteMaterial({ map: questionTex, transparent:true, opacity:0.85 }));
-  q.scale.setScalar(0.22); q.position.y = 0.24;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.15, 0.028, 8, 18), new THREE.MeshBasicMaterial({ color:FACTIONS[char.faction].color }));
+  ring.rotation.x = Math.PI/2; ring.position.y = 0.02;
+  g.add(ring);
+  const q = new THREE.Sprite(new THREE.SpriteMaterial({ map: questionTex, transparent:true, opacity:1 }));
+  q.scale.setScalar(0.28); q.position.y = 0.24;
   g.add(q);
   return g;
 }
@@ -2038,11 +3302,13 @@ function rebuildShowroom(){
   clearGroup(showroomRoot);
   shelfFigures = {}; selectableRoots = [];
   buildShowroomScene();
+  if(scene && currentMode==='showroom') scene.background = showroomBackdrop();
 }
 
 function updateShelfFiguresIdle(dt, elapsed){
   Object.values(shelfFigures).forEach(fig=>{
-    fig.rotation.y = Math.sin(elapsed*0.6+fig.userData.floatSeed)*0.5;
+    if(fig.userData.charId===shelfSpinId){ /* korisnik je okreće pun krug */ }
+    else fig.rotation.y += dt*0.45;
     fig.position.y = fig.userData.baseY + Math.abs(Math.sin(elapsed*1.6+fig.userData.floatSeed))*0.02;
     const orbit = fig.getObjectByName('orbit');
     if(orbit) orbit.rotation.y += dt*1.2;
@@ -2050,7 +3316,6 @@ function updateShelfFiguresIdle(dt, elapsed){
       fig.userData.bumpT += dt*2.4;
       const b = Math.sin(clamp(fig.userData.bumpT,0,1)*Math.PI)*0.18;
       fig.scale.setScalar(fig.userData.baseScale + b);
-      fig.rotation.y += fig.userData.bumpT*6;
       if(fig.userData.bumpT>=1){ fig.scale.setScalar(fig.userData.baseScale); delete fig.userData.bumpT; }
     }
   });
@@ -2079,16 +3344,21 @@ function setupControls(){
       // štipanje = zum, samo na policama
       if(currentMode!=='showroom') return;
       const [a,b] = [...pointers.values()], d = Math.hypot(a.x-b.x, a.y-b.y);
-      if(pinchDist>0) camTargetSpherical.radius = clamp(camTargetSpherical.radius * pinchDist/d, showroomMinR, showroomMaxR);
+      if(pinchDist>0){
+        const rMin = shelfFocus ? 1.55 : showroomMinR, rMax = shelfFocus ? 3.6 : showroomMaxR;
+        camTargetSpherical.radius = clamp(camTargetSpherical.radius * pinchDist/d, rMin, rMax);
+      }
       pinchDist = d;
       return;
     }
     if(currentMode==='showroom'){
-      camTargetSpherical.theta = clamp(camTargetSpherical.theta - dx*0.005, -0.9, 0.9);
-      camTargetSpherical.phi = clamp(camTargetSpherical.phi - dy*0.005, 1.0, 1.65);
+      const spun = shelfSpinId && shelfFigures[shelfSpinId];
+      if(spun) spun.rotation.y -= dx*0.012;
+      else if(!shelfFocus) showroomPan = clamp(showroomPan - dx*0.006, -1.8, 1.8);
+      if(!shelfFocus) camTargetSpherical.phi = clamp(camTargetSpherical.phi - dy*0.004, 1.15, 1.55);
     } else {
-      openCamGoal.theta = clamp(openCamGoal.theta - dx*0.006, -1.1, 1.1);
-      openCamGoal.phi = clamp(openCamGoal.phi - dy*0.004, 1.1, 1.5);
+      // izvlačenje: figura gleda u kameru, samo mali otklon levo-desno
+      openCamGoal.theta = clamp(openCamGoal.theta - dx*0.004, -0.28, 0.28);
     }
   });
   const up = e=>{ pointers.delete(e.pointerId); if(pointers.size<2) pinchDist = 0; };
@@ -2097,7 +3367,8 @@ function setupControls(){
   el.addEventListener('wheel', e=>{
     e.preventDefault();
     if(currentMode!=='showroom') return;       // na otvaranju nema zuma
-    camTargetSpherical.radius = clamp(camTargetSpherical.radius + e.deltaY*0.003, showroomMinR, showroomMaxR);
+    const rMin = shelfFocus ? 1.55 : showroomMinR, rMax = shelfFocus ? 3.6 : showroomMaxR;
+    camTargetSpherical.radius = clamp(camTargetSpherical.radius + e.deltaY*0.003, rMin, rMax);
   }, { passive:false });
   el.addEventListener('click', onCanvasClick);
 }
@@ -2121,7 +3392,31 @@ function onCanvasClick(e){
   } else hideInfoPanel();
 }
 
+function applyShelfFocusVisibility(){
+  Object.values(shelfFigures).forEach(fig=>{
+    fig.visible = !shelfFocus || fig.userData.charId===shelfSpinId;
+  });
+}
+function focusShelfFigure(fig){
+  const narrow = window.innerWidth < 720;
+  shelfFocus = {
+    x: fig.position.x + (narrow ? 0 : 0.32),
+    y: fig.userData.baseY + (narrow ? 0.22 : 0.38),
+    z: fig.position.z
+  };
+  camTargetSpherical.radius = narrow ? 1.85 : 1.55;
+  camTargetSpherical.phi = 1.18;
+  camTargetSpherical.theta = 0;
+  fig.rotation.y = 0;
+  applyShelfFocusVisibility();
+}
+function syncShelfChrome(){
+  const show = currentMode==='showroom' && !shelfFocus;
+  const bar = document.getElementById('series-bar');
+  if(bar) bar.classList.toggle('hidden', !show);
+}
 function selectCharacterInfo(charId){
+  shelfSpinId = charId;
   const char = CHAR_BY_ID[charId];
   const tag = document.getElementById('info-rarity');
   tag.textContent = RARITY[char.rarity].label;
@@ -2133,9 +3428,19 @@ function selectCharacterInfo(charId){
   document.getElementById('info-count').textContent = 'Poseduješ: x'+(state.collection[char.id]||0);
   document.getElementById('info-panel').classList.add('show');
   const fig = shelfFigures[char.id];
-  if(fig) fig.userData.bumpT = 0;
+  if(fig){ fig.userData.bumpT = 0; focusShelfFigure(fig); }
+  syncShelfChrome();
 }
-function hideInfoPanel(){ document.getElementById('info-panel').classList.remove('show'); }
+function hideInfoPanel(){
+  shelfSpinId = null;
+  shelfFocus = null;
+  applyShelfFocusVisibility();
+  camTargetSpherical.radius = shelfHome.radius;
+  camTargetSpherical.phi = shelfHome.phi;
+  camTargetSpherical.theta = 0;
+  document.getElementById('info-panel').classList.remove('show');
+  syncShelfChrome();
+}
 
 /* ============================= PROMENA EKRANA ============================= */
 
@@ -2148,10 +3453,9 @@ function setMode(mode){
   showroomRoot.visible = mode==='showroom';
   document.getElementById('open-panel').classList.toggle('hidden', mode!=='open');
   document.getElementById('progress-pill').classList.toggle('hidden', mode!=='open');
-  document.getElementById('showroom-hint').classList.toggle('hidden', mode!=='showroom');
   hideInfoPanel();
   hideResultCardInstant();
-  if(mode==='showroom'){ rebuildShowroom(); scene.background = showroomBgTex; camTargetSpherical.theta = 0; }
+  if(mode==='showroom'){ rebuildShowroom(); scene.background = showroomBackdrop(); camTargetSpherical.theta = 0; }
   else scene.background = openBgTex;
   updateTokenUI();
 }
@@ -2165,7 +3469,8 @@ function updateTokenUI(){
   const btn = document.getElementById('open-btn');
   const hint = document.getElementById('open-hint');
   btn.disabled = state.tokens<1 || phase!=='idle';
-  hint.textContent = state.tokens<1 ? ('Čekaj novi token… ('+Math.max(0,Math.ceil(state.tokenInterval-state.tokenTimer))+'s)') : (phase==='idle' ? 'Tapni kesicu da je pocepaš!' : '');
+  hint.textContent = state.tokens<1 ? ('Čekaj novi token… ('+Math.max(0,Math.ceil(state.tokenInterval-state.tokenTimer))+'s)') : '';
+  hint.classList.toggle('hidden', !hint.textContent);
 }
 function updateProgressUI(){
   document.getElementById('progress-text').textContent = Object.keys(state.collection).length+' / '+CHARACTERS.length+' skupljeno';
@@ -2203,13 +3508,17 @@ function showResultCard(char, isNew, bonus){
   document.getElementById('reveal-faction').textContent = FACTIONS[char.faction].emoji+' '+FACTIONS[char.faction].name;
   document.getElementById('reveal-desc').textContent = char.desc;
   document.getElementById('reveal-dup').textContent = isNew ? 'NOVO U KOLEKCIJI! 🎉' : (bonus ? 'Duplikat — +1 token na poklon 💎' : 'Duplikat');
+  document.body.classList.add('reveal-open');
   requestAnimationFrame(()=> card.classList.add('show'));
 }
-function hideResultCardInstant(){ document.getElementById('reveal-card').classList.remove('show'); }
+function hideResultCardInstant(){
+  document.getElementById('reveal-card').classList.remove('show');
+  document.body.classList.remove('reveal-open');
+}
 
 function setupSaveLoad(){
   document.getElementById('save-btn').addEventListener('click', ()=>{
-    const data = { v:2, tokens: state.tokens, maxTokens: state.maxTokens, tokenTimer: state.tokenTimer, collection: state.collection };
+    const data = { v:3, tokens: state.tokens, maxTokens: state.maxTokens, tokenTimer: state.tokenTimer, collection: state.collection, enabled: enabledSeries };
     const blob = new Blob([JSON.stringify(data)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -2231,6 +3540,9 @@ function setupSaveLoad(){
           state.tokenTimer = data.tokenTimer || 0;
           state.collection = {};
           for(const id in data.collection) if(CHAR_BY_ID[id]) state.collection[id] = data.collection[id];
+          applyEnabled(data.enabled);
+          renderSeriesSettings();
+          if(phase==='idle') spawnPouch(true);
           saveLocal(); updateTokenUI(); updateProgressUI();
           if(currentMode==='showroom') rebuildShowroom();
           showToast('Napredak učitan! 📂');
@@ -2256,10 +3568,9 @@ function init(){
   starTex = makeStarSprite();
   raysTex = makeRaysTexture();
   questionTex = makeQuestionTexture();
-  pouchFrontTex = makePouchFrontTexture();
-  pouchBackTex = makePouchBackTexture();
+  buildAllPouchTex();
   openBgTex = makeGradientTexture(['#ff9ad5','#ffc36b','#8f6bff']);
-  showroomBgTex = makeGradientTexture(['#8fe8ff','#c9a6ff','#ffb3e0']);
+  showroomBgTex = makeGradientTexture(['#2f6dff','#6a3dff','#ff5fa8']);
   scene.background = openBgTex;
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
@@ -2268,17 +3579,27 @@ function init(){
   buildOpenScene();
   setupControls();
   setupSaveLoad();
+  setupSettings();
+  renderSeriesSettings();
   document.querySelectorAll('.tab-btn').forEach(btn=> btn.addEventListener('click', ()=> setMode(btn.dataset.mode)));
+  document.querySelectorAll('#series-bar button').forEach(btn=> btn.addEventListener('click', ()=>{
+    showroomSeries = btn.dataset.series;
+    document.querySelectorAll('#series-bar button').forEach(b=> b.classList.toggle('active', b===btn));
+    if(shelfFocus) hideInfoPanel();
+    if(currentMode==='showroom') rebuildShowroom();
+  }));
   document.getElementById('open-btn').addEventListener('click', startOpen);
   document.getElementById('reveal-close').addEventListener('click', ()=>{ hideResultCardInstant(); enterPhase('idle'); });
+  document.getElementById('info-back').addEventListener('click', hideInfoPanel);
   document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveLocal(); });
   window.addEventListener('pagehide', saveLocal);
   updateTokenUI();
   updateProgressUI();
   // redraw labela kad se font učita (grafika kesice koristi Baloo 2)
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{
-    pouchFrontTex = makePouchFrontTexture(); pouchBackTex = makePouchBackTexture();
-    if(phase==='idle') spawnPouch();
+    buildAllPouchTex();
+    renderSeriesSettings();
+    if(phase==='idle') spawnPouch(true);
   });
   requestAnimationFrame(()=> document.getElementById('loading').classList.add('hide'));
   animate();
@@ -2308,13 +3629,13 @@ function animate(){
 }
 
 init();
-
 </script>
 <!-- gameroom:back — link nazad na landing (ne brisati) -->
 <a href="../../" id="gameroom-back" title="Nazad u Gameroom" aria-label="Nazad u Gameroom">⌂</a>
 <style>
-#gameroom-back{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:2147483647;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(15,12,30,.72);color:#fff;font:700 20px/1 system-ui,sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.75;transition:opacity .15s,transform .15s;-webkit-tap-highlight-color:transparent}
-#gameroom-back:hover,#gameroom-back:focus-visible{opacity:1;transform:scale(1.08)}
+#gameroom-back{position:fixed;left:max(14px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));right:auto;bottom:auto;z-index:30;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:#fffdf6;color:#2a1450;border:3px solid #2a1450;font:700 20px/1 system-ui,sans-serif;text-decoration:none;box-shadow:3px 3px 0 #8a5cff;opacity:1;-webkit-tap-highlight-color:transparent}
+#gameroom-back:hover,#gameroom-back:focus-visible{transform:translateY(-2px)}
+@media (max-width:640px){#gameroom-back{width:34px;height:34px;left:10px;top:8px;border-radius:12px;font-size:16px;box-shadow:2px 2px 0 #8a5cff}}
 </style>
 </body>
 </html>
