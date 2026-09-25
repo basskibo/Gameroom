@@ -60,8 +60,17 @@ Akcije: `click:<sel>`, `key:<taster>:<ms>`, `wait:<ms>`. Uvek otvori dobijenu sl
 - Igre imaju debug parametre u URL-u: monster-lane `?auto&q=0&sim=600` odmah startuje, bot odigra N sekundi (gađa kapije, kovčeg, pa gomilu), a rezultat piše u `document.title` i `window.simLog` (DPS po talasu, trajanje bossa). Za nove igre napravi isto — balans se meri simulacijom, ne pogađanjem.
 - Bot je bimodalan ako ne gađa upgrade-e; pusti 4–5 simulacija i gledaj raspon, ne jedan rezultat.
 - Monster Lane referentna kriva (posle rebalansa): bot stiže do talasa 5–6 za ~6 min, bossovi traju 17–50 s, broj mobova ≤ ~1000. Ne vraćati na lakše — korisnik je tražio težu igru.
+- Cene upgrade-a (kapije, kovčezi) veži za trenutni DPS igrača (par sekundi njegove vatre), ne za talas — inače igrač koji propusti par boostova više nikad ne može da ih stigne. Test: `&nogates=25` (bot ignoriše upgrade-e N sekundi) pa proveri da `ups` posle raste.
+- Ne dozvoli spawn-kill: neprijatelji su neranjivi dok ne izađu iz svog spawn prostora (monster-lane: paluba broda iza ograde), a upgrade objekti dok „iskaču“.
 - Pazi na performanse: kolizija je metci × mete, pa težinu diži HP-om, a ne beskonačnim brojem mobova.
 - Bloom + NaN: bilo koji `pow()` sa bazom koja može biti < 0 daje NaN, a bloom ga razmaže u crni pravougaonik (bug „pola ekrana crno“ na MQ/HQ). Uvek `pow(max(x, 0.0), y)`; monster-lane ima i sanitize pass pre blooma.
+
+## Mobilni prikaz (obavezno proveriti)
+
+- Screenshot na 390×844 (portret, DPR 2, touch) i 844×390 (landscape) posle svake izmene UI-ja ili kamere.
+- HUD na telefonu ne sme da pokriva donju trećinu ekrana gde je igrač: statistike idu gore kao tanka traka, sve ostalo kompaktno.
+- Kamera u portretu ne sme da se udaljava da bi sve stalo u širinu — prikaži uži isečak i pomeraj kameru za igračem.
+- Touch kontrola relativna (prevlačenje bilo gde pomera lik za pređeni put), da prst ne pokriva lik.
 
 ## Konvencije za samu igru
 

@@ -38,7 +38,7 @@
     position: absolute; top: 74px; left: 50%; transform: translateX(-50%);
     width: min(420px, calc(100vw - 32px)); display: none; text-align: center;
   }
-  @media (min-width: 760px) { #bossWrap { top: 14px; } }
+  @media (min-width: 760px) and (min-height: 501px) { #bossWrap { top: 14px; } }
   #bossName { font-size: 18px; margin-bottom: 4px; }
   #bossBar { height: 20px; background: #0006; border: 3px solid #1b1b2f; border-radius: 10px; overflow: hidden; position: relative; }
   #bossFill { height: 100%; width: 100%; background: linear-gradient(#ff6b6b, #c9184a); }
@@ -87,11 +87,40 @@
   .lv-shot b { background: linear-gradient(#8fd3ff, #1d8fe1); }
   .lv-dmg b { background: linear-gradient(#ff9b9b, #e63946); }
   .lv-rate b { background: linear-gradient(#9af0ad, #2fb344); }
+  /* ---------- phones: compact HUD, keep the bottom of the screen (the hero) clear ---------- */
+  @media (max-width: 600px), (max-height: 500px) {
+    #top { padding: max(8px, env(safe-area-inset-top)) 8px 0; gap: 6px; align-items: center; }
+    .pill { font-size: 14px; padding: 6px 10px; border-radius: 12px; }
+    .pill small { font-size: 11px; }
+    #baseBox { display: flex; align-items: center; gap: 6px; }
+    #basebar { width: 64px; height: 9px; margin-top: 4px; }
+    .btns { margin-top: 0; gap: 4px; }
+    .btns button { min-width: 36px; height: 36px; font-size: 15px; }
+    #weapon { width: auto; }
+    .plank { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; padding: 5px 7px; border-width: 2px; border-radius: 12px; box-shadow: 0 3px 0 #3b2210, inset 0 0 0 2px #3b2210; }
+    .plank::before, .plank::after, .tier, .levels { display: none; }
+    .ribbon { position: static; filter: none; }
+    .ribbon-in { font-size: 15px; gap: 5px; padding: 3px 14px 4px 9px; }
+    .skull { font-size: 13px; }
+    #wStats { gap: 4px; }
+    .chip { font-size: 11px; padding: 2px 6px 3px; border-radius: 8px; border-width: 1px; box-shadow: 0 2px 0 rgba(0,0,0,.35); }
+    .chip i { font-size: 10px; }
+    #bossName { font-size: 13px; margin-bottom: 2px; }
+    #bossBar { height: 16px; border-width: 2px; }
+    #bossHp { font-size: 11px; line-height: 12px; }
+    #banner { top: 38%; }
+    .float { font-size: 20px; }
+    .float.big { font-size: 28px; }
+  }
+  /* portrait phone: weapon strip right under the top bar, boss bar under it */
   @media (max-width: 600px) {
-    #weapon { width: auto; right: 14px; }
-    .ribbon-in { font-size: 20px; }
-    .chip { font-size: 13px; padding: 3px 8px 4px; }
-    .levels { display: none; }
+    #weapon { top: calc(max(8px, env(safe-area-inset-top)) + 50px); left: 8px; right: 8px; bottom: auto; }
+    #bossWrap { width: calc(100vw - 16px); }   /* top is set from JS: right under the weapon strip */
+  }
+  /* landscape phone: small strip bottom-left */
+  @media (min-width: 601px) and (max-height: 500px) {
+    #weapon { bottom: 8px; left: 8px; width: auto; max-width: 52vw; }
+    #bossWrap { top: 8px; width: min(340px, 40vw); }
   }
   #banner {
     position: absolute; top: 32%; left: 0; right: 0; text-align: center;
@@ -180,7 +209,7 @@
         <div class="sw" style="background:#e63946"></div><div><b>Sredina — gusari</b>: mornari, grmalji i kapetani-bosovi koji dozivaju posadu i pobesne na pola HP-a.</div>
       </div>
       <button class="play" id="startBtn">IGRAJ</button>
-      <div class="keys">Miš / prst — pomeranje · A/D ili ←/→ · P — pauza</div>
+      <div class="keys">Miš ili prevlačenje prstom bilo gde — pomeranje · A/D ili ←/→ · P — pauza</div>
     </div>
   </div>
 
@@ -495,6 +524,7 @@ const camBase = new THREE.Vector3();
 const camLook = new THREE.Vector3(0, 0, PLAYER_Z - 22);
 let composer = null;
 let debugCloseup = false;   // test-only camera (?closeup)
+let camPanLimit = 0, camPan = 0;
 
 function resize() {
   const w = innerWidth, h = innerHeight, aspect = w / h;
@@ -503,12 +533,16 @@ function resize() {
   camera.aspect = aspect;
   camera.fov = 66;
   // camera sits on a fixed direction behind/above the gun, tilted up enough to show the sea and
-  // ships on the horizon; on narrow screens it backs off until the full road width fits
-  const off = new THREE.Vector3(0, 20, 15);
+  // ships on the horizon. Wide screens fit the whole road; narrow (portrait) screens show a
+  // ~17 m wide slice and pan sideways with the player instead of backing off (keeps things big)
+  const portrait = aspect < 0.9;
+  const off = portrait ? new THREE.Vector3(0, 21, 13) : new THREE.Vector3(0, 20, 15);
   const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const k = Math.max(1, (FENCE_OUT + 1) / (off.length() * halfH * aspect));
+  const needHalf = portrait ? 8.5 : FENCE_OUT + 1;
+  const k = Math.max(1, needHalf / (off.length() * halfH * aspect));
+  camPanLimit = Math.max(0, FENCE_OUT + 1 - off.length() * k * halfH * aspect);
   camBase.set(0, 0, PLAYER_Z).addScaledVector(off, k);
-  camLook.set(0, 0, camBase.z - 34 * k);
+  camLook.set(0, 0, camBase.z - (portrait ? 30 : 34) * k);
   scene.fog.near = 90 + 30 * k;       // a farther camera needs farther fog
   scene.fog.far = 520 + 80 * k;
   if (debugCloseup) { camBase.set(state.playerX + 2.5, 4.5, PLAYER_Z + 5.5); camLook.set(state.playerX, 2, PLAYER_Z - 1); }
@@ -1355,7 +1389,7 @@ const MOB_KINDS = [buildPirateGeo(0), buildPirateGeo(1), buildBruteGeo()].map(ge
   mesh.count = ol.count = 0;
   scene.add(mesh, ol);
   const k = { mesh, ol, walk };
-  k.mesh.castShadow = true;
+  k.mesh.castShadow = false;      // blob shadows ground them; skipping the shadow pass for ~1000 mobs
   const white = new THREE.Color(1, 1, 1);
   for (let i = 0; i < MAX_MOBS; i++) k.mesh.setColorAt(i, white);
   return k;
@@ -1517,6 +1551,7 @@ const curWeapon = () => WEAPONS[state.weaponTier];
 const curDmg = () => curWeapon().dmg * (1 + 0.1 * state.dmgLvl);
 const curRate = () => curWeapon().rate * (1 + 0.08 * state.rateLvl);
 const curShots = () => curWeapon().pellets + state.barrels;
+const curDps = () => curDmg() * curShots() * curRate();
 
 // =====================================================================
 // AUDIO (tiny WebAudio synth)
@@ -1570,7 +1605,11 @@ function banner(main, sub = '', ms = 2000) {
 }
 
 const projV = new THREE.Vector3();
+let floatCount = 0;
 function floatText(text, x, y, z, cls = '') {
+  if (floatCount > 12 && cls !== 'big') return;
+  floatCount++;
+  setTimeout(() => floatCount--, 1250);
   projV.set(x, y, z).project(camera);
   const el = document.createElement('div');
   el.className = 'float stroke ' + cls;
@@ -1608,7 +1647,13 @@ function updateWeaponHud() {
     lv('lv-shot', 'CEVI', state.barrels, MAX_BARRELS) +
     lv('lv-dmg', 'ŠTETA', state.dmgLvl, MAX_DMG_LVL) +
     lv('lv-rate', 'BRZINA', state.rateLvl, MAX_RATE_LVL);
+  placeBossBar();
 }
+// portrait phones: the weapon strip can wrap to 1–3 rows, so the boss bar follows its height
+function placeBossBar() {
+  $('bossWrap').style.top = innerWidth <= 600 ? ($('weapon').getBoundingClientRect().bottom + 6) + 'px' : '';
+}
+addEventListener('resize', placeBossBar);
 
 function updateHud() {
   setT('wave', `TALAS ${state.wave}`);
@@ -1739,7 +1784,10 @@ function spawnGate() {
   if (!types.length) return;   // fully upgraded
   const type = types[Math.floor(Math.random() * types.length)];
   const def = GATE_DEFS[type];
-  const hp = Math.round((20 + state.wave * 15) * Math.pow(1.17, state.upgradesTaken));
+  // HP = a few seconds of the player's own firepower (never out of reach, never instant);
+  // every upgrade taken makes the next one take a bit longer
+  const secs = 0.8 * Math.pow(1.04, state.upgradesTaken) * rand(0.9, 1.15);
+  const hp = Math.round(Math.max(25, curDps() * secs) / 5) * 5;
 
   const group = new THREE.Group();
   const postMat = toonMat(0xeef6ff, 0, 0.2, 0.6);
@@ -1793,7 +1841,9 @@ function spawnPedestal() {
   group.scale.setScalar(0.01);
   scene.add(group);
 
-  const hp = Math.round(w.capture * (1 + 0.5 * (state.wave - 1)) / 10) * 10;
+  // never tougher than the wave-based price, but cheaper when the player is underpowered
+  const byWave = w.capture * (1 + 0.5 * (state.wave - 1));
+  const hp = Math.round(Math.min(byWave, Math.max(w.capture * 0.4, curDps() * rand(2.2, 2.8))) / 10) * 10;
   const p = { kind: 'ped', tier, w, x: WPN_X, z: ITEM_Z, hw: 2.1, hd: 1.5, hp, maxHp: hp, age: 0,
               group, lbl, model, beam, dirty: false, flash: 0, dead: false, gone: false };
   drawPed(p);
@@ -1927,7 +1977,7 @@ function explode(x, z, radius, dmg, exclude) {
   sfx.boom();
   const lists = [monsters, bosses, gates, pedestals];
   for (const list of lists) for (const t of list) {
-    if (t === exclude || t.dead) continue;
+    if (t === exclude || t.dead || shielded(t)) continue;
     const dx = Math.max(0, Math.abs(t.x - x) - t.hw);
     const dz = Math.max(0, Math.abs(t.z - z) - t.hd);
     if (dx * dx + dz * dz <= radius * radius) damage(t, dmg);
@@ -1997,24 +2047,47 @@ function captureWeapon(p) {
 }
 
 // bullet moved from z0 (farther from spawn) to z1 this frame; t is an axis-aligned box
+// pirates still on the deck (behind the bow rail) can't be hit; items can't be hit while popping in
+const SHIELD_Z = RAMP_TOP_Z - 0.3;
+const shielded = t => (t.kind === 'mob' || t.kind === 'boss') ? t.z < SHIELD_Z : t.age < 0.4;
 function segHit(t, x, z0, z1) {
   return z1 <= t.z + t.hd && z0 >= t.z - t.hd && Math.abs(x - t.x) <= t.hw;
 }
 
-const TARGET_LISTS = [monsters, bosses, gates, pedestals];
+// monsters are bucketed by z (1 m bins) once per frame; a bullet only tests the bins it crossed
+const BIN_Z0 = SPAWN_Z - 12, BIN_N = Math.ceil(DEFENSE_Z + 2 - BIN_Z0), MAX_HD = 1.3;
+const bins = Array.from({ length: BIN_N }, () => []);
+const FEW_LISTS = [bosses, gates, pedestals];
+function binMonsters() {
+  for (const b of bins) b.length = 0;
+  for (const m of monsters) {
+    if (m.dead || m.z < SHIELD_Z) continue;
+    const i = Math.floor(m.z - BIN_Z0);
+    if (i >= 0 && i < BIN_N) bins[i].push(m);
+  }
+}
 function updateBullets(dt) {
+  binMonsters();
   for (let i = bullets.length - 1; i >= 0; i--) {
     const b = bullets[i];
     const z0 = b.z;
     b.x += b.vx * dt; b.z += b.vz * dt;
     const z1 = b.z;
     let dead = false;
+    const i0 = Math.max(0, Math.floor(z1 - MAX_HD - BIN_Z0)), i1 = Math.min(BIN_N - 1, Math.floor(z0 + MAX_HD - BIN_Z0));
     for (;;) {
       // nearest thing along the bullet path (largest z = first encountered)
       let best = null, bestZ = -Infinity;
-      for (const list of TARGET_LISTS) {
-        for (const t of list) {
+      for (let k = i1; k >= i0; k--) {
+        for (const t of bins[k]) {
           if (t.dead || t.z <= bestZ) continue;
+          if (b.hits && b.hits.has(t)) continue;
+          if (segHit(t, b.x, z0, z1)) { best = t; bestZ = t.z; }
+        }
+      }
+      for (const list of FEW_LISTS) {
+        for (const t of list) {
+          if (t.dead || t.z <= bestZ || shielded(t)) continue;
           if (b.hits && b.hits.has(t)) continue;
           if (segHit(t, b.x, z0, z1)) { best = t; bestZ = t.z; }
         }
@@ -2029,7 +2102,11 @@ function updateBullets(dt) {
         (b.hits ||= new Set()).add(best);
       } else { dead = true; break; }
     }
-    if (dead || b.z < SPAWN_Z - 10 || Math.abs(b.x) > FENCE_OUT + 1.5) {
+    if (!dead && b.z < SHIELD_Z && Math.abs(b.x) < FENCE_IN) {       // thunk into the bow
+      dead = true;
+      if (Math.random() < 0.15) burst(b.x, RAMP_Y + 0.5, SHIELD_Z, 0x6b4a2e, 1, 3, 0.5);
+    }
+    if (dead || b.z < ITEM_Z - 12 || Math.abs(b.x) > FENCE_OUT + 1.5) {
       bullets[i] = bullets[bullets.length - 1];
       bullets.pop();
     }
@@ -2147,7 +2224,7 @@ function updateGates(dt) {
     const pulse = g.flash > 0 ? 1.06 : 1;
     g.panel.scale.set(pulse, pulse, 1);
     g.panel.material.uniforms.flash.value = g.flash > 0 ? 0.35 : 0;
-    if (g.dirty) { drawGate(g); g.dirty = false; }
+    if (g.dirty && state.time - (g.lastDraw || 0) > 0.08) { drawGate(g); g.dirty = false; g.lastDraw = state.time; }
     if (g.z > PLAYER_Z + 6) g.gone = true;
   }
 }
@@ -2163,7 +2240,7 @@ function updatePedestals(dt) {
     p.model.rotation.y += dt * 1.6;
     p.model.position.y = 3.6 + Math.sin(state.time * 3) * 0.2;
     p.model.scale.setScalar(p.flash > 0 ? 1.65 : 1.5);
-    if (p.dirty) { drawPed(p); p.dirty = false; }
+    if (p.dirty && state.time - (p.lastDraw || 0) > 0.08) { drawPed(p); p.dirty = false; p.lastDraw = state.time; }
     if (p.z > PLAYER_Z + 6) p.gone = true;
   }
 }
@@ -2373,8 +2450,25 @@ function aimAt(cx, cy) {
     state.targetX = clamp(hitPoint.x, -PLAYER_LIMIT, PLAYER_LIMIT);
   }
 }
-renderer.domElement.addEventListener('pointermove', e => aimAt(e.clientX, e.clientY));
-renderer.domElement.addEventListener('pointerdown', e => { sfx.ensure(); aimAt(e.clientX, e.clientY); });
+// mouse: the hero follows the cursor. touch: drag anywhere, the hero moves by the drag distance
+const drag = { id: null, x: 0, target: 0 };
+function worldPerPx() {
+  const a = new THREE.Vector3(), b = new THREE.Vector3();
+  ndc.set(-1, -0.6); raycaster.setFromCamera(ndc, camera); raycaster.ray.intersectPlane(aimPlane, a);
+  ndc.set(1, -0.6); raycaster.setFromCamera(ndc, camera); raycaster.ray.intersectPlane(aimPlane, b);
+  return (b.x - a.x) / innerWidth;
+}
+renderer.domElement.addEventListener('pointerdown', e => {
+  sfx.ensure();
+  if (e.pointerType === 'mouse') { aimAt(e.clientX, e.clientY); return; }
+  drag.id = e.pointerId; drag.x = e.clientX; drag.target = state.targetX;
+});
+renderer.domElement.addEventListener('pointermove', e => {
+  if (e.pointerType === 'mouse') { aimAt(e.clientX, e.clientY); return; }
+  if (e.pointerId !== drag.id || !state.running || state.paused) return;
+  state.targetX = clamp(drag.target + (e.clientX - drag.x) * worldPerPx() * 1.6, -PLAYER_LIMIT, PLAYER_LIMIT);
+});
+for (const ev of ['pointerup', 'pointercancel']) renderer.domElement.addEventListener(ev, e => { if (e.pointerId === drag.id) drag.id = null; });
 
 // =====================================================================
 // LOOP
@@ -2429,9 +2523,9 @@ const gradePass = new ShaderPass(GradeShader);
 
 // quality presets; the game steps down automatically if the frame rate drops
 const QUALITY = [
-  { label: 'LQ', pr: 1,    bloom: false, shadow: 1024, samples: 0, mobOutline: false, mobShadow: false },
-  { label: 'MQ', pr: 1.25, bloom: true,  shadow: 1024, samples: 2, mobOutline: true,  mobShadow: true },
-  { label: 'HQ', pr: 2,    bloom: true,  shadow: 2048, samples: 4, mobOutline: true,  mobShadow: true },
+  { label: 'LQ', pr: 1,    bloom: false, shadow: 1024, samples: 0, mobOutline: false },
+  { label: 'MQ', pr: 1.25, bloom: true,  shadow: 1024, samples: 0, mobOutline: false },
+  { label: 'HQ', pr: 2,    bloom: true,  shadow: 2048, samples: 4, mobOutline: true },
 ];
 let qLevel = 2, autoQuality = true;
 function applyQuality(level) {
@@ -2441,7 +2535,7 @@ function applyQuality(level) {
   renderer.setPixelRatio(pr);
   composer.setPixelRatio(pr);
   bloomPass.enabled = sanitizePass.enabled = q.bloom;
-  for (const k of MOB_KINDS) { k.ol.visible = q.mobOutline; k.mesh.castShadow = q.mobShadow; }
+  for (const k of MOB_KINDS) k.ol.visible = q.mobOutline;
   if (sun.shadow.mapSize.x !== q.shadow) {
     sun.shadow.mapSize.set(q.shadow, q.shadow);
     if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
@@ -2487,7 +2581,9 @@ function loop() {
   }
   gradePass.uniforms.hurt.value = clamp(state.hurt, 0, 0.8);
   const sh = state.shake;
-  camera.position.set(camBase.x + rand(-sh, sh), camBase.y + rand(-sh, sh) * 0.5, camBase.z);
+  // sideways pan (portrait): keep the player and the lane he is in on screen
+  camPan += (clamp(state.playerX * 0.75, -camPanLimit, camPanLimit) - camPan) * Math.min(1, dt * 6);
+  camera.position.set(camBase.x + camPan + rand(-sh, sh), camBase.y + rand(-sh, sh) * 0.5, camBase.z);
   state.shake = Math.max(0, sh - 1.6 * dt);
   composer.render();
 }
@@ -2502,14 +2598,18 @@ if (qs.has('auto')) {
   // bot: alternates between the upgrade gates, the weapon chest and sweeping the crowd
   const sim = Number(qs.get('sim') || 0), log = [];
   let lastWave = 0, bossAt = 0;
+  const skipUpgrades = Number(qs.get('nogates') || 0);
   for (let t = 0; t < sim && state.running; t += 1 / 60) {
     const c = t % 10;
-    state.targetX = c < 3 && gates.length ? UP_X : c < 5 && pedestals.length ? WPN_X : Math.sin(t * 0.9) * 6;
+    const greedy = t >= skipUpgrades;     // &nogates=N: ignore gates/chests for the first N seconds
+    state.targetX = greedy && c < 3 && gates.length ? UP_X : greedy && c < 5 && pedestals.length ? WPN_X : Math.sin(t * 0.9) * 6;
+    if (t < skipUpgrades + 1 / 60 && t + 1 / 60 >= skipUpgrades) log.push(`start upgrading@${t.toFixed(0)}s ups=${state.upgradesTaken}`);
     update(1 / 60);
     if (state.wave !== lastWave) { lastWave = state.wave; log.push(`w${state.wave}@${t.toFixed(0)}s dps=${Math.round(curDmg() * curShots() * curRate())} hp=${Math.ceil(state.baseHp)}`); }
     if (bosses.length && !bossAt) bossAt = t;
     if (!bosses.length && bossAt) { log.push(`  boss${state.wave} ${(t - bossAt).toFixed(1)}s`); bossAt = 0; }
   }
+  log.push(`end ups=${state.upgradesTaken}`);
   window.simLog = log;
   if (debugCloseup) resize();
   document.title = `wave=${state.wave} hp=${Math.ceil(state.baseHp)} score=${state.score} tier=${state.weaponTier} barrels=${state.barrels} dmgLvl=${state.dmgLvl} rateLvl=${state.rateLvl} dps=${Math.round(curDmg()*curShots()*curRate())} kills=${state.kills} mobs=${monsters.length} running=${state.running}`;
