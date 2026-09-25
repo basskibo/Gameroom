@@ -51,30 +51,15 @@ html, body{
 #topbar{
   position: absolute; top: 0; left: 0; right: 0;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px 14px 72px;
+  padding: 10px 20px 6px 16px;
   z-index: 20;
   pointer-events: none;
 }
 #topbar > *{ pointer-events: auto; }
 
-.brand{ display:flex; align-items:center; gap:10px; }
-.brand .logo-badge{
-  width: 48px; height: 48px; border-radius: 16px;
-  background: linear-gradient(160deg, #ff8ad4, #ffe14d);
-  display:flex; align-items:center; justify-content:center;
-  font-size: 24px;
-  border: var(--stroke);
-  box-shadow: 3px 3px 0 #2a1450;
-  transform: rotate(-8deg);
-}
-.brand .name{
-  font-family:'Lilita One', cursive; font-size: 26px; font-weight: 400; letter-spacing: 0.5px;
-  color: #1f5eff;
-  text-shadow:
-    -2px -2px 0 #ffe14d, 2px -2px 0 #ffe14d, -2px 2px 0 #ffe14d, 2px 2px 0 #ffe14d,
-    4px 4px 0 #e10600;
-}
-.brand .tagline{ font-size: 12px; color: #2a1450; font-weight: 800; margin-top: -2px; }
+.brand{ display:flex; flex-direction:column; align-items:flex-start; gap:0; min-width:0; }
+#brand-logo{ display:block; height:52px; width:auto; }
+.brand .tagline{ font-size: 12px; color: #2a1450; font-weight: 800; margin-top: -4px; }
 
 .topbar-right{ display:flex; align-items:center; gap:10px; }
 
@@ -122,6 +107,8 @@ html, body{
   padding: 16px 16px 18px;
   box-shadow: 8px 8px 0 #ff4d9a;
   margin-bottom: max(8px, env(safe-area-inset-bottom));
+  max-height: calc(100vh - 28px - env(safe-area-inset-bottom));
+  overflow: auto;
 }
 #settings-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
 #settings-head h2{ margin:0; font-family:'Lilita One',cursive; font-size:26px; color: var(--ink); }
@@ -197,8 +184,7 @@ html, body{
 
 #progress-pill{ position:absolute; left: 20px; top: 132px; bottom: auto; z-index: 20; background:#b8ff9a; box-shadow: 3px 3px 0 #2a1450; }
 body.reveal-open #progress-pill,
-body.reveal-open #open-panel,
-body.reveal-open #gameroom-back{ display:none !important; }
+body.reveal-open #open-panel{ display:none !important; }
 
 #info-panel{
   position:absolute; right: 20px; top: 140px; width: 280px;
@@ -323,22 +309,20 @@ body.reveal-open #gameroom-back{ display:none !important; }
 .hidden{ display:none !important; }
 
 @media (max-width: 640px){
-  #topbar{ padding: 8px 10px 0 50px; gap: 6px; align-items: center; }
-  .brand{ gap: 6px; min-width: 0; }
+  #topbar{ padding: 6px 10px 0 10px; gap: 6px; align-items: center; }
   .brand .tagline{ display:none; }
-  .brand .logo-badge{ width: 34px; height: 34px; font-size: 16px; border-radius: 12px; flex: none; }
-  .brand .name{ font-size: 18px; text-shadow: -1px -1px 0 #ffe14d, 1px -1px 0 #ffe14d, -1px 1px 0 #ffe14d, 1px 1px 0 #ffe14d, 3px 3px 0 #e10600; }
+  #brand-logo{ height: 40px; }
   .topbar-right{ gap: 6px; flex: none; }
   #token-pill{ min-width: 0; padding: 6px 10px; }
   #token-count{ font-size: 15px; }
   .icon-btn{ width: 34px; height: 34px; border-radius: 12px; font-size: 15px; box-shadow: 2px 2px 0 #8a5cff; }
-  #tabs{ top: 48px; }
+  #tabs{ top: 56px; }
   .tab-btn{ font-size: 14px; padding: 6px 12px; }
   #series-bar{ top: auto; bottom: max(14px, env(safe-area-inset-bottom)); }
   #series-bar button{ font-size: 12px; padding: 6px 8px; }
   #toast{ top: 148px; }
   #info-panel{ top: auto; bottom: max(14px, env(safe-area-inset-bottom)); left: 10px; right: 10px; width: auto; padding: 14px; }
-  #progress-pill{ left: 10px; top: 124px; bottom: auto; padding: 6px 10px; font-size: 12px; }
+  #progress-pill{ left: 10px; top: 140px; bottom: auto; padding: 6px 10px; font-size: 12px; }
   #open-panel{ bottom: max(16px, env(safe-area-inset-bottom)); }
   #open-btn{ font-size: 20px; padding: 12px 26px; }
   #reveal-name{ font-size: 28px; }
@@ -356,11 +340,8 @@ body.reveal-open #gameroom-back{ display:none !important; }
 
   <div id="topbar">
     <div class="brand">
-      <div class="logo-badge">🎁</div>
-      <div>
-        <div class="name font-title">SuperUkiz</div>
-        <div class="tagline">Otvori. Skupljaj. Izloži.</div>
-      </div>
+      <canvas id="brand-logo" width="280" height="70" aria-label="SuperUkiz"></canvas>
+      <div class="tagline">Otvori. Skupljaj. Izloži.</div>
     </div>
     <div class="topbar-right">
       <div class="pill" id="token-pill">
@@ -408,6 +389,7 @@ body.reveal-open #gameroom-back{ display:none !important; }
         <button type="button" id="load-btn">📂 Uvezi</button>
         <input type="file" id="load-input" accept="application/json" class="hidden">
       </div>
+      <a href="../../" id="gameroom-back">⌂ Nazad u Gameroom</a>
     </div>
   </div>
 
@@ -822,19 +804,59 @@ function comicGlyph(ch, size, fill){
   glyphCache[key] = c;
   return c;
 }
+function comicBolt(size){
+  const key = 'bolt|'+size;
+  if(glyphCache[key]) return glyphCache[key];
+  const c = document.createElement('canvas');
+  c.width = Math.ceil(size*1.55); c.height = Math.ceil(size*1.7);
+  const g = c.getContext('2d');
+  const x = c.width/2, y = c.height/2 + size*0.08;
+  const s = size;
+  function bolt(){
+    g.beginPath();
+    g.moveTo(x - s*0.06, y - s*0.40);
+    g.lineTo(x + s*0.20, y - s*0.40);
+    g.lineTo(x - s*0.02, y - s*0.02);
+    g.lineTo(x + s*0.18, y - s*0.02);
+    g.lineTo(x - s*0.22, y + s*0.46);
+    g.lineTo(x + s*0.02, y + s*0.04);
+    g.lineTo(x - s*0.18, y + s*0.04);
+    g.closePath();
+  }
+  g.lineJoin = 'round'; g.lineCap = 'round';
+  g.save(); g.translate(s*0.03, s*0.05);
+  bolt(); g.lineWidth = s*0.16; g.strokeStyle = '#c41212'; g.stroke();
+  g.restore();
+  bolt(); g.lineWidth = s*0.12; g.strokeStyle = '#ff2d2d'; g.stroke();
+  bolt(); g.lineWidth = s*0.05; g.strokeStyle = '#fff3a0'; g.stroke();
+  bolt(); g.fillStyle = '#ffe14d'; g.fill();
+  g.save();
+  g.globalCompositeOperation = 'source-atop';
+  const hg = g.createLinearGradient(0, y-s*0.5, 0, y+s*0.1);
+  hg.addColorStop(0, 'rgba(255,255,255,0.75)');
+  hg.addColorStop(0.45, 'rgba(255,255,255,0)');
+  g.fillStyle = hg; g.fillRect(0, 0, c.width, c.height);
+  g.restore();
+  g.beginPath();
+  g.arc(x + s*0.06, y - s*0.58, s*0.10, 0, Math.PI*2);
+  g.fillStyle = '#ff2d2d'; g.fill();
+  g.lineWidth = s*0.045; g.strokeStyle = '#9d0c0c'; g.stroke();
+  glyphCache[key] = c;
+  return c;
+}
 function comicLogo(ctx, text, x, y, size, fill){
   fill = fill || '#1f5eff';
   ctx.save(); ctx.translate(x, y);
   ctx.font = '900 '+size+'px "Lilita One", "Arial Black", Arial';
   const chars = [...text];
-  const widths = chars.map(ch => ctx.measureText(ch===' ' ? ' ' : ch).width);
+  const widths = chars.map(ch => ch==='i' ? size*0.62 : ctx.measureText(ch===' ' ? ' ' : ch).width);
   const gap = size*0.01;
   const total = widths.reduce((a,b)=>a+b,0) + gap*Math.max(0, chars.length-1);
   let cx = -total/2;
   chars.forEach((ch,i)=>{
     const t = chars.length<2 ? 0 : i/(chars.length-1)-0.5;
     if(ch!==' '){
-      const glyph = comicGlyph(ch, size, fill);
+      const glyph = ch==='i' ? comicBolt(size) : comicGlyph(ch, size, fill);
       ctx.save();
       ctx.translate(cx+widths[i]/2, -Math.cos(t*Math.PI)*size*0.14);
       ctx.rotate(t*0.42);
@@ -1169,11 +1191,25 @@ function initThree(){
   window.addEventListener('resize', onResize);
 }
 
+function paintBrandLogo(){
+  const c = document.getElementById('brand-logo');
+  if(!c) return;
+  const size = window.innerWidth < 640 ? 22 : 30;
+  const w = Math.ceil(size * 8.4), h = Math.ceil(size * 1.85);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  c.width = Math.ceil(w * dpr); c.height = Math.ceil(h * dpr);
+  c.style.width = w + 'px'; c.style.height = h + 'px';
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  comicLogo(ctx, 'SuperUkiz', w / 2, h * 0.62, size, '#1f5eff');
+}
 function onResize(){
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   fitCameras();
+  paintBrandLogo();
 }
 
 /* ============================= CARTOON MATERIJALI ============================= */
@@ -3596,8 +3632,10 @@ function init(){
   updateTokenUI();
   updateProgressUI();
   // redraw labela kad se font učita (grafika kesice koristi Baloo 2)
+  paintBrandLogo();
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{
     buildAllPouchTex();
+    paintBrandLogo();
     renderSeriesSettings();
     if(phase==='idle') spawnPouch(true);
   });
@@ -3630,12 +3668,11 @@ function animate(){
 
 init();
 </script>
-<!-- gameroom:back — link nazad na landing (ne brisati) -->
-<a href="../../" id="gameroom-back" title="Nazad u Gameroom" aria-label="Nazad u Gameroom">⌂</a>
+<!-- gameroom:back — link nazad na landing (ne brisati); dugme je u podešavanjima -->
 <style>
-#gameroom-back{position:fixed;left:max(14px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));right:auto;bottom:auto;z-index:30;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:#fffdf6;color:#2a1450;border:3px solid #2a1450;font:700 20px/1 system-ui,sans-serif;text-decoration:none;box-shadow:3px 3px 0 #8a5cff;opacity:1;-webkit-tap-highlight-color:transparent}
+#gameroom-back{display:flex;align-items:center;justify-content:center;margin-top:8px;padding:10px 8px;border-radius:16px;background:#fff4c8;color:#2a1450;border:3px solid #2a1450;font:400 16px/1 'Lilita One',cursive;text-decoration:none;box-shadow:3px 3px 0 #8a5cff;-webkit-tap-highlight-color:transparent}
 #gameroom-back:hover,#gameroom-back:focus-visible{transform:translateY(-2px)}
-@media (max-width:640px){#gameroom-back{width:34px;height:34px;left:10px;top:8px;border-radius:12px;font-size:16px;box-shadow:2px 2px 0 #8a5cff}}
+#gameroom-back:active{transform:translateY(2px);box-shadow:1px 1px 0 #8a5cff}
 </style>
 </body>
 </html>
