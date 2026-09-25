@@ -51,15 +51,30 @@ html, body{
 #topbar{
   position: absolute; top: 0; left: 0; right: 0;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 20px 6px 16px;
+  padding: 14px 20px 14px 72px;
   z-index: 20;
   pointer-events: none;
 }
 #topbar > *{ pointer-events: auto; }
 
-.brand{ display:flex; flex-direction:column; align-items:flex-start; gap:0; min-width:0; }
-#brand-logo{ display:block; height:52px; width:auto; }
-.brand .tagline{ font-size: 12px; color: #2a1450; font-weight: 800; margin-top: -4px; }
+.brand{ display:flex; align-items:center; gap:10px; }
+.brand .logo-badge{
+  width: 48px; height: 48px; border-radius: 16px;
+  background: linear-gradient(160deg, #ff8ad4, #ffe14d);
+  display:flex; align-items:center; justify-content:center;
+  font-size: 24px;
+  border: var(--stroke);
+  box-shadow: 3px 3px 0 #2a1450;
+  transform: rotate(-8deg);
+}
+.brand .name{
+  font-family:'Lilita One', cursive; font-size: 26px; font-weight: 400; letter-spacing: 0.5px;
+  color: #1f5eff;
+  text-shadow:
+    -2px -2px 0 #ffe14d, 2px -2px 0 #ffe14d, -2px 2px 0 #ffe14d, 2px 2px 0 #ffe14d,
+    4px 4px 0 #e10600;
+}
+.brand .tagline{ font-size: 12px; color: #2a1450; font-weight: 800; margin-top: -2px; }
 
 .topbar-right{ display:flex; align-items:center; gap:10px; }
 
@@ -107,8 +122,6 @@ html, body{
   padding: 16px 16px 18px;
   box-shadow: 8px 8px 0 #ff4d9a;
   margin-bottom: max(8px, env(safe-area-inset-bottom));
-  max-height: calc(100vh - 28px - env(safe-area-inset-bottom));
-  overflow: auto;
 }
 #settings-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; }
 #settings-head h2{ margin:0; font-family:'Lilita One',cursive; font-size:26px; color: var(--ink); }
@@ -118,6 +131,13 @@ html, body{
   box-shadow: 2px 2px 0 #2a1450;
 }
 #settings-note{ margin:6px 0 12px; color: var(--text-dim); font-size:14px; font-weight:800; }
+#settings-actions{ display:flex; gap:10px; margin-top:12px; padding-top:14px; border-top: 3px dashed #e6d9ff; }
+.settings-action-btn{
+  flex:1; font-family:'Lilita One',cursive; font-size:15px; color: var(--ink);
+  background:#fff4c8; border: var(--stroke); border-radius:14px; padding:10px 8px; cursor:pointer;
+  box-shadow: 3px 3px 0 #8a5cff;
+}
+.settings-action-btn:active{ transform: translateY(2px); box-shadow: 1px 1px 0 #8a5cff; }
 .series-toggle{
   display:flex; align-items:center; gap:12px;
   background: #fff4c8;
@@ -135,15 +155,6 @@ html, body{
 .series-toggle .meta b{ display:block; font-family:'Lilita One',cursive; font-size:18px; color: var(--ink); }
 .series-toggle .meta small{ color: var(--text-dim); font-weight:800; }
 .series-toggle input{ width: 26px; height: 26px; accent-color: #ff4d9a; flex: none; }
-#settings-io{
-  display:flex; gap:8px; margin-top:12px;
-}
-#settings-io button{
-  flex:1; font-family:'Lilita One',cursive; font-size:16px; color:#2a1450;
-  background:#fff4c8; border:3px solid #2a1450; border-radius:16px;
-  padding:10px 8px; cursor:pointer; box-shadow:3px 3px 0 #8a5cff;
-}
-#settings-io button:active{ transform: translateY(2px); box-shadow:1px 1px 0 #8a5cff; }
 
 #tabs{
   position:absolute; top: 78px; left: 50%; transform: translateX(-50%);
@@ -184,7 +195,8 @@ html, body{
 
 #progress-pill{ position:absolute; left: 20px; top: 132px; bottom: auto; z-index: 20; background:#b8ff9a; box-shadow: 3px 3px 0 #2a1450; }
 body.reveal-open #progress-pill,
-body.reveal-open #open-panel{ display:none !important; }
+body.reveal-open #open-panel,
+body.reveal-open #gameroom-back{ display:none !important; }
 
 #info-panel{
   position:absolute; right: 20px; top: 140px; width: 280px;
@@ -216,12 +228,14 @@ body.reveal-open #open-panel{ display:none !important; }
 #series-bar{
   position:absolute; top: auto; bottom: max(16px, env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
   z-index: 21; display:flex; gap:6px; max-width: 94vw;
+  overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
   background: var(--cream); border: var(--stroke);
   border-radius: 999px; padding: 4px; box-shadow: 4px 4px 0 #ff4d9a;
 }
+#series-bar::-webkit-scrollbar{ display:none; }
 #series-bar button{
   border: 3px solid transparent; background:transparent; color: var(--text-dim); cursor:pointer;
-  font-family:'Lilita One',cursive; font-weight:400; font-size:15px;
+  font-family:'Lilita One',cursive; font-weight:400; font-size:15px; flex: none;
   padding: 6px 14px; border-radius: 999px; white-space: nowrap;
 }
 #series-bar button.active{
@@ -309,20 +323,22 @@ body.reveal-open #open-panel{ display:none !important; }
 .hidden{ display:none !important; }
 
 @media (max-width: 640px){
-  #topbar{ padding: 6px 10px 0 10px; gap: 6px; align-items: center; }
+  #topbar{ padding: 10px 12px 0 52px; gap: 8px; align-items: center; }
+  .brand{ gap: 7px; min-width: 0; }
   .brand .tagline{ display:none; }
-  #brand-logo{ height: 40px; }
-  .topbar-right{ gap: 6px; flex: none; }
+  .brand .logo-badge{ width: 34px; height: 34px; font-size: 16px; border-radius: 12px; flex: none; }
+  .brand .name{ font-size: 18px; text-shadow: -1px -1px 0 #ffe14d, 1px -1px 0 #ffe14d, -1px 1px 0 #ffe14d, 1px 1px 0 #ffe14d, 3px 3px 0 #e10600; }
+  .topbar-right{ gap: 8px; flex: none; }
   #token-pill{ min-width: 0; padding: 6px 10px; }
   #token-count{ font-size: 15px; }
-  .icon-btn{ width: 34px; height: 34px; border-radius: 12px; font-size: 15px; box-shadow: 2px 2px 0 #8a5cff; }
-  #tabs{ top: 56px; }
+  .icon-btn{ width: 36px; height: 36px; border-radius: 12px; font-size: 16px; box-shadow: 2px 2px 0 #8a5cff; }
+  #tabs{ top: 54px; }
   .tab-btn{ font-size: 14px; padding: 6px 12px; }
   #series-bar{ top: auto; bottom: max(14px, env(safe-area-inset-bottom)); }
   #series-bar button{ font-size: 12px; padding: 6px 8px; }
-  #toast{ top: 148px; }
+  #toast{ top: 154px; }
   #info-panel{ top: auto; bottom: max(14px, env(safe-area-inset-bottom)); left: 10px; right: 10px; width: auto; padding: 14px; }
-  #progress-pill{ left: 10px; top: 140px; bottom: auto; padding: 6px 10px; font-size: 12px; }
+  #progress-pill{ left: 12px; top: 132px; bottom: auto; padding: 6px 10px; font-size: 12px; }
   #open-panel{ bottom: max(16px, env(safe-area-inset-bottom)); }
   #open-btn{ font-size: 20px; padding: 12px 26px; }
   #reveal-name{ font-size: 28px; }
@@ -340,8 +356,11 @@ body.reveal-open #open-panel{ display:none !important; }
 
   <div id="topbar">
     <div class="brand">
-      <canvas id="brand-logo" width="280" height="70" aria-label="SuperUkiz"></canvas>
-      <div class="tagline">Otvori. Skupljaj. Izloži.</div>
+      <div class="logo-badge">🎁</div>
+      <div>
+        <div class="name font-title">SuperUkiz</div>
+        <div class="tagline">Otvori. Skupljaj. Izloži.</div>
+      </div>
     </div>
     <div class="topbar-right">
       <div class="pill" id="token-pill">
@@ -360,7 +379,7 @@ body.reveal-open #open-panel{ display:none !important; }
 
   <div id="toast"></div>
 
-  <div id="progress-pill" class="pill">🧩 <span id="progress-text">0 / 90 skupljeno</span></div>
+  <div id="progress-pill" class="pill">🧩 <span id="progress-text">0 / 120 skupljeno</span></div>
 
   <div id="open-panel">
     <button id="open-btn">OTVORI KESICU</button>
@@ -374,22 +393,22 @@ body.reveal-open #open-panel{ display:none !important; }
     <button type="button" data-series="slatko" class="active">🍬 Slatki svet</button>
     <button type="button" data-series="garaza">🚗 Garaža</button>
     <button type="button" data-series="more">🌊 More</button>
+    <button type="button" data-series="voce">🍏 Voće i Povrće</button>
   </div>
 
   <div id="settings" class="hidden">
     <div id="settings-card">
       <div id="settings-head">
-        <h2>Podešavanja</h2>
+        <h2>Kesice</h2>
         <button type="button" id="settings-close" aria-label="Zatvori">✕</button>
       </div>
       <p id="settings-note">Čekirane serije ulaze u izvlačenje.</p>
       <div id="series-toggles"></div>
-      <div id="settings-io">
-        <button type="button" id="save-btn">💾 Sačuvaj</button>
-        <button type="button" id="load-btn">📂 Uvezi</button>
+      <div id="settings-actions">
+        <button type="button" class="settings-action-btn" id="save-btn">💾 Sačuvaj</button>
+        <button type="button" class="settings-action-btn" id="load-btn">📂 Učitaj</button>
         <input type="file" id="load-input" accept="application/json" class="hidden">
       </div>
-      <a href="../../" id="gameroom-back">⌂ Nazad u Gameroom</a>
     </div>
   </div>
 
@@ -464,6 +483,11 @@ const FACTIONS = {
   mekusi:    { id:'mekusi',    name:'Mekušci',    emoji:'🐙', color:0xc44dff },
   sisari:    { id:'sisari',    name:'Sisari',     emoji:'🐬', color:0x14c4e0 },
   zvezde:    { id:'zvezde',    name:'Zvezde',     emoji:'⭐', color:0xff5f9a },
+  citrusi:   { id:'citrusi',   name:'Citrusi',    emoji:'🍊', color:0xffa726 },
+  jagodicke: { id:'jagodicke', name:'Bobičasto voće', emoji:'🍓', color:0xe0245e },
+  tropsko:   { id:'tropsko',   name:'Tropsko voće',   emoji:'🍍', color:0xcddc39 },
+  korenasto: { id:'korenasto', name:'Korenasto povrće', emoji:'🥕', color:0xe64a19 },
+  listasto:  { id:'listasto',  name:'Lisnato povrće',   emoji:'🥦', color:0x66bb6a },
 };
 const SERIES = {
   slatko: {
@@ -486,6 +510,13 @@ const SERIES = {
     stops:['#b8f4ff','#3ec6ff','#1a6bff','#0a2a78'],
     back:['#7ee8ff','#1f6bff','#0c2f86'],
     band:'#06204a', ink:'#e8fbff', sticker:'#ffd24a',
+  },
+  voce: {
+    id:'voce', name:'Voće i Povrće', badge:'SERIJA 4 · VOĆE I POVRĆE',
+    factions:['citrusi','jagodicke','tropsko','korenasto','listasto'],
+    stops:['#f5ffb0','#c6ec4a','#7fbf3f','#2f7a1f'],
+    back:['#eaff8f','#9ccc3f','#2f7a1f'],
+    band:'#1f3a10', ink:'#eaffb0', sticker:'#ff8a3d',
   },
 };
 let pouchSeries = 'slatko';
@@ -609,6 +640,41 @@ const CHARACTERS = [
   C('morski-jez',   'Morski Jež',     'zvezde','rare',      0x7a4dff,0xffe14d,0xffffff,'Bodlje mu svetle kad se nasmeje.'),
   C('raza',         'Raža',           'zvezde','rare',      0x14c8e0,0xffffff,0x1a4dff,'Klizi kao senka preko peska.'),
   C('koral-kralj',  'Koral Kralj',    'zvezde','legendary', 0xff5fa2,0xffd24a,0x3ec6ff,'Kruna mu je ceo greben.'),
+
+  C('limunko',      'Limunko',        'citrusi','common',    0xfff176,0x9ccc65,0xffffff,'Kiselkasto se osmehuje, ali svima diže raspoloženje.'),
+  C('mandarinko',   'Mandarinko',     'citrusi','common',    0xffb74d,0x4caf50,0xfff3e0,'Lako se oljušti, a ispod kore krije sto osmeha.'),
+  C('limeta',       'Limeta',         'citrusi','common',    0xaed581,0xf9fbe7,0x558b2f,'Najmanja u ekipi, ali najskočnija.'),
+  C('pomorandzo',   'Pomorandžo',     'citrusi','rare',      0xff9800,0xffe0b2,0xffffff,'Sve vreme širi miris letnjeg jutra.'),
+  C('grejpfruta',   'Grejpfruta',     'citrusi','rare',      0xff7043,0xffccbc,0xffffff,'Pomalo gorka, ali ogromnog srca.'),
+  C('kralj-citrus', 'Kralj Citrus',   'citrusi','legendary', 0xffca28,0xff6f00,0xffffff,'Vlada voćnjakom sa krunom od korica.'),
+
+  C('malinko',      'Malinko',        'jagodicke','common',    0xef5350,0xffffff,0x2e7d32,'Sastavljen od stotinu sitnih kapljica slasti.'),
+  C('borovko',      'Borovko',        'jagodicke','common',    0x5c6bc0,0xc5cae9,0x33691e,'Mali i okrugli, ali pun energije.'),
+  C('kupinko',      'Kupinko',        'jagodicke','common',    0x4a148c,0x9575cd,0x2e7d32,'Tamniji od noći, sladi kao dan.'),
+  C('jagoda-zvezda','Jagoda Zvezda',  'jagodicke','rare',      0xff5252,0xffffff,0x2e7d32,'Na svakoj tački ima poljubac sunca.'),
+  C('ribizla',      'Ribizla',        'jagodicke','rare',      0xd32f2f,0xffcdd2,0x1b5e20,'Kad se okupe, prave pravi vatromet boja.'),
+  C('kraljica-bobica','Kraljica Bobica','jagodicke','legendary',0xc2185b,0xffd54f,0xffffff,'Njena kruna je od najslađih zrna u vrtu.'),
+
+  C('bananko',      'Bananko',        'tropsko','common',    0xfff176,0x8d6e63,0xffffff,'Uvek nasmejan, uvek malo kriv.'),
+  C('kivinko',      'Kivinko',        'tropsko','common',    0x8bc34a,0x5d4037,0xf1f8e9,'Dlakav spolja, a iznutra pravi smaragd.'),
+  C('mangovic',     'Mangović',       'tropsko','common',    0xffa726,0xffee58,0x33691e,'Sladak je toliko da mu se i pčele klanjaju.'),
+  C('papajko',      'Papajko',        'tropsko','rare',      0xff7043,0xffca28,0x33691e,'U stomaku nosi crne biserčiće semenki.'),
+  C('ananasic',     'Ananasić',       'tropsko','rare',      0xffca28,0x558b2f,0xffe082,'Bodljikav omot, meden osmeh.'),
+  C('kralj-tropiko','Kralj Tropiko',  'tropsko','legendary', 0xff7043,0xffd54f,0x33691e,'Stigao je iz najtoplijeg dela vrta i nikad ne žuri.'),
+
+  C('mrkvica',      'Mrkvica',        'korenasto','common',    0xff8a3d,0x66bb6a,0xffe0b2,'Najbolje vidi u mraku, kaže da je to od šargarepe.'),
+  C('rotkvica',     'Rotkvica',       'korenasto','common',    0xe57373,0xf5f5f5,0x66bb6a,'Ljuta napolju, blaga iznutra.'),
+  C('krompirko',    'Krompirko',      'korenasto','common',    0xd7b98e,0x8d6e63,0xffffff,'Izgleda obično, ali ume da iznenadi u svakom jelu.'),
+  C('cveklana',     'Cveklana',       'korenasto','rare',      0x8e24aa,0xffffff,0x4a148c,'Gde god prođe, ostavi ljubičasti trag.'),
+  C('celeric',      'Celerić',        'korenasto','rare',      0xdce775,0x827717,0xf9fbe7,'Mirisom napuni celu kuhinju za tren.'),
+  C('kralj-koren',  'Kralj Koren',    'korenasto','legendary', 0xef6c00,0x33691e,0xffd54f,'Duboko ukorenjen, niko ga ne može pomeriti.'),
+
+  C('brokolina',    'Brokolina',      'listasto','common',    0x388e3c,0x1b5e20,0xffffff,'Izgleda kao malo drvo, miriše na pobedu.'),
+  C('salatko',      'Salatko',        'listasto','common',    0x9ccc65,0xf1f8e9,0x558b2f,'Lagan kao pero, hrskav kao smeh.'),
+  C('spanacko',     'Spanaćko',       'listasto','common',    0x2e7d32,0x66bb6a,0xffffff,'Kažu da od njega jačaju mišići — a i osmesi.'),
+  C('kupusko',      'Kupusko',        'listasto','rare',      0x81c784,0xe8f5e9,0x1b5e20,'Ispod svakog lista krije se novi sloj iznenađenja.'),
+  C('paprikana',    'Paprikana',      'listasto','rare',      0xff5252,0x43a047,0xffee58,'Šarena spolja, vatrena iznutra.'),
+  C('kraljica-list','Kraljica List',  'listasto','legendary', 0x2e7d32,0xc6ff00,0xffffff,'Njena kruna je od najsvežijeg lišća u vrtu.'),
 ];
 const CHAR_BY_ID = {}; CHARACTERS.forEach(c => CHAR_BY_ID[c.id] = c);
 
@@ -804,59 +870,19 @@ function comicGlyph(ch, size, fill){
   glyphCache[key] = c;
   return c;
 }
-function comicBolt(size){
-  const key = 'bolt|'+size;
-  if(glyphCache[key]) return glyphCache[key];
-  const c = document.createElement('canvas');
-  c.width = Math.ceil(size*1.55); c.height = Math.ceil(size*1.7);
-  const g = c.getContext('2d');
-  const x = c.width/2, y = c.height/2 + size*0.08;
-  const s = size;
-  function bolt(){
-    g.beginPath();
-    g.moveTo(x - s*0.06, y - s*0.40);
-    g.lineTo(x + s*0.20, y - s*0.40);
-    g.lineTo(x - s*0.02, y - s*0.02);
-    g.lineTo(x + s*0.18, y - s*0.02);
-    g.lineTo(x - s*0.22, y + s*0.46);
-    g.lineTo(x + s*0.02, y + s*0.04);
-    g.lineTo(x - s*0.18, y + s*0.04);
-    g.closePath();
-  }
-  g.lineJoin = 'round'; g.lineCap = 'round';
-  g.save(); g.translate(s*0.03, s*0.05);
-  bolt(); g.lineWidth = s*0.16; g.strokeStyle = '#c41212'; g.stroke();
-  g.restore();
-  bolt(); g.lineWidth = s*0.12; g.strokeStyle = '#ff2d2d'; g.stroke();
-  bolt(); g.lineWidth = s*0.05; g.strokeStyle = '#fff3a0'; g.stroke();
-  bolt(); g.fillStyle = '#ffe14d'; g.fill();
-  g.save();
-  g.globalCompositeOperation = 'source-atop';
-  const hg = g.createLinearGradient(0, y-s*0.5, 0, y+s*0.1);
-  hg.addColorStop(0, 'rgba(255,255,255,0.75)');
-  hg.addColorStop(0.45, 'rgba(255,255,255,0)');
-  g.fillStyle = hg; g.fillRect(0, 0, c.width, c.height);
-  g.restore();
-  g.beginPath();
-  g.arc(x + s*0.06, y - s*0.58, s*0.10, 0, Math.PI*2);
-  g.fillStyle = '#ff2d2d'; g.fill();
-  g.lineWidth = s*0.045; g.strokeStyle = '#9d0c0c'; g.stroke();
-  glyphCache[key] = c;
-  return c;
-}
 function comicLogo(ctx, text, x, y, size, fill){
   fill = fill || '#1f5eff';
   ctx.save(); ctx.translate(x, y);
   ctx.font = '900 '+size+'px "Lilita One", "Arial Black", Arial';
   const chars = [...text];
-  const widths = chars.map(ch => ch==='i' ? size*0.62 : ctx.measureText(ch===' ' ? ' ' : ch).width);
+  const widths = chars.map(ch => ctx.measureText(ch===' ' ? ' ' : ch).width);
   const gap = size*0.01;
   const total = widths.reduce((a,b)=>a+b,0) + gap*Math.max(0, chars.length-1);
   let cx = -total/2;
   chars.forEach((ch,i)=>{
     const t = chars.length<2 ? 0 : i/(chars.length-1)-0.5;
     if(ch!==' '){
-      const glyph = ch==='i' ? comicBolt(size) : comicGlyph(ch, size, fill);
+      const glyph = comicGlyph(ch, size, fill);
       ctx.save();
       ctx.translate(cx+widths[i]/2, -Math.cos(t*Math.PI)*size*0.14);
       ctx.rotate(t*0.42);
@@ -1040,32 +1066,117 @@ function sketchJelly(ctx){
   cartoonEye(ctx, -10, -4, 6); cartoonEye(ctx, 10, -4, 6);
   cartoonGrin(ctx, 0, 6, 6);
 }
+function sketchApple(ctx){
+  stickLimb(ctx, -18, 10, -34, 26, '#ffb347', 8);
+  stickLimb(ctx, 16, 12, 32, 28, '#ffb347', 8);
+  ctx.fillStyle = '#3ecf6e';
+  ctx.beginPath(); ctx.ellipse(9, -32, 7, 15, 0.5, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 3);
+  ctx.strokeStyle = '#6b4a2a'; ctx.lineWidth = 5;
+  ctx.beginPath(); ctx.moveTo(0, -22); ctx.quadraticCurveTo(4, -32, 2, -38); ctx.stroke();
+  ctx.fillStyle = '#ff3d3d';
+  ctx.beginPath(); ctx.moveTo(0, -18); ctx.bezierCurveTo(30, -16, 30, 24, 0, 38); ctx.bezierCurveTo(-30, 24, -30, -16, 0, -18); ctx.fill(); inkPath(ctx, 4);
+  ctx.save(); ctx.globalAlpha = 0.45; ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.ellipse(-10, -2, 8, 16, -0.3, 0, Math.PI*2); ctx.fill(); ctx.restore();
+  cartoonEye(ctx, -9, 4, 6); cartoonEye(ctx, 9, 4, 6);
+  cartoonGrin(ctx, 0, 16, 7);
+}
+function sketchCarrot(ctx){
+  stickLimb(ctx, -14, 6, -30, 18, '#ffb347', 7);
+  stickLimb(ctx, 14, 8, 30, 20, '#ffb347', 7);
+  ctx.fillStyle = '#3ecf6e';
+  [-10,0,10].forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,-24); ctx.lineTo(x-6,-44); ctx.lineTo(x+6,-44); ctx.closePath(); ctx.fill(); });
+  inkPath(ctx, 3);
+  ctx.fillStyle = '#ff8a3d';
+  ctx.beginPath(); ctx.moveTo(-22,-20); ctx.lineTo(22,-20); ctx.lineTo(0,44); ctx.closePath(); ctx.fill(); inkPath(ctx, 4);
+  ctx.strokeStyle = '#e06a1a'; ctx.lineWidth = 2;
+  for(let i=0;i<3;i++){ ctx.beginPath(); ctx.moveTo(-16+i*3, -6+i*12); ctx.lineTo(16-i*3, -6+i*12); ctx.stroke(); }
+  cartoonEye(ctx, -8, -4, 6); cartoonEye(ctx, 8, -4, 6);
+  cartoonGrin(ctx, 0, 8, 6);
+}
+function sketchGrapes(ctx){
+  stickLimb(ctx, -20, 4, -36, 16, '#8a5cff', 7);
+  stickLimb(ctx, 20, 6, 36, 18, '#8a5cff', 7);
+  ctx.fillStyle = '#3ecf6e';
+  ctx.beginPath(); ctx.ellipse(0, -38, 10, 16, 0, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 3);
+  ctx.fillStyle = '#8a5cff';
+  [[-14,-10],[0,-14],[14,-10],[-20,6],[-6,2],[8,4],[20,8],[-12,20],[4,22],[16,24]].forEach(p=>{
+    ctx.beginPath(); ctx.arc(p[0], p[1], 11, 0, Math.PI*2); ctx.fill(); inkPath(ctx, 3);
+  });
+  cartoonEye(ctx, -7, 0, 6); cartoonEye(ctx, 7, 0, 6);
+  cartoonGrin(ctx, 0, 12, 6);
+}
 const PACK_CAST = {
   slatko: [sketchBerry, sketchDonut, sketchCone],
   garaza: [sketchDigger, sketchCar, sketchPlane],
   more: [sketchFish, sketchCrab, sketchJelly],
+  voce: [sketchGrapes, sketchApple, sketchCarrot],
 };
+// dodaje sjaj (gore levo) i senku (dole) preko lika, samo unutar njegovog silueta
+function addToonShading(canvas){
+  const w = canvas.width, h = canvas.height, g = canvas.getContext('2d');
+  g.save();
+  g.globalCompositeOperation = 'source-atop';
+  const shade = g.createLinearGradient(0, h*0.32, 0, h);
+  shade.addColorStop(0, 'rgba(20,10,40,0)');
+  shade.addColorStop(1, 'rgba(20,10,40,0.24)');
+  g.fillStyle = shade; g.fillRect(0, 0, w, h);
+  const gloss = g.createRadialGradient(w*0.34, h*0.26, 2, w*0.34, h*0.26, w*0.46);
+  gloss.addColorStop(0, 'rgba(255,255,255,0.6)');
+  gloss.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = gloss; g.fillRect(0, 0, w, h);
+  g.restore();
+}
+// siluet lika u jednoj boji — koristi se za debelu "sticker" konturu
+function silhouette(canvas, color){
+  const w = canvas.width, h = canvas.height;
+  const s = document.createElement('canvas'); s.width = w; s.height = h;
+  const g = s.getContext('2d');
+  g.drawImage(canvas, 0, 0);
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = color; g.fillRect(0, 0, w, h);
+  return s;
+}
 function drawPackCast(ctx, seriesId, W, H){
+  const theme = SERIES[seriesId] || SERIES.slatko;
+  const pack = PACK_LOOK[theme.id] || PACK_LOOK.slatko;
   const cast = PACK_CAST[seriesId] || PACK_CAST.slatko;
   const spots = [
-    { x:0.22, y:0.54, s:1.65, rot:-0.18 },
-    { x:0.50, y:0.52, s:1.9, rot:0.03 },
-    { x:0.78, y:0.54, s:1.55, rot:0.16 },
+    { x:0.22, y:0.54, s:1.72, rot:-0.2 },
+    { x:0.50, y:0.51, s:2.05, rot:0.03 },
+    { x:0.78, y:0.54, s:1.62, rot:0.18 },
   ];
+  // pozadinske iskrice oko ekipe — dodatna dinamika iza likova
+  [[0.14,0.32,11,'#ffffff'],[0.87,0.30,9,'#ffffff'],[0.30,0.70,8,pack.a],[0.71,0.68,10,pack.a],[0.5,0.23,13,'#ffffff']]
+    .forEach(s=> starShape(ctx, W*s[0], H*s[1], s[2], s[3]));
   cast.forEach((draw, i)=>{
     const c = document.createElement('canvas');
     c.width = 200; c.height = 200;
     const g = c.getContext('2d');
     g.translate(100, 90);
     draw(g);
+    addToonShading(c);
+    const sil = silhouette(c, '#ffffff');
     const p = spots[i];
     ctx.save();
     ctx.translate(W*p.x, H*p.y);
     ctx.rotate(p.rot);
     ctx.scale(p.s, p.s);
+    // senka na "podu" ispod lika, za osećaj dubine
+    ctx.save();
+    ctx.globalAlpha = 0.24; ctx.fillStyle = '#140a2a';
+    ctx.beginPath(); ctx.ellipse(3, 64, 44, 13, 0, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+    // debela bela "sticker" kontura oko lika (krug otisaka silueta)
+    for(let a=0; a<14; a++){
+      const ang = a/14*Math.PI*2;
+      ctx.drawImage(sil, -100+Math.cos(ang)*6.5, -90+Math.sin(ang)*6.5);
+    }
     ctx.drawImage(c, -100, -90);
     ctx.restore();
   });
+  // male akcione zvezdice odmah uz glavnog (srednjeg) lika
+  starShape(ctx, W*0.635, H*0.395, 10, '#ffffff');
+  starShape(ctx, W*0.355, H*0.40, 7, pack.a);
 }
 function pouchSplash(ctx, x, y, color){
   ctx.save(); ctx.translate(x,y);
@@ -1094,6 +1205,7 @@ const PACK_LOOK = {
   slatko: { a:'#ffe14d', b:'#ff8a1a', c:'#ff4d6d', splash:'#1d4dff' },
   garaza: { a:'#ffe566', b:'#ff7a00', c:'#e10600', splash:'#142033' },
   more:   { a:'#fff4a8', b:'#3ec6ff', c:'#1a4dff', splash:'#0a2a78' },
+  voce:   { a:'#fef9b0', b:'#b6e34d', c:'#2f8f3a', splash:'#ff8a3d' },
 };
 
 function makePouchFrontTexture(series){
@@ -1117,8 +1229,6 @@ function makePouchFrontTexture(series){
     ctx.fillStyle = '#e10600'; ctx.font = '900 16px "Lilita One", Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
     ctx.fillText('SAKUPI', 0, -6); ctx.fillText('SVE', 0, 12);
     ctx.restore();
-    crimp(ctx, 0, H*0.1, W);
-    crimp(ctx, H*0.935, H, W);
     tearLine(ctx, W, H);
     zigzagCut(ctx, W, H);
   }, ART_W, ART_H));
@@ -1140,8 +1250,6 @@ function makePouchBackTexture(series){
         ctx.fillText(c===5 ? '⭐' : FACTIONS[f].emoji, x, y+2);
       }
     });
-    crimp(ctx, 0, H*0.1, W);
-    crimp(ctx, H*0.935, H, W);
     tearLine(ctx, W, H);
     zigzagCut(ctx, W, H);
   }, ART_W, ART_H));
@@ -1191,25 +1299,11 @@ function initThree(){
   window.addEventListener('resize', onResize);
 }
 
-function paintBrandLogo(){
-  const c = document.getElementById('brand-logo');
-  if(!c) return;
-  const size = window.innerWidth < 640 ? 22 : 30;
-  const w = Math.ceil(size * 8.4), h = Math.ceil(size * 1.85);
-  const dpr = Math.min(window.devicePixelRatio || 1, 2);
-  c.width = Math.ceil(w * dpr); c.height = Math.ceil(h * dpr);
-  c.style.width = w + 'px'; c.style.height = h + 'px';
-  const ctx = c.getContext('2d');
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.clearRect(0, 0, w, h);
-  comicLogo(ctx, 'SuperUkiz', w / 2, h * 0.62, size, '#1f5eff');
-}
 function onResize(){
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
   fitCameras();
-  paintBrandLogo();
 }
 
 /* ============================= CARTOON MATERIJALI ============================= */
@@ -2553,6 +2647,33 @@ function addToyExtra(g, char, base, accent, trim){
     const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 6), green);
     leaf.scale.set(0.45, 1.6, 0.25);
     leaf.position.set(0.05, 0.68, 0); leaf.rotation.z = -0.4; g.add(leaf);
+  } else if(fac==='citrusi'){
+    const top = new THREE.Mesh(new THREE.SphereGeometry(0.048, 12, 10), accent);
+    top.position.set(0, 0.685, 0); g.add(top);
+    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.026, 0.06, 4), green);
+    leaf.position.set(0.03, 0.73, 0); leaf.rotation.z = -0.6; g.add(leaf);
+  } else if(fac==='jagodicke'){
+    for(let i=0;i<4;i++){
+      const seed = new THREE.Mesh(new THREE.SphereGeometry(0.012, 6, 6), gold);
+      seed.position.set((i-1.5)*0.03, 0.66+((i%2)*0.02), 0.09); g.add(seed);
+    }
+    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.03, 0.05, 4), green);
+    leaf.position.set(0, 0.71, 0); g.add(leaf);
+  } else if(fac==='tropsko'){
+    for(let i=0;i<5;i++){
+      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.02, 0.1, 4), green);
+      leaf.position.set(Math.cos(i)*0.03, 0.7, Math.sin(i)*0.03);
+      leaf.rotation.z = (i-2)*0.25; g.add(leaf);
+    }
+  } else if(fac==='korenasto'){
+    const leafTop = new THREE.Mesh(new THREE.ConeGeometry(0.045, 0.13, 6), green);
+    leafTop.position.set(0, 0.72, 0); g.add(leafTop);
+  } else if(fac==='listasto'){
+    for(let i=0;i<3;i++){
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 6), green);
+      leaf.scale.set(0.5, 1.5, 0.3);
+      leaf.position.set((i-1)*0.05, 0.7, 0); leaf.rotation.z = (i-1)*0.5; g.add(leaf);
+    }
   }
   if(char.rarity==='legendary'){
     const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.045, 5), gold);
@@ -2769,27 +2890,31 @@ function updateParticleSystems(dt){
   }
 }
 
-// konfete: jedan InstancedMesh, pool pravougaonih papirića
+// konfete: po jedan InstancedMesh po boji (ova verzija three.js-a ne čita per-instance
+// boju u MeshBasicMaterial-u, pa šarenilo pravimo kroz nekoliko pool-ova sa fiksnom bojom)
 const CONF_MAX = 260;
-let confettiMesh, confetti = [];
+const CONF_COLORS = [0xff4d6d,0xffb13d,0xffe14d,0x5ee06b,0x4db8ff,0xa46bff,0xff5ad1,0xffffff];
+let confettiPools = [], confetti = [];
 const confDummy = new THREE.Object3D();
 function buildConfetti(){
-  confettiMesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.035,0.06), new THREE.MeshBasicMaterial({ side:THREE.DoubleSide }), CONF_MAX);
-  confettiMesh.count = 0; confettiMesh.frustumCulled = false;
-  for(let i=0;i<CONF_MAX;i++) confettiMesh.setColorAt(i, new THREE.Color(1,1,1));
-  openRoot.add(confettiMesh);
+  confettiPools = CONF_COLORS.map(hex=>{
+    const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.035,0.06), new THREE.MeshBasicMaterial({ color:hex, side:THREE.DoubleSide, toneMapped:false }), CONF_MAX);
+    mesh.frustumCulled = false;
+    mesh.count = 0;
+    openRoot.add(mesh);
+    return mesh;
+  });
 }
 function spawnConfetti(origin, n, power){
-  const cols = [0xff4d6d,0xffb13d,0xffe14d,0x5ee06b,0x4db8ff,0xa46bff,0xff5ad1,0xffffff].map(c=>new THREE.Color(c));
   for(let i=0;i<n;i++){
     if(confetti.length>=CONF_MAX) confetti.shift();
     const a = rand(0,Math.PI*2);
     confetti.push({ p: origin.clone(), v: new THREE.Vector3(Math.cos(a)*rand(0.3,1.3)*power, rand(1.5,3.2)*power, Math.sin(a)*rand(0.3,1.1)*power),
-      r: new THREE.Vector3(rand(0,6),rand(0,6),rand(0,6)), w: new THREE.Vector3(rand(-9,9),rand(-9,9),rand(-9,9)), c: cols[i%cols.length], life: rand(2,3.2) });
+      r: new THREE.Vector3(rand(0,6),rand(0,6),rand(0,6)), w: new THREE.Vector3(rand(-9,9),rand(-9,9),rand(-9,9)),
+      colorIdx: Math.floor(Math.random()*CONF_COLORS.length), life: rand(2,3.2) });
   }
 }
 function updateConfetti(dt){
-  let n = 0;
   for(let i=confetti.length-1;i>=0;i--){
     const c = confetti[i];
     c.life -= dt;
@@ -2799,15 +2924,17 @@ function updateConfetti(dt){
     c.p.addScaledVector(c.v, dt);
     c.r.addScaledVector(c.w, dt);
   }
+  const perPoolCount = new Array(confettiPools.length).fill(0);
   for(const c of confetti){
+    const pool = confettiPools[c.colorIdx];
+    const idx = perPoolCount[c.colorIdx]++;
+    if(idx >= CONF_MAX) continue;
     confDummy.position.copy(c.p); confDummy.rotation.set(c.r.x,c.r.y,c.r.z);
     confDummy.scale.setScalar(Math.min(1, c.life*2));
     confDummy.updateMatrix();
-    confettiMesh.setMatrixAt(n, confDummy.matrix); confettiMesh.setColorAt(n, c.c); n++;
+    pool.setMatrixAt(idx, confDummy.matrix);
   }
-  confettiMesh.count = n;
-  confettiMesh.instanceMatrix.needsUpdate = true;
-  if(confettiMesh.instanceColor) confettiMesh.instanceColor.needsUpdate = true;
+  confettiPools.forEach((pool,i)=>{ pool.count = perPoolCount[i]; pool.instanceMatrix.needsUpdate = true; });
 }
 
 let rays, raysMat, beamCone, ring, ringMat;
@@ -2866,8 +2993,17 @@ const sfx = (()=>{
     rip(){ noise(0.12, 0.25, rand(1800,3200)); },
     pop(){ tone(300, 0.18, 'sine', 0.2, 900); },
     sparkle(){ [1318,1568,2093].forEach((f,i)=>tone(f, 0.12, 'triangle', 0.05, null, i*0.06)); },
-    rare(){ [523,659,784,1046].forEach((f,i)=>tone(f, 0.22, 'triangle', 0.08, null, i*0.09)); },
-    legendary(){ [392,523,659,784,1046,1318].forEach((f,i)=>tone(f, 0.35, 'square', 0.05, null, i*0.1)); tone(1568, 0.8, 'triangle', 0.06, null, 0.65); },
+    rare(){
+      noise(0.22, 0.09, 3200);
+      [523,659,784,1046,1318].forEach((f,i)=>tone(f, 0.26, 'triangle', 0.09, null, i*0.075));
+      tone(1568, 0.5, 'sine', 0.05, null, 0.42);
+    },
+    legendary(){
+      tone(110, 0.6, 'sine', 0.18, 60, 0);
+      noise(0.4, 0.13, 2600);
+      [392,523,659,784,1046,1318,1568].forEach((f,i)=>tone(f, 0.4, 'square', 0.055, null, 0.12+i*0.09));
+      [784,1046,1568,2093].forEach((f,i)=>tone(f, 0.9, 'triangle', 0.055, null, 0.9+i*0.08));
+    },
   };
 })();
 
@@ -3017,21 +3153,28 @@ function enterPhase(name){
     openRoot.add(activeFigure);
     const top = new THREE.Vector3(0, pouch.group.position.y + POUCH_H*0.35, 0.05);
     const lvl = ch.rarity==='legendary' ? 2 : ch.rarity==='rare' ? 1 : 0;
-    spawnParticleBurst(top, RARITY[ch.rarity].hex, ch.accent, [60,110,200][lvl], [0.09,0.12,0.15][lvl], [1,1.2,1.5][lvl]);
-    spawnConfetti(top, [50,110,220][lvl], [0.8,1,1.25][lvl]);
+    spawnParticleBurst(top, RARITY[ch.rarity].hex, ch.accent, [60,150,320][lvl], [0.09,0.13,0.17][lvl], [1,1.35,1.8][lvl]);
+    spawnConfetti(top, [50,160,340][lvl], [0.8,1.15,1.5][lvl]);
     ringMat.color.set(RARITY[ch.rarity].hex); ringMat.opacity = 0.9; ring.scale.setScalar(0.3);
     if(lvl>0){
       beamCone.visible = true; beamCone.material.color.set(RARITY[ch.rarity].hex); beamCone.material.opacity = 0;
       raysMat.color.set(lvl===2 ? 0xffd24a : 0x6fc3ff);
       rarityPop(ch);
-      camShake = lvl===2 ? 0.06 : 0.025;
-      screenFlash(lvl===2 ? '#fff6c9' : '#d9f0ff', lvl===2 ? 0.95 : 0.5);
+      camShake = lvl===2 ? 0.09 : 0.04;
+      screenFlash(lvl===2 ? '#fff6c9' : '#d9f0ff', lvl===2 ? 1 : 0.62);
       if(lvl===2) sfx.legendary(); else sfx.rare();
     } else sfx.sparkle();
   }
   if(name==='result'){
     updateTokenUI(); updateProgressUI();
     showResultCard(ch, pendingIsNew, pendingBonus);
+    // dodatni "sletni" bljesak čestica tačno kad se pojavi kartica — jači za retke/legendarne
+    const lvl2 = ch.rarity==='legendary' ? 2 : ch.rarity==='rare' ? 1 : 0;
+    if(lvl2>0){
+      const landPt = new THREE.Vector3(0, 1.1, 0.05);
+      spawnParticleBurst(landPt, RARITY[ch.rarity].hex, ch.accent, lvl2===2?150:75, lvl2===2?0.15:0.11, lvl2===2?1.35:1.05);
+      if(lvl2===2) spawnConfetti(landPt, 130, 1.1);
+    }
   }
   if(name==='idle'){
     if(activeFigure){ openRoot.remove(activeFigure); activeFigure=null; }
@@ -3098,19 +3241,20 @@ function updateOpenSequence(dt){
     if(t>0.25){ const d = easeOutCubic(clamp((t-0.25)/0.7,0,1)); pouch.group.position.y = 0.46 - d*1.2; pouch.mats.forEach(m=>{ m.transparent = true; m.opacity = 1-d; }); }
     pouch.leakMat.opacity = Math.max(0, pouch.leakMat.opacity - dt*2);
     pouch.glowMat.opacity = Math.max(0, pouch.glowMat.opacity - dt*1.2);
-    ring.scale.setScalar(0.3 + t*2.2); ringMat.opacity = Math.max(0, 0.9 - t*1.2);
+    const lvl = ch.rarity==='legendary' ? 2 : ch.rarity==='rare' ? 1 : 0;
+    ring.scale.setScalar(0.3 + t*(2.2 + lvl*1.1)); ringMat.opacity = Math.max(0, (0.9 + lvl*0.05) - t*(1.2 - lvl*0.2));
     if(activeFigure){
       const bs = activeFigure.userData.baseScale;
       if(t<0.45){ const k = easeOutCubic(t/0.45); activeFigure.position.y = lerp(0.6, 1.05, k); activeFigure.scale.setScalar(lerp(0.25, 1.15, k)*bs); }
       else { const k = clamp((t-0.45)/0.6,0,1); activeFigure.position.y = lerp(1.05, 0.12, easeOutBounce(k)); activeFigure.scale.setScalar(lerp(1.15,1,k)*bs); }
       activeFigure.rotation.y = lerp(activeFigure.rotation.y, 0, Math.min(1, dt*8));
     }
-    const lvl = ch.rarity==='legendary' ? 2 : ch.rarity==='rare' ? 1 : 0;
     if(lvl>0){
-      beamCone.material.opacity = Math.sin(clamp(t/1.05,0,1)*Math.PI)*0.55;
+      beamCone.material.opacity = Math.sin(clamp(t/1.05,0,1)*Math.PI)*(0.4+lvl*0.2);
       raysMat.opacity = Math.min(lvl===2 ? 0.9 : 0.55, t*2);
     }
-    if(lvl===2 && Math.random()<dt*8) spawnConfetti(new THREE.Vector3(rand(-0.6,0.6),1.4,rand(-0.2,0.2)), 6, 0.4);
+    if(lvl===2 && Math.random()<dt*14) spawnConfetti(new THREE.Vector3(rand(-0.7,0.7),1.5,rand(-0.25,0.25)), 10, 0.55);
+    if(lvl===1 && Math.random()<dt*5) spawnConfetti(new THREE.Vector3(rand(-0.5,0.5),1.3,rand(-0.2,0.2)), 5, 0.4);
     if(t>=1.05){ pouch.group.visible = false; enterPhase('result'); }
   }
   else if(phase==='result'){
@@ -3137,7 +3281,7 @@ let shelfFocus = null;
 function fitCameras(){
   const aspect = window.innerWidth/window.innerHeight, halfT = Math.tan(THREE.MathUtils.degToRad(camera.fov/2));
   // otvaranje: fiksna udaljenost (bez zuma) — dovoljno da kesica/figura stanu i na uskom ekranu
-  openCamGoal.radius = openCam.radius = Math.max(2.7, 0.62/(halfT*aspect));
+  openCamGoal.radius = openCam.radius = Math.max(2.45, 0.56/(halfT*aspect));
   // showroom: na uskom ekranu bliži kadar (figure se vide), širina se gleda prevlačenjem
   const wide = Math.max(4.6/halfT*0.5, 2.6/(halfT*Math.max(aspect, 0.55)));
   const portrait = aspect < 0.9;
@@ -3229,6 +3373,27 @@ function paintSeaWall(ctx, s){
     ctx.beginPath(); ctx.moveTo(x, s); ctx.quadraticCurveTo(x+20, s*0.82, x-8, s*0.7); ctx.stroke();
   }
 }
+function paintFruitWall(ctx, s){
+  const g = ctx.createLinearGradient(0,0,0,s);
+  g.addColorStop(0,'#eaffb0'); g.addColorStop(0.5,'#b6e34d'); g.addColorStop(1,'#3f8f1f');
+  ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
+  ctx.fillStyle='#ffe14d';
+  ctx.beginPath(); ctx.arc(s*0.78, s*0.15, s*0.075, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.4)'; ctx.lineWidth=6;
+  for(let i=0;i<6;i++){
+    const x = s*(0.08+i*0.17);
+    ctx.beginPath(); ctx.moveTo(x, s); ctx.quadraticCurveTo(x+18, s*0.6, x-10, s*0.3); ctx.stroke();
+  }
+  ctx.globalAlpha=0.6;
+  for(let i=0;i<40;i++){ ctx.fillStyle = i%2 ? '#fff6c9' : '#ffffff'; ctx.beginPath(); ctx.arc(Math.random()*s, s*0.15+Math.random()*s*0.7, rand(3,7), 0, Math.PI*2); ctx.fill(); }
+  ctx.globalAlpha=1;
+}
+function paintFruitFloor(ctx, s){
+  ctx.fillStyle='#c98a4b'; ctx.fillRect(0,0,s,s);
+  for(let i=0;i<8;i++){ ctx.fillStyle = i%2 ? '#b6742f' : '#c98a4b'; ctx.fillRect(0,i*s/8,s,s/8); }
+  ctx.strokeStyle='rgba(0,0,0,0.15)'; ctx.lineWidth=3;
+  for(let i=0;i<4;i++){ ctx.beginPath(); ctx.moveTo(i*s/4,0); ctx.lineTo(i*s/4,s); ctx.stroke(); }
+}
 function paintSweetFloor(ctx, s){
   for(let i=0;i<8;i++){ ctx.fillStyle = i%2 ? '#e39a4a' : '#c47b32'; ctx.fillRect(0,i*s/8,s,s/8); }
 }
@@ -3249,15 +3414,18 @@ function paintSeaFloor(ctx, s){
 const ROOM_BACKDROP = {
   slatko: ['#2f6dff','#6a3dff','#ff5fa8'],
   garaza: ['#7ecbff','#ffe7a0','#ffb020'],
-  more: ['#7fe7ff','#1470e0','#07285f']
+  more: ['#7fe7ff','#1470e0','#07285f'],
+  voce: ['#eaffb0','#9ccc3f','#2f7a1f']
 };
 function showroomBackdrop(){
   return makeGradientTexture(ROOM_BACKDROP[showroomSeries] || ROOM_BACKDROP.slatko);
 }
 
+const WALL_PAINT = { garaza:paintGarageWall, more:paintSeaWall, voce:paintFruitWall };
+const FLOOR_PAINT = { garaza:paintGarageFloor, more:paintSeaFloor, voce:paintFruitFloor };
 function buildShowroomScene(){
-  const wallPaint = showroomSeries==='garaza' ? paintGarageWall : showroomSeries==='more' ? paintSeaWall : paintSweetWall;
-  const floorPaint = showroomSeries==='garaza' ? paintGarageFloor : showroomSeries==='more' ? paintSeaFloor : paintSweetFloor;
+  const wallPaint = WALL_PAINT[showroomSeries] || paintSweetWall;
+  const floorPaint = FLOOR_PAINT[showroomSeries] || paintSweetFloor;
   const wallTex = srgb(makeCanvasTexture(wallPaint, 512));
   const wall = new THREE.Mesh(new THREE.PlaneGeometry(9,5.4), new THREE.MeshStandardMaterial({ map:wallTex, roughness:0.9 }));
   wall.position.set(-0.25,2.3,-1.3); wall.receiveShadow = true;
@@ -3632,10 +3800,8 @@ function init(){
   updateTokenUI();
   updateProgressUI();
   // redraw labela kad se font učita (grafika kesice koristi Baloo 2)
-  paintBrandLogo();
   if(document.fonts && document.fonts.ready) document.fonts.ready.then(()=>{
     buildAllPouchTex();
-    paintBrandLogo();
     renderSeriesSettings();
     if(phase==='idle') spawnPouch(true);
   });
@@ -3668,11 +3834,12 @@ function animate(){
 
 init();
 </script>
-<!-- gameroom:back — link nazad na landing (ne brisati); dugme je u podešavanjima -->
+<!-- gameroom:back — link nazad na landing (ne brisati) -->
+<a href="../../" id="gameroom-back" title="Nazad u Gameroom" aria-label="Nazad u Gameroom">⌂</a>
 <style>
-#gameroom-back{display:flex;align-items:center;justify-content:center;margin-top:8px;padding:10px 8px;border-radius:16px;background:#fff4c8;color:#2a1450;border:3px solid #2a1450;font:400 16px/1 'Lilita One',cursive;text-decoration:none;box-shadow:3px 3px 0 #8a5cff;-webkit-tap-highlight-color:transparent}
+#gameroom-back{position:fixed;left:max(14px,env(safe-area-inset-left));top:max(14px,env(safe-area-inset-top));right:auto;bottom:auto;z-index:30;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:14px;background:#fffdf6;color:#2a1450;border:3px solid #2a1450;font:700 20px/1 system-ui,sans-serif;text-decoration:none;box-shadow:3px 3px 0 #8a5cff;opacity:1;-webkit-tap-highlight-color:transparent}
 #gameroom-back:hover,#gameroom-back:focus-visible{transform:translateY(-2px)}
-#gameroom-back:active{transform:translateY(2px);box-shadow:1px 1px 0 #8a5cff}
+@media (max-width:640px){#gameroom-back{width:34px;height:34px;left:10px;top:8px;border-radius:12px;font-size:16px;box-shadow:2px 2px 0 #8a5cff}}
 </style>
 </body>
 </html>
