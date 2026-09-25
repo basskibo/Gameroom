@@ -2313,5 +2313,11 @@ if (qs.has('auto')) {
   document.title = `wave=${state.wave} hp=${Math.ceil(state.baseHp)} score=${state.score} tier=${state.weaponTier} barrels=${state.barrels} dmgLvl=${state.dmgLvl} rateLvl=${state.rateLvl} dps=${Math.round(curDmg()*curShots()*curRate())} kills=${state.kills} mobs=${monsters.length} running=${state.running}`;
 }
 </script>
+<!-- gameroom:back — link nazad na landing (ne brisati) -->
+<a href="../../" id="gameroom-back" title="Nazad u Gameroom" aria-label="Nazad u Gameroom">⌂</a>
+<style>
+#gameroom-back{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:2147483647;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(15,12,30,.72);color:#fff;font:700 20px/1 system-ui,sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.75;transition:opacity .15s,transform .15s;-webkit-tap-highlight-color:transparent}
+#gameroom-back:hover,#gameroom-back:focus-visible{opacity:1;transform:scale(1.08)}
+</style>
 </body>
 </html>

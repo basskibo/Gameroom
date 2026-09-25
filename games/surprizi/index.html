@@ -323,21 +323,21 @@ const RARITY = {
 };
 
 const CHARACTERS = [
-  // Blistavci (heroji svetla)
-  { id:'iskrica',       name:'Iskrica',       faction:'blistavci', rarity:'common',    base:0x53e6ff, accent:0xff8fd6, desc:'Mala varnica energije — uvek je prva na zabavi.' },
-  { id:'zumby',         name:'Zumby',         faction:'blistavci', rarity:'common',    base:0x7ee0ff, accent:0xffe066, desc:'Skakutavo stvorenje sa oprugom umesto nogu.' },
-  { id:'kapetan-sjaj',  name:'Kapetan Sjaj',  faction:'blistavci', rarity:'rare',      base:0x3fc6ff, accent:0xfff2b0, desc:'Vođa odreda — nosi štit napravljen od čistog svetla.' },
-  { id:'zvezdana',      name:'Zvezdana',      faction:'blistavci', rarity:'legendary', base:0xcdeeff, accent:0xffe27a, desc:'Priča kaže da je rođena iz padajuće zvezde.' },
-  // Mrakoni (šeretlije iz senke)
-  { id:'zupko',         name:'Zupko',         faction:'mrakoni', rarity:'common',    base:0x6a4fd6, accent:0x9dff5a, desc:'Mali zupčasti nestaško — voli da petlja po mašinama.' },
-  { id:'kiselko',       name:'Kiselko',       faction:'mrakoni', rarity:'common',    base:0x5a3fc2, accent:0xb6ff3d, desc:'Kaplje kiselo-zelenom energijom kad se nasmeje.' },
-  { id:'lord-mrak',     name:'Lord Mrak',     faction:'mrakoni', rarity:'rare',      base:0x4a2fa8, accent:0x7dffb0, desc:'Vlada senkama, ali u srcu je sasvim fin.' },
-  { id:'kraljica-senki',name:'Kraljica Senki',faction:'mrakoni', rarity:'legendary', base:0x2e1a66, accent:0xffd24a, desc:'Najmoćnija figura iz čitavog sveta senki.' },
-  // Divljaci (duhovi prirode)
-  { id:'liscan',        name:'Liščan',        faction:'divljaci', rarity:'common',    base:0x5a9e4a, accent:0xd9c23d, desc:'Napravljen od lišća — šušti kad god hoda.' },
-  { id:'kamenko',       name:'Kamenko',       faction:'divljaci', rarity:'common',    base:0x8a7a5a, accent:0x6a9e4a, desc:'Tvrd spolja, mek iznutra.' },
-  { id:'vatrenko',      name:'Vatrenko',      faction:'divljaci', rarity:'rare',      base:0xd9793d, accent:0xffb84a, desc:'Nosi plamičak koji nikad ne gasi.' },
-  { id:'drevni-koren',  name:'Drevni Koren',  faction:'divljaci', rarity:'legendary', base:0x3d6a2f, accent:0xffcf6b, desc:'Stariji je od svih priča koje se o njemu pričaju.' },
+  // Blistavci (heroji svetla) — kristalno-slatkišni fazon, svako drugačiji "predmet"
+  { id:'iskrica',       name:'Iskrica',       faction:'blistavci', rarity:'common',    base:0x53e6ff, accent:0xff8fd6, trim:0xffffff, desc:'Mala varnica energije — uvek je prva na zabavi.' },
+  { id:'zumby',         name:'Zumby',         faction:'blistavci', rarity:'common',    base:0x7ee0ff, accent:0xffe066, trim:0xff8fd6, desc:'Skakutavo bombonasto stvorenje sa oprugom umesto nogu.' },
+  { id:'kapetan-sjaj',  name:'Kapetan Sjaj',  faction:'blistavci', rarity:'rare',      base:0x3fc6ff, accent:0xfff2b0, trim:0xffd24a, desc:'Vođa odreda — nosi štit napravljen od čistog svetla.' },
+  { id:'zvezdana',      name:'Zvezdana',      faction:'blistavci', rarity:'legendary', base:0xcdeeff, accent:0xffe27a, trim:0xffffff, desc:'Priča kaže da je rođena iz padajuće zvezde.' },
+  // Mrakoni (šeretlije iz senke) — mehaničko-gadžet fazon
+  { id:'zupko',         name:'Zupko',         faction:'mrakoni', rarity:'common',    base:0x6a4fd6, accent:0x9dff5a, trim:0xd8d8ee, desc:'Mali zupčasti nestaško — voli da petlja po mašinama.' },
+  { id:'kiselko',       name:'Kiselko',       faction:'mrakoni', rarity:'common',    base:0x5a3fc2, accent:0xb6ff3d, trim:0xe8ffcf, desc:'Kaplje kiselo-zelenom energijom kad se nasmeje.' },
+  { id:'lord-mrak',     name:'Lord Mrak',     faction:'mrakoni', rarity:'rare',      base:0x4a2fa8, accent:0x7dffb0, trim:0xffd24a, desc:'Vlada senkama, ali u srcu je sasvim fin.' },
+  { id:'kraljica-senki',name:'Kraljica Senki',faction:'mrakoni', rarity:'legendary', base:0x2e1a66, accent:0xffd24a, trim:0xff5ac8, desc:'Najmoćnija figura iz čitavog sveta senki.' },
+  // Divljaci (duhovi prirode) — plodovi i šumske poslastice
+  { id:'liscan',        name:'Liščan',        faction:'divljaci', rarity:'common',    base:0x5a9e4a, accent:0xd9c23d, trim:0xffffff, rough:0.4, desc:'Napravljen od lišća — šušti kad god hoda.' },
+  { id:'kamenko',       name:'Kamenko',       faction:'divljaci', rarity:'common',    base:0x8a7a5a, accent:0x6a9e4a, trim:0xffffff, rough:0.55, desc:'Tvrd spolja, mek iznutra — pečurka od kamena.' },
+  { id:'vatrenko',      name:'Vatrenko',      faction:'divljaci', rarity:'rare',      base:0xd9793d, accent:0xffb84a, trim:0xffe066, desc:'Nosi plamičak koji nikad ne gasi.' },
+  { id:'drevni-koren',  name:'Drevni Koren',  faction:'divljaci', rarity:'legendary', base:0x3d6a2f, accent:0xffcf6b, trim:0xffc6e0, rough:0.5, desc:'Stariji je od svih priča koje se o njemu pričaju.' },
 ];
 const CHAR_BY_ID = {}; CHARACTERS.forEach(c=>CHAR_BY_ID[c.id]=c);
 
@@ -545,191 +545,403 @@ function onResize(){
 /* ============================= FIGURE FACTORY ============================= */
 
 function makeEyePair(parent, opts){
+  // Cartoonish oči: bela beonjača + obojena šarenica + zenica + sjaj, umesto proste tačkice.
   opts = opts || {};
   const spacing = opts.spacing!==undefined?opts.spacing:0.075;
   const y = opts.y!==undefined?opts.y:0;
   const z = opts.z!==undefined?opts.z:0.14;
-  const r = opts.r!==undefined?opts.r:0.032;
+  const r = opts.r!==undefined?opts.r:0.036;
+  const irisColor = opts.irisColor!==undefined?opts.irisColor:0x2a2044;
   [-1,1].forEach(side=>{
-    const pupil = new THREE.Mesh(new THREE.SphereGeometry(r,12,12), blackMat);
-    pupil.position.set(side*spacing, y, z);
+    const sclera = new THREE.Mesh(new THREE.SphereGeometry(r*1.15,14,14), whiteMat);
+    sclera.scale.set(1,1.18,0.55);
+    sclera.position.set(side*spacing, y, z-0.008);
+    parent.add(sclera);
+    const iris = new THREE.Mesh(new THREE.CircleGeometry(r*0.74,16), new THREE.MeshBasicMaterial({ color:irisColor }));
+    iris.position.set(side*spacing, y, z+0.012);
+    parent.add(iris);
+    const pupil = new THREE.Mesh(new THREE.CircleGeometry(r*0.36,12), blackMat);
+    pupil.position.set(side*spacing+side*r*0.08, y-r*0.06, z+0.014);
     parent.add(pupil);
-    const hi = new THREE.Mesh(new THREE.SphereGeometry(r*0.32,8,8), whiteMat);
-    hi.position.set(side*spacing + r*0.35, y+r*0.4, z+r*0.55);
+    const hi = new THREE.Mesh(new THREE.CircleGeometry(r*0.24,8), whiteMat);
+    hi.position.set(side*spacing+r*0.34, y+r*0.44, z+0.016);
     parent.add(hi);
   });
 }
 
-function buildBlistavac(char, baseMat, accentMat){
-  // Chibi proporcije: veliki, sjajni okrugli lik, sitno telo -- klasičan "surprise capsule" fazon
-  const g = new THREE.Group();
-  const lightMat = baseMat.clone(); lightMat.color.offsetHSL(0,0,0.14);
-
-  const torso = pillMesh(0.155, 0.26, baseMat); torso.position.y = 0.205; g.add(torso);
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.215,26,20), lightMat);
-  head.position.y = 0.46; g.add(head);
-  makeEyePair(head, { spacing:0.09, y:-0.015, z:0.19, r:0.042 });
-
-  [-1,1].forEach(side=>{
-    const blush = new THREE.Mesh(new THREE.CircleGeometry(0.028,12), new THREE.MeshBasicMaterial({ color:char.accent, transparent:true, opacity:0.4 }));
-    blush.position.set(side*0.135,-0.03,0.175); blush.rotation.y = side*-0.5;
-    head.add(blush);
-  });
-
-  [-1,1].forEach(side=>{
-    const stalk = pillMesh(0.016,0.12,accentMat);
-    stalk.position.set(side*0.1,0.62,0); stalk.rotation.z = side*0.4; g.add(stalk);
-    const tip = new THREE.Mesh(new THREE.IcosahedronGeometry(0.036,0), accentMat);
-    tip.position.set(side*0.16,0.7,0); g.add(tip);
-  });
-
-  const emblem = new THREE.Mesh(new THREE.OctahedronGeometry(0.05,0), accentMat);
-  emblem.position.set(0,0.235,0.15); emblem.rotation.y = Math.PI/4; g.add(emblem);
-
-  [-1,1].forEach(side=>{
-    const arm = pillMesh(0.05,0.16,baseMat);
-    arm.position.set(side*0.185,0.25,0); arm.rotation.z = side*-0.5; g.add(arm);
-    const leg = pillMesh(0.06,0.12,lightMat);
-    leg.position.set(side*0.08,0.045,0); g.add(leg);
-  });
-
-  if(char.rarity==='legendary'){
-    [-1,1].forEach(side=>{
-      const wing = new THREE.Mesh(new THREE.ConeGeometry(0.15,0.32,4), accentMat);
-      wing.scale.set(0.25,1,0.9);
-      wing.position.set(side*0.22,0.3,-0.1);
-      wing.rotation.z = side*0.55; wing.rotation.x = 0.3;
-      g.add(wing);
-    });
+function addCape(g, color, opts){
+  // Mali "plašt" na leđima -- zupčasti donji rub, blago savijen unazad, dodatna boja/detalj na figuri.
+  opts = opts || {};
+  const w = opts.w!==undefined?opts.w:0.22;
+  const h = opts.h!==undefined?opts.h:0.3;
+  const y = opts.y!==undefined?opts.y:0.28;
+  const z = opts.z!==undefined?opts.z:-0.1;
+  const teeth = 4;
+  const shape = new THREE.Shape();
+  shape.moveTo(-w/2, h*0.5);
+  shape.lineTo(w/2, h*0.5);
+  shape.lineTo(w*0.42, -h*0.5+0.03);
+  for(let i=0;i<teeth;i++){
+    const x1 = lerp(w*0.42, -w*0.42, (i+0.5)/teeth);
+    const x2 = lerp(w*0.42, -w*0.42, (i+1)/teeth);
+    shape.quadraticCurveTo(x1, -h*0.5-0.025, x2, -h*0.5+0.03);
   }
+  shape.lineTo(-w/2, h*0.5);
+  const geo = new THREE.ExtrudeGeometry(shape, { depth:0.018, bevelEnabled:false, curveSegments:6 });
+  geo.translate(0,0,-0.009);
+  const mat = new THREE.MeshPhysicalMaterial({ color, roughness:0.4, metalness:0.06, clearcoat:0.6, clearcoatRoughness:0.35, side:THREE.DoubleSide });
+  const cape = new THREE.Mesh(geo, mat);
+  cape.position.set(0,y,z);
+  cape.rotation.x = -0.22;
+  cape.castShadow = true;
+  g.add(cape);
+  return cape;
+}
+
+function addStubLimbs(g, mat, opts){
+  opts = opts || {};
+  const armY = opts.armY!==undefined?opts.armY:0.22;
+  const armX = opts.armX!==undefined?opts.armX:0.15;
+  const legY = opts.legY!==undefined?opts.legY:0.045;
+  const legX = opts.legX!==undefined?opts.legX:0.08;
+  const armR = opts.armR!==undefined?opts.armR:0.042;
+  const armLen = opts.armLen!==undefined?opts.armLen:0.12;
+  const legR = opts.legR!==undefined?opts.legR:0.05;
+  const legLen = opts.legLen!==undefined?opts.legLen:0.09;
+  const armTilt = opts.armTilt!==undefined?opts.armTilt:0.4;
+  const legMat = opts.legMat || mat;
+  [-1,1].forEach(side=>{
+    const arm = pillMesh(armR, armLen, mat);
+    arm.position.set(side*armX, armY, 0); arm.rotation.z = side*-armTilt;
+    g.add(arm);
+    if(!opts.noLegs){
+      const leg = pillMesh(legR, legLen, legMat);
+      leg.position.set(side*legX, legY, 0);
+      g.add(leg);
+    }
+  });
+}
+
+/* --- Blistavci: kristalno-slatkišni oblici --- */
+
+function buildIskrica(char, baseMat, accentMat, trimMat){
+  // Fasetirani kristal iskre
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.OctahedronGeometry(0.2,0), baseMat);
+  body.position.y = 0.32; body.rotation.y = Math.PI/8;
+  g.add(body);
+  makeEyePair(body, { spacing:0.078, y:-0.02, z:0.15, r:0.036 });
+  for(let i=0;i<4;i++){
+    const a = i/4*Math.PI*2;
+    const shard = new THREE.Mesh(new THREE.ConeGeometry(0.032,0.1,4), trimMat);
+    shard.position.set(Math.cos(a)*0.17, 0.32+Math.sin(a)*0.03, Math.sin(a)*0.1);
+    shard.rotation.z = -a; shard.rotation.x = 0.3;
+    g.add(shard);
+  }
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.055,0.17,5), accentMat);
+  tip.position.y = 0.53; g.add(tip);
+  addStubLimbs(g, baseMat, { armY:0.24, armX:0.17, legY:0.045 });
+  addCape(g, char.accent, { w:0.18, h:0.22, y:0.3, z:-0.11 });
   return g;
 }
 
-function buildMrakon(char, baseMat, accentMat){
-  // Chibi proporcije: krupna kockasta glava, sitno telo, sjajan "vinyl toy" fazon
+function buildZumby(char, baseMat, accentMat, trimMat){
+  // Gumeni bombonski skakutavac sa oprugom
   const g = new THREE.Group();
-  const darkMat = baseMat.clone(); darkMat.color.offsetHSL(0,0,-0.07);
-
-  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.24,0.24,0.19), baseMat);
-  torso.position.y = 0.185; g.add(torso);
-
-  const head = new THREE.Mesh(new THREE.BoxGeometry(0.34,0.3,0.3), darkMat);
-  head.position.y = 0.44; g.add(head);
-  makeEyePair(head, { spacing:0.075, y:0, z:0.16, r:0.038 });
-
-  const vent = new THREE.Mesh(new THREE.BoxGeometry(0.18,0.03,0.02), accentMat);
-  vent.position.set(0,0.375,0.16); g.add(vent);
-
-  [-1,1].forEach(side=>{
-    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.04,0.11,5), accentMat);
-    spike.position.set(side*0.2,0.34,0); spike.rotation.z = side*-0.5; g.add(spike);
-  });
-
-  const chestVent = new THREE.Mesh(new THREE.BoxGeometry(0.04,0.13,0.02), accentMat);
-  chestVent.position.set(0,0.18,0.1); g.add(chestVent);
-
-  [-1,1].forEach(side=>{
-    const arm = pillMesh(0.045,0.15,darkMat);
-    arm.position.set(side*0.16,0.2,0); arm.rotation.z = side*-0.35; g.add(arm);
-    const leg = new THREE.Mesh(new THREE.BoxGeometry(0.085,0.12,0.1), darkMat);
-    leg.position.set(side*0.07,0.04,0); g.add(leg);
-  });
-
-  const tail = new THREE.Group();
-  for(let i=0;i<3;i++){
-    const s = new THREE.Mesh(new THREE.SphereGeometry(0.042-i*0.01,10,8), darkMat);
-    s.position.set(0,0.08-i*0.07,-0.12-i*0.07); tail.add(s);
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.19,20,16), baseMat);
+  body.scale.set(1,1.25,1); body.position.y = 0.34; g.add(body);
+  const capTop = new THREE.Mesh(new THREE.ConeGeometry(0.1,0.14,16), baseMat);
+  capTop.position.y = 0.34+0.19*1.25*0.72; g.add(capTop);
+  makeEyePair(body, { spacing:0.07, y:0.04, z:0.16, r:0.038 });
+  for(let i=0;i<4;i++){
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.09,0.02,8,16), trimMat);
+    ring.rotation.x = Math.PI/2;
+    ring.position.y = 0.02+i*0.035;
+    ring.scale.set(1-i*0.02,1-i*0.02,1);
+    g.add(ring);
   }
+  addStubLimbs(g, baseMat, { armY:0.28, armX:0.19, noLegs:true });
+  addCape(g, char.accent, { w:0.16, h:0.2, y:0.34, z:-0.1 });
+  return g;
+}
+
+function buildKapetanSjaj(char, baseMat, accentMat, trimMat){
+  // Kapetan sa okruglim štitom -- kolut/"kolačić" telo
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.175,0.19,0.14,22), baseMat);
+  body.position.y = 0.2; g.add(body);
+  const rim = new THREE.Mesh(new THREE.TorusGeometry(0.175,0.018,8,24), trimMat);
+  rim.rotation.x = Math.PI/2; rim.position.y = 0.2; g.add(rim);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17,20,16), baseMat);
+  head.position.y = 0.44; g.add(head);
+  makeEyePair(head, { spacing:0.072, y:0, z:0.15, r:0.036 });
+  const visor = new THREE.Mesh(new THREE.TorusGeometry(0.09,0.014,8,16,Math.PI), accentMat);
+  visor.position.set(0,0.5,0.13); visor.rotation.x = -0.3; g.add(visor);
+  const shield = new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.11,0.02,20), trimMat);
+  shield.rotation.z = Math.PI/2; shield.position.set(0.24,0.22,0.05); g.add(shield);
+  const shieldGem = new THREE.Mesh(new THREE.OctahedronGeometry(0.03,0), accentMat);
+  shieldGem.position.set(0.25,0.22,0.07); g.add(shieldGem);
+  addStubLimbs(g, baseMat, { armY:0.22, armX:0.19, legY:0.05, legX:0.09 });
+  addCape(g, char.accent, { w:0.24, h:0.3, y:0.28, z:-0.12 });
+  return g;
+}
+
+function buildZvezdana(char, baseMat, accentMat, trimMat){
+  // Petokraka zvezda-kometa sa repom
+  const g = new THREE.Group();
+  const starShape = new THREE.Shape();
+  const spikes=5, oR=0.22, iR=0.09;
+  for(let i=0;i<spikes*2;i++){
+    const r = i%2===0?oR:iR;
+    const a = (Math.PI/spikes)*i - Math.PI/2;
+    const x=Math.cos(a)*r, y=Math.sin(a)*r;
+    i===0?starShape.moveTo(x,y):starShape.lineTo(x,y);
+  }
+  starShape.closePath();
+  const starGeo = new THREE.ExtrudeGeometry(starShape, { depth:0.07, bevelEnabled:true, bevelThickness:0.012, bevelSize:0.012, bevelSegments:2, curveSegments:6 });
+  starGeo.translate(0,0,-0.035);
+  const body = new THREE.Mesh(starGeo, baseMat);
+  body.position.y = 0.4; g.add(body);
+  makeEyePair(body, { spacing:0.07, y:0, z:0.09, r:0.036 });
+  const tailMat = accentMat.clone(); tailMat.transparent = true; tailMat.opacity = 0.7;
+  const tail = new THREE.Mesh(new THREE.ConeGeometry(0.1,0.32,10,1,true), tailMat);
+  tail.rotation.x = Math.PI/2; tail.position.set(0,0.4,-0.24);
   g.add(tail);
-
-  if(char.rarity==='legendary'){
-    const crown = new THREE.Group();
-    for(let i=0;i<5;i++){
-      const spike = new THREE.Mesh(new THREE.ConeGeometry(0.025,0.09,4), accentMat);
-      const a = (i-2)*0.13;
-      spike.position.set(a,0.62,0); spike.rotation.z = -a*1.4;
-      crown.add(spike);
-    }
-    g.add(crown);
-    const gem = new THREE.Mesh(new THREE.IcosahedronGeometry(0.045,0), accentMat);
-    gem.position.set(0,0.46,0.17); g.add(gem);
-  }
+  addStubLimbs(g, baseMat, { armY:0.32, armX:0.2, legY:0.06, legX:0.1 });
+  addCape(g, char.accent, { w:0.26, h:0.3, y:0.36, z:-0.14 });
   return g;
 }
 
-function buildDivljak(char, baseMat, accentMat){
-  // Chibi proporcije: veliki okrugli lik, sitne šapice -- fazon mekog vinyl stvorenja
+/* --- Mrakoni: mehaničko-gadžet oblici --- */
+
+function buildZupko(char, baseMat, accentMat, trimMat){
+  // Glava u obliku zupčanika
   const g = new THREE.Group();
-
-  const torso = new THREE.Mesh(new THREE.SphereGeometry(0.165,20,16), baseMat);
-  torso.scale.set(1,0.82,1); torso.position.y = 0.185; g.add(torso);
-
-  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2,22,18), baseMat);
-  head.position.y = 0.44; g.add(head);
-  makeEyePair(head, { spacing:0.08, y:0, z:0.175, r:0.036 });
-
-  [-1,1].forEach(side=>{
-    const fin = new THREE.Mesh(new THREE.ConeGeometry(0.038,0.11,4), accentMat);
-    fin.scale.set(0.4,1,1.1);
-    fin.position.set(side*0.15,0.56,-0.02); fin.rotation.z = side*0.6; fin.rotation.x=-0.2;
-    g.add(fin);
-  });
-
-  const rockMat = accentMat.clone(); rockMat.emissiveIntensity = 0.12;
-  const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(0.065,0), rockMat);
-  rock.position.set(0.16,0.22,0.06); g.add(rock);
-
-  [-1,1].forEach(side=>{
-    const arm = pillMesh(0.055,0.12,baseMat);
-    arm.position.set(side*0.185,0.19,0); arm.rotation.z = side*-0.4; g.add(arm);
-    const leg = pillMesh(0.065,0.11,baseMat);
-    leg.position.set(side*0.085,0.04,0); g.add(leg);
-  });
-
-  if(char.rarity==='legendary'){
-    torso.material = torso.material.clone();
-    torso.material.transparent = true; torso.material.opacity = 0.9;
-    const core = new THREE.Mesh(new THREE.SphereGeometry(0.08,14,12), new THREE.MeshStandardMaterial({ color:char.accent, emissive:char.accent, emissiveIntensity:1.4 }));
-    core.position.y = 0.185; g.add(core);
-    const orbit = new THREE.Group(); orbit.name = 'orbit';
-    for(let i=0;i<3;i++){
-      const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.02,0.06,4), accentMat);
-      const a = i/3*Math.PI*2;
-      leaf.position.set(Math.cos(a)*0.28, 0.35+Math.sin(a*2)*0.05, Math.sin(a)*0.28);
-      orbit.add(leaf);
-    }
-    g.add(orbit);
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.2,0.2,0.16), baseMat);
+  torso.position.y = 0.18; g.add(torso);
+  const gearHead = new THREE.Mesh(new THREE.CylinderGeometry(0.17,0.17,0.16,12), baseMat);
+  gearHead.position.y = 0.42; g.add(gearHead);
+  const teethCount = 10;
+  for(let i=0;i<teethCount;i++){
+    const a = i/teethCount*Math.PI*2;
+    const tooth = new THREE.Mesh(new THREE.BoxGeometry(0.045,0.16,0.045), trimMat);
+    tooth.position.set(Math.cos(a)*0.19,0.42,Math.sin(a)*0.19);
+    tooth.rotation.y = -a;
+    g.add(tooth);
   }
+  makeEyePair(gearHead, { spacing:0.07, y:0, z:0.155, r:0.034 });
+  const bolt = new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,0.03,6), trimMat);
+  bolt.position.set(0,0.18,0.09); g.add(bolt);
+  addStubLimbs(g, baseMat, { armY:0.2, armX:0.16, legY:0.045, legX:0.075 });
+  addCape(g, char.accent, { w:0.18, h:0.2, y:0.24, z:-0.1 });
   return g;
 }
+
+function buildKiselko(char, baseMat, accentMat, trimMat){
+  // Flašica kiselih kapi
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.15,0.13,0.32,18), baseMat);
+  body.position.y = 0.24; g.add(body);
+  const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.09,0.09,14), baseMat);
+  neck.position.y = 0.42; g.add(neck);
+  const cork = new THREE.Mesh(new THREE.CylinderGeometry(0.065,0.065,0.05,12), trimMat);
+  cork.position.y = 0.48; g.add(cork);
+  makeEyePair(body, { spacing:0.07, y:0.03, z:0.145, r:0.034 });
+  [-1,1].forEach(side=>{
+    const drip = new THREE.Mesh(new THREE.SphereGeometry(0.025,8,8), accentMat);
+    drip.position.set(side*0.11,0.08,0.1); g.add(drip);
+  });
+  addStubLimbs(g, baseMat, { armY:0.24, armX:0.15, legY:0.045, legX:0.07 });
+  addCape(g, char.accent, { w:0.16, h:0.22, y:0.26, z:-0.1 });
+  return g;
+}
+
+function buildLordMrak(char, baseMat, accentMat, trimMat){
+  // Fenjer gospodara senki
+  const g = new THREE.Group();
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16,0.18,0.28,10), baseMat);
+  body.position.y = 0.24; g.add(body);
+  for(let i=0;i<6;i++){
+    const a = i/6*Math.PI*2;
+    const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.008,0.008,0.3,6), trimMat);
+    bar.position.set(Math.cos(a)*0.165,0.24,Math.sin(a)*0.165);
+    g.add(bar);
+  }
+  const roof = new THREE.Mesh(new THREE.ConeGeometry(0.19,0.14,10), trimMat);
+  roof.position.y = 0.43; g.add(roof);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.06,0.012,8,12,Math.PI), trimMat);
+  handle.position.y = 0.53; handle.rotation.z = Math.PI; g.add(handle);
+  const glow = new THREE.Mesh(new THREE.SphereGeometry(0.09,14,12), new THREE.MeshStandardMaterial({ color:char.accent, emissive:char.accent, emissiveIntensity:1.1 }));
+  glow.position.y = 0.26; g.add(glow);
+  makeEyePair(glow, { spacing:0.045, y:0, z:0.08, r:0.02 });
+  addStubLimbs(g, baseMat, { armY:0.2, armX:0.18, legY:0.03, legX:0.09 });
+  addCape(g, char.accent, { w:0.24, h:0.3, y:0.24, z:-0.13 });
+  return g;
+}
+
+function buildKraljicaSenki(char, baseMat, accentMat, trimMat){
+  // Kruna kraljice senki
+  const g = new THREE.Group();
+  const gown = new THREE.Mesh(new THREE.ConeGeometry(0.22,0.42,16), baseMat);
+  gown.position.y = 0.22; g.add(gown);
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17,20,16), baseMat);
+  head.position.y = 0.5; g.add(head);
+  makeEyePair(head, { spacing:0.07, y:0, z:0.155, r:0.036 });
+  const crown = new THREE.Group();
+  for(let i=0;i<5;i++){
+    const spike = new THREE.Mesh(new THREE.ConeGeometry(0.03,0.11,4), trimMat);
+    const a=(i-2)*0.15;
+    spike.position.set(a,0.67,0); spike.rotation.z=-a*1.3;
+    crown.add(spike);
+    const gem = new THREE.Mesh(new THREE.OctahedronGeometry(0.018,0), accentMat);
+    gem.position.set(a,0.62,0.02); crown.add(gem);
+  }
+  g.add(crown);
+  const scepterStick = pillMesh(0.014,0.32,trimMat);
+  scepterStick.position.set(0.26,0.3,0); scepterStick.rotation.z = -0.15; g.add(scepterStick);
+  const scepterTop = new THREE.Mesh(new THREE.OctahedronGeometry(0.04,0), accentMat);
+  scepterTop.position.set(0.28,0.46,0); g.add(scepterTop);
+  addStubLimbs(g, baseMat, { armY:0.32, armX:0.2, noLegs:true });
+  addCape(g, char.accent, { w:0.3, h:0.4, y:0.34, z:-0.15 });
+  return g;
+}
+
+/* --- Divljaci: plodovi i šumske poslastice --- */
+
+function buildLiscan(char, baseMat, accentMat, trimMat){
+  // Želudov lisnati duh
+  const g = new THREE.Group();
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.19,18,14,0,Math.PI*2,0,Math.PI*0.55), accentMat);
+  cap.position.y = 0.46; g.add(cap);
+  const body = new THREE.Mesh(new THREE.SphereGeometry(0.17,18,14), baseMat);
+  body.scale.set(1,1.1,1); body.position.y = 0.28; g.add(body);
+  makeEyePair(body, { spacing:0.07, y:0.03, z:0.15, r:0.036 });
+  [-1,1].forEach(side=>{
+    const leaf = new THREE.Mesh(new THREE.ConeGeometry(0.06,0.14,4), trimMat);
+    leaf.scale.set(0.5,1,1.2);
+    leaf.position.set(side*0.16,0.5,-0.02); leaf.rotation.z = side*0.6; leaf.rotation.x=-0.2;
+    g.add(leaf);
+  });
+  const stem = pillMesh(0.018,0.08,trimMat);
+  stem.position.y = 0.58; g.add(stem);
+  addStubLimbs(g, baseMat, { armY:0.22, armX:0.17, legY:0.04, legX:0.08 });
+  addCape(g, char.accent, { w:0.2, h:0.22, y:0.24, z:-0.1 });
+  return g;
+}
+
+function buildKamenko(char, baseMat, accentMat, trimMat){
+  // Pečurka od kamena
+  const g = new THREE.Group();
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.22,20,14,0,Math.PI*2,0,Math.PI*0.5), baseMat);
+  cap.position.y = 0.42; g.add(cap);
+  const capRim = new THREE.Mesh(new THREE.TorusGeometry(0.215,0.02,8,28), accentMat);
+  capRim.position.y = 0.42; capRim.rotation.x = Math.PI/2; g.add(capRim);
+  for(let i=0;i<5;i++){
+    const spot = new THREE.Mesh(new THREE.CircleGeometry(0.028,10), trimMat);
+    const a = (i/5)*Math.PI*2, rr = 0.09+ (i%2)*0.05;
+    spot.position.set(Math.cos(a)*rr, 0.42+0.157, Math.sin(a)*rr);
+    spot.rotation.x = -Math.PI/2;
+    g.add(spot);
+  }
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.11,0.14,0.26,14), trimMat);
+  stem.position.y = 0.21; g.add(stem);
+  makeEyePair(stem, { spacing:0.06, y:0.02, z:0.115, r:0.032, irisColor:0x3d3020 });
+  addStubLimbs(g, baseMat, { armY:0.22, armX:0.16, legY:0.04, legX:0.08, legMat:trimMat });
+  addCape(g, char.accent, { w:0.2, h:0.2, y:0.3, z:-0.11 });
+  return g;
+}
+
+function buildVatrenko(char, baseMat, accentMat, trimMat){
+  // Savijeni čili sa plamičkom
+  const g = new THREE.Group();
+  const body = pillMesh(0.1, 0.3, baseMat, 16);
+  body.position.set(-0.02,0.32,0); body.rotation.z = 0.3;
+  g.add(body);
+  const tip = new THREE.Mesh(new THREE.ConeGeometry(0.09,0.13,12), baseMat);
+  tip.position.set(-0.11,0.47,0.01); tip.rotation.z = Math.PI+0.3;
+  g.add(tip);
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.032,0.09,8), accentMat);
+  stem.position.set(0.11,0.16,0); stem.rotation.z = 0.3; g.add(stem);
+  makeEyePair(body, { spacing:0.055, y:0.03, z:0.095, r:0.03 });
+  const flameMat = new THREE.MeshStandardMaterial({ color:char.accent, emissive:char.accent, emissiveIntensity:0.9 });
+  const flame = new THREE.Mesh(new THREE.ConeGeometry(0.05,0.14,8), flameMat);
+  flame.position.set(-0.16,0.52,0); g.add(flame);
+  addStubLimbs(g, baseMat, { armY:0.26, armX:0.16, legY:0.05, legX:0.08 });
+  addCape(g, char.accent, { w:0.18, h:0.22, y:0.26, z:-0.11 });
+  return g;
+}
+
+function buildDrevniKoren(char, baseMat, accentMat, trimMat){
+  // Drevni panj sa korenjem
+  const g = new THREE.Group();
+  const barkMat = new THREE.MeshStandardMaterial({ color:0x5c4530, roughness:0.9 });
+  const stump = new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.23,0.34,16), barkMat);
+  stump.position.y = 0.2; g.add(stump);
+  const topRing = new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.19,0.02,16), baseMat);
+  topRing.position.y = 0.37; g.add(topRing);
+  const growthRing = new THREE.Mesh(new THREE.TorusGeometry(0.13,0.008,6,20), accentMat);
+  growthRing.rotation.x = -Math.PI/2; growthRing.position.y = 0.381; g.add(growthRing);
+  makeEyePair(stump, { spacing:0.075, y:0, z:0.185, r:0.038 });
+  for(let i=0;i<4;i++){
+    const a = i/4*Math.PI*2+0.4;
+    const root = new THREE.Mesh(new THREE.ConeGeometry(0.045,0.16,6), barkMat);
+    root.position.set(Math.cos(a)*0.2,0.02,Math.sin(a)*0.2);
+    root.rotation.x = Math.PI*0.42; root.rotation.y = -a;
+    g.add(root);
+  }
+  const sapling = new THREE.Mesh(new THREE.ConeGeometry(0.06,0.16,8), baseMat);
+  sapling.position.y = 0.46; g.add(sapling);
+  [-1,0,1].forEach(i=>{
+    const blossom = new THREE.Mesh(new THREE.SphereGeometry(0.028,8,8), trimMat);
+    blossom.position.set(i*0.05,0.52+Math.abs(i)*-0.02,0.02);
+    g.add(blossom);
+  });
+  addStubLimbs(g, barkMat, { armY:0.24, armX:0.2, noLegs:true });
+  addCape(g, char.accent, { w:0.26, h:0.28, y:0.28, z:-0.14 });
+  return g;
+}
+
+const SHAPE_BUILDERS = {
+  'iskrica': buildIskrica,
+  'zumby': buildZumby,
+  'kapetan-sjaj': buildKapetanSjaj,
+  'zvezdana': buildZvezdana,
+  'zupko': buildZupko,
+  'kiselko': buildKiselko,
+  'lord-mrak': buildLordMrak,
+  'kraljica-senki': buildKraljicaSenki,
+  'liscan': buildLiscan,
+  'kamenko': buildKamenko,
+  'vatrenko': buildVatrenko,
+  'drevni-koren': buildDrevniKoren,
+};
 
 function buildFigureModel(char){
   const group = new THREE.Group();
   group.name = char.id;
-  const baseMat = new THREE.MeshPhysicalMaterial({ color:char.base, roughness: char.faction==='divljaci'?0.5:0.18, metalness: 0.05, clearcoat:1, clearcoatRoughness:0.15 });
+  const rough = char.rough!==undefined ? char.rough : 0.2;
+  const baseMat = new THREE.MeshPhysicalMaterial({ color:char.base, roughness:rough, metalness:0.05, clearcoat: rough<0.4?1:0.4, clearcoatRoughness:0.15 });
   const accentMat = new THREE.MeshPhysicalMaterial({ color:char.accent, emissive:char.accent, emissiveIntensity:0.5, roughness:0.22, metalness:0.1, clearcoat:1, clearcoatRoughness:0.15 });
+  const trimMat = new THREE.MeshStandardMaterial({ color: char.trim!==undefined?char.trim:0xffffff, metalness:0.55, roughness:0.28 });
 
-  let body;
-  if(char.faction==='blistavci') body = buildBlistavac(char, baseMat, accentMat);
-  else if(char.faction==='mrakoni') body = buildMrakon(char, baseMat, accentMat);
-  else body = buildDivljak(char, baseMat, accentMat);
+  const builder = SHAPE_BUILDERS[char.id] || buildIskrica;
+  const body = builder(char, baseMat, accentMat, trimMat);
   group.add(body);
 
   const isLegendary = char.rarity==='legendary';
   const isRare = char.rarity==='rare';
 
   if(isLegendary){
-    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.21,0.016,10,40), accentMat);
-    halo.position.y = 0.68; halo.rotation.x = Math.PI/2 + 0.15;
+    const halo = new THREE.Mesh(new THREE.TorusGeometry(0.24,0.016,10,40), accentMat);
+    halo.position.y = 0.72; halo.rotation.x = Math.PI/2 + 0.15;
     group.add(halo);
     const glow = new THREE.PointLight(char.accent, 1.0, 2.2);
-    glow.position.y = 0.4; group.add(glow);
+    glow.position.y = 0.42; group.add(glow);
   }
 
   group.traverse(o=>{ if(o.isMesh){ o.castShadow=true; o.receiveShadow=true; } });
 
-  const scale = isLegendary?1.16:(isRare?1.05:0.98);
+  const scale = isLegendary?1.14:(isRare?1.04:0.98);
   group.scale.setScalar(scale);
   group.userData.baseScale = scale;
   group.userData.floatSeed = Math.random()*10;
@@ -751,7 +963,7 @@ function buildPouch(){
   const group = new THREE.Group();
   const hw=0.31, H=0.62, D=0.1, R=0.075;
 
-  const foilMat = new THREE.MeshPhysicalMaterial({ color:0xe0b6ff, metalness:0.5, roughness:0.2, clearcoat:1, clearcoatRoughness:0.12 });
+  const foilMat = new THREE.MeshPhysicalMaterial({ color:0xe0b6ff, metalness:0.5, roughness:0.2, clearcoat:1, clearcoatRoughness:0.12, transparent:true });
   const halfGeo = extrudeRounded(hw, H, R, D);
 
   const hingeLeft = new THREE.Group();
@@ -810,7 +1022,7 @@ function buildPouch(){
   flash.scale.set(1.6,1.6,1.6); flash.position.y = 0.12;
   group.add(flash);
 
-  return { group, hingeLeft, hingeRight, sealGroup, sealMat, flash, flashMat };
+  return { group, hingeLeft, hingeRight, sealGroup, sealMat, flash, flashMat, foilMat };
 }
 
 /* ============================= ČESTICE ============================= */
@@ -881,7 +1093,7 @@ let pendingIsNew = false;
 function buildOpenScene(){
   const pedestalTex = makeCanvasTexture((ctx,s)=>{
     const g = ctx.createRadialGradient(s/2,s/2,0, s/2,s/2,s/2);
-    g.addColorStop(0,'#3a2a66'); g.addColorStop(0.6,'#241a44'); g.addColorStop(1,'#140c28');
+    g.addColorStop(0,'#3a2a1e'); g.addColorStop(0.6,'#231a12'); g.addColorStop(1,'#120d09');
     ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
     ctx.strokeStyle='rgba(255,255,255,0.08)'; ctx.lineWidth=2;
     for(let r=30;r<s/2;r+=30){ ctx.beginPath(); ctx.arc(s/2,s/2,r,0,Math.PI*2); ctx.stroke(); }
@@ -936,6 +1148,7 @@ function enterPhase(name){
     if(activeFigure){ openRoot.remove(activeFigure); }
     activeFigure = buildFigureModel(pendingCharacter);
     activeFigure.position.set(pouch.group.position.x, -0.05, pouch.group.position.z);
+    activeFigure.rotation.y = 0.4; // lep 3/4 ugao za prikaz; korisnik može dalje da okreće kamerom
     activeFigure.scale.setScalar(0.0001);
     openRoot.add(activeFigure);
     if(pendingCharacter.rarity!=='common'){
@@ -978,9 +1191,8 @@ function updateOpenSequence(dt){
   }
   else if(phase==='splitting'){
     const dur=0.55; const t=clamp(phaseTime/dur,0,1); const e=easeOutCubic(t);
-    pouch.hingeLeft.rotation.y = -e*2.3;
-    pouch.hingeRight.rotation.y = e*2.3;
-    pouch.sealGroup.position.y = lerp(pouch.sealGroup.position.y===undefined?0:pouch.sealGroup.position.y, 0, 0); // no-op guard
+    pouch.hingeLeft.rotation.y = -e*1.9;
+    pouch.hingeRight.rotation.y = e*1.9;
     pouch.sealGroup.position.y = lerp(0.26, 0.75, e);
     pouch.sealMat.opacity = 1-e;
     pouch.sealGroup.rotation.z = e*1.1;
@@ -994,26 +1206,42 @@ function updateOpenSequence(dt){
   else if(phase==='revealing'){
     const dur=1.0; const t=clamp(phaseTime/dur,0,1);
     const e = easeOutBack(t);
+    // Polovine kesice se razmiču i tonu u stranu/dole i nestaju (fade), tako da figura
+    // koja raste iznad njih nikad ne "prolazi kroz" kutiju dok se otvara.
+    const openT = clamp(phaseTime/0.55,0,1);
+    const openE = easeOutCubic(openT);
+    pouch.hingeLeft.position.x = -openE*0.6; pouch.hingeLeft.position.y = -openE*0.6;
+    pouch.hingeRight.position.x = openE*0.6; pouch.hingeRight.position.y = -openE*0.6;
+    pouch.foilMat.opacity = 1-openE;
     if(activeFigure){
       activeFigure.scale.setScalar(Math.max(0.0001,e) * activeFigure.userData.baseScale);
       activeFigure.position.y = lerp(-0.05, 0.42, easeOutCubic(t));
-      activeFigure.rotation.y += dt*1.4;
     }
     if(beamCone.visible){ beamCone.material.opacity = Math.sin(clamp(t*1.6,0,1)*Math.PI)*0.5; }
-    if(t>=1){ enterPhase('result'); }
+    if(t>=1){ pouch.group.visible = false; enterPhase('result'); }
   }
   else if(phase==='result'){
-    if(activeFigure) activeFigure.rotation.y += dt*0.6;
+    // Figura mirno stoji (blagi float) -- korisnik sam okreće kameru prevlačenjem i zumira točkićem.
+    if(activeFigure) activeFigure.position.y = 0.42 + Math.sin(clock.elapsedTime*1.6)*0.015;
     if(beamCone.visible){ beamCone.material.opacity = Math.max(0, beamCone.material.opacity-dt*0.4); }
   }
 
   updateParticleSystems(dt);
 }
 
-function updateOpenCamera(dt, elapsed){
-  const targetPos = new THREE.Vector3(Math.sin(elapsed*0.12)*0.35, 1.05+Math.sin(elapsed*0.2)*0.03, 2.55);
-  camera.position.lerp(targetPos, 0.04);
-  camera.lookAt(0,0.55,0);
+const openCamTarget = new THREE.Vector3(0,0.5,0);
+const openCamSpherical = { theta:0.0, phi:1.34, radius:2.68 };
+const openCamTargetSpherical = { theta:0.0, phi:1.34, radius:2.68 };
+
+function updateOpenCamera(dt){
+  // Korisnik sam okreće/zumira kameru (prevlačenje + točkić), baš kao u showroom-u --
+  // više nema prisilne automatske rotacije oko kesice/figure.
+  const k = 1-Math.pow(0.0008, dt);
+  openCamSpherical.theta = lerp(openCamSpherical.theta, openCamTargetSpherical.theta, k);
+  openCamSpherical.phi = lerp(openCamSpherical.phi, openCamTargetSpherical.phi, k);
+  openCamSpherical.radius = lerp(openCamSpherical.radius, openCamTargetSpherical.radius, k);
+  camera.position.copy(sphericalToCartesian(openCamSpherical, openCamTarget));
+  camera.lookAt(openCamTarget);
 }
 
 /* ============================= SHOWROOM ============================= */
@@ -1027,7 +1255,7 @@ const camTargetSpherical = { theta:0.0, phi:1.22, radius:5.6 };
 function buildShowroomScene(){
   const wallTex = makeCanvasTexture((ctx,s)=>{
     const g = ctx.createLinearGradient(0,0,0,s);
-    g.addColorStop(0,'#2a1f55'); g.addColorStop(1,'#140c2c');
+    g.addColorStop(0,'#123a4a'); g.addColorStop(1,'#0a1c2b');
     ctx.fillStyle=g; ctx.fillRect(0,0,s,s);
     ctx.globalAlpha=0.12; ctx.fillStyle='#ffffff';
     for(let i=0;i<40;i++){ const x=Math.random()*s,y=Math.random()*s,r=Math.random()*1.6+0.4; ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill(); }
@@ -1037,7 +1265,7 @@ function buildShowroomScene(){
   showroomRoot.add(wall);
 
   const floorTex = makeCanvasTexture((ctx,s)=>{
-    ctx.fillStyle='#1c1436'; ctx.fillRect(0,0,s,s);
+    ctx.fillStyle='#0f2430'; ctx.fillRect(0,0,s,s);
     ctx.strokeStyle='rgba(255,255,255,0.05)'; ctx.lineWidth=2;
     for(let i=0;i<s;i+=32){ ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i,s);ctx.stroke(); ctx.beginPath();ctx.moveTo(0,i);ctx.lineTo(s,i);ctx.stroke(); }
   }, 512);
@@ -1053,7 +1281,7 @@ function buildShowroomScene(){
   showroomRoot.add(key);
   const fill = new THREE.PointLight(0x9d7bff,0.6,10); fill.position.set(-3,2,2);
   showroomRoot.add(fill);
-  const ambient2 = new THREE.HemisphereLight(0x6a5cc9, 0x100a20, 0.5);
+  const ambient2 = new THREE.HemisphereLight(0x3fb0c9, 0x140c08, 0.5);
   showroomRoot.add(ambient2);
 
   const factionOrder = ['blistavci','mrakoni','divljaci'];
@@ -1166,26 +1394,33 @@ function updateShowroomCamera(dt){
 
 let isDragging=false, lastX=0, lastY=0, dragAccum=0;
 
-function setupShowroomControls(){
+function setupOrbitControls(){
+  // Zajednička prevlačenje-za-okretanje / točkić-za-zum kontrola i za showroom i za scenu otvaranja,
+  // tako da korisnik uvek sam kontroliše kameru (nema prisilne auto-rotacije).
   const el = renderer.domElement;
   el.addEventListener('pointerdown', e=>{
-    if(currentMode!=='showroom') return;
+    if(currentMode!=='showroom' && currentMode!=='open') return;
     isDragging=true; lastX=e.clientX; lastY=e.clientY; dragAccum=0;
     try{ el.setPointerCapture(e.pointerId); }catch(err){}
   });
   el.addEventListener('pointermove', e=>{
-    if(!isDragging || currentMode!=='showroom') return;
+    if(!isDragging) return;
     const dx=e.clientX-lastX, dy=e.clientY-lastY;
     lastX=e.clientX; lastY=e.clientY;
     dragAccum += Math.abs(dx)+Math.abs(dy);
-    camTargetSpherical.theta -= dx*0.006;
-    camTargetSpherical.phi = clamp(camTargetSpherical.phi - dy*0.006, 0.55, 1.5);
+    const target = currentMode==='showroom' ? camTargetSpherical : openCamTargetSpherical;
+    target.theta -= dx*0.006;
+    target.phi = clamp(target.phi - dy*0.006, 0.5, 1.55);
   });
   window.addEventListener('pointerup', ()=>{ isDragging=false; });
   el.addEventListener('wheel', e=>{
-    if(currentMode!=='showroom') return;
+    if(currentMode!=='showroom' && currentMode!=='open') return;
     e.preventDefault();
-    camTargetSpherical.radius = clamp(camTargetSpherical.radius + e.deltaY*0.0026, 2.8, 7.6);
+    if(currentMode==='showroom'){
+      camTargetSpherical.radius = clamp(camTargetSpherical.radius + e.deltaY*0.0026, 2.8, 7.6);
+    } else {
+      openCamTargetSpherical.radius = clamp(openCamTargetSpherical.radius + e.deltaY*0.0018, 1.5, 4.4);
+    }
   }, { passive:false });
   el.addEventListener('click', onShowroomClick);
 }
@@ -1349,15 +1584,15 @@ function init(){
   sparkleTex = makeSparkleSprite();
   questionTex = makeQuestionTexture();
   stickerTex = makeStickerTexture();
-  openBgTex = makeGradientTexture(['#33235c','#171029','#0c0817']);
-  showroomBgTex = makeGradientTexture(['#241a44','#140c28','#0a0716']);
+  openBgTex = makeGradientTexture(['#ff6fb0','#ffb648','#12222b']);
+  showroomBgTex = makeGradientTexture(['#17c9c0','#0e6fb0','#0a1c2b']);
   scene.background = openBgTex;
 
   raycaster = new THREE.Raycaster();
   mouse = new THREE.Vector2();
 
   buildOpenScene();
-  setupShowroomControls();
+  setupOrbitControls();
   setupSaveLoad();
 
   document.querySelectorAll('.tab-btn').forEach(btn=>{
@@ -1384,7 +1619,7 @@ function animate(){
 
   if(currentMode==='open'){
     updateOpenSequence(dt);
-    updateOpenCamera(dt, elapsed);
+    updateOpenCamera(dt);
   } else {
     updateShowroomCamera(dt);
     updateShelfFiguresIdle(dt, elapsed);
@@ -1397,5 +1632,11 @@ function animate(){
 init();
 
 </script>
+<!-- gameroom:back — link nazad na landing (ne brisati) -->
+<a href="../../" id="gameroom-back" title="Nazad u Gameroom" aria-label="Nazad u Gameroom">⌂</a>
+<style>
+#gameroom-back{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:2147483647;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(15,12,30,.72);color:#fff;font:700 20px/1 system-ui,sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.75;transition:opacity .15s,transform .15s;-webkit-tap-highlight-color:transparent}
+#gameroom-back:hover,#gameroom-back:focus-visible{opacity:1;transform:scale(1.08)}
+</style>
 </body>
 </html>
