@@ -1,0 +1,21 @@
+import { chromium } from 'playwright';
+const [,, mode] = process.argv;
+const size = mode === 'hero' ? { width: 1600, height: 700 } : { width: 1200, height: 900 };
+const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: size });
+page.on('pageerror', e => console.log('[pageerror]', e.message));
+await page.goto(`${process.env.GAME_URL || 'http://localhost:8766/games/pilana-tajkun/index.html'}?auto`, { waitUntil: 'load' });
+await page.waitForFunction(() => !!window.__debug, null, { timeout: 60000 });
+await page.evaluate(() => {
+  window.__start();
+  window.__cheat('truckN', 5); window.__cheat('forkN', 2); window.__cheat('forkCap', 4); window.__cheat('forkSpd', 3);
+  window.__cheat('saw', 6); window.__cheat('yield', 4); window.__cheat('road', 1);
+  window.__step(1500, 0.1);
+  document.querySelectorAll('#top,#nav,#hint,#gameroom-back,#toast').forEach(el => el.style.visibility = 'hidden');
+});
+if (mode === 'hero') await page.evaluate(() => window.__cam(30, 9, 44));
+else await page.evaluate(() => window.__cam(-18, -6, 40));
+await page.waitForTimeout(6000);
+await page.screenshot({ path: mode === 'hero' ? 'hero2.jpg' : 'cover2.jpg', type: 'jpeg', quality: 88 });
+console.log('saved', mode);
+await browser.close();

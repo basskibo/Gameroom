@@ -1,0 +1,12 @@
+import { chromium } from 'playwright';
+const secs = process.argv[2] || '3600';
+const browser = await chromium.launch({ args: ['--use-gl=swiftshader', '--enable-webgl', '--ignore-gpu-blocklist'] });
+const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+page.on('pageerror', e => console.log('[pageerror]', e.message));
+await page.goto(`${process.env.GAME_URL || 'http://localhost:8766/games/pilana-tajkun/index.html'}?auto&sim=${secs}${process.argv[3]||""}`, { waitUntil: 'load' });
+await page.waitForFunction(() => window.__simDone === true, { timeout: 170000 });
+const info = await page.evaluate(() => window.simInfo);
+const log = await page.evaluate(() => window.simLog);
+console.log(JSON.stringify(info));
+console.log(log.join('\n'));
+await browser.close();
