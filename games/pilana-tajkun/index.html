@@ -228,10 +228,11 @@ document.body.prepend(renderer.domElement);
 const SKY = 0xbfe4f5;
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(SKY);
-scene.fog = new THREE.Fog(SKY, 34, 62);
-const camera = new THREE.PerspectiveCamera(42, 1, 0.5, 200);
+scene.fog = new THREE.Fog(SKY, 72, 145);
+const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.5, 200);
 const CENTER = V(2.5, 0, 0);
-const camOff = V(0, 15, 11);
+const CAM_DIR = V(10, 21, 10).normalize();
+const camOff = CAM_DIR.clone().multiplyScalar(45);
 
 scene.add(new THREE.HemisphereLight(0xffffff, 0xb0946a, 1.4));
 const sun = new THREE.DirectionalLight(0xfff1dc, 2.2);
@@ -246,14 +247,11 @@ scene.add(sun, sun.target);
 function resize() {
   const w = innerWidth, h = innerHeight, aspect = w / h;
   renderer.setSize(w, h);
-  camera.aspect = aspect;
   const portrait = aspect < 0.9;
-  camera.fov = portrait ? 52 : 42;
-  const base = V(11, 15, 11);
-  const halfT = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const targetHalfW = portrait ? 10 : 15.5;
-  const k = Math.max(1, targetHalfW / (base.length() * halfT * aspect));
-  camOff.copy(base).multiplyScalar(k);
+  const halfW = portrait ? 11 : 16.5;
+  const halfH = halfW / aspect;
+  camera.left = -halfW; camera.right = halfW;
+  camera.top = halfH; camera.bottom = -halfH;
   camera.updateProjectionMatrix();
 }
 addEventListener('resize', resize);
@@ -279,6 +277,8 @@ function mesh(geo, color, parent, x = 0, y = 0, z = 0) {
 }
 const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const cyl = (rt, rb, h, s = 12) => new THREE.CylinderGeometry(rt, rb, h, s);
+const UPV = V(0, 1, 0);
+function orientAlong(obj, dir) { obj.quaternion.setFromUnitVectors(UPV, dir.clone().normalize()); }
 
 function canvas(w, h) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -307,9 +307,9 @@ function emojiSprite(parent, e, y, worldH = 0.5) {
 // =====================================================================
 // GROUND / WORLD DECOR
 // =====================================================================
-const dirt = M(0xcdbb8c), grass = M(0x8fcf6c), asphalt = M(0x6a747a), water = M(0x4fa0d8);
+const dirt = M(0xd9c496), grass = M(0x4fae3d), asphalt = M(0x62707a), water = M(0x2f93d6), sand = M(0xe3cf9a);
 {
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(120, 60), grass);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(140, 70), grass);
   ground.rotation.x = -Math.PI / 2; ground.position.set(4, -0.01, 0); ground.receiveShadow = true; scene.add(ground);
 
   const flat = (geo, x, z, mat, y = 0.01, rot = 0) => {
@@ -317,30 +317,33 @@ const dirt = M(0xcdbb8c), grass = M(0x8fcf6c), asphalt = M(0x6a747a), water = M(
     m.position.set(x, y, z); m.receiveShadow = true; scene.add(m); return m;
   };
   // yard pad under saw/stockpile
-  flat(new THREE.PlaneGeometry(13, 11), -6.5, 0, dirt, 0.008);
+  flat(new THREE.PlaneGeometry(14, 12), -6.8, 0, dirt, 0.008);
   // road from bays to market
   flat(new THREE.PlaneGeometry(ROAD_X1 - BAY_X + 4, 11.4), (BAY_X + ROAD_X1) / 2, 0, asphalt, 0.01);
   // lane stripes
   for (const z of LANE_Z) flat(new THREE.PlaneGeometry(ROAD_X1 - ROAD_X0, 0.12), (ROAD_X0 + ROAD_X1) / 2, z, M(0xf2d675), 0.015);
-  // river under bridge
-  flat(new THREE.PlaneGeometry(3.6, 13), BRIDGE_X, 0, water, 0.005);
+  // river valley crossing the road, with sandy banks
+  flat(new THREE.PlaneGeometry(6.6, 30), BRIDGE_X, 0, sand, 0.004);
+  flat(new THREE.PlaneGeometry(4.2, 30), BRIDGE_X, 0, water, 0.006);
 
-  // background forest (instanced, decorative)
-  const N = 90;
-  const trunks = new THREE.InstancedMesh(cyl(0.22, 0.28, 1.3, 6), M(0x7a4a24), N);
-  const crowns = new THREE.InstancedMesh(new THREE.ConeGeometry(1.5, 3.3, 7), M(0x3f8f3a), N);
+  // layered low-poly pine forest (instanced, decorative) — two rings + two crown tones for depth
+  const N = 170;
+  const trunks = new THREE.InstancedMesh(cyl(0.2, 0.26, 1.4, 6), M(0x6b4726), N);
+  const crownsA = new THREE.InstancedMesh(new THREE.ConeGeometry(1.55, 2.6, 7), M(0x2f8a34), N);
+  const crownsB = new THREE.InstancedMesh(new THREE.ConeGeometry(1.05, 1.9, 7), M(0x49a83f), N);
   const d = new THREE.Object3D();
   for (let i = 0; i < N; i++) {
     const side = i % 2, t = Math.random();
-    const x = lerp(-24, 24, t);
-    const z = side === 0 ? -16 - Math.random() * 6 : 16 + Math.random() * 6;
-    const s = 0.85 + Math.random() * 0.6;
-    d.position.set(x, 0.65 * s, z); d.rotation.set(0, Math.random() * 6, 0); d.scale.setScalar(s); d.updateMatrix();
+    const x = lerp(-26, 30, t);
+    const z = side === 0 ? -(8.4 + Math.random() * 8) : (8.4 + Math.random() * 8);
+    const s = 0.8 + Math.random() * 0.7;
+    d.position.set(x, 0.7 * s, z); d.rotation.set(0, Math.random() * 6, 0); d.scale.setScalar(s); d.updateMatrix();
     trunks.setMatrixAt(i, d.matrix);
-    d.position.y = 2.7 * s; d.updateMatrix(); crowns.setMatrixAt(i, d.matrix);
+    d.position.y = 2.3 * s; d.updateMatrix(); crownsA.setMatrixAt(i, d.matrix);
+    d.position.y = 3.5 * s; d.updateMatrix(); crownsB.setMatrixAt(i, d.matrix);
   }
-  crowns.castShadow = true;
-  scene.add(trunks, crowns);
+  crownsA.castShadow = crownsB.castShadow = true;
+  scene.add(trunks, crownsA, crownsB);
 }
 
 // market sign + background prop per route tier
@@ -377,6 +380,13 @@ buildRouteProp(0);
 // =====================================================================
 const PLANK_GEO = box(0.62, 0.13, 0.3);
 function plankMesh() { const m = new THREE.Mesh(PLANK_GEO, M(0xe9c27f)); m.frustumCulled = false; return m; }
+function hashRand(i, salt = 0) { const x = Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453; return x - Math.floor(x); }
+const CHIP_GEO = box(0.36, 0.15, 0.15);
+const CHIP_COLORS = [0xe9c27f, 0xdcb066, 0xb8863f, 0xc0392b];
+function chipMesh(i) {
+  const c = hashRand(i, 9) < 0.12 ? CHIP_COLORS[3] : CHIP_COLORS[Math.floor(hashRand(i, 8) * 3)];
+  const m = new THREE.Mesh(CHIP_GEO, M(c)); m.frustumCulled = false; return m;
+}
 const slotOut = { p: V(), r: 0 };
 function pileLayout(cols, rows, dx, dz, h) {
   return (i, o) => {
@@ -385,18 +395,29 @@ function pileLayout(cols, rows, dx, dz, h) {
     o.r = (layer % 2) * 0.5;
   };
 }
+// chaotic mound distribution (deterministic per-index so it never flickers on re-layout)
+function moundLayout(maxR, maxH, ozRatio = 0.75) {
+  return (i, o) => {
+    const rad = maxR * Math.pow(hashRand(i, 1), 0.62);
+    const ang = hashRand(i, 2) * Math.PI * 2;
+    const heightFrac = Math.max(0, 1 - rad / maxR);
+    const h = 0.08 + heightFrac * maxH * (0.55 + 0.45 * hashRand(i, 3));
+    o.p.set(Math.cos(ang) * rad, h, Math.sin(ang) * rad * ozRatio);
+    o.r = hashRand(i, 4) * Math.PI * 2;
+  };
+}
 class Pile {
-  constructor(parent, pos, layout, cap = 9999) {
+  constructor(parent, pos, layout, cap = 9999, factory = plankMesh) {
     this.group = new THREE.Group();
     this.group.position.copy(pos);
     parent.add(this.group);
-    this.n = 0; this.layout = layout; this.cap = cap; this.meshes = [];
+    this.n = 0; this.layout = layout; this.cap = cap; this.meshes = []; this.factory = factory;
   }
   setCount(n) {
     this.n = n;
     const shown = Math.min(n, this.cap);
     while (this.meshes.length < shown) {
-      const m = plankMesh(); m.castShadow = true; this.group.add(m); this.meshes.push(m);
+      const m = this.factory(this.meshes.length); m.castShadow = true; this.group.add(m); this.meshes.push(m);
     }
     while (this.meshes.length > shown) { const m = this.meshes.pop(); this.group.remove(m); }
     for (let i = 0; i < this.meshes.length; i++) {
@@ -418,40 +439,103 @@ class Pile {
 // =====================================================================
 const SAW_POS = V(-9, 0, 0);
 const sawGroup = new THREE.Group(); sawGroup.position.copy(SAW_POS); scene.add(sawGroup);
+// giant tapered trunk jutting diagonally from the forest toward the cutting point
+const TRUNK_LEN = 8.6;
+const TRUNK_DIR = V(1, -0.16, 0.34).normalize();
+const TRUNK_BASE = V(-2.6, 4.3, -3.0);
+const TRUNK_TIP = TRUNK_BASE.clone().addScaledVector(TRUNK_DIR, TRUNK_LEN);
 {
-  // log cradle + log
-  mesh(box(0.5, 0.5, 1.3), 0x6b4a2a, sawGroup, -1.6, 0.25, -3.2);
-  mesh(box(0.5, 0.5, 1.3), 0x6b4a2a, sawGroup, -1.6, 0.25, 3.2);
-  const log = mesh(cyl(0.85, 0.85, 6.6, 14), 0x8a5a34, sawGroup, -1.6, 0.95, 0);
-  log.rotation.x = Math.PI / 2;
-  // ring texture on log end (simple darker cap ring using a torus)
-  mesh(new THREE.TorusGeometry(0.6, 0.1, 6, 16), 0xceac7a, sawGroup, -1.6, 0.95, 3.32);
+  // forest-side support cradle
+  mesh(cyl(0.5, 0.7, 2.4, 10), 0x5c4128, sawGroup, TRUNK_BASE.x - 0.3, 1.2, TRUNK_BASE.z);
+  mesh(cyl(0.5, 0.7, 2.4, 10), 0x5c4128, sawGroup, TRUNK_BASE.x + 1.1, 2.6, TRUNK_BASE.z + 0.9);
+
+  // shorten the visible trunk slightly so it terminates flush behind the blade plane
+  const trunk = mesh(cyl(0.55, 1.25, TRUNK_LEN * 0.94, 16), 0x8a5a34, sawGroup);
+  trunk.position.copy(TRUNK_BASE).addScaledVector(TRUNK_DIR, TRUNK_LEN * 0.94 / 2);
+  orientAlong(trunk, TRUNK_DIR);
+  // bark ridge rings for texture detail
+  for (let i = 1; i < 6; i++) {
+    const t = i / 7, rr = lerp(1.22, 0.62, t);
+    const ring = mesh(new THREE.TorusGeometry(rr, 0.05, 6, 20), 0x7a4d2c, sawGroup);
+    ring.position.copy(TRUNK_BASE).addScaledVector(TRUNK_DIR, TRUNK_LEN * t);
+    orientAlong(ring, TRUNK_DIR);
+  }
 }
-const sawArm = new THREE.Group(); sawArm.position.set(0.6, 1.7, 0); sawGroup.add(sawArm);
-const sawBlade = mesh(cyl(1.25, 1.25, 0.14, 24), 0xd6dee4, sawArm, 0, 0, 0);
-sawBlade.rotation.z = Math.PI / 2;
-mesh(box(0.22, 2.2, 0.22), 0x3a4650, sawArm, 0, 0.9, 0);
-const chuteTex = (() => {
-  const k = canvas(64, 64), c = k.ctx;
-  c.fillStyle = '#5b4632'; c.fillRect(0, 0, 64, 64);
-  c.fillStyle = '#f2d675'; c.globalAlpha = 0.65;
-  for (let i = -64; i < 128; i += 16) { c.beginPath(); c.moveTo(i, 64); c.lineTo(i + 32, 0); c.lineTo(i + 44, 0); c.lineTo(i + 12, 64); c.fill(); }
-  k.tex.wrapS = k.tex.wrapT = THREE.RepeatWrapping; k.tex.repeat.set(3, 1);
-  return new THREE.MeshToonMaterial({ map: k.tex, gradientMap: ramp });
+// angled circular blade biting right into the tip, spinning about its own tilted axis
+const BLADE_AXIS = TRUNK_DIR.clone().applyAxisAngle(V(0, 0, 1), 1.15).applyAxisAngle(V(1, 0, 0), 0.15).normalize();
+const sawArm = new THREE.Group();
+sawArm.position.copy(TRUNK_TIP).addScaledVector(TRUNK_DIR, -0.42);
+orientAlong(sawArm, BLADE_AXIS);
+sawGroup.add(sawArm);
+const sawSpin = new THREE.Group(); sawArm.add(sawSpin);
+const bladeFaceTex = (() => {
+  const k = canvas(256, 256), c = k.ctx, cx = 128, cy = 128, R = 124;
+  c.fillStyle = '#c7d2d8'; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fill();
+  c.strokeStyle = '#8f9aa1'; c.lineWidth = 3;
+  for (let i = 0; i < 12; i++) { c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(i / 12 * 7) * R, cy + Math.sin(i / 12 * 7) * R); c.stroke(); }
+  c.fillStyle = '#eef3f5'; c.beginPath(); c.arc(cx, cy, R * 0.32, 0, 7); c.fill();
+  c.fillStyle = '#c0392b'; c.beginPath(); c.arc(cx, cy, R * 0.13, 0, 7); c.fill();
+  c.fillStyle = '#5b6469';
+  for (let i = 0; i < 22; i++) {
+    const a = i / 22 * 7;
+    c.save(); c.translate(cx + Math.cos(a) * R, cy + Math.sin(a) * R); c.rotate(a);
+    c.fillRect(-4, -10, 14, 20); c.restore();
+  }
+  return k.tex;
 })();
-const chute = new THREE.Mesh(box(6.6, 0.18, 1.6), chuteTex);
-chute.position.set(-6.4, 0.75, 0); chute.rotation.z = -0.1; chute.castShadow = chute.receiveShadow = true;
-scene.add(chute);
+const bladeFaceMat = new THREE.MeshToonMaterial({ map: bladeFaceTex, gradientMap: ramp });
+const bladeSideMat = M(0x9aa6ac);
+const sawBlade = new THREE.Mesh(new THREE.CylinderGeometry(1.75, 1.75, 0.16, 32), [bladeSideMat, bladeFaceMat, bladeFaceMat]);
+sawBlade.castShadow = true; sawSpin.add(sawBlade);
+// gantry arm holding the blade, running from the ground straight up to the rig
+{
+  const mountBase = V(TRUNK_BASE.x + 3.4, 0, TRUNK_BASE.z + 3.0);
+  const mountTop = sawArm.position.clone();
+  const beamDir = mountTop.clone().sub(mountBase);
+  const beamLen = beamDir.length();
+  const beam = mesh(box(0.32, beamLen, 0.32), 0x3a4650, sawGroup);
+  beam.position.copy(mountBase).addScaledVector(beamDir.clone().normalize(), beamLen / 2);
+  orientAlong(beam, beamDir);
+  mesh(cyl(0.4, 0.55, 0.5, 10), 0x2b2f33, sawGroup, mountBase.x, 0.25, mountBase.z);
+  mesh(box(0.36, 0.36, 0.9), 0x2b2f33, sawGroup).position.copy(mountTop).addScaledVector(beamDir.clone().normalize(), -0.3);
+}
+
+// =====================================================================
+// FLYING CHIP PARTICLES (juice on every cut)
+// =====================================================================
+const chipParticles = [];
+const CHIP_PART_GEO = box(0.16, 0.07, 0.07);
+function spawnChips(originWorld, count = 7) {
+  for (let i = 0; i < count; i++) {
+    const m = new THREE.Mesh(CHIP_PART_GEO, M(i % 3 === 0 ? 0xd8451f : 0xe8b84a));
+    m.position.copy(originWorld).addScaledVector(V(rand(-0.2, 0.2), rand(-0.1, 0.1), rand(-0.2, 0.2)), 1);
+    m.rotation.set(rand(0, 6), rand(0, 6), rand(0, 6));
+    scene.add(m);
+    chipParticles.push({ mesh: m, vel: V(rand(-2.4, 1.4), rand(2.5, 5), rand(-2.2, 2.2)), t: 0, life: rand(0.55, 0.95) });
+  }
+}
+function updateChipParticles(dt) {
+  for (let i = chipParticles.length - 1; i >= 0; i--) {
+    const p = chipParticles[i];
+    p.t += dt;
+    p.vel.y -= 11 * dt;
+    p.mesh.position.addScaledVector(p.vel, dt);
+    p.mesh.rotation.x += dt * 12; p.mesh.rotation.z += dt * 9;
+    const k = p.t / p.life;
+    if (k >= 1 || p.mesh.position.y < -0.3) { scene.remove(p.mesh); chipParticles.splice(i, 1); continue; }
+    p.mesh.scale.setScalar(1 - k * 0.4);
+  }
+}
 
 // stockpile yard
-const stockpilePos = V(-3.6, 0, 0);
-const stockPile = new Pile(scene, stockpilePos, pileLayout(4, 3, 0.66, 0.42, 0.13), 60);
+const stockpilePos = V(-3.4, 0, 0.4);
+const stockPile = new Pile(scene, stockpilePos, moundLayout(2.6, 2.4, 0.85), 220, chipMesh);
 {
   const padK = canvas(128, 128), pc = padK.ctx;
   pc.fillStyle = '#e9c27f55'; pc.strokeStyle = '#e9c27f'; pc.lineWidth = 6; pc.setLineDash([12, 8]);
   pc.beginPath(); pc.roundRect(6, 6, 116, 116, 18); pc.fill(); pc.stroke();
-  const pad = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 2.6), new THREE.MeshBasicMaterial({ map: padK.tex, transparent: true, depthWrite: false }));
-  pad.rotation.x = -Math.PI / 2; pad.position.set(-3.6, 0.02, 0); scene.add(pad);
+  const pad = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.6), new THREE.MeshBasicMaterial({ map: padK.tex, transparent: true, depthWrite: false }));
+  pad.rotation.x = -Math.PI / 2; pad.position.set(-3.4, 0.02, 0.4); scene.add(pad);
 }
 
 // =====================================================================
@@ -506,12 +590,24 @@ function buildBay(z) {
 }
 function buildTruck(color) {
   const g = new THREE.Group();
-  mesh(box(1.5, 0.55, 2.6), color, g, 0, 0.62, 0.2);
-  mesh(box(1.4, 0.7, 0.9), color, g, 0, 0.72, -1.15);
-  const wind = mesh(box(1.3, 0.4, 0.05), 0xbfe4f5, g, 0, 0.9, -1.55);
-  for (const [x, z] of [[0.72, 1.1], [-0.72, 1.1], [0.72, -0.1], [-0.72, -0.1], [0.72, -1.4], [-0.72, -1.4]])
-    mesh(cyl(0.28, 0.28, 0.24, 12), 0x2b2f33, g, x, 0.28, z);
-  g.bedPos = V(0, 0.92, 0.25);
+  // cab up front (-z)
+  mesh(box(1.32, 0.62, 0.95), 0xf2f4f6, g, 0, 0.66, -1.15);
+  mesh(box(1.18, 0.4, 0.06), 0x2b3138, g, 0, 0.86, -1.66);
+  mesh(box(1.4, 0.16, 1.95), 0x3a4650, g, 0, 0.42, -0.1);
+  // dump bed with flared rim + sloped tailgate at the rear (+z)
+  mesh(box(1.56, 0.62, 1.7), color, g, 0, 0.78, 0.85);
+  mesh(box(1.62, 0.14, 1.76), color, g, 0, 1.12, 0.85);
+  const tail = mesh(box(1.5, 0.66, 0.14), color, g, 0, 0.8, 1.76);
+  tail.rotation.x = -0.26;
+  g.bedPos = V(0, 1.05, 0.75);
+  // rolling wheels: pivot fixes wheel-plane orientation, child mesh spins on its own axis
+  g.wheels = [];
+  for (const [x, z] of [[0.7, -1.3], [-0.7, -1.3], [0.7, 0.35], [-0.7, 0.35], [0.7, 1.3], [-0.7, 1.3]]) {
+    const pivot = new THREE.Group(); pivot.position.set(x, 0.32, z); pivot.rotation.z = Math.PI / 2; g.add(pivot);
+    const wheel = new THREE.Mesh(cyl(0.3, 0.3, 0.26, 14), M(0x22262a)); wheel.castShadow = true; pivot.add(wheel);
+    const hub = new THREE.Mesh(cyl(0.1, 0.1, 0.28, 10), M(0x8a8f94)); pivot.add(hub);
+    g.wheels.push(wheel);
+  }
   return g;
 }
 const TRUCK_COLORS = [0xe0672a, 0x3d8fd6, 0x5cb85c, 0xd6ac2a];
@@ -522,7 +618,7 @@ for (let i = 0; i < 4; i++) {
   const truck = buildTruck(TRUCK_COLORS[i]);
   truck.position.set(BAY_X, 0, z); truck.rotation.y = -Math.PI / 2;
   scene.add(truck);
-  const load = new Pile(truck, truck.bedPos.clone(), pileLayout(2, 2, 0.34, 0.5, 0.13), 24);
+  const load = new Pile(truck, truck.bedPos.clone(), moundLayout(0.62, 0.55, 1.1), 30, chipMesh);
   const angry = emojiSprite(truck, '😠', 1.7, 0.55);
   bays.push({
     i, z, group, truck, load, angry, active: i === 0,
@@ -532,16 +628,33 @@ for (let i = 0; i < 4; i++) {
 }
 
 // bridge deck (widens visually with BRIDGE lvl)
+const hazardTex = (() => {
+  const k = canvas(64, 64), c = k.ctx;
+  c.fillStyle = '#f2c336'; c.fillRect(0, 0, 64, 64);
+  c.fillStyle = '#22262a';
+  for (let i = -64; i < 128; i += 22) { c.save(); c.translate(i, 0); c.rotate(Math.PI / 4); c.fillRect(-6, -80, 12, 200); c.restore(); }
+  k.tex.wrapS = k.tex.wrapT = THREE.RepeatWrapping; k.tex.repeat.set(2, 1);
+  return new THREE.MeshToonMaterial({ map: k.tex, gradientMap: ramp });
+})();
 const bridgeGroup = new THREE.Group(); bridgeGroup.position.set(BRIDGE_X, 0, 0); scene.add(bridgeGroup);
 function buildBridge(lvl) {
   while (bridgeGroup.children.length) bridgeGroup.remove(bridgeGroup.children[0]);
   const lanes = BRIDGE_V[lvl];
   const totalW = Math.max(3.2, lanes * 2.6 + 0.6);
-  mesh(box(4.4, 0.3, totalW), 0x9aa1a8, bridgeGroup, 0, 0.5, 0);
+  mesh(box(4.6, 0.3, totalW), 0x9aa1a8, bridgeGroup, 0, 0.5, 0);
+  mesh(box(4.7, 0.14, totalW + 0.3), 0x7d8890, bridgeGroup, 0, 0.34, 0);
   for (const s of [-1, 1]) {
-    mesh(box(0.5, 1.3, 0.5), 0xc0392b, bridgeGroup, -1.9, 0.9, s * totalW / 2);
-    mesh(box(0.5, 1.3, 0.5), 0xc0392b, bridgeGroup, 1.9, 0.9, s * totalW / 2);
-    mesh(box(4.4, 0.18, 0.18), 0xc0392b, bridgeGroup, 0, 1.5, s * totalW / 2);
+    const zEdge = s * totalW / 2;
+    mesh(box(0.4, 1.7, 0.4), 0xc0392b, bridgeGroup, -2.05, 1.15, zEdge);
+    mesh(box(0.4, 1.7, 0.4), 0xc0392b, bridgeGroup, 2.05, 1.15, zEdge);
+    mesh(box(4.7, 0.22, 0.22), 0xc0392b, bridgeGroup, 0, 1.95, zEdge);
+    const hz = new THREE.Mesh(box(4.5, 0.22, 0.1), hazardTex);
+    hz.position.set(0, 0.62, zEdge + s * 0.16); hz.castShadow = hz.receiveShadow = true; bridgeGroup.add(hz);
+    // X cross-brace between the posts
+    const brace1 = mesh(box(4.3, 0.14, 0.14), 0xc0392b, bridgeGroup, 0, 1.55, zEdge);
+    brace1.rotation.z = 0.22;
+    const brace2 = mesh(box(4.3, 0.14, 0.14), 0xc0392b, bridgeGroup, 0, 1.55, zEdge);
+    brace2.rotation.z = -0.22;
   }
   return totalW;
 }
@@ -744,7 +857,8 @@ function doSawCut(count) {
   S.stockpile += count;
   stockPile.setCount(S.stockpile);
   sfx.saw();
-  if (sawArm) sawArm.rotation.x = -0.35;
+  sawKick = 1;
+  if (!instant) { const p = V(); sawArm.getWorldPosition(p); spawnChips(p, Math.min(10, 4 + count)); }
 }
 function tickSaw(dt) {
   S.sawTimer += dt;
@@ -820,9 +934,17 @@ function tickBays(dt) {
   }
 }
 
+let sawKick = 0;
 function updateVisuals(dt) {
-  sawArm.rotation.z += dt * 6;
-  if (sawArm.rotation.x < 0) sawArm.rotation.x = Math.min(0, sawArm.rotation.x + dt * 3);
+  sawSpin.rotation.y += dt * 9;
+  if (sawKick > 0) { sawKick = Math.max(0, sawKick - dt * 4); sawArm.scale.setScalar(1 + sawKick * 0.06); }
+  updateChipParticles(dt);
+  for (const b of bays) {
+    if (b.active && (b.state === 'transit' || b.state === 'queued')) {
+      const spin = b.state === 'transit' ? 12 : 2.2;
+      for (const w of b.truck.wheels) w.rotation.y += dt * spin;
+    }
+  }
   if (forkAnim.active) {
     forkAnim.t += dt / forkAnim.dur;
     const k = Math.min(1, forkAnim.t), e = k * k * (3 - 2 * k);
