@@ -35,6 +35,13 @@
   .pill.wood { font-size: 16px; color: #f0d2a0; }
   .pill.stock { font-size: 16px; color: #f0a05a; }
   .pill.board { font-size: 16px; color: #f6e7c1; }
+  #orderBar {
+    position: absolute; top: 58px; left: 12px; display: flex; align-items: center; gap: 8px;
+    background: #1e2a33ee; border: 2px solid #ffd84a; border-radius: 14px; padding: 6px 12px;
+    font-weight: 800; font-size: 16px; box-shadow: 0 3px 0 #0003;
+  }
+  #orderBar.hidden { display: none; }
+  #orderBar b { color: #ffd84a; font-weight: 800; }
   .btns { display: flex; gap: 6px; }
   .btns button, #nav button {
     pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800; color: #fff; background: #1e2a33d9;
@@ -98,6 +105,7 @@
     #nav button { font-size: 0; padding: 0 10px; }
     #nav button span { font-size: 20px; }
     #hint { font-size: 13px; bottom: 64px; }
+    #orderBar { top: 96px; font-size: 14px; padding: 5px 10px; }
   }
 </style>
 </head>
@@ -111,6 +119,7 @@
       <div class="pill stock stroke" id="stockPill" title="Cut pieces ready to load"><span>📦</span><span id="stock">0</span></div>
       <div class="pill board stroke" id="boardPill" title="Boards — sell for more"><span>🪵</span><span id="boards">0</span></div>
     </div>
+    <div id="orderBar" class="stroke hidden" title="Rush order from the buyer"><span id="orderIcon">🪵</span><span id="orderLabel">Boards</span><span id="orderCount">0/0</span><b id="orderTime">0s</b></div>
     <div class="btns">
       <button id="muteBtn" title="Sound">♪</button>
       <button id="pauseBtn" title="Pause (P)">II</button>
@@ -136,6 +145,7 @@
         <span>🪚</span><span>Buy more saws. Each new lane cuts logs, and they all fall into the same bin.</span>
         <span>🌲</span><span>The forest is not endless. Hire a lumberjack or the saws run out of logs.</span>
         <span>🪵</span><span>Buy a planer. It turns cut pieces into boards, and boards sell for more.</span>
+        <span>📋</span><span>The buyer posts rush orders. Fill one before the timer ends and you get a cash bonus.</span>
         <span>🚚</span><span>Buy more trucks on the empty parking spots, and bigger beds so each trip hauls more.</span>
         <span>🚧</span><span>There's a toll gate on the bridge. When trucks get stuck and angry, speed it up.</span>
         <span>🛣️</span><span>A better road means faster trucks. A better buyer means a higher price per log.</span>
@@ -199,6 +209,7 @@ const UP = {
 };
 const START_TIMBER = 48;
 const TIMBER_CAP = 90;
+let orderBoard = null;
 
 // =====================================================================
 // HELPERS
@@ -434,7 +445,9 @@ const SPOT_X = [-24, -20.2, -16.4, -12.6, -8.8, -5];
 const SPOT_Z = 3.4;
 const AISLE_OUT_Z = 7.7 + LANE, AISLE_RET_Z = 7.7 - LANE;
 const TUB = { x0: -30.6, x1: -21.4, z0: -12.1, z1: -3.9 };
-const FORK_HOME = [V(-19.1, 0, -8.0), V(-19.1, 0, -10.1), V(-19.1, 0, -5.9)];
+const FORK_HOME = [V(-18.8, 0, -9.2), V(-18.8, 0, -11.95), V(-18.8, 0, -6.45)];
+const FORK_CROSS_X = [-16.9, -15.0, -16.0];
+const FORK_LANE_Z = [-0.35, -2.95, -1.65];
 const S_GATE = nearestS(43.8, 15.2, 0, IDX_LOOP0) - 2.3;
 const S_DOCK = nearestS(71.6, 8.6, IDX_LOOP0, IDX_RET0);
 const S_MERGE = SPOT_X.map(x => nearestS(x + 4.6, AISLE_OUT_Z, 0, IDX_LOOP0));
@@ -743,6 +756,15 @@ const gateViz = { arm: null, lightR: null, lightG: null };
   const pit = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2), new THREE.MeshStandardMaterial({ map: pitTex, roughness: 0.9 }));
   pit.rotation.x = -Math.PI / 2; pit.position.set(71.6, 0.1, 11.8); pit.receiveShadow = true; g.add(pit);
   part(boxG(3.6, 0.25, 0.25), hazardMat(3.6), g, 71.6, 0.12, 13.5);
+  // rush-order board, facing the yard
+  const ow = 512, oh = 320;
+  const oc = document.createElement('canvas'); oc.width = ow; oc.height = oh;
+  const otex = new THREE.CanvasTexture(oc); otex.colorSpace = THREE.SRGBColorSpace; otex.anisotropy = 4;
+  orderBoard = { ctx: oc.getContext('2d'), tex: otex, w: ow, h: oh };
+  const ob = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 2.2), new THREE.MeshStandardMaterial({ map: otex, roughness: 0.65 }));
+  ob.position.set(60.2, 2.45, 4.7); g.add(ob);
+  part(cylG(0.09, 0.1, 2.3, 8), 0x6b4a2e, g, 58.75, 1.15, 4.55);
+  part(cylG(0.09, 0.1, 2.3, 8), 0x6b4a2e, g, 61.65, 1.15, 4.55);
   // decorative log stacks
   const logSide = mat(0xe3ad45), logEnd = mat(0xf5dfa6);
   for (let k = 0; k < 3; k++) {
@@ -1379,6 +1401,7 @@ class Truck {
           const mult = UP.market.vals[S.lv.market];
           const raw = Math.max(0, this.loaded - this.boards);
           const pay = (raw * PIECE_PRICE + this.boards * BOARD_PRICE) * mult;
+          fillOrder(this.boards, raw, this.pos);
           this.loaded = 0; this.boards = 0;
           addMoney(pay, this.pos.clone().setY(3.5));
           sfx.cash();
@@ -1479,8 +1502,10 @@ class Forklift {
   blocked() {
     for (const o of forks) {
       if (o === this) continue;
+      const d = Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z);
+      if (d < 1.55 && this.i > o.i) return true;
       if (!this.sees(o, 2.4)) continue;
-      if (o.sees(this, 2.4) && this.i < o.i) continue; // head-on: lower index has priority
+      if (o.sees(this, 2.4) && this.i < o.i) continue;
       return true;
     }
     return false;
@@ -1490,6 +1515,8 @@ class Forklift {
     this.dir = rev ? -1 : 1;
     if (dist < 0.04) { this.pos.x = tx; this.pos.z = tz; return true; }
     if (dist < 0.35) {
+      if (this.blocked()) { this.blockT += dt; if (this.blockT < 5) { this.v = 0; return false; } }
+      else this.blockT = 0;
       const step = Math.min(dist, Math.max(0.6, this.v) * dt);
       this.pos.x += dx / dist * step; this.pos.z += dz / dist * step; this.v = Math.max(0.3, this.v * 0.9);
       return Math.hypot(tx - this.pos.x, tz - this.pos.z) < 0.04 ? (this.pos.x = tx, this.pos.z = tz, true) : false;
@@ -1504,6 +1531,28 @@ class Forklift {
     const step = Math.min(this.v * dt, dist);
     this.pos.x += Math.sin(this.yaw) * step * this.dir; this.pos.z += Math.cos(this.yaw) * step * this.dir;
     return false;
+  }
+  crossX() { return FORK_CROSS_X[this.i]; }
+  laneZ() { return FORK_LANE_Z[this.i]; }
+  outPath(tx, tz) {
+    const H = this.home, cx = this.crossX(), lz = this.laneZ();
+    return [
+      { x: H.x + 1.8, z: H.z, rev: true, sm: 0.6 },
+      { x: cx, z: H.z },
+      { x: cx, z: lz },
+      { x: tx, z: lz },
+      { x: tx, z: tz, sm: 0.5, yaw: 0 },
+    ];
+  }
+  homePath(tx) {
+    const H = this.home, cx = this.crossX(), lz = this.laneZ();
+    return [
+      { x: tx, z: lz, rev: true, sm: 0.6 },
+      { x: cx, z: lz },
+      { x: cx, z: H.z },
+      { x: H.x + 1.6, z: H.z },
+      { x: H.x, z: H.z, sm: 0.5, yaw: -Math.PI / 2 },
+    ];
   }
   followPath(dt) {
     while (this.path.length) {
@@ -1537,18 +1586,26 @@ class Forklift {
           const need = t.cap() - t.loaded - t.incoming;
           const want = Math.min(UP.forkCap.vals[S.lv.forkCap], need);
           const boardsFree = S.boards - (S.boardHold || 0);
-          const useBoards = boardsFree >= want || (boardsFree > 0 && S.stockpile <= 0);
+          let useBoards = boardsFree >= want || (boardsFree > 0 && S.stockpile <= 0);
+          const left = order.on ? order.need - order.have : 0;
+          if (order.on && order.kind === 'boards' && boardsFree >= Math.min(want, Math.max(1, left))) useBoards = true;
+          if (order.on && order.kind === 'raw' && S.stockpile > 0) useBoards = false;
           const pile = useBoards ? boardsFree : S.stockpile;
-          if (pile > 0 && (pile >= want || this.waitT > 2.5)) {
+          const ordered = order.on && order.kind === (useBoards ? 'boards' : 'raw');
+          const ready = pile >= want || (ordered && pile >= left);
+          if (pile > 0 && (ready || this.waitT > (ordered ? 1.2 : 2.5))) {
             const n = Math.min(want, pile);
             this.truck = t; t.incoming += n; this.waitT = 0;
             if (useBoards) {
               S.boardHold = (S.boardHold || 0) + n;
               this.boardReserve = n; this.boards = 0; this.n = 0; this.fromPile = true;
+              const lz = this.laneZ(), cx = this.crossX();
               this.path = [
-                { x: H.x + 1.6, z: H.z, rev: true, sm: 0.6 },
-                { x: -14.2, z: -3.5 },
-                { x: BOARD_PILE.x, z: BOARD_PILE.z + 1.55, sm: 0.45 },
+                { x: H.x + 1.8, z: H.z, rev: true, sm: 0.6 },
+                { x: cx, z: H.z },
+                { x: cx, z: lz },
+                { x: BOARD_PILE.x, z: lz },
+                { x: BOARD_PILE.x, z: BOARD_PILE.z + 1.65, sm: 0.45 },
               ];
               this.state = 'toBoards';
             } else {
@@ -1573,15 +1630,10 @@ class Forklift {
         if (this.timer >= 0.55) {
           const tx = SPOT_X[this.truck.i];
           this.path = this.fromPile ? [
-            { x: BOARD_PILE.x, z: -2.55 },
-            { x: tx, z: -2.4 },
-            { x: tx, z: -0.3, sm: 0.5, yaw: 0 },
-          ] : [
-            { x: H.x + 1.6, z: H.z, rev: true, sm: 0.6 },
-            { x: -18.4, z: -2.9 },
-            { x: tx, z: -2.4 },
-            { x: tx, z: -0.3, sm: 0.5, yaw: 0 },
-          ];
+            { x: BOARD_PILE.x, z: this.laneZ() },
+            { x: tx, z: this.laneZ() },
+            { x: tx, z: -0.35, sm: 0.5, yaw: 0 },
+          ] : this.outPath(tx, -0.35);
           this.fromPile = false;
           this.state = 'toTruck';
         }
@@ -1598,12 +1650,7 @@ class Forklift {
           t.loaded += this.n; t.boards += this.boards; t.incoming -= this.n; this.n = 0; this.boards = 0;
           sfx.drop();
           const tx = SPOT_X[t.i];
-          this.path = [
-            { x: tx, z: -2.4, rev: true, sm: 0.6 },
-            { x: -16.2, z: -3.3 },
-            { x: H.x + 2.4, z: H.z },
-            { x: H.x, z: H.z, sm: 0.5, yaw: -Math.PI / 2 },
-          ];
+          this.path = this.homePath(tx);
           this.state = 'toHome';
         }
         break;
@@ -1754,10 +1801,13 @@ function incomeRate() {
 // =====================================================================
 const PLANER_AT = { x: -9.4, z: -6.3 };
 const BOARD_PILE = { x: -6.4, z: -3.15 };
-const TUB_PICK = { x: -21.05, z: -5.15 };
+const TUB_PICK = { x: -20.7, z: -7.6 };
 const IN_DROP = { x: PLANER_AT.x - 2.45, z: PLANER_AT.z };
 const OUT_PICK = { x: PLANER_AT.x + 1.15, z: PLANER_AT.z + 0.85 };
 const HAND_HOME = { x: PLANER_AT.x + 0.2, z: PLANER_AT.z + 2.35 };
+const BR = { z: -4.35, y: 2.85, x0: -13.4, x1: -20.7, w: 1.2 };
+const RAMP_E = { x: -13.4, z: -8.65, y: 0 };
+const RAMP_W = { x: -20.7, z: -7.6, y: 0 };
 const planerViz = { g: null, ghost: null, roller: null, head: null, cutter: null, feed: [], out: null, kamara: [] };
 {
   const ghost = new THREE.Group(); ghost.position.set(PLANER_AT.x, 0, PLANER_AT.z); scene.add(ghost);
@@ -1817,8 +1867,60 @@ function buildPlanerHand() {
   board.visible = false;
   return { g, body, pieces, board };
 }
-const hand = Object.assign(buildPlanerHand(), { x: HAND_HOME.x, z: HAND_HOME.z, yaw: 0, state: 'idle', carry: '', wait: 0, moving: false, path: null });
-const HAND_LANE = { x: -16.4, z: -7.7 };
+const hand = Object.assign(buildPlanerHand(), { x: HAND_HOME.x, z: HAND_HOME.z, y: 0, yaw: 0, state: 'idle', carry: '', wait: 0, moving: false, path: null });
+function bridgeToTub() {
+  const south = BR.z - BR.w / 2;
+  return [
+    { x: -12.6, z: -3.5, y: 0 },
+    { x: RAMP_E.x, z: -3.5, y: 0 },
+    { x: RAMP_E.x, z: RAMP_E.z, y: 0 },
+    { x: RAMP_E.x, z: south, y: BR.y },
+    { x: RAMP_W.x, z: BR.z, y: BR.y },
+    { x: RAMP_W.x, z: south, y: BR.y },
+    { x: RAMP_W.x, z: RAMP_W.z, y: 0 },
+  ];
+}
+function bridgeToPlaner() {
+  const south = BR.z - BR.w / 2;
+  return [
+    { x: RAMP_W.x, z: south, y: BR.y },
+    { x: RAMP_W.x, z: BR.z, y: BR.y },
+    { x: RAMP_E.x, z: BR.z, y: BR.y },
+    { x: RAMP_E.x, z: south, y: BR.y },
+    { x: RAMP_E.x, z: RAMP_E.z, y: 0 },
+    { x: -12.9, z: IN_DROP.z, y: 0 },
+    { x: IN_DROP.x, z: IN_DROP.z, y: 0 },
+  ];
+}
+{
+  const g = new THREE.Group(); scene.add(g);
+  const wood = 0xd7b07a, rail = 0x6a4328, post = 0x5a3a22;
+  const span = BR.x1 - BR.x0;
+  part(rbox(span + 0.2, 0.12, BR.w, 0.02, 1), wood, g, (BR.x0 + BR.x1) / 2, BR.y - 0.06, BR.z);
+  const ramp = (x, z0, y0, z1, y1) => {
+    const dz = z1 - z0, dy = y1 - y0, L = Math.hypot(dz, dy);
+    const mesh = part(rbox(1.05, 0.1, L, 0.02, 1), wood, g);
+    mesh.position.set(x, (y0 + y1) / 2, (z0 + z1) / 2);
+    mesh.quaternion.setFromUnitVectors(V(0, 0, 1), V(0, dy, dz).normalize());
+    for (const s of [-1, 1]) {
+      const groundZ = y0 < y1 ? z0 : z1;
+      const lip = BR.z - BR.w / 2 + 0.1;
+      beam(V(x + s * 0.42, 0.42, groundZ), V(x + s * 0.42, BR.y + 0.28, lip), 0.06, rail, g);
+    }
+  };
+  ramp(RAMP_E.x, RAMP_E.z, 0.08, BR.z, BR.y - 0.06);
+  ramp(RAMP_W.x, BR.z, BR.y - 0.06, RAMP_W.z, 0.08);
+  for (const x of [BR.x0, BR.x1]) for (const s of [-1, 1]) {
+    part(cylG(0.09, 0.11, BR.y - 0.1, 8), post, g, x, (BR.y - 0.1) / 2, BR.z + s * (BR.w / 2 - 0.06));
+  }
+  for (let x = BR.x0 + 1.6; x < BR.x1 - 0.4; x += 1.7) {
+    for (const s of [-1, 1]) part(cylG(0.045, 0.05, 0.5, 6), post, g, x, BR.y + 0.16, BR.z + s * (BR.w / 2 - 0.06));
+  }
+  for (const s of [-1, 1]) {
+    const z = BR.z + s * (BR.w / 2 - 0.06);
+    beam(V(BR.x0 + 0.2, BR.y + 0.32, z), V(BR.x1 - 0.2, BR.y + 0.32, z), 0.065, rail, g);
+  }
+}
 function planerOn() { return UP.planer.vals[S.lv.planer] >= 1; }
 function updatePlanerLook() {
   const on = planerOn();
@@ -1833,17 +1935,19 @@ function handSpeed() {
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
   return 3.8 + (4.2 - interval) * 0.85;
 }
-function stepHand(dt, tx, tz) {
-  const dx = tx - hand.x, dz = tz - hand.z, dist = Math.hypot(dx, dz);
-  if (dist < 0.12) { hand.x = tx; hand.z = tz; return true; }
+function stepHand(dt, tx, tz, ty = 0) {
+  const dx = tx - hand.x, dy = ty - hand.y, dz = tz - hand.z, dist = Math.hypot(dx, dy, dz);
+  if (dist < 0.12) { hand.x = tx; hand.z = tz; hand.y = ty; return true; }
   const step = Math.min(dist, handSpeed() * dt);
-  hand.x += dx / dist * step; hand.z += dz / dist * step;
-  hand.yaw = yawOf(dx, dz); hand.moving = true;
+  hand.x += dx / dist * step; hand.y += dy / dist * step; hand.z += dz / dist * step;
+  if (dx * dx + dz * dz > 1e-4) hand.yaw = yawOf(dx, dz);
+  hand.moving = true;
   return false;
 }
 function walkPath(dt) {
   if (!hand.path || !hand.path.length) return true;
-  if (stepHand(dt, hand.path[0].x, hand.path[0].z)) hand.path.shift();
+  const w = hand.path[0];
+  if (stepHand(dt, w.x, w.z, w.y || 0)) hand.path.shift();
   return !hand.path.length;
 }
 function updateHand(dt) {
@@ -1855,7 +1959,7 @@ function updateHand(dt) {
       if (S.outBoard) hand.state = 'toOut';
       else if (hand.carry === 'pieces') hand.state = 'toIn';
       else if (hand.carry === 'board') hand.state = 'toPile';
-      else if (room && S.infeed < 6 && S.stockpile >= PLANER_KEEP + BOARD_IN) { hand.path = [HAND_LANE, TUB_PICK]; hand.state = 'toTub'; }
+      else if (room && S.infeed < 6 && S.stockpile >= PLANER_KEEP + BOARD_IN) { hand.path = bridgeToTub(); hand.state = 'toTub'; }
       else stepHand(dt, HAND_HOME.x, HAND_HOME.z);
       break;
     case 'toTub': if (walkPath(dt)) { hand.state = 'scoop'; hand.wait = 0; } break;
@@ -1865,7 +1969,7 @@ function updateHand(dt) {
         if (S.stockpile >= PLANER_KEEP + BOARD_IN) {
           S.stockpile -= BOARD_IN;
           if (!instant) removePieces(BOARD_IN);
-          hand.carry = 'pieces'; hand.path = [HAND_LANE, IN_DROP]; hand.state = 'toIn';
+          hand.carry = 'pieces'; hand.path = bridgeToPlaner(); hand.state = 'toIn';
         } else hand.state = 'idle';
       }
       break;
@@ -1923,7 +2027,7 @@ function updatePlanerVisual(dt, time) {
   });
   if (planerViz.out) planerViz.out.visible = S.outBoard > 0;
   hand.g.visible = planerOn();
-  hand.g.position.set(hand.x, 0, hand.z);
+  hand.g.position.set(hand.x, hand.y, hand.z);
   hand.g.rotation.y = hand.yaw;
   hand.body.position.y = hand.moving ? Math.abs(Math.sin(time * 10)) * 0.06 : 0;
   hand.pieces.visible = hand.carry === 'pieces';
@@ -1944,8 +2048,8 @@ const PADS = [
   { id: 'forkCap', name: 'Bigger forks', icon: '📦', x: -4.7, z: -11.3 },
   { id: 'truckN', name: 'New truck', icon: '🚚', x: 0, z: SPOT_Z },
   { id: 'truckCap', name: 'Bigger bed', icon: '🔼', x: -3.5, z: -6.9 },
-  { id: 'planer', name: 'Planer', icon: '🪵', x: -14.6, z: -8.4 },
-  { id: 'planerSpd', name: 'Faster feed', icon: '⚡', x: -14.6, z: -4.6 },
+  { id: 'planer', name: 'Planer', icon: '🪵', x: -10.6, z: -10.5 },
+  { id: 'planerSpd', name: 'Faster feed', icon: '⚡', x: -6.0, z: -10.6 },
   { id: 'road', name: 'New road', icon: '🛣️', x: 3.0, z: 3.3 },
   { id: 'gate', name: 'Faster gate', icon: '🚧', x: 48.5, z: 21.2 },
   { id: 'market', name: 'Better price', icon: '💰', x: 64.5, z: 1.8 },
@@ -2207,6 +2311,96 @@ function updateCamera(dt) {
 }
 
 // =====================================================================
+// RUSH ORDERS — the buyer asks for one cargo, on a timer, for a bonus
+// =====================================================================
+const order = { on: false, kind: 'raw', need: 0, have: 0, left: 0, gap: 22, dirty: true, visT: 0 };
+function rollOrder() {
+  const cap = UP.truckCap.vals[S.lv.truckCap];
+  const boards = S.lv.planer > 0 && Math.random() < 0.55;
+  order.kind = boards ? 'boards' : 'raw';
+  order.need = boards ? clamp(6 + Math.floor(cap / 5), 6, 18) : clamp(8 + Math.floor(cap / 3), 8, 28);
+  order.have = 0;
+  order.left = 50 + order.need * 2.2;
+  order.on = true;
+  order.dirty = true;
+  order.visT = 0;
+  if (!instant) toast(boards ? 'Rush order: boards' : 'Rush order: cut wood', `Deliver ${order.need} before time runs out`);
+}
+function orderBonus() {
+  const unit = order.kind === 'boards' ? BOARD_PRICE : PIECE_PRICE;
+  return Math.round(order.need * unit * UP.market.vals[S.lv.market] * 0.8);
+}
+function fillOrder(boards, raw, pos) {
+  if (!order.on) return;
+  const n = order.kind === 'boards' ? boards : raw;
+  if (n <= 0) return;
+  order.have = Math.min(order.need, order.have + n);
+  order.dirty = true;
+  if (order.have < order.need) return;
+  const bonus = orderBonus();
+  order.on = false;
+  order.gap = 16 + Math.random() * 10;
+  addMoney(bonus, pos ? pos.clone().setY(4.4) : null);
+  if (!instant) toast('Order filled', `+${fmt(bonus)} bonus`);
+}
+function updateOrder(dt) {
+  if (order.on) {
+    order.left -= dt;
+    order.visT += dt;
+    if (order.visT > 0.4) { order.visT = 0; order.dirty = true; }
+    if (order.left <= 0) {
+      order.on = false;
+      order.gap = 18;
+      order.dirty = true;
+      if (!instant) toast('Order missed', 'The buyer wanted it faster', true);
+    }
+  } else {
+    order.gap -= dt;
+    if (order.gap <= 0) rollOrder();
+  }
+}
+function drawOrderBoard() {
+  if (!orderBoard) return;
+  const c = orderBoard.ctx, w = orderBoard.w, h = orderBoard.h;
+  c.clearRect(0, 0, w, h);
+  c.fillStyle = '#2a2118';
+  c.beginPath(); c.roundRect(6, 6, w - 12, h - 12, 28); c.fill();
+  c.strokeStyle = '#ffd84a'; c.lineWidth = 12;
+  c.beginPath(); c.roundRect(18, 18, w - 36, h - 36, 20); c.stroke();
+  c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillStyle = '#ffd84a';
+  c.font = '800 44px "Baloo 2", Arial Black, sans-serif';
+  if (!order.on) {
+    c.fillText('WAITING', w / 2, h * 0.4);
+    c.fillStyle = '#f6e7c1';
+    c.font = '700 32px "Baloo 2", Arial, sans-serif';
+    c.fillText('Next order soon', w / 2, h * 0.64);
+  } else {
+    c.fillText(order.kind === 'boards' ? 'BOARDS' : 'CUT WOOD', w / 2, h * 0.26);
+    c.fillStyle = '#fff';
+    c.font = '800 78px "Baloo 2", Arial Black, sans-serif';
+    c.fillText(`${order.have} / ${order.need}`, w / 2, h * 0.52);
+    c.fillStyle = order.left < 12 ? '#ff6b5a' : '#ffd84a';
+    c.font = '800 42px "Baloo 2", Arial Black, sans-serif';
+    c.fillText(`${Math.max(0, Math.ceil(order.left))}s`, w / 2, h * 0.74);
+    c.fillStyle = '#b6f5a0';
+    c.font = '700 30px "Baloo 2", Arial, sans-serif';
+    c.fillText(`BONUS ${fmt(orderBonus())}`, w / 2, h * 0.89);
+  }
+  orderBoard.tex.needsUpdate = true;
+  order.dirty = false;
+}
+function syncOrderHud() {
+  const bar = $('orderBar');
+  if (!order.on) { bar.classList.add('hidden'); return; }
+  bar.classList.remove('hidden');
+  $('orderIcon').textContent = order.kind === 'boards' ? '🪵' : '📦';
+  $('orderLabel').textContent = order.kind === 'boards' ? 'Boards' : 'Cut wood';
+  $('orderCount').textContent = `${order.have}/${order.need}`;
+  $('orderTime').textContent = `${Math.max(0, Math.ceil(order.left))}s`;
+}
+
+// =====================================================================
 // SIMULATION TICK (logic only — also runs headless in ?sim mode)
 // =====================================================================
 let saveT = 0, starvedNote = false;
@@ -2244,6 +2438,7 @@ function update(dt) {
   updatePlaner(dt);
   updateHand(dt);
   for (const t of trucks) t.update(dt);
+  updateOrder(dt);
   for (const f of forks) f.update(dt);
   updateGate(dt);
   saveT += dt; if (saveT > 5) { saveT = 0; save(); }
@@ -2315,6 +2510,8 @@ function render() {
     $('stock').textContent = fmt(S.stockpile);
     $('boards').textContent = fmt(S.boards);
     $('ratePill').textContent = fmt(incomeRate()) + '/s';
+    syncOrderHud();
+    if (order.dirty) drawOrderBoard();
     refreshPads();
   }
   renderer.render(scene, camera);
@@ -2363,7 +2560,7 @@ if (camera.aspect < 0.9) { cam.dist = 64; cam.target.set(-17, 0, -3); }
 applyCamera();
 refreshPads();
 
-window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, boards: S.boards, lv: { ...S.lv }, trucks: trucks.map(t => [t.state, t.loaded, t.boards, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => f.state), pieces: pieces.length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)] });
+window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, boards: S.boards, lv: { ...S.lv }, order: { on: order.on, kind: order.kind, have: order.have, need: order.need, left: +order.left.toFixed(1) }, hand: [+hand.x.toFixed(1), +hand.y.toFixed(2), +hand.z.toFixed(1), hand.state], trucks: trucks.map(t => [t.state, t.loaded, t.boards, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1)]), pieces: pieces.length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)] });
 window.__cheat = (id, n = 1) => { for (let i = 0; i < n; i++) { const c = upCost(id); if (c === null) break; S.money += c; buy(id); } refreshPads(); };
 window.__addMoney = v => { S.money += v; };
 window.__cam = (x, z, d) => { cam.tween = null; cam.target.set(x, 0, z); if (d) cam.dist = d; applyCamera(); };
