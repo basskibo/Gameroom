@@ -24,6 +24,7 @@
     align-items: flex-start; padding: max(10px, env(safe-area-inset-top)) 12px 0; gap: 8px;
   }
   .hud-left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .hud-res { display: flex; gap: 8px; align-items: center; flex: none; }
   .pill {
     display: inline-flex; align-items: center; gap: 6px; background: #1e2a33d9; border-radius: 16px;
     padding: 4px 14px 4px 8px; font-size: 20px; font-weight: 800; line-height: 1.2; box-shadow: 0 3px 0 #0003;
@@ -35,17 +36,31 @@
   .pill.wood { font-size: 16px; color: #f0d2a0; }
   .pill.stock { font-size: 16px; color: #f0a05a; }
   .pill.board { font-size: 16px; color: #f6e7c1; }
+  .ico { width: 26px; height: 26px; display: block; flex: none; }
+  #furnPill.hidden, #firePill.hidden { display: none; }
+  #orderWrap { flex-basis: 100%; display: flex; }
+  #orderWrap.hidden { display: none; }
   #orderBar {
-    position: absolute; top: 58px; left: 12px; display: flex; align-items: center; gap: 8px;
+    width: max-content; display: flex; align-items: center; gap: 8px;
     background: #1e2a33ee; border: 2px solid #ffd84a; border-radius: 14px; padding: 6px 12px;
     font-weight: 800; font-size: 16px; box-shadow: 0 3px 0 #0003;
   }
-  #orderBar.hidden { display: none; }
   #orderBar b { color: #ffd84a; font-weight: 800; }
-  .btns { display: flex; gap: 6px; }
-  .btns button, #nav button {
+  .btns { display: flex; gap: 6px; position: relative; z-index: 60; }
+  .btns button, #nav button, #settingsMenu button, #settingsMenu a {
     pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800; color: #fff; background: #1e2a33d9;
     border: none; border-radius: 12px; min-width: 42px; height: 42px; cursor: pointer; box-shadow: 0 3px 0 #0003;
+  }
+  #settingsMenu {
+    position: absolute; top: calc(100% + 8px); right: 0; width: min(260px, calc(100vw - 24px));
+    background: #1e2a33f5; border: 3px solid #ffd84a; border-radius: 18px; padding: 8px;
+    display: flex; flex-direction: column; gap: 6px; z-index: 61; pointer-events: auto;
+  }
+  #settingsMenu.hidden { display: none; }
+  #settingsMenu button, #settingsMenu a {
+    width: 100%; min-width: 0; height: 40px; font-size: 16px; text-decoration: none;
+    display: flex; align-items: center; gap: 8px; padding: 0 12px; justify-content: flex-start;
+    background: #2b3842;
   }
   #nav {
     position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
@@ -75,9 +90,43 @@
     padding: 6px 16px; font-size: 15px; font-weight: 700; color: #e8f1f5; transition: opacity .6s; max-width: 92vw; text-align: center;
   }
   #hint.gone { opacity: 0; }
+  #shop {
+    position: absolute; left: 50%; bottom: max(62px, calc(env(safe-area-inset-bottom) + 52px));
+    transform: translateX(-50%); width: min(440px, calc(100vw - 16px));
+    background: #1e2a33f2; border: 3px solid #ffd84a; border-radius: 22px;
+    box-shadow: 0 8px 0 #0004; pointer-events: auto; z-index: 6;
+    max-height: min(460px, 54vh); display: flex; flex-direction: column; overflow: hidden;
+  }
+  #shop.hidden { display: none; }
+  .shop-head {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; border-bottom: 2px solid #ffffff18;
+  }
+  .shop-head h3 { font-size: 22px; line-height: 1; }
+  .shop-head p { font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; color: #c5d0d6; }
+  #shopIcon { font-size: 28px; }
+  #shopClose {
+    margin-left: auto; pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800;
+    color: #fff; background: #31404a; border: none; border-radius: 12px; width: 36px; height: 36px; cursor: pointer;
+  }
+  #shopRows { overflow: auto; padding: 8px; display: flex; flex-direction: column; gap: 6px; }
+  button.urow {
+    pointer-events: auto; display: grid; grid-template-columns: 36px 1fr auto; gap: 8px; align-items: center;
+    text-align: left; font-family: inherit; color: #fff; background: #2b3842; border: 2px solid #46505a;
+    border-radius: 16px; padding: 8px 10px; cursor: pointer;
+  }
+  button.urow.can { border-color: #5fe07c; }
+  button.urow.maxed { border-color: #3d5a48; cursor: default; }
+  button.urow .uico { font-size: 26px; text-align: center; }
+  button.urow b { display: block; font-size: 16px; line-height: 1.1; }
+  button.urow small { display: block; font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; color: #d5dee4; margin-top: 2px; }
+  .ubar { display: block; height: 6px; margin-top: 6px; background: #4b5560; border-radius: 99px; overflow: hidden; }
+  .ubar i { display: block; height: 100%; background: #5fe07c; border-radius: 99px; }
+  .uprice { font-size: 20px; font-weight: 800; color: #ffd84a; min-width: 64px; text-align: right; }
+  button.urow.maxed .uprice { color: #7fe39a; font-size: 16px; }
+  button.urow:not(.can):not(.maxed) .uprice { color: #9aa6ae; }
   .overlay {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-    background: #0d1418bb; pointer-events: auto; padding: 16px;
+    background: #0d1418bb; pointer-events: auto; padding: 16px; z-index: 30;
   }
   .overlay.hidden { display: none; }
   .modal {
@@ -98,14 +147,33 @@
   button.link { background: none; border: none; font-family: inherit; font-size: 15px; color: #8a8378; text-decoration: underline; cursor: pointer; margin-top: 8px; }
   button.link.hidden { display: none; }
   .keys { font-family: system-ui, sans-serif; font-size: 12px; color: #8a8378; margin-top: 10px; }
+  #saveName {
+    pointer-events: auto; user-select: text; -webkit-user-select: text; width: 100%;
+    font-family: inherit; font-size: 18px; font-weight: 800; color: #1e2a33;
+    padding: 10px 12px; border-radius: 12px; border: 2px solid #eadfce; margin: 8px 0 4px;
+  }
+  #saveList { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; max-height: 36vh; overflow: auto; text-align: left; }
+  .slotrow { display: flex; gap: 6px; }
+  button.slot {
+    pointer-events: auto; flex: 1; text-align: left; font-family: inherit; font-size: 14px; font-weight: 800;
+    color: #1e2a33; background: #fff; border: 2px solid #eadfce; border-radius: 12px; padding: 8px 10px; cursor: pointer;
+  }
+  button.slot small { display: block; font-weight: 600; color: #8a8378; font-size: 12px; }
+  button.slotx {
+    pointer-events: auto; width: 36px; font-family: inherit; font-weight: 800; color: #c4533a;
+    background: #fff; border: 2px solid #eadfce; border-radius: 12px; cursor: pointer;
+  }
+  #saveList .empty { font-family: system-ui, sans-serif; font-size: 14px; color: #8a8378; text-align: center; padding: 8px; }
+  #saveName.hidden, #saveConfirm.hidden, #saveList.hidden { display: none; }
   @media (max-width: 600px) {
     .pill { font-size: 17px; padding: 3px 11px 3px 7px; }
     .pill.money { font-size: 22px; }
     .pill.rate { font-size: 12px; }
+    .ico { width: 22px; height: 22px; }
     #nav button { font-size: 0; padding: 0 10px; }
     #nav button span { font-size: 20px; }
     #hint { font-size: 13px; bottom: 64px; }
-    #orderBar { top: 96px; font-size: 14px; padding: 5px 10px; }
+    #orderBar { font-size: 14px; padding: 5px 10px; }
   }
 </style>
 </head>
@@ -115,18 +183,40 @@
     <div class="hud-left">
       <div class="pill money stroke" id="moneyPill"><span>💰</span><span id="money">0</span></div>
       <div class="pill rate stroke" id="ratePill">0/s</div>
-      <div class="pill wood stroke" id="woodPill" title="Logs left to cut"><span>🌲</span><span id="wood">0</span></div>
-      <div class="pill stock stroke" id="stockPill" title="Cut pieces ready to load"><span>📦</span><span id="stock">0</span></div>
-      <div class="pill board stroke" id="boardPill" title="Boards — sell for more"><span>🪵</span><span id="boards">0</span></div>
+      <div class="hud-res">
+        <div class="pill wood stroke" id="woodPill" title="Logs left to cut"><span id="woodIco"></span><span id="wood">0</span></div>
+        <div class="pill stock stroke" id="stockPill" title="Cut wood in the bin"><span id="stockIco"></span><span id="stock">0</span></div>
+        <div class="pill board stroke" id="boardPill" title="Boards — sell for more"><span id="boardIco"></span><span id="boards">0</span></div>
+        <div class="pill board stroke hidden" id="furnPill" title="Furniture waiting at the shop"><span class="ico-slot"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.4" width="11" height="2.2" rx=".3" fill="#f7ebc8"/><rect x="7.4" y="4.6" width="9.2" height="6.4" fill="#e7c98a"/><rect x="5.2" y="11" width="13.6" height="2.1" rx=".3" fill="#f3e0bc"/><rect x="6.4" y="13.1" width="1.7" height="8" fill="#8d5a32"/><rect x="15.9" y="13.1" width="1.7" height="8" fill="#8d5a32"/></svg></span><span id="furnN">0</span></div>
+        <div class="pill stock stroke hidden" id="firePill" title="Firewood bundles at the shop"><span class="ico-slot"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="14.2" width="13" height="4" rx="2" fill="#c47a32"/><circle cx="16.2" cy="16.2" r="2.05" fill="#f3d7a0"/><circle cx="16.2" cy="16.2" r=".45" fill="#c4843a"/><rect x="6" y="9.2" width="13" height="4" rx="2" fill="#e8a03a"/><circle cx="6" cy="11.2" r="2.05" fill="#ffe7ad"/><circle cx="6" cy="11.2" r=".45" fill="#c4843a"/><rect x="4" y="4.4" width="12.2" height="3.8" rx="1.9" fill="#d4922e"/><circle cx="16.2" cy="6.3" r="1.95" fill="#f7e2a8"/></svg></span><span id="fireN">0</span></div>
+      </div>
+      <div id="orderWrap" class="hidden"><div id="orderBar" class="stroke" title="Rush order from the buyer"><span id="orderIcon"></span><span id="orderLabel">Boards</span><span id="orderCount">0/0</span><b id="orderTime">0s</b></div></div>
     </div>
-    <div id="orderBar" class="stroke hidden" title="Rush order from the buyer"><span id="orderIcon">🪵</span><span id="orderLabel">Boards</span><span id="orderCount">0/0</span><b id="orderTime">0s</b></div>
     <div class="btns">
-      <button id="muteBtn" title="Sound">♪</button>
-      <button id="pauseBtn" title="Pause (P)">II</button>
+      <button id="settingsBtn" type="button" title="Settings">⚙</button>
+      <div id="settingsMenu" class="hidden">
+        <button id="menuSound" type="button">♪ Sound on</button>
+        <button id="menuPause" type="button">II Pause</button>
+        <button id="menuHelp" type="button">? Help</button>
+        <button id="menuSave" type="button">💾 Save game</button>
+        <button id="menuLoad" type="button">📂 Load game</button>
+        <button id="menuNew" type="button">✨ New game</button>
+        <!-- gameroom:back -->
+        <a href="../../" id="gameroom-back" title="Back to Gameroom" aria-label="Back to Gameroom">⌂ Home</a>
+        <!-- /gameroom:back -->
+      </div>
     </div>
   </div>
   <div id="toast" class="stroke"></div>
-  <div id="hint">🖐️ drag · 🔍 zoom · 🟩 tap a pad to upgrade</div>
+  <div id="hint">🖐️ drag · 🔍 zoom · tap a machine to upgrade</div>
+  <div id="shop" class="hidden">
+    <div class="shop-head">
+      <span id="shopIcon">🪚</span>
+      <div><h3 id="shopTitle">Sawmill</h3><p>Buy the next small step</p></div>
+      <button id="shopClose" type="button" title="Close">✕</button>
+    </div>
+    <div id="shopRows"></div>
+  </div>
   <div id="nav">
     <button data-go="saw"><span>🪚</span>Sawmill</button>
     <button data-go="forest"><span>🌲</span>Forest</button>
@@ -141,27 +231,40 @@
       <p>Logs ride the belt, the saw cuts them, forklifts load the trucks, and the trucks haul the wood across the river to the buyer. Invest what you earn and grow the whole business.</p>
       <div class="steps">
         <span>🖐️</span><span>Drag to look around the map. Scroll or pinch to zoom.</span>
-        <span>🟩</span><span>Dark pads on the ground are upgrades. Tap the one next to the machine you want.</span>
+        <span>👆</span><span>Tap a machine — the saw, a forklift, a truck, the planer — and buy its upgrades from the panel.</span>
         <span>🪚</span><span>Buy more saws. Each new lane cuts logs, and they all fall into the same bin.</span>
         <span>🌲</span><span>The forest is not endless. Hire a lumberjack or the saws run out of logs.</span>
-        <span>🪵</span><span>Buy a planer. It turns cut pieces into boards, and boards sell for more.</span>
-        <span>📋</span><span>The buyer posts rush orders. Fill one before the timer ends and you get a cash bonus.</span>
-        <span>🚚</span><span>Buy more trucks on the empty parking spots, and bigger beds so each trip hauls more.</span>
+        <span>🪵</span><span>The planer turns cut wood into boards. Buy another planer, up to three, and each machine runs on its own.</span>
+        <span>⚙️</span><span>When the bin is overflowing, a chipper chews the extra wood. Buy another tile to make the bin itself bigger.</span>
+        <span>🏪</span><span>A shop lot sits just east of the saws. Open it and people walk up to buy. A worker carries the wood, then a cart, then a belt straight out of the bin. Extra buyers wait in line until you add another pallet.</span>
+        <span>🪑</span><span>South of the shop, a joiner turns spare boards into a stool, then a bench, then a table, and carries each one over to sell.</span>
+        <span>🔥</span><span>A chopping block east of the shop splits extra cut logs into firewood. A worker, then a cart, then a belt hauls the bundles to the stall so the bin does not just fill up.</span>
+        <span>🚐</span><span>A delivery van pulls in for rush orders: cut wood, boards, firewood, or furniture. The counter climbs as each lot is loaded. Fill it before the timer ends for a bonus.</span>
+        <span>🚚</span><span>Buy more trucks on the empty parking spots, and bigger beds so each trip hauls more. Coming back, a truck takes the first free spot.</span>
         <span>🚧</span><span>There's a toll gate on the bridge. When trucks get stuck and angry, speed it up.</span>
-        <span>🛣️</span><span>A better road means faster trucks. A better buyer means a higher price per log.</span>
+        <span>🛣️</span><span>Pave the road and trucks drive faster, in the yard and past the bridge. The sign by the pad shows the new speed.</span>
       </div>
-      <button class="play" id="startBtn">PLAY</button><br>
-      <button class="link hidden" id="newBtn">New game (erases progress)</button>
-      <div class="keys">WASD / arrows — move · P — pause · progress saves automatically</div>
+      <button class="play" id="startBtn">PLAY</button>
+      <div class="keys">WASD / arrows — move · P — pause · ⚙ settings</div>
     </div>
   </div>
 
   <div id="pauseScreen" class="overlay hidden">
     <div class="modal">
       <h2>PAUSED</h2>
-      <p>Progress saves automatically.</p>
-      <button class="play" id="resumeBtn">RESUME</button><br>
-      <button class="link" id="resetBtn">Start over</button>
+      <p>Open ⚙ to save, load, or start another mill. This one is kept.</p>
+      <button class="play" id="resumeBtn">RESUME</button>
+    </div>
+  </div>
+
+  <div id="saveScreen" class="overlay hidden">
+    <div class="modal">
+      <h2 id="saveTitle">SAVE</h2>
+      <p id="saveBlurb"></p>
+      <input id="saveName" maxlength="32" autocomplete="off" placeholder="Name this mill">
+      <div id="saveList"></div>
+      <button class="play" id="saveConfirm">SAVE</button><br>
+      <button class="link" id="saveClose" type="button">Back</button>
     </div>
   </div>
 </div>
@@ -181,6 +284,8 @@ const THREE = await import(URL.createObjectURL(new Blob([document.getElementById
 // CONFIG / ECONOMY
 // =====================================================================
 const SAVE_KEY = 'pilana-tajkun:v2';
+const SLOT_KEY = 'pilana-tajkun:slots';
+const HELP_KEY = 'pilana-tajkun:help';
 const qs = new URLSearchParams(location.search);
 const AUTO = qs.has('auto');
 const SIM = parseFloat(qs.get('sim') || '0');
@@ -193,20 +298,56 @@ const START_MONEY = 80;
 const UP = {
   saw:      { vals: [3.0, 2.5, 2.1, 1.75, 1.45, 1.2, 1.0, 0.85, 0.72, 0.6], costs: [40, 110, 260, 600, 1300, 2800, 6000, 12500, 26000] },
   sawN:     { vals: [1, 2, 3], costs: [1600, 7500] },
-  yield:    { vals: [2, 3, 4, 5, 6, 8, 10], costs: [150, 450, 1300, 3600, 9500, 24000] },
-  forkN:    { vals: [1, 2, 3], costs: [900, 6500] },
-  forkSpd:  { vals: [4.5, 5.5, 6.5, 7.5, 8.5], costs: [180, 650, 2200, 7000] },
-  forkCap:  { vals: [5, 8, 12, 16, 22, 30], costs: [250, 900, 2800, 8000, 21000] },
+  yield:    { vals: [2, 3, 4, 5, 6, 7, 8, 9, 10], costs: [200, 400, 800, 1500, 2800, 5200, 9000, 19100] },
+  forkN:    { vals: [1, 2, 3, 4, 5], costs: [900, 6500, 18000, 42000] },
+  forkSpd:  { vals: [4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5], costs: [150, 250, 400, 600, 900, 1400, 2200, 4130] },
+  forkCap:  { vals: [5, 8, 10, 12, 14, 16, 19, 22, 26, 30], costs: [200, 350, 600, 1000, 1600, 2500, 4000, 6500, 16200] },
   truckN:   { vals: [1, 2, 3, 4, 5, 6], costs: [120, 500, 1600, 4800, 13000] },
-  truckCap: { vals: [10, 16, 24, 34, 46, 60], costs: [200, 800, 2500, 7500, 20000] },
-  road:     { vals: [8, 10.5, 13], costs: [2500, 14000] },
-  gate:     { vals: [4.0, 3.0, 2.2, 1.6, 1.1, 0.7], costs: [350, 1200, 3800, 10500, 26000] },
-  market:   { vals: [1, 1.6, 2.4, 3.5, 5], costs: [3000, 11000, 30000, 70000] },
+  truckCap: { vals: [10, 13, 16, 20, 24, 29, 34, 40, 46, 53, 60], costs: [120, 200, 350, 550, 900, 1400, 2200, 3500, 5500, 16280] },
+  road:     { vals: [8, 10, 12, 13, 15, 17, 19], costs: [700, 1200, 1800, 2600, 4000, 6200] },
+  gate:     { vals: [4, 3.5, 3, 2.6, 2.2, 1.9, 1.6, 1.35, 1.1, 0.9, 0.7], costs: [250, 450, 800, 1200, 1800, 2800, 4200, 6500, 9000, 14850] },
+  market:   { vals: [1, 1.3, 1.6, 2.0, 2.4, 2.9, 3.5, 4.2, 5], costs: [1500, 2500, 4000, 6500, 10000, 15000, 24000, 50500] },
   cutterN:  { vals: [0, 1, 2, 3], costs: [220, 800, 2800] },
-  cutterSpd:{ vals: [9, 6.2, 4.4, 3.1], costs: [180, 650, 2200] },
+  cutterSpd:{ vals: [9, 7.4, 6.2, 5.2, 4.4, 3.7, 3.1], costs: [200, 350, 500, 650, 700, 630] },
   planer:   { vals: [0, 1], costs: [650] },
-  planerSpd:{ vals: [4.2, 3.0, 2.1, 1.45], costs: [900, 2800, 8000] },
+  planerN:  { vals: [1, 2, 3], costs: [1800, 5600] },
+  planerSpd:{ vals: [2.6, 2.15, 1.7, 1.4, 1.15, 0.95, 0.8], costs: [600, 1100, 1600, 2200, 2800, 3400] },
+  planerCrew:{ vals: [1, 1.25, 1.5, 1.75, 1.9, 2.1], costs: [300, 450, 650, 900, 1050] },
+  boardCap: { vals: [60, 80, 100, 120, 150, 175, 200], costs: [250, 400, 550, 700, 900, 1200] },
+  tub:      { vals: [0, 1, 2, 3, 4, 5, 6], costs: [400, 800, 1400, 2500, 4500, 13000] },
+  chipper:  { vals: [0, 1], costs: [900] },
+  chipSpd:  { vals: [4.6, 3.8, 3.1, 2.55, 2.1, 1.75, 1.45], costs: [700, 1100, 1500, 2000, 2500, 2800] },
+  chipBite: { vals: [5, 7, 9, 11, 12, 14], costs: [500, 800, 1100, 1300, 1600] },
+  shop:     { vals: [0, 1], costs: [420] },
+  haul:     { vals: [0, 1, 2, 3, 4], costs: [260, 640, 1500, 4200] },
+  buyers:   { vals: [1, 2, 3, 4, 5, 6], costs: [180, 420, 800, 1400, 2600] },
+  palletN:  { vals: [1, 2, 3, 4], costs: [320, 780, 1900] },
+  joinery:  { vals: [0, 1], costs: [240] },
+  joinSpd:  { vals: [5.6, 4.6, 3.7, 3.0, 2.4], costs: [100, 180, 320, 500] },
+  joinKind: { vals: [0, 1, 2], costs: [200, 420] },
+  firewood: { vals: [0, 1], costs: [200] },
+  fireSpd:  { vals: [4.8, 3.8, 3.0, 2.4, 1.8], costs: [90, 160, 280, 450] },
+  fireSize: { vals: [0, 1, 2, 3], costs: [120, 240, 420] },
+  fireHaul: { vals: [0, 1, 2, 3], costs: [140, 280, 520] },
 };
+const UP_VER = 2;
+const TUB_EXTRA = [0, 2.2, 4.4, 6.6, 8.8, 11.0, 12.9];
+const LEGACY_VALS = {
+  yield: [2, 3, 4, 5, 6, 8, 10],
+  forkSpd: [4.5, 5.5, 6.5, 7.5, 8.5],
+  forkCap: [5, 8, 12, 16, 22, 30],
+  truckCap: [10, 16, 24, 34, 46, 60],
+  road: [8, 13, 19],
+  gate: [4, 3, 2.2, 1.6, 1.1, 0.7],
+  market: [1, 1.6, 2.4, 3.5, 5],
+  cutterSpd: [9, 6.2, 4.4, 3.1],
+  planerSpd: [2.6, 1.7, 1.15, 0.8],
+  planerCrew: [1, 1.5, 2.1],
+  boardCap: [60, 120, 200],
+  chipSpd: [4.6, 3.1, 2.1, 1.45],
+  chipBite: [5, 9, 14],
+};
+const LOWER_BETTER = new Set(['planerSpd', 'chipSpd', 'cutterSpd', 'gate']);
 const START_TIMBER = 48;
 const TIMBER_CAP = 90;
 let orderBoard = null;
@@ -434,20 +575,21 @@ function nearestS(x, z, i0, i1) {
 }
 function zoneLimit(s) {
   const i = routeIdx(s), p = ROUTE[i];
-  if (i >= IDX_LOOP0 && i < IDX_RET0) return 5.0;
-  if (p.x < -1.5) return 5.2;
-  return UP.road.vals[S.lv.road];
+  const open = UP.road.vals[S.lv.road];
+  const t = clamp((open - 8) / 11, 0, 1.2);
+  if (i >= IDX_LOOP0 && i < IDX_RET0) return 4.6 + t * 1.6;
+  if (p.x < -1.5) return 4.8 + t * 3.0;
+  return open;
 }
 
 // yard & spots
-const YARD = { x0: -31.5, x1: -1, z0: -12.8, z1: 12 };
-const SPOT_X = [-24, -20.2, -16.4, -12.6, -8.8, -5];
+const YARD = { x0: -34, x1: 14, z0: -20, z1: 14 };
+const SPOT_X = [-27.2, -22.2, -17.2, -12.2, -7.2, -2.2];
 const SPOT_Z = 3.4;
 const AISLE_OUT_Z = 7.7 + LANE, AISLE_RET_Z = 7.7 - LANE;
 const TUB = { x0: -30.6, x1: -21.4, z0: -12.1, z1: -3.9 };
-const FORK_HOME = [V(-18.8, 0, -9.2), V(-18.8, 0, -11.95), V(-18.8, 0, -6.45)];
-const FORK_CROSS_X = [-16.9, -15.0, -16.0];
-const FORK_LANE_Z = [-0.35, -2.95, -1.65];
+const FORK_HOME = [V(-20.2, 0, -11.5), V(-17.7, 0, -11.5), V(-15.2, 0, -11.5), V(-12.7, 0, -11.5), V(-10.2, 0, -11.5)];
+const FORK_ROW_Z = -0.55;
 const S_GATE = nearestS(43.8, 15.2, 0, IDX_LOOP0) - 2.3;
 const S_DOCK = nearestS(71.6, 8.6, IDX_LOOP0, IDX_RET0);
 const S_MERGE = SPOT_X.map(x => nearestS(x + 4.6, AISLE_OUT_Z, 0, IDX_LOOP0));
@@ -539,11 +681,49 @@ const loopRight = rightsOf(loopAll);
 ribbon(loopAll, loopRight, 1.7, 0, 0.075, roadMat);
 ribbon(loopAll, loopRight, 0.07, 1.6, 0.086, lineWhite);
 ribbon(loopAll, loopRight, 0.07, -1.6, 0.086, lineWhite);
+function roadBand() {
+  const v = UP.road.vals[S.lv.road];
+  if (v < 12) return 0;
+  if (v < 17) return 1;
+  return 2;
+}
 function applyRoadLook() {
-  const lv = S.lv.road;
-  roadMat.color.setHex(lv === 0 ? 0xa39479 : lv === 1 ? 0x5c6168 : 0x43474d);
-  roadMat.roughness = lv === 0 ? 0.98 : 0.85;
-  roadLines.visible = lv >= 1;
+  const band = roadBand();
+  roadMat.color.setHex(band === 0 ? 0xa39479 : band === 1 ? 0x5c6168 : 0x43474d);
+  roadMat.roughness = band === 0 ? 0.98 : 0.85;
+  roadLines.visible = band >= 1;
+  drawRoadSign();
+}
+const roadSignCanvas = document.createElement('canvas');
+roadSignCanvas.width = 256; roadSignCanvas.height = 320;
+const roadSignTex = new THREE.CanvasTexture(roadSignCanvas);
+roadSignTex.colorSpace = THREE.SRGBColorSpace;
+const roadSign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.75), new THREE.MeshBasicMaterial({ map: roadSignTex, transparent: true, toneMapped: false }));
+roadSign.position.set(5.7, 1.9, 2.15);
+roadSign.rotation.y = Math.atan2(CAM_DIR.x, CAM_DIR.z);
+scene.add(roadSign);
+function drawRoadSign() {
+  const band = roadBand();
+  const names = ['DIRT', 'PAVED', 'HIGHWAY'];
+  const open = UP.road.vals[S.lv.road];
+  const t = clamp((open - 8) / 11, 0, 1.2);
+  const yard = Math.round(4.8 + t * 3.0);
+  const c = roadSignCanvas.getContext('2d');
+  c.clearRect(0, 0, 256, 320);
+  c.fillStyle = band === 0 ? '#c4a574' : band === 1 ? '#3d4450' : '#1e2430';
+  c.fillRect(8, 8, 240, 304);
+  c.strokeStyle = band === 2 ? '#f2c230' : '#f4f4f0';
+  c.lineWidth = 10; c.strokeRect(18, 18, 220, 284);
+  c.fillStyle = '#ffffff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.font = '800 42px "Baloo 2", Arial Black, sans-serif';
+  c.fillText(names[band], 128, 78);
+  c.font = '800 92px "Baloo 2", Arial Black, sans-serif';
+  c.fillStyle = band === 2 ? '#f2c230' : '#ffffff';
+  c.fillText(String(Math.round(open)), 128, 168);
+  c.font = '700 28px "Baloo 2", Arial, sans-serif';
+  c.fillStyle = '#ffffff';
+  c.fillText('yard ' + yard, 128, 248);
+  roadSignTex.needsUpdate = true;
 }
 
 // street lamps along the road
@@ -570,20 +750,20 @@ for (let i = ROAD_I0 + 10; i < roadPts.length - 4; i += 26) {
   part(rbox(w, 0.16, d, 0.05, 1), 0xd8dbdd, scene, cx, 0.02, cz, 0, 0, 0, false);
   const Y = 0.105;
   // aisle paint
-  const aisle = [V(-29.5, 0, 7.7), V(-1, 0, 7.7)];
-  const ap = []; for (let x = -29.5; x <= -1; x += 0.5) ap.push(V(x, 0, 7.7));
+  const aisle = [V(YARD.x0 + 2, 0, 7.7), V(YARD.x1 - 2, 0, 7.7)];
+  const ap = []; for (let x = YARD.x0 + 2; x <= YARD.x1 - 2; x += 0.5) ap.push(V(x, 0, 7.7));
   const ar = ap.map(() => V(0, 0, 1));
   dashed(ap, ar, 0, Y, lineWhite, 0, ap.length - 1, 3, 3);
   ribbon(ap, ar, 0.07, 2.55, Y, lineYellow);
   // parking spots
   for (const x of SPOT_X) {
-    for (const s of [-1, 1]) part(boxG(0.12, 0.02, 4.8), lineWhite, scene, x + s * 1.75, Y, SPOT_Z, 0, 0, 0, false);
-    part(boxG(3.62, 0.02, 0.12), lineWhite, scene, x, Y, SPOT_Z - 2.4, 0, 0, 0, false);
+    for (const s of [-1, 1]) part(boxG(0.12, 0.02, 5.8), lineWhite, scene, x + s * 2.2, Y, SPOT_Z, 0, 0, 0, false);
+    part(boxG(4.52, 0.02, 0.12), lineWhite, scene, x, Y, SPOT_Z - 2.9, 0, 0, 0, false);
   }
-  // forklift parking boxes next to the tub
-  for (const z of [-8.0, -10.1, -5.9]) {
-    part(boxG(2.6, 0.02, 0.08), lineYellow, scene, -19.1, Y, z - 0.9, 0, 0, 0, false);
-    part(boxG(2.6, 0.02, 0.08), lineYellow, scene, -19.1, Y, z + 0.9, 0, 0, 0, false);
+  part(rbox(3.6, 0.1, 18, 0.05, 1), 0xb7b1a4, scene, 10.2, 0.04, -28, 0, 0, 0, false);
+  for (const h of FORK_HOME) {
+    part(boxG(0.08, 0.02, 1.7), lineYellow, scene, h.x - 1.05, Y, h.z, 0, 0, 0, false);
+    part(boxG(0.08, 0.02, 1.7), lineYellow, scene, h.x + 1.05, Y, h.z, 0, 0, 0, false);
   }
 }
 
@@ -641,19 +821,19 @@ const truckBays = SPOT_X.map((x, i) => {
   const g = new THREE.Group();
   g.position.set(x, 0, SPOT_Z);
   scene.add(g);
-  bayFloor(g, 3.2, 4.15);
-  bayNumber(g, i + 1, 1.55, 0.15);
-  const stop = new THREE.Group(); stop.position.set(0, 0, -1.85); g.add(stop);
-  wheelStop(stop, 2.35);
-  const gate = new THREE.Group(); gate.position.set(0, 0, 1.95); g.add(gate);
-  bayGate(gate, 2.7);
+  bayFloor(g, 4.15, 5.5);
+  bayNumber(g, i + 1, 1.7, 0.15);
+  const stop = new THREE.Group(); stop.position.set(0, 0, -2.45); g.add(stop);
+  wheelStop(stop, 3.05);
+  const gate = new THREE.Group(); gate.position.set(0, 0, 2.55); g.add(gate);
+  bayGate(gate, 3.5);
   return g;
 });
 const forkBays = FORK_HOME.map((h, i) => {
   const g = new THREE.Group();
   g.position.copy(h);
   scene.add(g);
-  bayFloor(g, 2.15, 1.45);
+  bayFloor(g, 2.3, 1.7);
   bayNumber(g, i + 1, 0.95, 0);
   const stop = new THREE.Group(); stop.position.set(-0.78, 0, 0); stop.rotation.y = Math.PI / 2; g.add(stop);
   wheelStop(stop, 1.1);
@@ -790,6 +970,9 @@ function cleared(x, z) {
   if (x > -38 && x < -16 && z > -44 && z < -11) return true;        // conveyors + log deck + saw pads
   if (x > -64 && x < -36 && z > -14 && z < 14) return true;         // logging camp
   if (x > -46 && x < -30 && z > -42 && z < -6) return true;         // lumberjack path to the log deck
+  if (x > -50 && x < -16 && z > -21 && z < 2) return true;          // bin expansion, chipper, planer
+  if (x > 6.2 && x < 14 && z > -38 && z < 12) return true;         // delivery drive
+  if (x > -21.6 && x < -3.2 && z > -36.2 && z < -13.2) return true; // shop, joinery, firewood — east of the saw belts
   if (x > 55.5 && x < 84 && z > -3 && z < 18.5) return true;          // market
   if (x > 41 && x < 51 && z > 14 && z < 23) return true;              // toll booth
   if (x > -1 && x < 7 && z > 1 && z < 7) return true;                 // road upgrade pad
@@ -1138,23 +1321,44 @@ function updateCutterVisuals(dt, time) {
   syncPile();
 }
 
-// tub (kadica)
-{
-  const g = new THREE.Group(); scene.add(g);
+// tub (kadica) — walls rebuild when the bin grows west
+let tubGroup = null;
+function layoutBin(lv = 0) {
+  TUB.x0 = -30.6 - (TUB_EXTRA[lv] || 0);
+  TUB_IN.x0 = TUB.x0 + 0.35; TUB_IN.x1 = TUB.x1 - 0.35;
+  TUB_IN.z0 = TUB.z0 + 0.35; TUB_IN.z1 = TUB.z1 - 0.35;
+  HC = Math.max(1, Math.ceil((TUB_IN.x1 - TUB_IN.x0) / CELL));
+  HR = Math.max(1, Math.ceil((TUB_IN.z1 - TUB_IN.z0) / CELL));
+  heights = new Float32Array(HC * HR);
+}
+function buildTubWalls() {
+  if (tubGroup) scene.remove(tubGroup);
+  const g = new THREE.Group(); scene.add(g); tubGroup = g;
   const w = TUB.x1 - TUB.x0, d = TUB.z1 - TUB.z0, cx = (TUB.x0 + TUB.x1) / 2, cz = (TUB.z0 + TUB.z1) / 2, H = 1.25, T = 0.34;
   part(rbox(w, 0.1, d, 0.03, 1), 0xb4b9be, g, cx, 0.12, cz, 0, 0, 0, false);
   const walls = [[cx, TUB.z0, w + T, T], [cx, TUB.z1, w + T, T], [TUB.x0, cz, T, d + T], [TUB.x1, cz, T, d + T]];
   for (const [x, z, ww, dd] of walls) {
     part(rbox(ww, H, dd, 0.06, 1), 0xc9cdd1, g, x, H / 2 + 0.06, z);
-    const L = Math.max(ww, dd);
-    const cap = new THREE.Mesh(boxG(ww + 0.02, 0.12, dd + 0.02), hazardMat(L));
-    if (dd > ww) cap.rotation.y = Math.PI / 2, cap.geometry = boxG(dd + 0.02, 0.12, ww + 0.02);
+    const cap = new THREE.Mesh(dd > ww ? boxG(dd + 0.02, 0.12, ww + 0.02) : boxG(ww + 0.02, 0.12, dd + 0.02), hazardMat(Math.max(ww, dd)));
+    if (dd > ww) cap.rotation.y = Math.PI / 2;
     cap.position.set(x, H + 0.12, z); cap.castShadow = true; g.add(cap);
   }
 }
+function resizeTub() {
+  layoutBin(S.lv.tub | 0);
+  buildTubWalls();
+  for (const pc of pieces) {
+    pc.cell = -1; pc.settled = false;
+    pc.p.x = clamp(pc.p.x, TUB_IN.x0 + 0.3, TUB_IN.x1 - 0.3);
+    pc.p.z = clamp(pc.p.z, TUB_IN.z0 + 0.3, TUB_IN.z1 - 0.3);
+    settlePiece(pc);
+  }
+  if (typeof placeChipper === 'function') placeChipper();
+  if (typeof placeTubPad === 'function') placeTubPad();
+}
 
 // pieces (small logs) in the tub: instanced, physics-lite with a heightfield + sliding
-const PIECE_CAP = 620;
+const PIECE_CAP = 1400;
 const pieceGeo = new THREE.CylinderGeometry(0.16, 0.16, 0.85, 9);
 const pieceIM = new THREE.InstancedMesh(pieceGeo, [mat(0xe8b23e, { r: 0.7 }), mat(0xf7e2a8, { r: 0.7 }), mat(0xf7e2a8, { r: 0.7 })], PIECE_CAP);
 pieceIM.count = 0; pieceIM.castShadow = true; pieceIM.receiveShadow = true; pieceIM.frustumCulled = false;
@@ -1163,8 +1367,9 @@ scene.add(pieceIM);
 const pieces = [];
 const TUB_IN = { x0: TUB.x0 + 0.35, x1: TUB.x1 - 0.35, z0: TUB.z0 + 0.35, z1: TUB.z1 - 0.35 };
 const CELL = 0.42;
-const HC = Math.ceil((TUB_IN.x1 - TUB_IN.x0) / CELL), HR = Math.ceil((TUB_IN.z1 - TUB_IN.z0) / CELL);
-const heights = new Float32Array(HC * HR);
+let HC = 1, HR = 1, heights = new Float32Array(1);
+layoutBin();
+buildTubWalls();
 const FLOOR_Y = 0.17, PIECE_H = 0.1;
 const cellOf = (x, z) => clamp(Math.floor((z - TUB_IN.z0) / CELL), 0, HR - 1) * HC + clamp(Math.floor((x - TUB_IN.x0) / CELL), 0, HC - 1);
 const tmpQ = new THREE.Quaternion(), tmpE = new THREE.Euler(), tmpM = new THREE.Matrix4(), ONE = V(1, 1, 1);
@@ -1177,20 +1382,27 @@ function pieceColor() {
 function addPiece(p, v, settled = false) {
   if (pieces.length >= PIECE_CAP) return;
   const q = new THREE.Quaternion().setFromEuler(tmpE.set(rand(-0.2, 0.2), rand(0, 6.28), Math.PI / 2 + rand(-0.2, 0.2)));
-  const pc = { p, v, q, w: V(rand(-6, 6), rand(-6, 6), rand(-6, 6)), settled: false, bounces: 0, cell: -1 };
+  const pc = { p, v, q, w: V(rand(-6, 6), rand(-6, 6), rand(-6, 6)), settled: false, bounces: 0, cell: -1, fly: settled ? 0 : 0.45 };
   pieceIM.setColorAt(pieces.length, pieceColor()); pieceIM.instanceColor.needsUpdate = true;
   pieces.push(pc);
   if (settled) settlePiece(pc);
 }
 function settlePiece(pc) {
   let c = cellOf(pc.p.x, pc.p.z);
-  for (let k = 0; k < 30; k++) {
+  for (let k = 0; k < 40; k++) {
     const cx = c % HC, cz = (c / HC) | 0; let best = c, bh = heights[c];
     for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
       const nx = cx + dx, nz = cz + dz; if (nx < 0 || nz < 0 || nx >= HC || nz >= HR) continue;
       const n = nz * HC + nx; if (heights[n] < bh - 0.16) { bh = heights[n]; best = n; }
     }
     if (best === c) break; c = best;
+  }
+  let lowH = heights[0];
+  for (let i = 1; i < heights.length; i++) if (heights[i] < lowH) lowH = heights[i];
+  if (lowH + 0.05 < heights[c]) {
+    const ties = [];
+    for (let i = 0; i < heights.length; i++) if (heights[i] <= lowH + 1e-4) ties.push(i);
+    c = ties[(Math.random() * ties.length) | 0];
   }
   const cx = c % HC, cz = (c / HC) | 0;
   pc.p.x = TUB_IN.x0 + (cx + 0.5) * CELL + rand(-0.14, 0.14);
@@ -1199,15 +1411,44 @@ function settlePiece(pc) {
   pc.q.setFromEuler(tmpE.set(rand(-0.25, 0.25), rand(0, 6.28), Math.PI / 2 + rand(-0.25, 0.25), 'YXZ'));
   heights[c] += PIECE_H; pc.cell = c; pc.settled = true;
 }
+function evictSettled(n) {
+  let left = n;
+  while (left > 0) {
+    let bi = -1, by = 1e9;
+    for (let i = 0; i < pieces.length; i++) {
+      if (pieces[i].settled && pieces[i].p.y < by) { by = pieces[i].p.y; bi = i; }
+    }
+    if (bi < 0) break;
+    const cell = pieces[bi].cell;
+    if (cell >= 0) heights[cell] = Math.max(0, heights[cell] - PIECE_H);
+    const last = pieces.length - 1;
+    if (bi !== last) {
+      pieces[bi] = pieces[last];
+      const c = new THREE.Color();
+      pieceIM.getColorAt(last, c);
+      pieceIM.setColorAt(bi, c);
+    }
+    pieces.pop();
+    if (cell >= 0) {
+      const y = FLOOR_Y + heights[cell] + 0.16;
+      for (const pc of pieces) if (pc.settled && pc.cell === cell && pc.p.y > y + 0.02) pc.p.y = Math.max(y, pc.p.y - PIECE_H);
+    }
+    left--;
+  }
+  pieceIM.instanceColor.needsUpdate = true;
+}
 function spawnCutPieces(n, x) {
+  const overflow = pieces.length + n - PIECE_CAP;
+  if (overflow > 0) evictSettled(overflow);
   for (let k = 0; k < n; k++) {
     const a = rand(0, 6.28), r = rand(0, 0.28);
-    addPiece(V(x + Math.cos(a) * r, BELT_Y + LOG_R + Math.sin(a) * r, BLADE_Z + LP / 2 + rand(-0.2, 0.2)), V(rand(-1.2, 1.2), rand(0.4, 2.2), rand(1.8, 4.4)));
+    addPiece(V(x + Math.cos(a) * r, BELT_Y + LOG_R + 0.15 + Math.sin(a) * r, BLADE_Z + LP / 2 + rand(-0.15, 0.15)), V(rand(-1.6, 1.6), rand(2.2, 4.2), rand(3.4, 6.4)));
   }
 }
 function updatePieces(dt) {
   for (const pc of pieces) {
     if (pc.settled) continue;
+    pc.fly -= dt;
     pc.v.y -= 13 * dt;
     pc.p.addScaledVector(pc.v, dt);
     tmpQ.setFromEuler(tmpE.set(pc.w.x * dt, pc.w.y * dt, pc.w.z * dt)); pc.q.multiply(tmpQ);
@@ -1218,7 +1459,7 @@ function updatePieces(dt) {
     if (pc.p.z < TUB_IN.z0) continue;
     const floor = FLOOR_Y + heights[cellOf(pc.p.x, pc.p.z)] + 0.16;
     if (pc.p.y <= floor) {
-      if (pc.v.y < -2.2 && pc.bounces < 2) { pc.p.y = floor; pc.v.y *= -0.3; pc.v.x *= 0.5; pc.v.z *= 0.5; pc.w.multiplyScalar(0.5); pc.bounces++; if (pc.bounces === 1) sfx.clunk(); }
+      if (pc.fly > 0) { pc.p.y = floor + 0.08; pc.v.y = Math.max(1.4, Math.abs(pc.v.y) * 0.3); pc.v.z = Math.max(pc.v.z, 2.4); }
       else settlePiece(pc);
     }
   }
@@ -1242,7 +1483,7 @@ function removePieces(n) {
 function fillPiecesInstant(n) {
   pieces.length = 0; heights.fill(0);
   const m = Math.min(n, PIECE_CAP);
-  for (let i = 0; i < m; i++) addPiece(V(BELT_X + rand(-2, 2), 3, rand(TUB_IN.z0 + 0.5, TUB_IN.z0 + 4.5)), V(), true);
+  for (let i = 0; i < m; i++) addPiece(V(rand(TUB_IN.x0 + 0.4, TUB_IN.x1 - 0.4), 3, rand(TUB_IN.z0 + 0.4, TUB_IN.z1 - 0.4)), V(), true);
 }
 
 // =====================================================================
@@ -1344,37 +1585,42 @@ const T_ACC = 4.0, T_DEC = 6.5, GAP = 5.5, DUMP_DUR = 1.9;
 const tv1 = V(), tv2 = V();
 class Truck {
   constructor(i) {
-    this.i = i;
+    this.i = i; this.bay = i;
     this.m = buildTruck(); scene.add(this.m.g);
     this.state = 'parked'; this.loaded = 0; this.boards = 0; this.incoming = 0;
     this.s = 0; this.v = 0; this.u = 0; this.pos = V(SPOT_X[i], 0, SPOT_Z); this.yaw = 0; this.dir = 1;
     this.gatePass = false; this.dumped = false; this.paid = false; this.waitT = 0; this.dumpT = 0; this.wheelA = 0; this.pop = 0;
-    this.exitCurve = new THREE.CubicBezierCurve3(V(SPOT_X[i], 0, SPOT_Z), V(SPOT_X[i], 0, AISLE_OUT_Z - 1.2), V(SPOT_X[i] + 1.6, 0, AISLE_OUT_Z), routeAt(S_MERGE[i], V()));
-    this.revCurve = new THREE.CubicBezierCurve3(routeAt(S_REV[i], V()), V(SPOT_X[i] - 1.2, 0, AISLE_RET_Z), V(SPOT_X[i], 0, AISLE_RET_Z - 0.4), V(SPOT_X[i], 0, SPOT_Z));
+    this.setBay(i);
+  }
+  setBay(b) {
+    this.bay = b;
+    const x = SPOT_X[b];
+    this.exitCurve = new THREE.CubicBezierCurve3(V(x, 0, SPOT_Z), V(x, 0, AISLE_OUT_Z - 1.2), V(x + 1.6, 0, AISLE_OUT_Z), routeAt(S_MERGE[b], V()));
+    this.revCurve = new THREE.CubicBezierCurve3(routeAt(S_REV[b], V()), V(x - 1.2, 0, AISLE_RET_Z), V(x, 0, AISLE_RET_Z - 0.4), V(x, 0, SPOT_Z));
     this.exitLen = this.exitCurve.getLength(); this.revLen = this.revCurve.getLength();
   }
   cap() { return UP.truckCap.vals[S.lv.truckCap]; }
   occ() {
     if (this.state === 'route' || this.state === 'dumping') return this.s;
-    if (this.state === 'reversing') return S_REV[this.i];
+    if (this.state === 'reversing') return S_REV[this.bay];
     return -1;
   }
   canExit() {
     for (const o of trucks) {
       if (o === this) continue;
       if (o.state === 'exiting') return false;
-      if (o.state === 'reversing' && Math.abs(SPOT_X[o.i] - SPOT_X[this.i]) < 8.5) return false;
+      if (o.state === 'reversing' && Math.abs(SPOT_X[o.bay] - SPOT_X[this.bay]) < 8.5) return false;
       const oc = o.occ(); if (oc < 0) continue;
-      if (oc > S_MERGE[this.i] - 11 && oc < S_MERGE[this.i] + GAP + 0.5) return false;
-      if (oc > S_CROSS[this.i] - 9 && oc < S_CROSS[this.i] + 3.5) return false;
+      if (oc > S_MERGE[this.bay] - 11 && oc < S_MERGE[this.bay] + GAP + 0.5) return false;
+      if (oc > S_CROSS[this.bay] - 9 && oc < S_CROSS[this.bay] + 3.5) return false;
     }
     return true;
   }
   canReverse() {
     for (const o of trucks) {
       if (o === this) continue;
-      if (o.state === 'exiting' && Math.abs(SPOT_X[o.i] - SPOT_X[this.i]) < 8.5) return false;
-      if (o.state === 'route' && o.s > S_OUTBLOCK[this.i] - 0.5 && o.s < S_OUTCLEAR[this.i]) return false;
+      if (o.state === 'exiting' && Math.abs(SPOT_X[o.bay] - SPOT_X[this.bay]) < 8.5) return false;
+      if (o.state === 'route' && o.s > S_OUTBLOCK[this.bay] - 0.5 && o.s < S_OUTCLEAR[this.bay]) return false;
     }
     return true;
   }
@@ -1389,7 +1635,7 @@ class Truck {
         break;
       case 'exiting': {
         this.v = Math.min(3.6, this.v + T_ACC * dt); this.u += this.v * dt; this.dir = 1;
-        if (this.u >= this.exitLen) { this.state = 'route'; this.s = S_MERGE[this.i]; this.placeOnRoute(dt); }
+        if (this.u >= this.exitLen) { this.state = 'route'; this.s = S_MERGE[this.bay]; this.placeOnRoute(dt); }
         else { const t = this.u / this.exitLen; this.exitCurve.getPointAt(t, this.pos); this.exitCurve.getTangentAt(t, tv1); this.yaw = yawOf(tv1.x, tv1.z); }
         break;
       }
@@ -1401,7 +1647,6 @@ class Truck {
           const mult = UP.market.vals[S.lv.market];
           const raw = Math.max(0, this.loaded - this.boards);
           const pay = (raw * PIECE_PRICE + this.boards * BOARD_PRICE) * mult;
-          fillOrder(this.boards, raw, this.pos);
           this.loaded = 0; this.boards = 0;
           addMoney(pay, this.pos.clone().setY(3.5));
           sfx.cash();
@@ -1411,7 +1656,7 @@ class Truck {
       case 'reversing': {
         this.v = Math.min(2.2, this.v + 2.2 * dt); this.u += this.v * dt; this.dir = -1;
         if (this.u >= this.revLen) {
-          this.state = 'parked'; this.pos.set(SPOT_X[this.i], 0, SPOT_Z); this.yaw = 0; this.v = 0;
+          this.state = 'parked'; this.pos.set(SPOT_X[this.bay], 0, SPOT_Z); this.yaw = 0; this.v = 0;
           this.gatePass = false; this.dumped = false; this.paid = false; this.loaded = 0; this.boards = 0; this.incoming = 0;
         } else { const t = this.u / this.revLen; this.revCurve.getPointAt(t, this.pos); this.revCurve.getTangentAt(t, tv1); this.yaw = yawOf(-tv1.x, -tv1.z); }
         if (!instant) sfx.beep(this);
@@ -1423,6 +1668,22 @@ class Truck {
     this.moved = prevPos.distanceTo(this.pos);
   }
   drive(dt) {
+    if (this.dumped && this.waitT > 5) {
+      const n = UP.truckN.vals[S.lv.truckN];
+      const taken = new Set();
+      for (const o of trucks) {
+        if (o !== this && (o.state === 'parked' || o.state === 'waitExit' || o.state === 'exiting' || o.state === 'reversing')) taken.add(o.bay);
+      }
+      let bay = (!taken.has(this.bay) && this.bay < n) ? this.bay : -1;
+      if (bay < 0) { for (let b = 0; b < n; b++) if (!taken.has(b)) { bay = b; break; } }
+      if (bay >= 0) {
+        if (this.bay !== bay) this.setBay(bay);
+        this.s = S_REV[bay];
+        this.v = 0;
+        this.waitT = 0;
+        if (this.canReverse()) { this.state = 'reversing'; this.u = 0; return; }
+      }
+    }
     const lim = zoneLimit(this.s);
     let stop = ROUTE_LEN;
     for (const o of trucks) {
@@ -1432,11 +1693,11 @@ class Truck {
       if (oc > this.s || (oc === this.s && o.i > this.i)) stop = Math.min(stop, oc - GAP);
     }
     for (const o of trucks) {
-      if (o !== this && o.state === 'reversing' && this.s <= S_OUTBLOCK[o.i] + 0.01) stop = Math.min(stop, S_OUTBLOCK[o.i]);
+      if (o !== this && o.state === 'reversing' && this.s <= S_OUTBLOCK[o.bay] + 0.01) stop = Math.min(stop, S_OUTBLOCK[o.bay]);
     }
     if (!this.gatePass && this.s <= S_GATE + 0.01) stop = Math.min(stop, S_GATE);
     if (!this.dumped && this.s <= S_DOCK + 0.01) stop = Math.min(stop, S_DOCK);
-    if (this.dumped) stop = Math.min(stop, S_REV[this.i]);
+    if (this.dumped) stop = Math.min(stop, S_REV[this.bay]);
     const d = stop - this.s;
     const vAllowed = Math.min(lim, Math.sqrt(2 * T_DEC * Math.max(0, d)));
     this.v = this.v < vAllowed ? Math.min(vAllowed, this.v + T_ACC * dt) : Math.max(vAllowed, this.v - T_DEC * 2 * dt);
@@ -1445,7 +1706,7 @@ class Truck {
     if (this.s >= stop - 1e-4 && d < 0.3) this.v = Math.min(this.v, 0.2);
     this.dir = 1;
     if (!this.dumped && Math.abs(this.s - S_DOCK) < 0.03 && this.v < 0.25) { this.state = 'dumping'; this.dumpT = 0; this.paid = false; this.v = 0; }
-    if (this.dumped && Math.abs(this.s - S_REV[this.i]) < 0.03 && this.v < 0.25 && this.canReverse()) { this.state = 'reversing'; this.u = 0; this.v = 0; }
+    if (this.dumped && Math.abs(this.s - S_REV[this.bay]) < 0.03 && this.v < 0.25 && this.canReverse()) { this.state = 'reversing'; this.u = 0; this.v = 0; }
     this.placeOnRoute(dt);
   }
   placeOnRoute(dt) {
@@ -1491,7 +1752,7 @@ class Forklift {
     this.i = i; this.home = FORK_HOME[i].clone();
     this.m = buildForklift(); scene.add(this.m.g);
     this.pos = this.home.clone(); this.yaw = -Math.PI / 2; this.v = 0; this.dir = 1;
-    this.state = 'idle'; this.n = 0; this.boards = 0; this.boardReserve = 0; this.fromPile = false; this.lift = 0; this.timer = 0; this.truck = null; this.path = []; this.waitT = 0; this.blockT = 0; this.wheelA = 0; this.pop = 0;
+    this.state = 'idle'; this.n = 0; this.boards = 0; this.boardReserve = 0; this.fromPile = false; this.vanJob = false; this.lift = 0; this.timer = 0; this.truck = null; this.path = []; this.waitT = 0; this.blockT = 0; this.wheelA = 0; this.pop = 0;
   }
   spd() { return UP.forkSpd.vals[S.lv.forkSpd]; }
   sees(o, r) {
@@ -1503,9 +1764,9 @@ class Forklift {
     for (const o of forks) {
       if (o === this) continue;
       const d = Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z);
-      if (d < 1.55 && this.i > o.i) return true;
-      if (!this.sees(o, 2.4)) continue;
-      if (o.sees(this, 2.4) && this.i < o.i) continue;
+      if (d < 1.4 && this.i > o.i) return true;
+      if (!this.sees(o, 1.85)) continue;
+      if (o.sees(this, 1.85) && this.i < o.i) continue;
       return true;
     }
     return false;
@@ -1514,9 +1775,24 @@ class Forklift {
     const dx = tx - this.pos.x, dz = tz - this.pos.z, dist = Math.hypot(dx, dz);
     this.dir = rev ? -1 : 1;
     if (dist < 0.04) { this.pos.x = tx; this.pos.z = tz; return true; }
+    if (this.blocked()) {
+      this.blockT += dt; this.v = 0;
+      if (this.blockT > 4) {
+        this.blockT = 0;
+        let nx = 0, nz = 0, nd = 1e9;
+        for (const o of forks) {
+          if (o === this) continue;
+          const d = Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z);
+          if (d < nd) { nd = d; nx = this.pos.x - o.pos.x; nz = this.pos.z - o.pos.z; }
+        }
+        const len = Math.hypot(nx, nz) || 1;
+        this.pos.x += nx / len * 0.9;
+        this.pos.z += nz / len * 0.9;
+      }
+      return false;
+    }
+    this.blockT = 0;
     if (dist < 0.35) {
-      if (this.blocked()) { this.blockT += dt; if (this.blockT < 5) { this.v = 0; return false; } }
-      else this.blockT = 0;
       const step = Math.min(dist, Math.max(0.6, this.v) * dt);
       this.pos.x += dx / dist * step; this.pos.z += dz / dist * step; this.v = Math.max(0.3, this.v * 0.9);
       return Math.hypot(tx - this.pos.x, tz - this.pos.z) < 0.04 ? (this.pos.x = tx, this.pos.z = tz, true) : false;
@@ -1525,32 +1801,25 @@ class Forklift {
     const err = angDiff(this.yaw, want);
     this.yaw += clamp(err, -F_TURN * dt, F_TURN * dt);
     const al = Math.max(0, Math.cos(err));
-    let vT = Math.min(spd * (0.32 + 0.68 * al * al), Math.sqrt(2 * 5 * dist) + 0.1);
-    if (this.blocked()) { this.blockT += dt; if (this.blockT < 5) vT = 0; } else this.blockT = 0;
+    const vT = Math.min(spd * (0.08 + 0.92 * al * al), Math.sqrt(2 * 5 * dist) + 0.1);
     this.v = this.v < vT ? Math.min(vT, this.v + F_ACC * dt) : Math.max(vT, this.v - 9 * dt);
     const step = Math.min(this.v * dt, dist);
     this.pos.x += Math.sin(this.yaw) * step * this.dir; this.pos.z += Math.cos(this.yaw) * step * this.dir;
     return false;
   }
-  crossX() { return FORK_CROSS_X[this.i]; }
-  laneZ() { return FORK_LANE_Z[this.i]; }
   outPath(tx, tz) {
-    const H = this.home, cx = this.crossX(), lz = this.laneZ();
+    const x = this.home.x;
     return [
-      { x: H.x + 1.8, z: H.z, rev: true, sm: 0.6 },
-      { x: cx, z: H.z },
-      { x: cx, z: lz },
-      { x: tx, z: lz },
+      { x, z: FORK_ROW_Z },
+      { x: tx, z: FORK_ROW_Z },
       { x: tx, z: tz, sm: 0.5, yaw: 0 },
     ];
   }
   homePath(tx) {
-    const H = this.home, cx = this.crossX(), lz = this.laneZ();
+    const H = this.home;
     return [
-      { x: tx, z: lz, rev: true, sm: 0.6 },
-      { x: cx, z: lz },
-      { x: cx, z: H.z },
-      { x: H.x + 1.6, z: H.z },
+      { x: tx, z: FORK_ROW_Z, rev: true, sm: 0.55 },
+      { x: H.x, z: FORK_ROW_Z },
       { x: H.x, z: H.z, sm: 0.5, yaw: -Math.PI / 2 },
     ];
   }
@@ -1570,7 +1839,7 @@ class Forklift {
       if (t.state !== 'parked') continue;
       const cap = t.cap(), need = cap - t.loaded - t.incoming;
       if (need <= 0) continue;
-      const f = (t.loaded + t.incoming) / cap - Math.abs(SPOT_X[t.i] - this.pos.x) * 0.002;
+      const f = (t.loaded + t.incoming) / cap - Math.abs(SPOT_X[t.bay] - this.pos.x) * 0.002;
       if (f > bf) { bf = f; best = t; }
     }
     return best;
@@ -1581,31 +1850,43 @@ class Forklift {
     switch (this.state) {
       case 'idle': {
         this.v = 0; this.lift = Math.max(0, this.lift - dt * 2);
+        const job = courier.takeJob();
+        if (job) {
+          this.vanJob = true; this.truck = null; this.waitT = 0;
+          if (job.boards) {
+            S.boardHold = (S.boardHold || 0) + job.n;
+            this.boardReserve = job.n; this.boards = 0; this.n = 0; this.fromPile = true;
+            this.path = [
+              { x: H.x, z: -11.2 },
+              { x: BOARD_PILE.x + 1.3, z: -11.2 },
+              { x: BOARD_PILE.x + 1.3, z: BOARD_PILE.z + 1.2, sm: 0.45 },
+            ];
+            this.state = 'toBoards';
+          } else {
+            S.stockpile -= job.n; this.boards = 0; this.n = job.n;
+            if (!instant) removePieces(job.n);
+            this.state = 'scoop'; this.timer = 0;
+          }
+          break;
+        }
         const t = this.pickTruck();
         if (t) {
           const need = t.cap() - t.loaded - t.incoming;
           const want = Math.min(UP.forkCap.vals[S.lv.forkCap], need);
           const boardsFree = S.boards - (S.boardHold || 0);
           let useBoards = boardsFree >= want || (boardsFree > 0 && S.stockpile <= 0);
-          const left = order.on ? order.need - order.have : 0;
-          if (order.on && order.kind === 'boards' && boardsFree >= Math.min(want, Math.max(1, left))) useBoards = true;
-          if (order.on && order.kind === 'raw' && S.stockpile > 0) useBoards = false;
+          if (useBoards && forks.some(f => f !== this && (f.state === 'toBoards' || f.boardReserve > 0))) useBoards = false;
           const pile = useBoards ? boardsFree : S.stockpile;
-          const ordered = order.on && order.kind === (useBoards ? 'boards' : 'raw');
-          const ready = pile >= want || (ordered && pile >= left);
-          if (pile > 0 && (ready || this.waitT > (ordered ? 1.2 : 2.5))) {
+          if (pile > 0 && (pile >= want || this.waitT > 2.5)) {
             const n = Math.min(want, pile);
             this.truck = t; t.incoming += n; this.waitT = 0;
             if (useBoards) {
               S.boardHold = (S.boardHold || 0) + n;
               this.boardReserve = n; this.boards = 0; this.n = 0; this.fromPile = true;
-              const lz = this.laneZ(), cx = this.crossX();
               this.path = [
-                { x: H.x + 1.8, z: H.z, rev: true, sm: 0.6 },
-                { x: cx, z: H.z },
-                { x: cx, z: lz },
-                { x: BOARD_PILE.x, z: lz },
-                { x: BOARD_PILE.x, z: BOARD_PILE.z + 1.65, sm: 0.45 },
+                { x: H.x, z: FORK_ROW_Z },
+                { x: BOARD_PILE.x + 1.3, z: FORK_ROW_Z },
+                { x: BOARD_PILE.x + 1.3, z: BOARD_PILE.z + 1.15, sm: 0.45 },
               ];
               this.state = 'toBoards';
             } else {
@@ -1628,12 +1909,14 @@ class Forklift {
       case 'scoop':
         this.timer += dt; this.lift = Math.min(0.42, this.timer / 0.45 * 0.42);
         if (this.timer >= 0.55) {
-          const tx = SPOT_X[this.truck.i];
+          const tx = this.vanJob ? VAN_YARD.x : SPOT_X[this.truck.bay];
+          const tz = this.vanJob ? VAN_YARD.z - 3.3 : -0.35;
           this.path = this.fromPile ? [
-            { x: BOARD_PILE.x, z: this.laneZ() },
-            { x: tx, z: this.laneZ() },
-            { x: tx, z: -0.35, sm: 0.5, yaw: 0 },
-          ] : this.outPath(tx, -0.35);
+            { x: BOARD_PILE.x + 1.3, z: -11.2 },
+            { x: BOARD_PILE.x + 1.3, z: FORK_ROW_Z },
+            { x: tx, z: FORK_ROW_Z },
+            { x: tx, z: tz, sm: 0.5, yaw: 0 },
+          ] : this.outPath(tx, tz);
           this.fromPile = false;
           this.state = 'toTruck';
         }
@@ -1646,11 +1929,16 @@ class Forklift {
         this.timer += dt; this.v = 0;
         this.lift = Math.min(1, 0.42 + this.timer / 0.45 * 0.58);
         if (this.timer >= 0.7) {
-          const t = this.truck;
-          t.loaded += this.n; t.boards += this.boards; t.incoming -= this.n; this.n = 0; this.boards = 0;
           sfx.drop();
-          const tx = SPOT_X[t.i];
-          this.path = this.homePath(tx);
+          if (this.vanJob) {
+            courier.receive(this.n);
+            this.vanJob = false; this.n = 0; this.boards = 0;
+            this.path = this.homePath(VAN_YARD.x);
+          } else {
+            const t = this.truck;
+            t.loaded += this.n; t.boards += this.boards; t.incoming -= this.n; this.n = 0; this.boards = 0;
+            this.path = this.homePath(SPOT_X[t.bay]);
+          }
           this.state = 'toHome';
         }
         break;
@@ -1660,6 +1948,8 @@ class Forklift {
         break;
     }
     this.moved = prev.distanceTo(this.pos);
+    this.pos.x = clamp(this.pos.x, -32, 9.5);
+    this.pos.z = clamp(this.pos.z, -17.4, 0.8);
   }
   sync(dt, time) {
     const m = this.m;
@@ -1705,21 +1995,66 @@ const freshState = () => ({
   running: false, paused: false,
 });
 let S = freshState();
+let suppressSave = false;
+function snapshot() {
+  return { v: UP_VER, money: S.money, earned: S.earned, stockpile: S.stockpile, timber: S.timber, boards: S.boards, infeed: S.infeed, outBoard: S.outBoard, time: S.time, lv: { ...S.lv } };
+}
 function save() {
-  if (instant) return;
-  try { localStorage.setItem(SAVE_KEY, JSON.stringify({ money: S.money, earned: S.earned, stockpile: S.stockpile, timber: S.timber, boards: S.boards, infeed: S.infeed, outBoard: S.outBoard, lv: S.lv })); } catch (e) {}
+  if (instant || suppressSave) return;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(snapshot())); } catch (e) {}
+}
+function readSlots() {
+  try { const raw = JSON.parse(localStorage.getItem(SLOT_KEY)); return Array.isArray(raw) ? raw : []; } catch (e) { return []; }
+}
+function writeSlots(list) {
+  try { localStorage.setItem(SLOT_KEY, JSON.stringify(list.slice(0, 12))); } catch (e) {}
+}
+function pushSlot(name, snap) {
+  const list = readSlots();
+  const top = list[0];
+  if (top && top.name === name && top.snap && top.snap.money === snap.money && Math.abs((top.snap.time || 0) - (snap.time || 0)) < 2) return;
+  list.unshift({ id: Date.now().toString(36), name, at: Date.now(), snap });
+  writeSlots(list);
+}
+function worthKeeping() {
+  return S.time > 20 || S.earned > 0 || S.money !== START_MONEY || LV_KEYS.some(k => S.lv[k] > 0);
+}
+function mapLegacyLevel(id, oldLv) {
+  oldLv = Math.max(0, oldLv | 0);
+  if (id === 'tub') {
+    const width = oldLv * 4.3;
+    let best = 0;
+    for (let i = 0; i < TUB_EXTRA.length; i++) if (TUB_EXTRA[i] <= width + 0.08) best = i;
+    return best;
+  }
+  const legacy = LEGACY_VALS[id];
+  if (!legacy) return oldLv;
+  const oldVal = legacy[Math.min(oldLv, legacy.length - 1)];
+  const vals = UP[id].vals;
+  let best = 0;
+  if (LOWER_BETTER.has(id)) {
+    for (let i = 0; i < vals.length; i++) if (vals[i] >= oldVal - 1e-3) best = i;
+  } else {
+    for (let i = 0; i < vals.length; i++) if (vals[i] <= oldVal + 1e-3) best = i;
+  }
+  return best;
 }
 function load() {
   try {
     const raw = localStorage.getItem(SAVE_KEY); if (!raw) return false;
     const d = JSON.parse(raw);
-    for (const k of LV_KEYS) S.lv[k] = clamp(d.lv?.[k] | 0, 0, UP[k].vals.length - 1);
+    const legacy = (d.v | 0) < UP_VER;
+    for (const k of LV_KEYS) {
+      const rawLv = d.lv?.[k] | 0;
+      S.lv[k] = clamp(legacy ? mapLegacyLevel(k, rawLv) : rawLv, 0, UP[k].vals.length - 1);
+    }
     S.money = d.money || 0; S.earned = d.earned || 0; S.stockpile = d.stockpile || 0;
     S.timber = d.timber == null ? START_TIMBER : Math.max(0, d.timber | 0);
     S.boards = Math.max(0, d.boards | 0);
     S.infeed = Math.max(0, d.infeed | 0);
-    S.outBoard = d.outBoard ? 1 : 0;
+    S.outBoard = Math.max(0, d.outBoard | 0);
     S.boardHold = 0;
+    S.time = Math.max(0, d.time || 0);
     return true;
   } catch (e) { return false; }
 }
@@ -1754,6 +2089,7 @@ const sfx = (() => {
     gate() { const v = near(V(GATE_X, 0, 15)); if (ok('gate', 200)) tone(660, 0.08, 'triangle', 0.03 * v); },
     chop() { const v = near(V(CAMP.x, 0, CAMP.z)); if (ok('chop', 180)) { tone(rand(90, 130), 0.07, 'square', 0.04 * v); tone(rand(180, 240), 0.05, 'triangle', 0.03 * v); } },
     planer() { const v = near(V(PLANER_AT.x, 0, PLANER_AT.z)); if (ok('planer', 220)) tone(rand(210, 260), 0.08, 'sawtooth', 0.02 * v, 140); },
+    shop() { const v = near(V(-14.4, 0, -24)); if (ok('shop', 160)) { tone(880, 0.06, 'square', 0.022 * v); tone(1174, 0.09, 'square', 0.018 * v, null, 0.05); } },
   };
 })();
 
@@ -1799,50 +2135,77 @@ function incomeRate() {
 // =====================================================================
 // PLANER — cut pieces in, boards out (boards sell for more)
 // =====================================================================
-const PLANER_AT = { x: -9.4, z: -6.3 };
-const BOARD_PILE = { x: -6.4, z: -3.15 };
-const TUB_PICK = { x: -20.7, z: -7.6 };
-const IN_DROP = { x: PLANER_AT.x - 2.45, z: PLANER_AT.z };
-const OUT_PICK = { x: PLANER_AT.x + 1.15, z: PLANER_AT.z + 0.85 };
-const HAND_HOME = { x: PLANER_AT.x + 0.2, z: PLANER_AT.z + 2.35 };
-const BR = { z: -4.35, y: 2.85, x0: -13.4, x1: -20.7, w: 1.2 };
-const RAMP_E = { x: -13.4, z: -8.65, y: 0 };
-const RAMP_W = { x: -20.7, z: -7.6, y: 0 };
-const planerViz = { g: null, ghost: null, roller: null, head: null, cutter: null, feed: [], out: null, kamara: [] };
-{
-  const ghost = new THREE.Group(); ghost.position.set(PLANER_AT.x, 0, PLANER_AT.z); scene.add(ghost);
-  part(rbox(5.2, 0.1, 3.4, 0.06, 1), 0xb7c2cb, ghost, 0, 0.06, 0, 0, 0, 0, false);
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 2.8), bayHatchMat);
-  floor.rotation.x = -Math.PI / 2; floor.position.y = 0.13; ghost.add(floor);
-  planerViz.ghost = ghost;
-  const g = new THREE.Group(); g.position.set(PLANER_AT.x, 0, PLANER_AT.z); g.visible = false; scene.add(g);
-  part(rbox(5.6, 0.14, 2.8, 0.05, 1), 0xc5ccd1, g, 0, 0.08, 0, 0, 0, 0, false);
-  for (const [x, z] of [[-2.1, -0.85], [2.1, -0.85], [-2.1, 0.85], [2.1, 0.85]]) {
-    part(rbox(0.16, 0.62, 0.16, 0.03, 1), 0xf2a93b, g, x, 0.42, z);
+const PLANER_X = -4.2;
+const PLANER_Z = [-5.6, -10.8, -16.0];
+const PLANER_AT = { x: PLANER_X, z: PLANER_Z[0] };
+const BOARD_PILE = { x: PLANER_X + 6.4, z: PLANER_Z[1] };
+const TUB_PICK = { x: -20.8, z: -6.6 };
+const IN_DROP = { x: PLANER_AT.x - 4.6, z: PLANER_AT.z };
+const OUT_PICK = { x: PLANER_AT.x + 3.4, z: PLANER_AT.z + 2.3 };
+const HAND_HOME = { x: PLANER_AT.x, z: PLANER_AT.z + 2.6 };
+const VAN_YARD = { x: 7.2, z: -4.2, yaw: 0 };
+const VAN_FIRE = { x: -3.4, z: -28.3, yaw: Math.PI / 2 };
+const VAN_FURN = { x: -12.6, z: -30.5, yaw: Math.PI / 2 };
+const OUT_MAX = 3;
+function buildPlanerUnit(x, z, index) {
+  const viz = { g: null, ghost: null, roller: null, outRoll: null, head: null, cutter: null, feed: [], out: null, outs: [], t: 0 };
+  const ghost = new THREE.Group(); ghost.position.set(x, 0, z); scene.add(ghost);
+  part(rbox(9.2, 0.16, 4.4, 0.08, 1), 0xb7c2cb, ghost, 0, 0.08, 0, 0, 0, 0, false);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 3.8), bayHatchMat);
+  floor.rotation.x = -Math.PI / 2; floor.position.y = 0.16; ghost.add(floor);
+  if (index > 0) {
+    const num = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), new THREE.MeshBasicMaterial({
+      map: bayNumTex(index + 1), transparent: true, depthWrite: false, toneMapped: false,
+    }));
+    num.rotation.x = -Math.PI / 2; num.position.y = 0.2; ghost.add(num);
   }
-  part(rbox(4.7, 0.12, 1.7, 0.04, 1), 0x6d767e, g, -0.15, 0.78, 0);
-  part(boxG(4.4, 0.07, 0.14), hazardMat(4.4), g, -0.15, 0.88, 0.78);
+  viz.ghost = ghost;
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.visible = false; scene.add(g);
+  part(rbox(9.0, 0.28, 3.2, 0.06, 1), 0x5c656d, g, 0, 0.2, 0, 0, 0, 0, false);
+  part(boxG(8.6, 0.08, 0.16), hazardMat(8.6), g, 0, 0.38, 1.35);
   const rollerPivot = new THREE.Group();
-  rollerPivot.position.set(-1.55, 1.02, 0);
-  rollerPivot.rotation.z = Math.PI / 2;
+  rollerPivot.position.set(-2.8, 1.02, 0);
+  rollerPivot.rotation.x = Math.PI / 2;
   g.add(rollerPivot);
-  planerViz.roller = part(cylG(0.18, 0.18, 1.45, 14), 0xd5dbe0, rollerPivot);
-  const head = new THREE.Group(); head.position.set(0.15, 1.18, 0); g.add(head);
-  part(rbox(1.15, 0.42, 1.35, 0.06, 1), 0x323a42, head, 0, 0, 0);
-  const cutterPivot = new THREE.Group(); cutterPivot.position.set(0, -0.12, 0); cutterPivot.rotation.z = Math.PI / 2; head.add(cutterPivot);
-  planerViz.cutter = part(cylG(0.2, 0.2, 1.2, 12), 0x22272c, cutterPivot);
-  part(rbox(0.55, 0.48, 0.55, 0.08, 1), 0x2f6fb5, head, 0, 0.22, -0.95);
-  planerViz.head = head;
+  viz.roller = part(cylG(0.13, 0.13, 1.35, 12), 0xb7c0c6, rollerPivot);
+  for (const x of [-3.7, -3.15, -2.05, -1.55, 1.7, 2.25, 2.8, 3.4]) {
+    const roll = part(cylG(0.12, 0.12, 1.35, 10), 0xb7c0c6, g, x, 1.02, 0);
+    roll.rotation.x = Math.PI / 2;
+  }
+  const outRoll = new THREE.Group();
+  outRoll.position.set(2.5, 1.02, 0);
+  outRoll.rotation.x = Math.PI / 2;
+  g.add(outRoll);
+  viz.outRoll = part(cylG(0.12, 0.12, 1.35, 12), 0xc5ccd1, outRoll);
+  for (const s of [-1, 1]) {
+    part(rbox(0.55, 2.15, 1.7, 0.06, 1), 0x2a3138, g, s * 1.05, 1.35, 0);
+    part(rbox(0.7, 0.22, 1.9, 0.04, 1), 0x3e474f, g, s * 1.05, 2.5, 0);
+  }
+  part(rbox(2.8, 0.38, 1.85, 0.06, 1), 0x232a30, g, 0, 2.55, 0);
+  const head = new THREE.Group(); head.position.set(0, 1.55, 0); g.add(head);
+  part(rbox(0.9, 0.28, 1.45, 0.05, 1), 0xf2a93b, head, 0, 0.55, 0);
+  const cutterPivot = new THREE.Group(); cutterPivot.rotation.x = Math.PI / 2; head.add(cutterPivot);
+  viz.cutter = part(cylG(0.32, 0.32, 1.45, 16), 0x1a1e22, cutterPivot);
+  viz.head = head;
+  part(cylG(0.38, 0.38, 0.7, 14), 0x2f6fb5, g, 1.7, 1.7, -0.95);
+  part(rbox(0.12, 0.12, 0.9, 0.03, 1), 0x22272c, g, 1.35, 1.85, -0.55);
   const feed = [];
   for (let i = 0; i < 4; i++) {
-    const m = part(cylG(0.2, 0.2, 0.7, 10), i % 2 ? 0xe2b86a : 0xf3d7a0, g);
-    m.rotation.z = Math.PI / 2; m.visible = false; feed.push(m);
+    const m = part(cylG(0.16, 0.16, 1.15, 12), i % 2 ? 0xe2b86a : 0xf3d7a0, g);
+    m.rotation.x = Math.PI / 2; m.visible = false; feed.push(m);
   }
-  planerViz.feed = feed;
-  const out = part(rbox(1.25, 0.09, 0.5, 0.02, 1), 0xf7ebc8, g, 1.05, 0.96, 0.72);
-  out.visible = false; planerViz.out = out;
-  planerViz.g = g;
+  viz.feed = feed;
+  const out = part(rbox(1.5, 0.1, 0.55, 0.02, 1), 0xf7ebc8, g, 2.7, 1.16, 0);
+  out.visible = false; viz.out = out;
+  viz.outs = [out];
+  for (let i = 1; i < OUT_MAX; i++) {
+    const extra = part(rbox(1.5, 0.1, 0.55, 0.02, 1), 0xf7ebc8, g, 2.7, 1.16 + i * 0.11, 0);
+    extra.visible = false; viz.outs.push(extra);
+  }
+  viz.g = g;
+  return viz;
 }
+const planers = PLANER_Z.map((z, i) => buildPlanerUnit(PLANER_X, z, i));
 part(rbox(1.9, 0.1, 1.35, 0.04, 1), 0x8a6240, scene, BOARD_PILE.x, 0.06, BOARD_PILE.z, 0, 0, 0, false);
 const kamara = [];
 for (let i = 0; i < 12; i++) {
@@ -1868,72 +2231,24 @@ function buildPlanerHand() {
   return { g, body, pieces, board };
 }
 const hand = Object.assign(buildPlanerHand(), { x: HAND_HOME.x, z: HAND_HOME.z, y: 0, yaw: 0, state: 'idle', carry: '', wait: 0, moving: false, path: null });
-function bridgeToTub() {
-  const south = BR.z - BR.w / 2;
-  return [
-    { x: -12.6, z: -3.5, y: 0 },
-    { x: RAMP_E.x, z: -3.5, y: 0 },
-    { x: RAMP_E.x, z: RAMP_E.z, y: 0 },
-    { x: RAMP_E.x, z: south, y: BR.y },
-    { x: RAMP_W.x, z: BR.z, y: BR.y },
-    { x: RAMP_W.x, z: south, y: BR.y },
-    { x: RAMP_W.x, z: RAMP_W.z, y: 0 },
-  ];
-}
-function bridgeToPlaner() {
-  const south = BR.z - BR.w / 2;
-  return [
-    { x: RAMP_W.x, z: south, y: BR.y },
-    { x: RAMP_W.x, z: BR.z, y: BR.y },
-    { x: RAMP_E.x, z: BR.z, y: BR.y },
-    { x: RAMP_E.x, z: south, y: BR.y },
-    { x: RAMP_E.x, z: RAMP_E.z, y: 0 },
-    { x: -12.9, z: IN_DROP.z, y: 0 },
-    { x: IN_DROP.x, z: IN_DROP.z, y: 0 },
-  ];
-}
-{
-  const g = new THREE.Group(); scene.add(g);
-  const wood = 0xd7b07a, rail = 0x6a4328, post = 0x5a3a22;
-  const span = BR.x1 - BR.x0;
-  part(rbox(span + 0.2, 0.12, BR.w, 0.02, 1), wood, g, (BR.x0 + BR.x1) / 2, BR.y - 0.06, BR.z);
-  const ramp = (x, z0, y0, z1, y1) => {
-    const dz = z1 - z0, dy = y1 - y0, L = Math.hypot(dz, dy);
-    const mesh = part(rbox(1.05, 0.1, L, 0.02, 1), wood, g);
-    mesh.position.set(x, (y0 + y1) / 2, (z0 + z1) / 2);
-    mesh.quaternion.setFromUnitVectors(V(0, 0, 1), V(0, dy, dz).normalize());
-    for (const s of [-1, 1]) {
-      const groundZ = y0 < y1 ? z0 : z1;
-      const lip = BR.z - BR.w / 2 + 0.1;
-      beam(V(x + s * 0.42, 0.42, groundZ), V(x + s * 0.42, BR.y + 0.28, lip), 0.06, rail, g);
-    }
-  };
-  ramp(RAMP_E.x, RAMP_E.z, 0.08, BR.z, BR.y - 0.06);
-  ramp(RAMP_W.x, BR.z, BR.y - 0.06, RAMP_W.z, 0.08);
-  for (const x of [BR.x0, BR.x1]) for (const s of [-1, 1]) {
-    part(cylG(0.09, 0.11, BR.y - 0.1, 8), post, g, x, (BR.y - 0.1) / 2, BR.z + s * (BR.w / 2 - 0.06));
-  }
-  for (let x = BR.x0 + 1.6; x < BR.x1 - 0.4; x += 1.7) {
-    for (const s of [-1, 1]) part(cylG(0.045, 0.05, 0.5, 6), post, g, x, BR.y + 0.16, BR.z + s * (BR.w / 2 - 0.06));
-  }
-  for (const s of [-1, 1]) {
-    const z = BR.z + s * (BR.w / 2 - 0.06);
-    beam(V(BR.x0 + 0.2, BR.y + 0.32, z), V(BR.x1 - 0.2, BR.y + 0.32, z), 0.065, rail, g);
-  }
-}
 function planerOn() { return UP.planer.vals[S.lv.planer] >= 1; }
+function planerCount() { return planerOn() ? UP.planerN.vals[S.lv.planerN] : 0; }
 function updatePlanerLook() {
-  const on = planerOn();
-  planerViz.g.visible = on;
-  planerViz.ghost.visible = !on;
+  const n = planerCount();
+  planers.forEach((u, i) => {
+    u.g.visible = i < n;
+    u.ghost.visible = i >= n && (i === 0 || planerOn());
+  });
 }
+updatePlanerLook();
 function syncBoardStack() {
   const n = Math.min(kamara.length, S.boards);
   for (let i = 0; i < kamara.length; i++) kamara[i].visible = planerOn() && i < n;
 }
+function boardLimit() { return UP.boardCap.vals[S.lv.boardCap]; }
 function handSpeed() {
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
-  return 3.8 + (4.2 - interval) * 0.85;
+  return (5.2 + (2.6 - interval) * 1.2) * UP.planerCrew.vals[S.lv.planerCrew];
 }
 function stepHand(dt, tx, tz, ty = 0) {
   const dx = tx - hand.x, dy = ty - hand.y, dz = tz - hand.z, dist = Math.hypot(dx, dy, dz);
@@ -1953,27 +2268,27 @@ function walkPath(dt) {
 function updateHand(dt) {
   if (!planerOn()) return;
   hand.moving = false;
-  const room = S.boards + (S.outBoard ? 1 : 0) + (hand.carry === 'board' ? 1 : 0) < BOARD_CAP;
+  const room = S.boards + S.outBoard + (hand.carry === 'board' ? 1 : 0) < boardLimit();
   switch (hand.state) {
     case 'idle':
       if (S.outBoard) hand.state = 'toOut';
       else if (hand.carry === 'pieces') hand.state = 'toIn';
       else if (hand.carry === 'board') hand.state = 'toPile';
-      else if (room && S.infeed < 6 && S.stockpile >= PLANER_KEEP + BOARD_IN) { hand.path = bridgeToTub(); hand.state = 'toTub'; }
+      else if (room && S.infeed < 8 && S.stockpile >= PLANER_KEEP + BOARD_IN) hand.state = 'toTub';
       else stepHand(dt, HAND_HOME.x, HAND_HOME.z);
       break;
-    case 'toTub': if (walkPath(dt)) { hand.state = 'scoop'; hand.wait = 0; } break;
+    case 'toTub': if (stepHand(dt, TUB_PICK.x, TUB_PICK.z)) { hand.state = 'scoop'; hand.wait = 0; } break;
     case 'scoop':
       hand.wait += dt;
-      if (hand.wait > 0.4) {
+      if (hand.wait > 0.22) {
         if (S.stockpile >= PLANER_KEEP + BOARD_IN) {
           S.stockpile -= BOARD_IN;
           if (!instant) removePieces(BOARD_IN);
-          hand.carry = 'pieces'; hand.path = bridgeToPlaner(); hand.state = 'toIn';
+          hand.carry = 'pieces'; hand.state = 'toIn';
         } else hand.state = 'idle';
       }
       break;
-    case 'toIn': if (walkPath(dt)) { hand.state = 'dropIn'; hand.wait = 0; } break;
+    case 'toIn': if (stepHand(dt, IN_DROP.x, IN_DROP.z)) { hand.state = 'dropIn'; hand.wait = 0; } break;
     case 'dropIn':
       hand.wait += dt;
       if (hand.wait > 0.28) { S.infeed += BOARD_IN; hand.carry = ''; hand.state = S.outBoard ? 'toOut' : 'idle'; }
@@ -1982,7 +2297,7 @@ function updateHand(dt) {
     case 'takeOut':
       hand.wait += dt;
       if (hand.wait > 0.28) {
-        if (S.outBoard) { S.outBoard = 0; hand.carry = 'board'; hand.state = 'toPile'; }
+        if (S.outBoard > 0) { S.outBoard--; hand.carry = 'board'; hand.state = 'toPile'; }
         else hand.state = 'idle';
       }
       break;
@@ -1999,33 +2314,60 @@ function updateHand(dt) {
 function updatePlaner(dt) {
   if (!planerOn()) return;
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
-  const blocked = S.outBoard || S.infeed < BOARD_IN || S.boards >= BOARD_CAP;
-  if (blocked) { S.planerT = Math.min(S.planerT, interval * 0.2); return; }
-  S.planerT += dt;
-  if (S.planerT < interval) return;
-  S.planerT = 0;
-  S.infeed -= BOARD_IN;
-  S.outBoard = 1;
-  if (!instant) sfx.planer();
+  const blocked = S.outBoard >= OUT_MAX || S.infeed < BOARD_IN || S.boards + S.outBoard >= boardLimit();
+  if (blocked) { S.planerT = Math.min(S.planerT, interval * 0.2); }
+  else {
+    S.planerT += dt;
+    if (S.planerT >= interval) {
+      S.planerT = 0;
+      S.infeed -= BOARD_IN;
+      S.outBoard++;
+      if (!instant) sfx.planer();
+    }
+  }
+  planers[0].t = S.planerT;
+  const n = planerCount();
+  for (let i = 1; i < n; i++) {
+    const u = planers[i];
+    if (S.stockpile < PLANER_KEEP + BOARD_IN || S.boards >= boardLimit()) { u.t = Math.min(u.t, interval * 0.2); continue; }
+    u.t += dt;
+    if (u.t < interval) continue;
+    u.t = 0;
+    S.stockpile -= BOARD_IN;
+    S.boards++;
+    if (!instant) { removePieces(BOARD_IN); sfx.planer(); }
+  }
 }
 function planerBusy() {
-  return planerOn() && !S.outBoard && S.infeed >= BOARD_IN && S.boards < BOARD_CAP;
+  return planerOn() && S.outBoard < OUT_MAX && S.infeed >= BOARD_IN && S.boards + S.outBoard < boardLimit();
 }
 function updatePlanerVisual(dt, time) {
-  const busy = planerBusy() && S.running && !S.paused;
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
-  const phase = busy ? clamp(S.planerT / interval, 0, 1) : 0;
-  if (busy && planerViz.roller) planerViz.roller.rotation.y += dt * 10;
-  if (busy && planerViz.cutter) planerViz.cutter.rotation.y += dt * 16;
-  if (planerViz.head) planerViz.head.position.y = 1.18 + (busy ? Math.sin(phase * Math.PI) * -0.08 : 0);
-  planerViz.feed.forEach((m, i) => {
-    m.visible = i < Math.min(planerViz.feed.length, S.infeed);
-    const col = i % 2, row = Math.floor(i / 2);
-    let x = -2.15 + col * 0.72;
-    if (busy && i === 0) x = lerp(-2.15, -0.65, phase);
-    m.position.set(x, 1.06, row ? 0.32 : -0.32);
+  const running = S.running && !S.paused;
+  planers.forEach((u, mi) => {
+    if (!u.g.visible) return;
+    const first = mi === 0;
+    const busy = running && (first ? planerBusy() : u.t > 0.05);
+    const phase = first
+      ? (busy ? clamp(S.planerT / interval, 0, 1) : 0)
+      : clamp(u.t / interval, 0, 1);
+    if (busy && u.roller) u.roller.rotation.y += dt * 10;
+    if (busy && u.outRoll) u.outRoll.rotation.y += dt * 8;
+    if (busy && u.cutter) u.cutter.rotation.y += dt * 18;
+    if (u.head) u.head.position.y = 1.55 + (busy ? Math.sin(phase * Math.PI) * -0.12 : 0);
+    u.feed.forEach((m, i) => {
+      const show = first ? i < Math.min(u.feed.length, S.infeed) : busy && i < 2;
+      m.visible = show;
+      const col = i % 2, row = Math.floor(i / 2);
+      let x = -3.6 + col * 0.7;
+      if (busy && i === 0) x = lerp(-3.6, -1.2, phase);
+      m.position.set(x, 1.2, row ? 0.28 : -0.28);
+    });
+    if (first) {
+      const nOut = Math.min(OUT_MAX, S.outBoard | 0);
+      u.outs.forEach((m, i) => { m.visible = i < nOut; });
+    } else u.outs.forEach((m, i) => { m.visible = i === 0 && phase > 0.72; });
   });
-  if (planerViz.out) planerViz.out.visible = S.outBoard > 0;
   hand.g.visible = planerOn();
   hand.g.position.set(hand.x, hand.y, hand.z);
   hand.g.rotation.y = hand.yaw;
@@ -2035,131 +2377,853 @@ function updatePlanerVisual(dt, time) {
 }
 
 // =====================================================================
-// UPGRADES — physical pads placed next to what they upgrade
+// CHIPPER — chews overflow wood so the bin can actually empty
 // =====================================================================
-const PADS = [
-  { id: 'saw', name: 'Saw', icon: '🪚', x: -20.8, z: -16.2 },
-  { id: 'sawN', name: 'New saw', icon: '🪚', x: -20.8, z: -23.4 },
-  { id: 'cutterN', name: 'Lumberjack', icon: '🪓', x: -41.2, z: 6.4 },
-  { id: 'cutterSpd', name: 'Faster axe', icon: '⚡', x: -46.2, z: 8.2 },
-  { id: 'yield', name: 'Bigger cut', icon: '🪵', x: -20.8, z: -19.6 },
-  { id: 'forkN', name: 'New forklift', icon: '🚜', x: -13.9, z: -11.3 },
-  { id: 'forkSpd', name: 'Faster lift', icon: '⚡', x: -9.3, z: -11.3 },
-  { id: 'forkCap', name: 'Bigger forks', icon: '📦', x: -4.7, z: -11.3 },
-  { id: 'truckN', name: 'New truck', icon: '🚚', x: 0, z: SPOT_Z },
-  { id: 'truckCap', name: 'Bigger bed', icon: '🔼', x: -3.5, z: -6.9 },
-  { id: 'planer', name: 'Planer', icon: '🪵', x: -10.6, z: -10.5 },
-  { id: 'planerSpd', name: 'Faster feed', icon: '⚡', x: -6.0, z: -10.6 },
-  { id: 'road', name: 'New road', icon: '🛣️', x: 3.0, z: 3.3 },
-  { id: 'gate', name: 'Faster gate', icon: '🚧', x: 48.5, z: 21.2 },
-  { id: 'market', name: 'Better price', icon: '💰', x: 64.5, z: 1.8 },
+const CHIP_PRICE = 5, CHIP_MIN = 36;
+const chipViz = { g: null, ghost: null, drum: null, t: 0 };
+function chipSpot() { return { x: TUB.x0 - 2.7, z: (TUB.z0 + TUB.z1) / 2 }; }
+function buildChipBody(parent) {
+  part(rbox(2.2, 0.16, 1.6, 0.04, 1), 0x6d767e, parent, 0, 0.2, 0);
+  part(rbox(1.5, 1.1, 1.2, 0.08, 1), 0x3c4650, parent, 0.15, 0.85, 0);
+  part(rbox(0.9, 0.55, 0.9, 0.06, 1), 0xf2a93b, parent, -0.1, 1.5, 0);
+  const drum = part(cylG(0.28, 0.28, 1.05, 12), 0xd5dbe0, parent, 1.05, 0.72, 0);
+  drum.rotation.z = Math.PI / 2;
+  part(rbox(1.5, 0.14, 0.4, 0.03, 1), 0x8a6240, parent, -1.35, 0.55, 0);
+  return drum;
+}
+{
+  const ghost = new THREE.Group(); scene.add(ghost);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 1.9), bayHatchMat);
+  floor.rotation.x = -Math.PI / 2; floor.position.y = 0.12; ghost.add(floor);
+  chipViz.ghost = ghost;
+  const g = new THREE.Group(); g.visible = false; scene.add(g);
+  chipViz.drum = buildChipBody(g);
+  chipViz.g = g;
+}
+function placeChipper() {
+  const p = chipSpot();
+  chipViz.g.position.set(p.x, 0, p.z);
+  chipViz.ghost.position.set(p.x, 0, p.z);
+  const on = S.lv.chipper > 0;
+  chipViz.g.visible = on;
+  chipViz.ghost.visible = !on;
+}
+function placeTubPad() {}
+function updateChipper(dt) {
+  const running = S.lv.chipper > 0 && S.stockpile > CHIP_MIN && S.running && !S.paused;
+  if (chipViz.drum && running) chipViz.drum.rotation.x += dt * 7;
+  if (!running) return;
+  chipViz.t += dt;
+  const interval = UP.chipSpd.vals[S.lv.chipSpd];
+  if (chipViz.t < interval) return;
+  chipViz.t = 0;
+  const bite = Math.min(UP.chipBite.vals[S.lv.chipBite], S.stockpile - CHIP_MIN);
+  if (bite <= 0) return;
+  S.stockpile -= bite;
+  if (!instant) removePieces(bite);
+  addMoney(bite * CHIP_PRICE, chipViz.g.position.clone().setY(2.4));
+}
+
+// =====================================================================
+// YARD SHOP — local buyers, off the truck road and south of the forklifts
+// haul 0-1 walker, 2-3 cart, 4 belt from the bin onto sale pallets
+// =====================================================================
+const SHOP_PRICE = 4;
+const SHOP_KEEP = 12;
+const PALLET_CAP = 18;
+const HAUL_PTS = [
+  { x: -19.6, z: -15.2 },
+  { x: -19.6, z: -21.4 },
+  { x: -14.4, z: -21.4 },
+  { x: -14.4, z: -22.5 },
 ];
+const BELT_PTS = [{ x: -20.9, z: -13.3 }, ...HAUL_PTS];
+let HAUL_LEN = 0;
+for (let i = 1; i < HAUL_PTS.length; i++) HAUL_LEN += Math.hypot(HAUL_PTS[i].x - HAUL_PTS[i - 1].x, HAUL_PTS[i].z - HAUL_PTS[i - 1].z);
+const PALLET_POS = [{ x: -16.7, z: -22.7 }, { x: -15.0, z: -22.7 }, { x: -13.3, z: -22.7 }, { x: -11.6, z: -22.7 }];
+const SHOP_AT = { x: -14.2, z: -26.8 };
+const pallets = [0, 0, 0, 0];
+const palletBusy = [false, false, false, false];
+const hauler = { u: 0, leg: 'back', carry: 0, dwell: 0, yaw: 0 };
+let beltAcc = 0, custGap = 0.2;
+const customers = [];
+function shopOn() { return S.lv.shop > 0; }
+function palletCount() { return shopOn() ? UP.palletN.vals[S.lv.palletN] : 0; }
+function palletRoom() {
+  let r = 0;
+  const n = palletCount();
+  for (let i = 0; i < n; i++) r += Math.max(0, PALLET_CAP - pallets[i]);
+  return r;
+}
+function giveToPallets(n) {
+  let left = n;
+  while (left > 0) {
+    let bi = -1, bs = 1e9;
+    const c = palletCount();
+    for (let i = 0; i < c; i++) if (pallets[i] < PALLET_CAP && pallets[i] < bs) { bs = pallets[i]; bi = i; }
+    if (bi < 0) break;
+    pallets[bi]++;
+    left--;
+  }
+}
+function takeShopWood(n) {
+  const avail = Math.max(0, S.stockpile - SHOP_KEEP);
+  const take = Math.min(n, avail, palletRoom());
+  if (take <= 0) return 0;
+  S.stockpile -= take;
+  if (!instant) removePieces(take);
+  return take;
+}
+function buildPerson(shirt, hat) {
+  const g = new THREE.Group();
+  const body = new THREE.Group(); g.add(body);
+  part(rbox(0.36, 0.4, 0.26, 0.08), 0x3a342c, body, 0, 0.4, 0);
+  part(rbox(0.44, 0.52, 0.28, 0.1), shirt, body, 0, 0.84, 0);
+  part(new THREE.SphereGeometry(0.15, 10, 8), 0xf1c8a0, body, 0, 1.26, 0.02);
+  part(new THREE.SphereGeometry(0.18, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), hat, body, 0, 1.3, 0.02);
+  const wait = emojiSprite(g, '⏳', 2.05, 0.62);
+  return { g, body, wait };
+}
+function buildWalker() {
+  const p = buildPerson(0x2f8a4a, 0xf2a93b);
+  const bundle = new THREE.Group(); bundle.position.set(0.02, 1.15, 0.22); p.g.add(bundle);
+  for (let i = 0; i < 3; i++) {
+    const m = new THREE.Mesh(logGeo, logMats);
+    m.rotation.z = Math.PI / 2; m.scale.set(0.28, 0.7, 0.28);
+    m.position.set(0, i * 0.16, 0); bundle.add(m);
+  }
+  bundle.visible = false;
+  p.g.visible = false; scene.add(p.g);
+  return { g: p.g, body: p.body, wait: p.wait, bundle };
+}
+function buildCart() {
+  const g = new THREE.Group(); scene.add(g); g.visible = false;
+  part(rbox(1.05, 0.16, 2.15, 0.05), 0x2e3237, g, 0, 0.42, 0);
+  part(rbox(1.02, 0.28, 1.15, 0.06), 0xd8473b, g, 0, 0.62, -0.35);
+  part(rbox(0.92, 0.08, 1.05, 0.03), 0xb7c2cb, g, 0, 0.78, -0.32);
+  part(rbox(0.78, 0.42, 0.62, 0.1), 0xf4f5f7, g, 0, 0.78, 0.62);
+  part(rbox(0.62, 0.28, 0.08, 0.03), glassMat, g, 0, 0.9, 0.92);
+  part(rbox(0.16, 0.08, 0.1, 0.02), mat(0xfff5cc, { e: 0xffe9a0, ei: 0.45 }), g, 0.28, 0.62, 1.12);
+  part(rbox(0.16, 0.08, 0.1, 0.02), mat(0xfff5cc, { e: 0xffe9a0, ei: 0.45 }), g, -0.28, 0.62, 1.12);
+  const driver = buildPerson(0x2f6fb5, 0xf2a93b);
+  driver.g.position.set(0, 0.15, 0.55); driver.g.scale.setScalar(0.72); g.add(driver.g);
+  const bed = new THREE.Group(); g.add(bed);
+  for (let i = 0; i < 4; i++) {
+    const m = new THREE.Mesh(logGeo, logMats);
+    m.rotation.z = Math.PI / 2; m.scale.set(0.22, 0.85, 0.22);
+    m.position.set((i % 2 - 0.5) * 0.32, 0.95, -0.55 + Math.floor(i / 2) * 0.34);
+    m.visible = false; bed.add(m);
+  }
+  const wheels = [];
+  for (const z of [0.62, -0.62]) for (const s of [-1, 1]) wheels.push(wheel(g, s * 0.52, 0.22, z, 0.22, 0.16));
+  return { g, bed: bed.children, wheels, spin: 0 };
+}
+function buildStall() {
+  const ghost = new THREE.Group(); ghost.position.set(SHOP_AT.x, 0, SHOP_AT.z); scene.add(ghost);
+  part(rbox(7.4, 0.1, 3.4, 0.06, 1), 0xb7c2cb, ghost, 0, 0.06, 0, 0, 0, 0, false);
+  const hatch = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 2.6), bayHatchMat);
+  hatch.rotation.x = -Math.PI / 2; hatch.position.y = 0.12; ghost.add(hatch);
+  const g = new THREE.Group(); g.position.set(SHOP_AT.x, 0, SHOP_AT.z); g.visible = false; scene.add(g);
+  part(rbox(8.6, 0.12, 4.6, 0.05, 1), 0xd8dbdd, g, 0.2, 0.06, 1.15, 0, 0, 0, false);
+  part(rbox(6.4, 0.16, 2.8, 0.05, 1), 0xc6ad78, g, 0, 0.1, 0, 0, 0, 0, false);
+  for (const x of [-2.7, 2.7]) for (const z of [-1.15, 1.15]) part(rbox(0.18, 2.5, 0.18, 0.04), 0x8d5a32, g, x, 1.3, z);
+  part(rbox(6.2, 0.14, 3.3, 0.04), 0xd8473b, g, 0, 2.55, 0.15);
+  part(rbox(6.4, 0.1, 0.55, 0.04), 0xf4f5f7, g, 0, 2.48, 1.35);
+  part(rbox(5.2, 0.9, 0.16, 0.04), 0xf7ebc8, g, 0, 1.15, 1.42);
+  part(rbox(1.1, 1.5, 0.12, 0.04), 0x6e3d28, g, 0, 0.85, -1.42);
+  const signTex = canvasTex(512, 160, (c, w, h) => {
+    c.fillStyle = '#d8473b'; c.beginPath(); c.roundRect(8, 8, w - 16, h - 16, 28); c.fill();
+    c.fillStyle = '#fff6e4'; c.font = '800 78px "Baloo 2", Arial Black, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('SHOP', w / 2, h / 2 + 4);
+  });
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.82), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.7 }));
+  sign.position.set(0, 2.05, 1.48); g.add(sign);
+  part(rbox(0.28, 0.16, 0.28, 0.04), mat(0xfff5cc, { e: 0xffe9a0, ei: 0.7 }), g, 2.2, 2.35, 1.3, 0, 0, 0, false);
+  return { g, ghost };
+}
+function buildPalletStack(x, z) {
+  const g = new THREE.Group(); g.position.set(x, 0, z); g.visible = false; scene.add(g);
+  part(rbox(1.35, 0.08, 1.05, 0.03, 1), 0x8a6240, g, 0, 0.08, 0);
+  for (const sx of [-0.45, 0.45]) part(rbox(0.12, 0.1, 1.05, 0.02, 1), 0x6e4a2c, g, sx, 0.14, 0);
+  const logs = [];
+  for (let row = 0; row < 4; row++) for (let i = 0; i < 2; i++) {
+    const m = new THREE.Mesh(logGeo, logMats);
+    m.scale.set(0.22, 0.95, 0.22); m.rotation.z = Math.PI / 2;
+    m.position.set((i - 0.5) * 0.32, 0.32 + row * 0.22, (row % 2 ? 0.08 : -0.08));
+    m.visible = false; g.add(m); logs.push(m);
+  }
+  return { g, logs };
+}
+function buildShopBelt() {
+  const g = new THREE.Group(); g.visible = false; scene.add(g);
+  const pts = BELT_PTS;
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    const dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1;
+    const yaw = Math.atan2(dx, dz);
+    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
+    part(rbox(0.62, 0.08, L, 0.02, 1), 0x3a4048, g, mx, 0.32, mz, 0, yaw, 0, false);
+    const rx = dz / L, rz = -dx / L;
+    for (const s of [-1, 1]) part(rbox(0.06, 0.1, L, 0.02, 1), 0xf5c518, g, mx + rx * s * 0.32, 0.4, mz + rz * s * 0.32, 0, yaw, 0, false);
+  }
+  const riders = [];
+  for (let i = 0; i < 5; i++) {
+    const m = new THREE.Mesh(logGeo, logMats);
+    m.scale.set(0.22, 0.7, 0.22); m.rotation.z = Math.PI / 2; m.visible = false; g.add(m); riders.push(m);
+  }
+  return { g, riders };
+}
+const shopViz = { stall: buildStall(), walker: buildWalker(), cart: buildCart(), belt: buildShopBelt(), pallets: PALLET_POS.map(p => buildPalletStack(p.x, p.z)) };
+const SHOP_SHIRTS = [0x2f6fb5, 0xd8473b, 0x3e9a3a, 0xf2a93b, 0x7a4ea3, 0xe07a3a];
+for (let i = 0; i < 6; i++) {
+  const p = buildPerson(SHOP_SHIRTS[i], i % 2 ? 0xf4f5f7 : 0x2a2f34);
+  p.g.visible = false; scene.add(p.g);
+  customers.push({ mesh: p, x: -14, z: -21, tx: -14, tz: -21, yaw: 0, state: 'pool', wait: 0, pallet: -1, t: 0, want: 4, job: '' });
+}
+part(rbox(10.4, 0.08, 8.2, 0.04, 1), 0xc6ad78, scene, -14.6, 0.03, -24.6, 0, 0, 0, false);
+function refreshShopLook() {
+  const on = shopOn();
+  shopViz.stall.ghost.visible = !on;
+  shopViz.stall.g.visible = on;
+  const haul = on ? S.lv.haul : -1;
+  shopViz.walker.g.visible = haul >= 0 && haul < 2;
+  shopViz.cart.g.visible = haul >= 2 && haul < 4;
+  shopViz.belt.g.visible = haul >= 4;
+  const n = palletCount();
+  for (let i = 0; i < shopViz.pallets.length; i++) shopViz.pallets[i].g.visible = i < n;
+  if (!on) for (const c of customers) c.mesh.g.visible = false;
+}
+function updateHauler(dt) {
+  if (!shopOn() || S.lv.haul >= 4) return;
+  const spd = [1.7, 2.2, 4.0, 5.8][S.lv.haul];
+  const carryMax = [2, 4, 8, 14][S.lv.haul];
+  if (hauler.dwell > 0) { hauler.dwell -= dt; return; }
+  if (hauler.leg === 'out') {
+    hauler.u = Math.min(1, hauler.u + spd * dt / HAUL_LEN);
+    if (hauler.u >= 1) {
+      giveToPallets(hauler.carry);
+      hauler.carry = 0;
+      hauler.leg = 'back';
+      hauler.dwell = 0.4;
+    }
+    return;
+  }
+  if (hauler.u > 0) { hauler.u = Math.max(0, hauler.u - spd * dt / HAUL_LEN); return; }
+  const n = takeShopWood(carryMax);
+  if (!n) return;
+  hauler.carry = n;
+  hauler.leg = 'out';
+  hauler.dwell = 0.55;
+}
+function updateBelt(dt) {
+  if (!shopOn() || S.lv.haul < 4) return;
+  beltAcc = Math.min(2, beltAcc + dt * 3.5);
+  if (beltAcc < 1) return;
+  const n = Math.min(6, Math.floor(beltAcc));
+  const take = takeShopWood(n);
+  if (!take) return;
+  beltAcc -= take;
+  giveToPallets(take);
+}
+function liveCustomers() { return customers.filter(c => c.state !== 'pool'); }
+function grabCustomer() {
+  return customers.find(c => c.state === 'pool');
+}
+function updateCustomers(dt) {
+  if (!shopOn()) return;
+  const cap = UP.buyers.vals[S.lv.buyers];
+  custGap += dt;
+  if (liveCustomers().length < cap && custGap > 0.85) {
+    const c = grabCustomer();
+    if (c) {
+      custGap = 0;
+      c.state = 'arrive';
+      c.x = -12.4 + rand(-0.3, 0.6); c.z = -29.4;
+      c.wait = 0; c.pallet = -1;
+    }
+  }
+  let qi = 0;
+  for (const c of customers) {
+    if (c.state === 'pool') continue;
+    if (c.state === 'queue' || c.state === 'arrive') {
+      const i = qi++;
+      c.tx = -16.8 + (i % 4) * 1.45;
+      c.tz = -24.85 - Math.floor(i / 4) * 1.05;
+    }
+    if (c.state === 'queue') {
+      c.wait += dt;
+      if (!c.job || c.wait > 1.4) { c.job = chooseGoods(); c.wait = c.job ? 0 : c.wait; }
+      if (c.job === 'furn' && furnPile.length && !furnBusy) {
+        furnBusy = true; c.state = 'toBuy'; c.t = 0;
+        c.tx = FURN_SHOW.x; c.tz = FURN_SHOW.z + 1.05;
+      } else if (c.job === 'fire' && firePile > 0 && !fireBusy) {
+        fireBusy = true; c.state = 'toBuy'; c.t = 0;
+        c.tx = FIRE_SHOW.x + 1.15; c.tz = FIRE_SHOW.z;
+      } else if (c.job === 'wood' || !c.job) {
+        let spot = -1;
+        const n = palletCount();
+        for (let i = 0; i < n; i++) if (!palletBusy[i] && pallets[i] > 0) { spot = i; break; }
+        if (spot >= 0) {
+          palletBusy[spot] = true;
+          c.pallet = spot; c.job = 'wood'; c.state = 'toBuy'; c.t = 0;
+          c.tx = PALLET_POS[spot].x; c.tz = PALLET_POS[spot].z - 0.95;
+        }
+      }
+    }
+    if (c.state === 'arrive' || c.state === 'queue' || c.state === 'toBuy' || c.state === 'leave') {
+      const dx = c.tx - c.x, dz = c.tz - c.z, d = Math.hypot(dx, dz);
+      const spd = c.state === 'leave' ? 2.3 : 1.85;
+      if (d < 0.08) {
+        c.x = c.tx; c.z = c.tz;
+        if (c.state === 'arrive') c.state = 'queue';
+        else if (c.state === 'toBuy') {
+          c.state = 'buy'; c.t = 0;
+          if (c.job === 'wood' && c.pallet >= 0) c.want = Math.min(3 + S.lv.buyers, pallets[c.pallet]);
+        }
+        else if (c.state === 'leave') c.state = 'pool';
+      } else {
+        const step = Math.min(d, spd * dt);
+        c.x += dx / d * step; c.z += dz / d * step;
+        c.yaw = yawOf(dx, dz);
+      }
+    }
+    if (c.state === 'buy') {
+      c.t += dt;
+      if (c.job === 'furn') {
+        if (!furnPile.length) { furnBusy = false; c.job = ''; c.state = 'queue'; }
+        else if (c.t >= 1.45) {
+          const item = furnPile.pop();
+          furnBusy = false;
+          addMoney(FURN_PRICE[item.kind], V(c.x, 1.8, c.z));
+          if (!instant) sfx.shop();
+          c.job = ''; c.state = 'leave'; c.tx = c.x + rand(-0.4, 0.4); c.tz = -29.6;
+        }
+      } else if (c.job === 'fire') {
+        if (firePile <= 0) { fireBusy = false; c.job = ''; c.state = 'queue'; }
+        else if (c.t >= 1.15) {
+          const take = Math.min(firePile, [1, 2, 4, 6][S.lv.fireHaul]);
+          firePile -= take;
+          fireBusy = false;
+          addMoney(take * FIRE_PRICE[S.lv.fireSize], V(c.x, 1.8, c.z));
+          if (!instant) sfx.shop();
+          c.job = ''; c.state = 'leave'; c.tx = c.x + rand(-0.4, 0.4); c.tz = -29.6;
+        }
+      } else if (c.pallet < 0 || pallets[c.pallet] <= 0) {
+        if (c.pallet >= 0) palletBusy[c.pallet] = false;
+        c.pallet = -1; c.job = ''; c.state = 'queue';
+      } else if (c.t >= 1.7) {
+        const n = Math.min(c.want, pallets[c.pallet]);
+        pallets[c.pallet] -= n;
+        palletBusy[c.pallet] = false;
+        if (n > 0) { addMoney(n * SHOP_PRICE, V(c.x, 1.8, c.z)); if (!instant) sfx.shop(); }
+        c.pallet = -1; c.job = ''; c.state = 'leave'; c.tx = c.x + rand(-0.5, 0.5); c.tz = -29.6;
+      }
+    }
+  }
+}
+function updateRetail(dt) {
+  updateHauler(dt);
+  updateBelt(dt);
+  updateCustomers(dt);
+}
+function syncRetail(dt, time) {
+  if (!shopOn()) return;
+  const at = alongPath(HAUL_PTS, hauler.u);
+  const ahead = alongPath(HAUL_PTS, clamp(hauler.u + (hauler.leg === 'out' ? 0.04 : -0.04), 0, 1));
+  if (Math.hypot(ahead.x - at.x, ahead.z - at.z) > 0.02) hauler.yaw = yawOf(ahead.x - at.x, ahead.z - at.z);
+  const moving = hauler.dwell <= 0 && (hauler.leg === 'out' || hauler.u > 0);
+  if (S.lv.haul < 2) {
+    const w = shopViz.walker;
+    w.g.position.set(at.x, 0, at.z); w.g.rotation.y = hauler.yaw;
+    w.body.position.y = moving ? Math.abs(Math.sin(time * 9)) * 0.05 : 0;
+    w.bundle.visible = hauler.carry > 0;
+  } else if (S.lv.haul < 4) {
+    const cart = shopViz.cart;
+    cart.g.position.set(at.x, 0, at.z); cart.g.rotation.y = hauler.yaw;
+    cart.spin += (moving ? 6 : 0) * dt;
+    for (const wh of cart.wheels) wh.rotation.y = cart.spin;
+    const show = hauler.carry > 0 ? cart.bed.length : 0;
+    cart.bed.forEach((m, i) => { m.visible = i < show; });
+  } else {
+    const flow = S.stockpile > SHOP_KEEP && palletRoom() > 0;
+    shopViz.belt.riders.forEach((m, i) => {
+      m.visible = flow;
+      if (!flow) return;
+      const p = alongPath(BELT_PTS, (time * 0.15 + i / shopViz.belt.riders.length) % 1);
+      m.position.set(p.x, 0.55, p.z);
+    });
+  }
+  const n = palletCount();
+  for (let i = 0; i < shopViz.pallets.length; i++) {
+    const stack = shopViz.pallets[i];
+    if (i >= n) continue;
+    const shown = pallets[i] <= 0 ? 0 : clamp(Math.ceil(pallets[i] / PALLET_CAP * stack.logs.length), 1, stack.logs.length);
+    stack.logs.forEach((m, k) => { m.visible = k < shown; });
+  }
+  for (const c of customers) {
+    const on = c.state !== 'pool';
+    c.mesh.g.visible = on;
+    if (!on) continue;
+    c.mesh.g.position.set(c.x, 0, c.z);
+    c.mesh.g.rotation.y = c.yaw;
+    c.mesh.body.position.y = (c.state === 'arrive' || c.state === 'toBuy' || c.state === 'leave') ? Math.abs(Math.sin(time * 8 + c.x)) * 0.04 : 0;
+    c.mesh.wait.visible = c.state === 'queue' && c.wait > 4;
+  }
+}
+
+// =====================================================================
+// JOINERY + FIREWOOD — finished goods carried to the shop
+// stool / bench / table from boards; firewood bundles from cut logs
+// =====================================================================
+const FURN_BOARDS = [2, 3, 4];
+const FURN_PRICE = [32, 58, 96];
+const FURN_CAP = 4;
+const FIRE_PIECES = [4, 6, 9, 12];
+const FIRE_PRICE = [6, 7, 8, 9];
+const FIRE_CAP = 18;
+const FIRE_KEEP = 600;
+const JOIN_AT = { x: -18.6, z: -33.0 };
+const FURN_SHOW = { x: -17.2, z: -30.5 };
+const FIRE_AT = { x: -6.6, z: -20.5 };
+const FIRE_SHOW = { x: -6.6, z: -28.3 };
+const furnPile = [];
+let firePile = 0, fireTransit = 0, furnBusy = false, fireBusy = false;
+function chooseGoods() {
+  const bag = [];
+  if (furnPile.length && !furnBusy) bag.push('furn');
+  if (firePile > 0 && !fireBusy) {
+    bag.push('fire', 'fire', 'fire');
+    if (firePile > 6) bag.push('fire', 'fire');
+  }
+  let wood = false;
+  const nP = palletCount();
+  for (let i = 0; i < nP; i++) if (pallets[i] > 0) wood = true;
+  if (wood) bag.push('wood', 'wood');
+  if (!bag.length) return '';
+  return bag[(Math.random() * bag.length) | 0];
+}
+function freeBoards() { return Math.max(0, S.boards - (S.boardHold || 0) - 12); }
+function fireBatch() { return [1, 2, 4, 1][S.lv.fireHaul]; }
+function pullFire(k, force) {
+  if (!force) k = Math.min(k, FIRE_CAP - firePile - fireTransit);
+  if (k <= 0) return 0;
+  const pieces = FIRE_PIECES[S.lv.fireSize] * k;
+  if (S.stockpile - FIRE_KEEP < pieces) return 0;
+  S.stockpile -= pieces;
+  if (!instant) removePieces(pieces);
+  return k;
+}
+function stepActor(a, dt, tx, tz, spd) {
+  const dx = tx - a.x, dz = tz - a.z, d = Math.hypot(dx, dz);
+  a.moving = d >= 0.08;
+  if (!a.moving) { a.x = tx; a.z = tz; return true; }
+  const step = Math.min(d, spd * dt);
+  a.x += dx / d * step; a.z += dz / d * step;
+  a.yaw = yawOf(dx, dz);
+  return false;
+}
+function buildSeat(parent, kind) {
+  const g = new THREE.Group(); parent.add(g);
+  const top = 0xf4e6c4, leg = 0x8d5a32;
+  if (kind === 0) {
+    part(rbox(0.48, 0.08, 0.48, 0.03), top, g, 0, 0.48, 0);
+    for (const x of [-1, 1]) for (const z of [-1, 1]) part(rbox(0.07, 0.44, 0.07, 0.02), leg, g, x * 0.16, 0.22, z * 0.16);
+  } else if (kind === 1) {
+    part(rbox(1.15, 0.08, 0.4, 0.03), top, g, 0, 0.46, 0);
+    part(rbox(1.15, 0.38, 0.07, 0.02), 0xe7c98a, g, 0, 0.74, -0.16);
+    for (const x of [-0.46, 0.46]) for (const z of [-0.12, 0.12]) part(rbox(0.07, 0.42, 0.07, 0.02), leg, g, x, 0.21, z);
+  } else {
+    part(rbox(1.2, 0.08, 0.7, 0.03), top, g, 0, 0.7, 0);
+    for (const x of [-0.48, 0.48]) for (const z of [-0.24, 0.24]) part(rbox(0.08, 0.66, 0.08, 0.02), leg, g, x, 0.33, z);
+  }
+  return g;
+}
+function buildBundle(parent, x, y, z) {
+  const g = new THREE.Group(); g.position.set(x, y, z); parent.add(g);
+  for (let i = 0; i < 4; i++) {
+    const m = new THREE.Mesh(logGeo, logMats);
+    m.scale.set(0.22, 0.62, 0.22); m.rotation.z = Math.PI / 2;
+    m.position.set((i % 2 - 0.5) * 0.16, Math.floor(i / 2) * 0.16, 0);
+    m.castShadow = true; g.add(m);
+  }
+  return g;
+}
+function yardSign(text, bg) {
+  const tex = canvasTex(512, 160, (c, w, h) => {
+    c.fillStyle = bg; c.beginPath(); c.roundRect(8, 8, w - 16, h - 16, 28); c.fill();
+    c.fillStyle = '#fff6e4'; c.font = '800 68px "Baloo 2", Arial Black, sans-serif';
+    c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(text, w / 2, h / 2 + 4);
+  });
+  return new THREE.Mesh(new THREE.PlaneGeometry(2.2, 0.7), new THREE.MeshStandardMaterial({ map: tex, roughness: 0.7 }));
+}
+function buildJoinery() {
+  const ghost = new THREE.Group(); ghost.position.set(JOIN_AT.x, 0, JOIN_AT.z - 0.8); scene.add(ghost);
+  part(rbox(4.4, 0.1, 3.2, 0.05, 1), 0xb7c2cb, ghost, 0, 0.06, 0, 0, 0, 0, false);
+  const hatch = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 2.6), bayHatchMat);
+  hatch.rotation.x = -Math.PI / 2; hatch.position.y = 0.12; ghost.add(hatch);
+  const g = new THREE.Group(); g.position.set(JOIN_AT.x, 0, JOIN_AT.z - 1.15); g.visible = false; scene.add(g);
+  part(rbox(4.6, 0.12, 3.4, 0.04, 1), 0xc6ad78, g, 0, 0.06, 0, 0, 0, 0, false);
+  part(rbox(3.6, 2.2, 2.5, 0.06, 1), 0xf3e6cf, g, 0, 1.2, -0.2);
+  part(rbox(3.9, 0.16, 2.9, 0.04), 0x8d4a32, g, 0, 2.4, -0.15);
+  part(rbox(1.1, 1.6, 0.08, 0.03), 0x6e3d28, g, 0, 0.9, 1.05);
+  part(rbox(1.7, 0.1, 0.7, 0.03), 0x8d5a32, g, 0.9, 0.78, 1.35);
+  const benchWood = [];
+  for (let i = 0; i < 3; i++) {
+    const m = part(rbox(0.7, 0.06, 0.28, 0.02), i % 2 ? 0xf7ebc8 : 0xe7c98a, g, 0.9, 0.88 + i * 0.07, 1.35);
+    m.visible = false; benchWood.push(m);
+  }
+  const sign = yardSign('JOINERY', '#8d4a32'); sign.position.set(0, 1.85, 1.28); g.add(sign);
+  const show = new THREE.Group(); scene.add(show);
+  part(rbox(4.8, 0.1, 1.6, 0.04, 1), 0x8a6240, show, FURN_SHOW.x, 0.06, FURN_SHOW.z, 0, 0, 0, false);
+  const furnSign = yardSign('FURNITURE', '#6e4a2c');
+  furnSign.position.set(FURN_SHOW.x - 2.7, 0.85, FURN_SHOW.z);
+  show.add(furnSign);
+  const slots = [];
+  for (let i = 0; i < FURN_CAP; i++) {
+    const slot = new THREE.Group();
+    slot.position.set(FURN_SHOW.x + (i - 1.5) * 1.12, 0, FURN_SHOW.z);
+    show.add(slot);
+    slots.push([0, 1, 2].map(k => { const m = buildSeat(slot, k); m.scale.setScalar(0.95); m.visible = false; return m; }));
+  }
+  const person = buildPerson(0xc47a3a, 0xf2c14d);
+  const carry = new THREE.Group(); carry.position.set(0.2, 0.85, 0.42); person.g.add(carry);
+  const carried = [0, 1, 2].map(k => { const m = buildSeat(carry, k); m.scale.setScalar(0.5); m.visible = false; return m; });
+  person.g.visible = false; scene.add(person.g);
+  return { g, ghost, show, benchWood, slots, person, carried };
+}
+function buildFirewood() {
+  const ghost = new THREE.Group(); ghost.position.set(FIRE_AT.x, 0, FIRE_AT.z); scene.add(ghost);
+  part(rbox(2.3, 0.1, 2.2, 0.05, 1), 0xb7c2cb, ghost, 0, 0.06, 0, 0, 0, 0, false);
+  const hatch = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 1.7), bayHatchMat);
+  hatch.rotation.x = -Math.PI / 2; hatch.position.y = 0.12; ghost.add(hatch);
+  const g = new THREE.Group(); g.visible = false; scene.add(g);
+  const stump = part(cylG(0.38, 0.46, 0.42, 12), 0x8d5a32, g, FIRE_AT.x, 0.22, FIRE_AT.z);
+  part(cylG(0.4, 0.4, 0.06, 12), 0xe7c98a, g, FIRE_AT.x, 0.44, FIRE_AT.z);
+  const rack = new THREE.Group(); rack.position.set(FIRE_SHOW.x, 0, FIRE_SHOW.z); g.add(rack);
+  part(rbox(1.5, 0.1, 1.15, 0.03, 1), 0x8a6240, rack, 0, 0.08, 0);
+  for (const x of [-0.62, 0.62]) part(rbox(0.08, 0.9, 0.08, 0.02), 0x6e4a2c, rack, x, 0.5, 0);
+  const bundles = [];
+  for (let i = 0; i < 8; i++) bundles.push(buildBundle(rack, (i % 2 - 0.5) * 0.55, 0.28 + Math.floor(i / 2) * 0.34, (Math.floor(i / 2) % 2 ? 0.12 : -0.12)));
+  const sign = yardSign('FIREWOOD', '#a33b24'); sign.position.set(FIRE_SHOW.x + 1.25, 1.2, FIRE_SHOW.z); g.add(sign);
+  const belt = new THREE.Group(); belt.visible = false; scene.add(belt);
+  const dx = FIRE_SHOW.x - FIRE_AT.x, dz = FIRE_SHOW.z - FIRE_AT.z, L = Math.hypot(dx, dz) || 1;
+  const yaw = Math.atan2(dx, dz);
+  part(rbox(0.7, 0.08, L, 0.02, 1), 0x3a4048, belt, (FIRE_AT.x + FIRE_SHOW.x) / 2, 0.28, (FIRE_AT.z + FIRE_SHOW.z) / 2, 0, yaw, 0, false);
+  const riders = [];
+  for (let i = 0; i < 4; i++) {
+    const m = new THREE.Mesh(logGeo, logMats);
+    m.scale.set(0.16, 0.42, 0.16); m.rotation.z = Math.PI / 2; m.visible = false; belt.add(m); riders.push(m);
+  }
+  const walker = buildPerson(0x8d3a2a, 0x2a2f34);
+  const arm = buildBundle(walker.g, 0.05, 1.05, 0.28); arm.visible = false;
+  walker.g.visible = false; scene.add(walker.g);
+  const cart = new THREE.Group(); cart.visible = false; scene.add(cart);
+  part(rbox(0.85, 0.14, 1.35, 0.04), 0x8d5a32, cart, 0, 0.38, 0);
+  part(rbox(0.9, 0.28, 0.08, 0.02), 0x6e4a2c, cart, 0, 0.58, 0.62);
+  const wheels = [];
+  for (const s of [-1, 1]) wheels.push(wheel(cart, s * 0.48, 0.2, 0.15, 0.2, 0.12));
+  const cartLoad = [];
+  for (let i = 0; i < 4; i++) cartLoad.push(buildBundle(cart, (i % 2 - 0.5) * 0.38, 0.55, -0.15 + Math.floor(i / 2) * 0.4));
+  return { g, ghost, stump, bundles, belt, riders, walker, arm, cart, wheels, cartLoad, spin: 0 };
+}
+const yardViz = { join: buildJoinery(), fire: buildFirewood() };
+const joiner = { x: JOIN_AT.x, z: JOIN_AT.z, yaw: 0, state: 'idle', t: 0, carry: -1, kind: 0, moving: false };
+const splitter = { x: FIRE_AT.x, z: FIRE_AT.z, yaw: 0, state: 'idle', t: 0, carry: 0, moving: false };
+function refreshYardLook() {
+  const jOn = S.lv.joinery > 0, fOn = S.lv.firewood > 0;
+  yardViz.join.g.visible = jOn;
+  yardViz.join.ghost.visible = !jOn;
+  yardViz.join.show.visible = jOn;
+  yardViz.join.person.g.visible = jOn;
+  yardViz.fire.g.visible = fOn;
+  yardViz.fire.ghost.visible = !fOn;
+  yardViz.fire.belt.visible = fOn && S.lv.fireHaul >= 3;
+  yardViz.fire.walker.g.visible = fOn && S.lv.fireHaul < 2;
+  yardViz.fire.cart.visible = fOn && S.lv.fireHaul === 2;
+}
+function updateJoiner(dt) {
+  if (!S.lv.joinery) return;
+  const j = joiner;
+  j.moving = false;
+  const spd = 1.8 + S.lv.joinSpd * 0.12;
+  if (j.state === 'idle') {
+    const kind = S.lv.joinKind, need = FURN_BOARDS[kind];
+    if (furnPile.length >= FURN_CAP || freeBoards() < need) return;
+    S.boards -= need;
+    j.kind = kind; j.state = 'build'; j.t = 0;
+    return;
+  }
+  if (j.state === 'build') {
+    j.t += dt;
+    if (j.t >= UP.joinSpd.vals[S.lv.joinSpd]) { j.carry = j.kind; j.state = 'toShop'; }
+    return;
+  }
+  if (j.state === 'toShop') {
+    if (stepActor(j, dt, FURN_SHOW.x - 0.4, FURN_SHOW.z + 1.15, spd)) { j.state = 'drop'; j.t = 0; }
+    return;
+  }
+  if (j.state === 'drop') {
+    j.t += dt;
+    if (j.t < 0.22) return;
+    if (furnPile.length < FURN_CAP) furnPile.push({ kind: j.carry });
+    else S.boards += FURN_BOARDS[j.carry];
+    j.carry = -1; j.state = 'back';
+    if (!instant) sfx.drop();
+    return;
+  }
+  if (stepActor(j, dt, JOIN_AT.x, JOIN_AT.z, spd)) j.state = 'idle';
+}
+function updateSplitter(dt) {
+  if (!S.lv.firewood) return;
+  const f = splitter;
+  f.moving = false;
+  if (S.lv.fireHaul >= 3) {
+    f.x = FIRE_AT.x; f.z = FIRE_AT.z;
+    f.t += dt;
+    const every = UP.fireSpd.vals[S.lv.fireSpd] * 0.2;
+    if (f.t < every) return;
+    f.t = 0;
+    if (firePile < FIRE_CAP) {
+      if (pullFire(1)) firePile++;
+    } else if (pullFire(1, true)) addMoney(FIRE_PRICE[S.lv.fireSize], V(FIRE_SHOW.x, 1.6, FIRE_SHOW.z));
+    return;
+  }
+  const spd = [1.7, 2.2, 4.3][S.lv.fireHaul];
+  if (f.state === 'idle') {
+    const got = pullFire(Math.min(fireBatch(), FIRE_CAP - firePile - fireTransit));
+    if (!got) return;
+    fireTransit += got;
+    f.carry = got; f.state = 'chop'; f.t = 0;
+    return;
+  }
+  if (f.state === 'chop') {
+    f.t += dt;
+    if (f.t >= UP.fireSpd.vals[S.lv.fireSpd] * 0.55) f.state = 'toRack';
+    return;
+  }
+  if (f.state === 'toRack') {
+    if (stepActor(f, dt, FIRE_SHOW.x - 0.9, FIRE_SHOW.z, spd)) { f.state = 'drop'; f.t = 0; }
+    return;
+  }
+  if (f.state === 'drop') {
+    f.t += dt;
+    if (f.t < 0.2) return;
+    firePile += f.carry;
+    fireTransit = Math.max(0, fireTransit - f.carry);
+    f.carry = 0; f.state = 'back';
+    if (!instant) sfx.drop();
+    return;
+  }
+  if (stepActor(f, dt, FIRE_AT.x, FIRE_AT.z, spd)) f.state = 'idle';
+}
+function updateYardGoods(dt) { updateJoiner(dt); updateSplitter(dt); }
+function syncYardGoods(dt, time) {
+  const jOn = S.lv.joinery > 0;
+  yardViz.join.benchWood.forEach((m, i) => { m.visible = jOn && joiner.state === 'build' && i <= S.lv.joinKind; });
+  yardViz.join.carried.forEach((m, i) => { m.visible = joiner.carry === i; });
+  const p = yardViz.join.person;
+  p.g.visible = jOn;
+  p.g.position.set(joiner.x, 0, joiner.z);
+  p.g.rotation.y = joiner.yaw;
+  p.body.position.y = joiner.moving ? Math.abs(Math.sin(time * 9)) * 0.05 : 0;
+  for (let i = 0; i < yardViz.join.slots.length; i++) {
+    const item = furnPile[i];
+    yardViz.join.slots[i].forEach((m, k) => { m.visible = !!item && item.kind === k; });
+  }
+  const fOn = S.lv.firewood > 0;
+  const shown = firePile <= 0 ? 0 : clamp(Math.ceil(firePile / FIRE_CAP * yardViz.fire.bundles.length), 1, yardViz.fire.bundles.length);
+  yardViz.fire.bundles.forEach((m, i) => { m.visible = fOn && i < shown; });
+  const beltOn = fOn && S.lv.fireHaul >= 3;
+  yardViz.fire.belt.visible = beltOn;
+  yardViz.fire.riders.forEach((m, i) => {
+    m.visible = beltOn && firePile > 0;
+    if (!m.visible) return;
+    const u = (time * 0.18 + i / 4) % 1;
+    m.position.set(lerp(FIRE_AT.x, FIRE_SHOW.x, u), 0.5, lerp(FIRE_AT.z, FIRE_SHOW.z, u));
+  });
+  const walk = fOn && S.lv.fireHaul < 2;
+  const cartOn = fOn && S.lv.fireHaul === 2;
+  yardViz.fire.walker.g.visible = walk;
+  yardViz.fire.cart.visible = cartOn;
+  yardViz.fire.arm.visible = walk && splitter.carry > 0;
+  const moving = splitter.moving;
+  if (walk) {
+    const w = yardViz.fire.walker;
+    w.g.position.set(splitter.x, 0, splitter.z);
+    w.g.rotation.y = splitter.yaw;
+    w.body.position.y = moving ? Math.abs(Math.sin(time * 9)) * 0.05 : 0;
+  }
+  if (cartOn) {
+    const c = yardViz.fire.cart;
+    c.position.set(splitter.x, 0, splitter.z);
+    c.rotation.y = splitter.yaw;
+    yardViz.fire.spin += (moving ? 7 : 0) * dt;
+    for (const wh of yardViz.fire.wheels) wh.rotation.y = yardViz.fire.spin;
+    yardViz.fire.cartLoad.forEach((m, i) => { m.visible = i < splitter.carry; });
+  }
+}
+
+// =====================================================================
+// UPGRADES — tap a machine, buy from the panel
+// =====================================================================
+const STATIONS = [
+  { id: 'saw', name: 'Sawmill', icon: '🪚', ups: ['saw', 'sawN', 'yield'], spots: [{ x: -26, z: -20, r: 8 }, { x: -26, z: -30, r: 7 }] },
+  { id: 'forest', name: 'Forest', icon: '🪓', ups: ['cutterN', 'cutterSpd'], spots: [{ x: -50, z: 2, r: 16 }] },
+  { id: 'forks', name: 'Forklifts', icon: '🚜', ups: ['forkN', 'forkSpd', 'forkCap'], spots: [{ x: -15.2, z: -11.5, r: 5 }] },
+  { id: 'trucks', name: 'Trucks', icon: '🚚', ups: ['truckN', 'truckCap'], spots: [{ x: -14.5, z: 5.5, r: 5.5 }] },
+  { id: 'planer', name: 'Planer', icon: '🪵', ups: ['planer', 'planerN', 'planerSpd', 'planerCrew', 'boardCap'], spots: PLANER_Z.map(z => ({ x: PLANER_X, z, r: 4.2 })) },
+  { id: 'bin', name: 'Wood bin', icon: '📦', ups: ['tub', 'chipper', 'chipSpd', 'chipBite'], spots: [] },
+  { id: 'road', name: 'Road', icon: '🛣️', ups: ['road'], spots: [{ x: 16, z: 12, r: 18 }] },
+  { id: 'gate', name: 'Toll gate', icon: '🚧', ups: ['gate'], spots: [{ x: 46, z: 18, r: 9 }] },
+  { id: 'buyer', name: 'Buyer', icon: '💰', ups: ['market'], spots: [{ x: 70, z: 8, r: 14 }] },
+  { id: 'shop', name: 'Shop', icon: '🏪', ups: ['shop', 'haul', 'buyers', 'palletN'], spots: [{ x: -14.2, z: -24.2, r: 6.4 }] },
+  { id: 'joinery', name: 'Joinery', icon: '🪑', ups: ['joinery', 'joinSpd', 'joinKind'], spots: [{ x: -18.6, z: -33, r: 4.2 }] },
+  { id: 'firewood', name: 'Firewood', icon: '🔥', ups: ['firewood', 'fireSpd', 'fireSize', 'fireHaul'], spots: [{ x: -6.6, z: -24.4, r: 4.4 }] },
+];
+const UP_INFO = {
+  saw: ['Faster saw', '🪚'], sawN: ['Another saw', '🪚'], yield: ['Bigger cut', '🪵'],
+  forkN: ['Another forklift', '🚜'], forkSpd: ['Faster lift', '⚡'], forkCap: ['Bigger forks', '📦'],
+  truckN: ['Another truck', '🚚'], truckCap: ['Bigger bed', '🔼'],
+  road: ['Better road', '🛣️'], gate: ['Faster gate', '🚧'], market: ['Better price', '💰'],
+  cutterN: ['Lumberjack', '🪓'], cutterSpd: ['Faster axe', '⚡'],
+  planer: ['Planer', '🪵'], planerN: ['Another planer', '🪵'], planerSpd: ['Faster feed', '⚡'], planerCrew: ['Quicker crew', '🏃'], boardCap: ['Bigger stack', '📚'],
+  tub: ['Bigger bin', '📦'], chipper: ['Chipper', '⚙️'], chipSpd: ['Faster chip', '⚡'], chipBite: ['Bigger bite', '🪵'],
+  shop: ['Open shop', '🏪'], haul: ['Haul wood', '🛒'], buyers: ['More buyers', '🧑'], palletN: ['Another pallet', '📦'],
+  joinery: ['Joinery', '🪑'], joinSpd: ['Faster build', '⚡'], joinKind: ['Finer furniture', '🪑'],
+  firewood: ['Firewood', '🔥'], fireSpd: ['Faster split', '⚡'], fireSize: ['Bigger bundle', '🪵'], fireHaul: ['Haul bundles', '🛒'],
+};
 const upCost = id => { const lv = S.lv[id]; return lv < UP[id].costs.length ? UP[id].costs[lv] : null; };
-function buy(id, pad) {
+const numTxt = v => Math.abs(v - Math.round(v)) < 0.05 ? String(Math.round(v)) : v.toFixed(2);
+function upEffect(id) {
+  const lv = S.lv[id], vals = UP[id].vals, a = vals[lv], b = vals[lv + 1];
+  const arrow = b == null ? numTxt(a) : `${numTxt(a)} → ${numTxt(b)}`;
+  if (id === 'saw') return `A cut every ${arrow}s`;
+  if (id === 'sawN') return b == null ? `${a} saws` : `${a} → ${b} saws`;
+  if (id === 'yield') return `${arrow} pieces each cut`;
+  if (id === 'forkN') return `${arrow} forklifts`;
+  if (id === 'forkSpd') return `Speed ${arrow}`;
+  if (id === 'forkCap') return `${arrow} pieces a trip`;
+  if (id === 'truckN') return `${arrow} trucks`;
+  if (id === 'truckCap') return `Bed holds ${arrow}`;
+  if (id === 'road') return `Open road ${arrow}`;
+  if (id === 'gate') return `Gate ${arrow}s`;
+  if (id === 'market') return `Price ×${arrow}`;
+  if (id === 'cutterN') return `${arrow} lumberjacks`;
+  if (id === 'cutterSpd') return `A tree every ${arrow}s`;
+  if (id === 'planer') return b ? 'Turns cut wood into boards' : 'Planer is running';
+  if (id === 'planerN') return b == null ? `${a} planers` : `${a} → ${b} planers`;
+  if (id === 'planerSpd') return `A board every ${arrow}s`;
+  if (id === 'planerCrew') return `Crew ×${arrow}`;
+  if (id === 'boardCap') return `Stack holds ${arrow}`;
+  if (id === 'tub') return b == null ? 'The bin is as wide as it gets' : 'One more tile to the west';
+  if (id === 'chipper') return b ? 'Chews extra wood into chips' : 'Chipper is running';
+  if (id === 'chipSpd') return `A bite every ${arrow}s`;
+  if (id === 'chipBite') return `${arrow} pieces a bite`;
+  if (id === 'shop') return b ? 'People walk up to buy cut wood' : 'The stall is open';
+  if (id === 'haul') return ['A worker carries 2', 'Worker carries 4', 'A cart carries 8', 'Cart carries 14', 'A belt runs from the bin'][lv];
+  if (id === 'buyers') return b == null ? `${a} buyers, extras wait in line` : `${a} → ${b} buyers`;
+  if (id === 'palletN') return b == null ? `${a} sale pallets` : `${a} → ${b} sale pallets`;
+  if (id === 'joinery') return b ? 'Turns boards into furniture' : 'The bench is open';
+  if (id === 'joinSpd') return `A piece every ${arrow}s`;
+  if (id === 'joinKind') return ['Stool from 2 boards', 'Bench from 3 boards', 'Table from 4 boards'][lv];
+  if (id === 'firewood') return b ? 'Splits extra logs into firewood' : 'The block is in use';
+  if (id === 'fireSpd') return `A bundle every ${arrow}s`;
+  if (id === 'fireSize') return `${[4, 6, 9, 12][lv]} logs in a bundle`;
+  if (id === 'fireHaul') return ['Carries 1 bundle', 'Carries 2 bundles', 'A cart carries 4', 'A belt feeds the rack'][lv];
+  return arrow;
+}
+function rowShown(id) {
+  if ((id === 'planerN' || id === 'planerSpd' || id === 'planerCrew' || id === 'boardCap') && !planerOn()) return false;
+  if ((id === 'chipSpd' || id === 'chipBite') && !S.lv.chipper) return false;
+  if ((id === 'haul' || id === 'buyers' || id === 'palletN') && !S.lv.shop) return false;
+  if ((id === 'joinSpd' || id === 'joinKind') && !S.lv.joinery) return false;
+  if ((id === 'fireSpd' || id === 'fireSize' || id === 'fireHaul') && !S.lv.firewood) return false;
+  return true;
+}
+function spotsOf(st) {
+  if (st.id !== 'bin') return st.spots;
+  const chip = chipSpot();
+  return [
+    { x: (TUB.x0 + TUB.x1) / 2, z: (TUB.z0 + TUB.z1) / 2, r: 4.6 },
+    { x: chip.x, z: chip.z, r: 3.6 },
+  ];
+}
+function pickStation(x, z) {
+  let best = null, score = 1;
+  const consider = (st, sx, sz, r) => {
+    const d = Math.hypot(sx - x, sz - z);
+    if (d < r && d / r < score) { score = d / r; best = st; }
+  };
+  for (const st of STATIONS) for (const s of spotsOf(st)) consider(st, s.x, s.z, s.r);
+  const forksSt = STATIONS.find(s => s.id === 'forks');
+  const trucksSt = STATIONS.find(s => s.id === 'trucks');
+  for (const f of forks) consider(forksSt, f.pos.x, f.pos.z, 2.4);
+  for (const t of trucks) consider(trucksSt, t.pos.x, t.pos.z, 3.2);
+  return best;
+}
+let openStation = null, shopKey = '';
+function openShop(st) {
+  openStation = st; shopKey = '';
+  $('shop').classList.remove('hidden');
+  $('shopIcon').textContent = st.icon;
+  $('shopTitle').textContent = st.name;
+  drawShop();
+}
+function closeShop() {
+  openStation = null; shopKey = '';
+  $('shop').classList.add('hidden');
+}
+function drawShop() {
+  if (!openStation) return;
+  const ids = openStation.ups.filter(rowShown);
+  const key = openStation.id + '|' + Math.floor(S.money) + '|' + ids.map(id => S.lv[id] + ':' + (upCost(id) ?? 'x')).join(',');
+  if (key === shopKey) return;
+  shopKey = key;
+  const box = $('shopRows');
+  box.innerHTML = '';
+  for (const id of ids) {
+    const [name, icon] = UP_INFO[id];
+    const lv = S.lv[id], max = UP[id].costs.length, cost = upCost(id);
+    const can = cost !== null && S.money >= cost;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'urow' + (cost === null ? ' maxed' : can ? ' can' : '');
+    btn.innerHTML = `<span class="uico">${icon}</span><span><b>${name} <span style="color:#9aa6ae;font-size:13px">${lv}/${max}</span></b><small>${upEffect(id)}</small><span class="ubar"><i style="width:${max ? (lv / max) * 100 : 0}%"></i></span></span><span class="uprice">${cost === null ? 'MAX' : fmt(cost)}</span>`;
+    btn.addEventListener('click', () => buy(id, true));
+    box.appendChild(btn);
+  }
+}
+function buy(id, fromUi) {
   const cost = upCost(id);
-  if (cost === null) { if (pad) toast('Already maxed', '', false); return false; }
-  if (S.money < cost) { if (pad) { toast('Not enough money', `need ${fmt(cost - S.money)} more 💰`, true); sfx.err(); pad.shake = 1; } return false; }
+  if (cost === null) { if (fromUi) toast('Already maxed', '', false); return false; }
+  if (S.money < cost) { if (fromUi) { toast('Not enough money', `need ${fmt(cost - S.money)} more 💰`, true); sfx.err(); } return false; }
   S.money -= cost; S.lv[id]++;
   if (id === 'forkN') spawnForklifts();
   if (id === 'truckN') spawnTrucks();
   if (id === 'sawN') updateSaws();
-  if (id === 'planer') updatePlanerLook();
+  if (id === 'planer' || id === 'planerN') updatePlanerLook();
   if (id === 'road') applyRoadLook();
-  if (pad) {
-    pad.bounce = 1; sfx.buy(); confetti(V(pad.x, 0.5, pad.z));
-    const msgs = {
-      saw: `Saw: a cut every ${UP.saw.vals[S.lv.saw].toFixed(2)}s`, sawN: `${UP.sawN.vals[S.lv.sawN]} saws, same bin`, yield: `${UP.yield.vals[S.lv.yield]} pieces per cut`,
-      forkN: `${UP.forkN.vals[S.lv.forkN]} forklifts`, forkSpd: 'Forklifts are faster', forkCap: `${UP.forkCap.vals[S.lv.forkCap]} pieces per trip`,
-      truckN: `${UP.truckN.vals[S.lv.truckN]} trucks`, truckCap: `Bed: ${UP.truckCap.vals[S.lv.truckCap]} pieces`,
-      road: S.lv.road === 1 ? 'Paved road!' : 'New highway!', gate: `Gate: ${UP.gate.vals[S.lv.gate]}s per truck`,
-      market: `Price x${UP.market.vals[S.lv.market]}`,
-      cutterN: `${UP.cutterN.vals[S.lv.cutterN]} lumberjacks`, cutterSpd: 'Axes are faster',
-      planer: 'Planer is on — boards sell for more', planerSpd: 'The planer is faster',
-    };
-    toast('Upgraded!', msgs[id]);
+  if (id === 'tub') resizeTub();
+  if (id === 'chipper') placeChipper();
+  if (id === 'shop' || id === 'haul' || id === 'palletN') {
+    if (hauler.carry) { giveToPallets(hauler.carry); hauler.carry = 0; hauler.leg = 'back'; }
+    refreshShopLook();
+  }
+  if (id === 'joinery' || id === 'firewood' || id === 'fireHaul') refreshYardLook();
+  if (fromUi) {
+    sfx.buy();
+    const st = STATIONS.find(s => s.ups.includes(id)) || openStation;
+    const spot = st ? spotsOf(st)[0] : null;
+    if (spot) confetti(V(spot.x, 0.6, spot.z));
+    toast('Upgraded!', upEffect(id));
+    shopKey = '';
+    drawShop();
   }
   save();
   return true;
 }
-const padFaceRotY = Math.atan2(CAM_DIR.x, CAM_DIR.z);
-const glowTex = canvasTex(256, 160, (c, w, h) => {
-  const g = c.createRadialGradient(w / 2, h / 2, 10, w / 2, h / 2, w / 2);
-  g.addColorStop(0, 'rgba(110,255,140,0.9)'); g.addColorStop(0.55, 'rgba(90,240,120,0.55)'); g.addColorStop(1, 'rgba(90,240,120,0)');
-  c.fillStyle = g; c.fillRect(0, 0, w, h);
-});
-const padMeshes = [];
-for (const pad of PADS) {
-  const g = new THREE.Group(); g.position.set(pad.x, 0.06, pad.z); g.rotation.y = padFaceRotY; scene.add(g);
-  const inner = new THREE.Group(); g.add(inner);
-  const glow = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 3.7), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, opacity: 0 }));
-  glow.rotation.x = -Math.PI / 2; glow.position.y = 0.03; inner.add(glow);
-  const base = part(rbox(4.2, 0.18, 2.5, 0.16, 2), 0x252a30, inner, 0, 0.09, 0);
-  base.userData.pad = pad;
-  const c = document.createElement('canvas'); c.width = 640; c.height = 380;
-  const tex = new THREE.CanvasTexture(c); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8;
-  const face = new THREE.Mesh(new THREE.PlaneGeometry(4.04, 2.4), new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false }));
-  face.rotation.x = -Math.PI / 2; face.position.y = 0.19; inner.add(face);
-  face.userData.pad = pad;
-  Object.assign(pad, { g, inner, glow, base, face, canvas: c, tex, key: '', bounce: 0, shake: 0 });
-  padMeshes.push(base, face);
-}
-function drawPad(pad) {
-  const id = pad.id, lv = S.lv[id], max = UP[id].costs.length, cost = upCost(id), can = cost !== null && S.money >= cost;
-  const key = `${lv}|${cost}|${can}`;
-  if (key === pad.key) return;
-  pad.key = key;
-  const c = pad.canvas.getContext('2d'), W = 640, H = 380;
-  const F = '"Baloo 2", "Arial Black", sans-serif';
-  c.clearRect(0, 0, W, H);
-  c.fillStyle = '#2b3138'; c.beginPath(); c.roundRect(6, 6, W - 12, H - 12, 44); c.fill();
-  c.lineWidth = 12; c.strokeStyle = can ? '#5fe07c' : cost === null ? '#6f8a78' : '#46505a';
-  c.beginPath(); c.roundRect(13, 13, W - 26, H - 26, 38); c.stroke();
-  // title band
-  c.fillStyle = '#ffffff'; c.textAlign = 'center'; c.textBaseline = 'middle';
-  c.font = `800 60px ${F}`;
-  c.fillText(pad.name, W / 2, 72, W - 70);
-  // icon
-  c.font = '150px sans-serif'; c.fillText(pad.icon, 125, 225);
-  // level pips
-  const pw = Math.min(40, 340 / max);
-  for (let i = 0; i < max; i++) {
-    c.fillStyle = i < lv ? '#5fe07c' : '#4b5560';
-    c.beginPath(); c.roundRect(245 + i * pw, 150, pw - 8, 20, 8); c.fill();
-  }
-  c.textAlign = 'left';
-  if (cost === null) {
-    c.fillStyle = '#7fe39a'; c.font = `800 110px ${F}`; c.fillText('MAX', 245, 262);
-  } else {
-    c.fillStyle = can ? '#ffd84a' : '#c3cad0'; c.font = `800 112px ${F}`;
-    c.fillText(fmt(cost), 245, 262, 360);
-  }
-  pad.tex.needsUpdate = true;
-}
-function refreshPads() {
-  for (const pad of PADS) {
-    if (pad.id === 'truckN') {
-      const n = UP.truckN.vals[S.lv.truckN];
-      const vis = n < SPOT_X.length;
-      pad.g.visible = vis;
-      if (vis) { pad.x = SPOT_X[n]; pad.g.position.x = pad.x; }
-    }
-    if (pad.id === 'sawN') pad.g.visible = upCost('sawN') !== null;
-    if (pad.id === 'planer') pad.g.visible = !planerOn();
-    if (pad.id === 'planerSpd') pad.g.visible = planerOn() && upCost('planerSpd') !== null;
-    drawPad(pad);
-  }
-}
-function animatePads(dt, time) {
-  for (const pad of PADS) {
-    const cost = upCost(pad.id), can = cost !== null && S.money >= cost;
-    pad.glow.material.opacity = can ? 0.55 + Math.sin(time * 4 + pad.x) * 0.25 : 0;
-    let s = 1, ox = 0;
-    if (pad.bounce > 0) { pad.bounce = Math.max(0, pad.bounce - dt * 2.5); s = 1 + Math.sin(pad.bounce * Math.PI) * 0.18; }
-    if (pad.shake > 0) { pad.shake = Math.max(0, pad.shake - dt * 3); ox = Math.sin(pad.shake * 40) * 0.12 * pad.shake; }
-    pad.inner.scale.set(s, 1, s); pad.inner.position.x = ox;
-    pad.inner.position.y = can ? Math.max(0, Math.sin(time * 4 + pad.x)) * 0.05 : 0;
-  }
-}
+$('shopClose').addEventListener('click', () => { sfx.ensure(); closeShop(); });
+
 
 // confetti burst on purchase
 const confettiParts = [];
@@ -2258,26 +3322,35 @@ canvasEl.addEventListener('wheel', e => {
   if (before && after) { cam.target.x += before.x - after.x; cam.target.z += before.z - after.z; clampCam(); }
   hideHint();
 }, { passive: false });
-function pickPad(cx, cy) {
-  ndc.set(cx / innerWidth * 2 - 1, -(cy / innerHeight) * 2 + 1);
-  raycaster.setFromCamera(ndc, camera);
-  const hit = raycaster.intersectObjects(padMeshes, false).find(h => h.object.userData.pad.g.visible);
-  return hit ? hit.object.userData.pad : null;
-}
 function handleTap(cx, cy) {
   applyCamera();
-  const pad = pickPad(cx, cy);
-  if (pad) buy(pad.id, pad);
+  const g = groundAt(cx, cy);
+  if (!g) return;
+  const st = pickStation(g.x, g.z);
+  if (st) openShop(st);
 }
 let hoverT = 0;
 function hover(e) {
   const now = performance.now(); if (now - hoverT < 60) return; hoverT = now;
   applyCamera();
-  canvasEl.classList.toggle('hot', !!pickPad(e.clientX, e.clientY));
+  const g = groundAt(e.clientX, e.clientY);
+  canvasEl.classList.toggle('hot', !!(g && pickStation(g.x, g.z)));
 }
 const keys = new Set();
 addEventListener('keydown', e => {
-  if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { if (S.running) setPaused(!S.paused); return; }
+  if (e.target && e.target.id === 'saveName') return;
+  if (e.key === 'Escape') {
+    if (!$('settingsMenu').classList.contains('hidden')) { closeSettings(); return; }
+    if (!$('saveScreen').classList.contains('hidden')) { closeSaveScreen(); return; }
+    if (S.running && !$('startScreen').classList.contains('hidden')) { closeHelp(); return; }
+    if (openStation) { closeShop(); return; }
+    if (S.running) setPaused(!S.paused);
+    return;
+  }
+  if (e.key === 'p' || e.key === 'P') {
+    if (S.running && $('saveScreen').classList.contains('hidden') && $('startScreen').classList.contains('hidden')) setPaused(!S.paused);
+    return;
+  }
   keys.add(e.key.toLowerCase());
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
@@ -2311,54 +3384,198 @@ function updateCamera(dt) {
 }
 
 // =====================================================================
-// RUSH ORDERS — the buyer asks for one cargo, on a timer, for a bonus
+// RUSH ORDERS — a van drives in and is loaded, one lot at a time
 // =====================================================================
-const order = { on: false, kind: 'raw', need: 0, have: 0, left: 0, gap: 22, dirty: true, visT: 0 };
-function rollOrder() {
-  const cap = UP.truckCap.vals[S.lv.truckCap];
-  const boards = S.lv.planer > 0 && Math.random() < 0.55;
-  order.kind = boards ? 'boards' : 'raw';
-  order.need = boards ? clamp(6 + Math.floor(cap / 5), 6, 18) : clamp(8 + Math.floor(cap / 3), 8, 28);
+const FURN_NAME = ['Stool', 'Bench', 'Table'];
+const order = { on: false, kind: 'raw', label: 'Cut wood', furnKind: 0, need: 0, have: 0, left: 0, gap: 8, dirty: true, visT: 0, filled: false, expired: false, missed: false };
+function orderUnit() {
+  if (order.kind === 'boards') return BOARD_PRICE * UP.market.vals[S.lv.market];
+  if (order.kind === 'fire') return FIRE_PRICE[S.lv.fireSize];
+  if (order.kind === 'furn') return FURN_PRICE[order.furnKind];
+  return PIECE_PRICE * UP.market.vals[S.lv.market];
+}
+function orderBonus() { return Math.round(order.need * orderUnit() * 0.8); }
+function rollOrder(force) {
+  const kinds = ['raw'];
+  if (S.lv.planer > 0) kinds.push('boards');
+  if (S.lv.firewood > 0) kinds.push('fire');
+  if (S.lv.joinery > 0) kinds.push('furn');
+  const kind = force && kinds.includes(force) ? force : kinds[Math.floor(Math.random() * kinds.length)];
+  const tier = clamp(Math.floor(S.lv.truckCap / 3), 0, 3);
+  const pick = (arr) => arr[clamp(tier + Math.floor(Math.random() * 2), 0, arr.length - 1)];
+  order.kind = kind;
+  order.furnKind = S.lv.joinKind;
+  order.label = kind === 'boards' ? 'Boards' : kind === 'fire' ? 'Firewood' : kind === 'furn' ? FURN_NAME[order.furnKind] : 'Cut wood';
+  order.need = kind === 'boards' ? pick([6, 8, 11, 14]) : kind === 'fire' ? pick([4, 6, 9, 12]) : kind === 'furn' ? pick([1, 2, 2, 3]) : pick([8, 10, 13, 16, 20]);
   order.have = 0;
-  order.left = 50 + order.need * 2.2;
+  order.left = (kind === 'furn' ? 48 : 36) + order.need * (kind === 'furn' ? 14 : 3.2);
   order.on = true;
+  order.filled = false;
+  order.expired = false;
+  order.missed = false;
   order.dirty = true;
   order.visT = 0;
-  if (!instant) toast(boards ? 'Rush order: boards' : 'Rush order: cut wood', `Deliver ${order.need} before time runs out`);
-}
-function orderBonus() {
-  const unit = order.kind === 'boards' ? BOARD_PRICE : PIECE_PRICE;
-  return Math.round(order.need * unit * UP.market.vals[S.lv.market] * 0.8);
-}
-function fillOrder(boards, raw, pos) {
-  if (!order.on) return;
-  const n = order.kind === 'boards' ? boards : raw;
-  if (n <= 0) return;
-  order.have = Math.min(order.need, order.have + n);
-  order.dirty = true;
-  if (order.have < order.need) return;
-  const bonus = orderBonus();
-  order.on = false;
-  order.gap = 16 + Math.random() * 10;
-  addMoney(bonus, pos ? pos.clone().setY(4.4) : null);
-  if (!instant) toast('Order filled', `+${fmt(bonus)} bonus`);
+  if (!instant) toast(`Rush order: ${order.label}`, `Load ${order.need} before the van leaves`);
+  courier.summon();
 }
 function updateOrder(dt) {
   if (order.on) {
-    order.left -= dt;
-    order.visT += dt;
-    if (order.visT > 0.4) { order.visT = 0; order.dirty = true; }
-    if (order.left <= 0) {
-      order.on = false;
-      order.gap = 18;
-      order.dirty = true;
-      if (!instant) toast('Order missed', 'The buyer wanted it faster', true);
+    if (!order.filled && !order.expired) {
+      order.left -= dt;
+      order.visT += dt;
+      if (order.visT > 0.4) { order.visT = 0; order.dirty = true; }
+      if (order.left <= 0) {
+        order.expired = true;
+        order.missed = true;
+        order.dirty = true;
+        if (!instant) toast('Order missed', 'The van is leaving with what it has', true);
+      }
     }
-  } else {
+  } else if (courier.phase === 'idle') {
     order.gap -= dt;
     if (order.gap <= 0) rollOrder();
   }
+  courier.update(dt);
 }
+function buildVan() {
+  const g = new THREE.Group();
+  const body = new THREE.Group(); g.add(body);
+  part(rbox(1.7, 0.22, 3.5, 0.06), 0x2c3136, body, 0, 0.42, 0);
+  part(rbox(1.78, 1.35, 2.05, 0.08), 0xf7f4ee, body, 0, 1.15, -0.55);
+  part(rbox(1.62, 0.16, 2.05, 0.04), 0xe07a2f, body, 0, 1.55, -0.55);
+  part(rbox(1.55, 0.22, 0.08, 0.02), 0x23282d, body, 0, 0.68, -1.55);
+  part(rbox(1.58, 1.05, 1.15, 0.1), 0xfffaf3, body, 0, 1.05, 1.15);
+  part(rbox(1.35, 0.48, 0.06, 0.02), glassMat, body, 0, 1.22, 1.7);
+  for (const s of [-1, 1]) part(rbox(0.06, 0.42, 0.5, 0.02), glassMat, body, s * 0.8, 1.2, 1.15);
+  const cargo = new THREE.Group(); body.add(cargo);
+  const logs = [], planks = [], bundles = [];
+  for (let i = 0; i < 8; i++) {
+    const col = i % 4, row = Math.floor(i / 4);
+    const log = part(cylG(0.09, 0.09, 0.55, 8), 0xe2b86a, cargo, -0.42 + col * 0.28, 0.78 + row * 0.2, -1.35);
+    log.rotation.z = Math.PI / 2; log.visible = false; logs.push(log);
+    const plank = part(rbox(0.85, 0.05, 0.32, 0.01), 0xf7ebc8, cargo, 0, 0.78 + i * 0.06, -1.2);
+    plank.visible = false; planks.push(plank);
+    const bundle = part(cylG(0.1, 0.1, 0.36, 8), 0xc4843a, cargo, -0.36 + (i % 4) * 0.24, 0.78 + row * 0.22, -1.35);
+    bundle.visible = false; bundles.push(bundle);
+  }
+  const furn = part(rbox(0.55, 0.4, 0.55, 0.05), 0xe7c98a, cargo, 0, 0.95, -1.15);
+  furn.visible = false;
+  const wheels = [];
+  for (const z of [1.05, -1.05]) for (const s of [-1, 1]) wheels.push(wheel(body, s * 0.78, 0.3, z, 0.3, 0.2));
+  g.visible = false;
+  scene.add(g);
+  return { g, logs, planks, bundles, furn, wheels };
+}
+const courier = {
+  phase: 'idle', x: 16, z: 9.2, yaw: 0, v: 0, path: [], pi: 0, loaded: 0, incoming: 0, loadT: 0, bay: VAN_YARD, wheelA: 0, m: null,
+  summon() {
+    this.loaded = 0; this.incoming = 0; this.loadT = 0;
+    this.bay = order.kind === 'fire' ? VAN_FIRE : order.kind === 'furn' ? VAN_FURN : VAN_YARD;
+    this.x = 18; this.z = 9.2; this.yaw = Math.PI;
+    this.path = [{ x: 10.2, z: 9.2 }, { x: 10.2, z: this.bay.z }, { x: this.bay.x, z: this.bay.z }];
+    this.pi = 0; this.phase = 'arrive';
+    if (this.m) this.m.g.visible = true;
+  },
+  takeJob() {
+    if (this.phase !== 'parked' || !order.on || order.filled || order.expired) return null;
+    if (order.kind !== 'raw' && order.kind !== 'boards') return null;
+    if (forks.some(f => f.vanJob)) return null;
+    const boards = order.kind === 'boards';
+    const left = order.need - order.have - this.incoming;
+    if (left <= 0) return null;
+    const free = boards ? Math.max(0, S.boards - (S.boardHold || 0)) : S.stockpile;
+    const n = Math.min(4, left, free);
+    if (n <= 0) return null;
+    this.incoming += n;
+    return { n, boards };
+  },
+  receive(n) {
+    this.incoming = Math.max(0, this.incoming - n);
+    this.loaded += n;
+    order.have = Math.min(order.need, order.have + n);
+    order.dirty = true;
+    if (order.have >= order.need) {
+      order.filled = true;
+      if (!instant) toast('Order filled', `+${fmt(orderBonus())} bonus`);
+    }
+  },
+  pullOne() {
+    if (order.have >= order.need) return false;
+    if (order.kind === 'fire') {
+      if (firePile <= 0) return false;
+      firePile--;
+      return true;
+    }
+    if (order.kind === 'furn') {
+      const i = furnPile.findIndex(it => it.kind === order.furnKind);
+      if (i < 0) return false;
+      furnPile.splice(i, 1);
+      return true;
+    }
+    return false;
+  },
+  pay() {
+    const n = this.loaded;
+    let pay = Math.round(n * orderUnit());
+    if (order.filled) pay += orderBonus();
+    if (pay > 0) addMoney(pay, V(this.x, 3.2, this.z));
+    order.on = false;
+    order.gap = order.filled ? 14 + Math.random() * 8 : 18;
+    order.dirty = true;
+    this.phase = 'idle';
+    this.loaded = 0;
+    if (this.m) this.m.g.visible = false;
+  },
+  stepTo(dt, tx, tz) {
+    const dx = tx - this.x, dz = tz - this.z, dist = Math.hypot(dx, dz);
+    if (dist < 0.12) { this.x = tx; this.z = tz; this.v = 0; return true; }
+    const step = Math.min(dist, 7.5 * dt);
+    this.x += dx / dist * step; this.z += dz / dist * step;
+    this.yaw = yawOf(dx, dz); this.v = step / Math.max(dt, 1e-4);
+    return false;
+  },
+  update(dt) {
+    if (this.phase === 'arrive' || this.phase === 'leave') {
+      const w = this.path[this.pi];
+      if (!w || this.stepTo(dt, w.x, w.z)) {
+        this.pi++;
+        if (this.pi >= this.path.length) {
+          if (this.phase === 'arrive') { this.phase = 'parked'; this.yaw = this.bay.yaw; this.v = 0; }
+          else this.pay();
+        }
+      }
+      return;
+    }
+    if (this.phase !== 'parked') return;
+    if ((order.kind === 'fire' || order.kind === 'furn') && !order.filled && !order.expired) {
+      this.loadT += dt;
+      if (this.loadT >= 0.85) { this.loadT = 0; if (this.pullOne()) this.receive(1); }
+    }
+    if ((order.filled || order.expired) && this.incoming === 0) {
+      this.phase = 'leave';
+      this.path = [{ x: 10.2, z: this.bay.z }, { x: 10.2, z: 9.2 }, { x: 20, z: 9.2 }];
+      this.pi = 0;
+    }
+  },
+  sync(dt) {
+    if (!this.m) return;
+    const m = this.m;
+    const show = this.phase !== 'idle';
+    m.g.visible = show;
+    if (!show) return;
+    m.g.position.set(this.x, 0, this.z);
+    m.g.rotation.y = this.yaw;
+    const n = this.loaded;
+    const shown = order.need ? clamp(Math.ceil(n / order.need * 8), n > 0 ? 1 : 0, 8) : 0;
+    m.logs.forEach((mesh, i) => { mesh.visible = order.kind === 'raw' && i < shown; });
+    m.planks.forEach((mesh, i) => { mesh.visible = order.kind === 'boards' && i < Math.min(8, n); });
+    m.bundles.forEach((mesh, i) => { mesh.visible = order.kind === 'fire' && i < shown; });
+    m.furn.visible = order.kind === 'furn' && n > 0;
+    this.wheelA += this.v * dt / 0.32;
+    for (const w of m.wheels) w.rotation.y = this.wheelA;
+  },
+};
+courier.m = buildVan();
 function drawOrderBoard() {
   if (!orderBoard) return;
   const c = orderBoard.ctx, w = orderBoard.w, h = orderBoard.h;
@@ -2376,7 +3593,7 @@ function drawOrderBoard() {
     c.font = '700 32px "Baloo 2", Arial, sans-serif';
     c.fillText('Next order soon', w / 2, h * 0.64);
   } else {
-    c.fillText(order.kind === 'boards' ? 'BOARDS' : 'CUT WOOD', w / 2, h * 0.26);
+    c.fillText(order.label.toUpperCase(), w / 2, h * 0.26);
     c.fillStyle = '#fff';
     c.font = '800 78px "Baloo 2", Arial Black, sans-serif';
     c.fillText(`${order.have} / ${order.need}`, w / 2, h * 0.52);
@@ -2390,12 +3607,21 @@ function drawOrderBoard() {
   orderBoard.tex.needsUpdate = true;
   order.dirty = false;
 }
+const ICO = {
+  log: `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.1 16.3 8h-2.2l3.5 5.2h-2.3L18.8 18.7H5.2l3.5-5.5H6.4L9.9 8H7.7L12 2.1z" fill="#3caf55"/><path d="M12 2.1 16.3 8h-2.2l3.5 5.2h-2.3L18.8 18.7H12z" fill="#2e9448"/><rect x="10.55" y="18.7" width="2.9" height="3.1" rx=".35" fill="#8b5a32"/></svg>`,
+  cut: `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="10.2" y="3.6" width="9" height="4.2" fill="#d4922e"/><circle cx="10.2" cy="5.7" r="2.25" fill="#f7e2a8"/><circle cx="10.2" cy="5.7" r="1.25" fill="none" stroke="#e0b15a" stroke-width=".55"/><circle cx="10.2" cy="5.7" r=".38" fill="#c4843a"/><rect x="6.2" y="8.6" width="9.2" height="4.5" fill="#f0c14a"/><circle cx="16.6" cy="10.85" r="2.4" fill="#fff1c4"/><circle cx="16.6" cy="10.85" r="1.35" fill="none" stroke="#e0b15a" stroke-width=".55"/><circle cx="16.6" cy="10.85" r=".4" fill="#c4843a"/><rect x="1.6" y="14.2" width="10" height="5" fill="#e8b23e"/><circle cx="12.2" cy="16.7" r="2.65" fill="#f7e2a8"/><circle cx="12.2" cy="16.7" r="1.5" fill="none" stroke="#d7a85a" stroke-width=".6"/><circle cx="12.2" cy="16.7" r=".45" fill="#c4843a"/></svg>`,
+  plank: `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><polygon points="1.4,14.4 14.6,11.2 18.4,13.3 5.2,16.5" fill="#f7ebc8"/><polygon points="5.2,16.5 18.4,13.3 18.4,15.5 5.2,18.7" fill="#d7b56a"/><polygon points="1.4,14.4 5.2,16.5 5.2,18.7 1.4,16.6" fill="#c4a15a"/><polygon points="2.2,10 15.4,6.8 19.2,8.9 6,12.1" fill="#f7ebc8"/><polygon points="6,12.1 19.2,8.9 19.2,11.1 6,14.3" fill="#e0c48a"/><polygon points="2.2,10 6,12.1 6,14.3 2.2,12.2" fill="#c9a66a"/><polygon points="3,5.6 16.2,2.4 20,4.5 6.8,7.7" fill="#fff6e4"/><polygon points="6.8,7.7 20,4.5 20,6.7 6.8,9.9" fill="#e7c98a"/><polygon points="3,5.6 6.8,7.7 6.8,9.9 3,7.8" fill="#d2b07a"/></svg>`,
+  van: `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M1.4 14.6V9.1h7.4l2.2 2.3h9.4v3.2H1.4z" fill="#f4f7fb"/><path d="M8.8 9.4h2l1.5 1.8H8.8z" fill="#8ecaf2"/><rect x="14.6" y="5.2" width="5.6" height="4.3" rx=".45" fill="#f0b429"/><path d="M14.6 7.2h5.6M17.4 5.2v4.3" stroke="#a56b12" stroke-width=".7"/><circle cx="6" cy="15.7" r="1.85" fill="#2a2e33"/><circle cx="16.2" cy="15.7" r="1.85" fill="#2a2e33"/><circle cx="6" cy="15.7" r=".7" fill="#d5dbe0"/><circle cx="16.2" cy="15.7" r=".7" fill="#d5dbe0"/></svg>`,
+};
+$('woodIco').innerHTML = ICO.log;
+$('stockIco').innerHTML = ICO.cut;
+$('boardIco').innerHTML = ICO.plank;
 function syncOrderHud() {
-  const bar = $('orderBar');
-  if (!order.on) { bar.classList.add('hidden'); return; }
-  bar.classList.remove('hidden');
-  $('orderIcon').textContent = order.kind === 'boards' ? '🪵' : '📦';
-  $('orderLabel').textContent = order.kind === 'boards' ? 'Boards' : 'Cut wood';
+  const wrap = $('orderWrap');
+  if (!order.on) { wrap.classList.add('hidden'); return; }
+  wrap.classList.remove('hidden');
+  $('orderIcon').innerHTML = ICO.van;
+  $('orderLabel').textContent = order.label;
   $('orderCount').textContent = `${order.have}/${order.need}`;
   $('orderTime').textContent = `${Math.max(0, Math.ceil(order.left))}s`;
 }
@@ -2424,6 +3650,33 @@ function doCut(lane) {
   S.stockpile += n;
   if (!instant) { cutLogPiece(lane); spawnCutPieces(n, lane.x); sfx.saw(); }
 }
+function assignBays() {
+  const n = UP.truckN.vals[S.lv.truckN];
+  const taken = new Array(SPOT_X.length).fill(false);
+  for (const t of trucks) {
+    if (t.state === 'parked' || t.state === 'waitExit' || t.state === 'exiting' || t.state === 'reversing') taken[t.bay] = true;
+  }
+  const returning = trucks.filter(t => t.dumped && t.state === 'route').sort((a, b) => b.s - a.s);
+  for (const t of returning) {
+    let best = -1, bestS = 1e9;
+    for (let b = 0; b < n; b++) {
+      if (taken[b]) continue;
+      if (S_REV[b] + 0.6 < t.s) continue;
+      if (S_REV[b] < bestS) { bestS = S_REV[b]; best = b; }
+    }
+    if (best < 0) {
+      let lateS = -1;
+      for (let b = 0; b < n; b++) {
+        if (taken[b]) continue;
+        if (S_REV[b] > lateS) { lateS = S_REV[b]; best = b; }
+      }
+      if (best >= 0 && t.s > S_REV[best]) { t.s = S_REV[best]; t.v = 0; }
+    }
+    if (best < 0) continue;
+    taken[best] = true;
+    if (t.bay !== best) t.setBay(best);
+  }
+}
 function update(dt) {
   if (!S.running || S.paused) return;
   S.time += dt;
@@ -2437,6 +3690,10 @@ function update(dt) {
   updateCutters(dt);
   updatePlaner(dt);
   updateHand(dt);
+  updateChipper(dt);
+  updateRetail(dt);
+  updateYardGoods(dt);
+  assignBays();
   for (const t of trucks) t.update(dt);
   updateOrder(dt);
   for (const f of forks) f.update(dt);
@@ -2478,13 +3735,15 @@ function updateVisuals(dt, time) {
   updatePlanerVisual(dt, time);
   syncBoardStack();
   updatePieces(dt);
+  syncRetail(dt, time);
+  syncYardGoods(dt, time);
   for (const t of trucks) t.sync(dt, time);
   for (const f of forks) f.sync(dt, time);
+  courier.sync(dt);
   gateViz.arm.rotation.x = gate.arm * 1.42;
   gateViz.lightR.material.emissiveIntensity = gate.arm < 0.5 ? 1.4 : 0.05;
   gateViz.lightG.material.emissiveIntensity = gate.arm >= 0.5 ? 1.4 : 0.05;
   waterTex.offset.y += dt * 0.03; waterTex.offset.x = Math.sin(time * 0.3) * 0.02;
-  animatePads(dt, time);
   updateConfetti(dt);
 }
 
@@ -2509,10 +3768,14 @@ function render() {
     $('wood').textContent = fmt(logsLeft());
     $('stock').textContent = fmt(S.stockpile);
     $('boards').textContent = fmt(S.boards);
+    $('furnPill').classList.toggle('hidden', !S.lv.joinery);
+    $('firePill').classList.toggle('hidden', !S.lv.firewood);
+    $('furnN').textContent = fmt(furnPile.length);
+    $('fireN').textContent = fmt(firePile);
     $('ratePill').textContent = fmt(incomeRate()) + '/s';
     syncOrderHud();
     if (order.dirty) drawOrderBoard();
-    refreshPads();
+    drawShop();
   }
   renderer.render(scene, camera);
   requestAnimationFrame(render);
@@ -2521,53 +3784,174 @@ function render() {
 // =====================================================================
 // START / PAUSE / RESET
 // =====================================================================
+let helpHeld = false;
 function startGame() {
+  try { localStorage.setItem(HELP_KEY, '1'); } catch (e) {}
   $('startScreen').classList.add('hidden');
+  $('startBtn').textContent = 'PLAY';
   S.running = true; S.paused = false;
+  helpHeld = false;
   sfx.ensure(); clock.getDelta();
+}
+function closeHelp() {
+  $('startScreen').classList.add('hidden');
+  $('startBtn').textContent = 'PLAY';
+  if (helpHeld) { helpHeld = false; S.paused = false; }
+}
+function openHelp() {
+  closeSettings();
+  if (S.running && !S.paused) { helpHeld = true; S.paused = true; }
+  $('startBtn').textContent = S.running ? 'BACK' : 'PLAY';
+  $('startScreen').classList.remove('hidden');
 }
 function setPaused(p) {
   S.paused = p;
   $('pauseScreen').classList.toggle('hidden', !p);
-  $('pauseBtn').textContent = p ? '▶' : 'II';
+  $('menuPause').textContent = p ? '▶ Resume' : 'II Pause';
   if (p) save();
 }
-$('startBtn').addEventListener('click', startGame);
+function closeSettings() { $('settingsMenu').classList.add('hidden'); }
+function closeSaveScreen() { $('saveScreen').classList.add('hidden'); }
+let saveMode = 'save';
+function slotWhen(at) {
+  const d = new Date(at);
+  return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+function drawSlots() {
+  const box = $('saveList');
+  box.innerHTML = '';
+  const list = readSlots();
+  if (!list.length) {
+    const p = document.createElement('div');
+    p.className = 'empty';
+    p.textContent = 'No saved games yet.';
+    box.appendChild(p);
+    return;
+  }
+  for (const slot of list) {
+    const row = document.createElement('div');
+    row.className = 'slotrow';
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'slot';
+    const mins = Math.floor((slot.snap?.time || 0) / 60);
+    btn.innerHTML = `${slot.name}<small>${fmt(slot.snap?.money || 0)} · ${mins} min · ${slotWhen(slot.at)}</small>`;
+    if (saveMode === 'load') btn.addEventListener('click', () => loadSlot(slot));
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'slotx';
+    del.textContent = '✕';
+    del.title = 'Delete save';
+    del.addEventListener('click', () => {
+      writeSlots(readSlots().filter(s => s.id !== slot.id));
+      drawSlots();
+    });
+    row.appendChild(btn);
+    row.appendChild(del);
+    box.appendChild(row);
+  }
+}
+function openSaveScreen(mode) {
+  closeSettings();
+  saveMode = mode;
+  const naming = mode === 'save';
+  const fresh = mode === 'fresh';
+  $('saveTitle').textContent = naming ? 'SAVE' : fresh ? 'NEW GAME' : 'LOAD';
+  $('saveBlurb').textContent = naming
+    ? 'This mill stays in the list, so you can come back to it.'
+    : fresh
+      ? 'Start a fresh mill. This one is kept under Load game.'
+      : 'Pick a mill to continue. The one you are playing is kept too.';
+  $('saveName').classList.toggle('hidden', !naming);
+  $('saveName').value = '';
+  $('saveConfirm').textContent = naming ? 'SAVE' : fresh ? 'START NEW' : 'LOAD';
+  $('saveConfirm').classList.toggle('hidden', mode === 'load');
+  $('saveList').classList.toggle('hidden', fresh);
+  if (!fresh) drawSlots();
+  $('saveScreen').classList.remove('hidden');
+  if (naming) $('saveName').focus();
+}
+function loadSlot(slot) {
+  if (!slot?.snap) return;
+  if (worthKeeping()) pushSlot('Before load', snapshot());
+  suppressSave = true;
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(slot.snap)); } catch (e) {}
+  location.reload();
+}
+function confirmSaveScreen() {
+  if (saveMode === 'save') {
+    const name = $('saveName').value.trim() || `Mill ${fmt(S.money)}`;
+    save();
+    pushSlot(name, snapshot());
+    closeSaveScreen();
+    toast('Saved', name);
+    return;
+  }
+  if (saveMode === 'fresh') {
+    if (worthKeeping()) pushSlot('Before new game', snapshot());
+    suppressSave = true;
+    try { localStorage.removeItem(SAVE_KEY); } catch (e) {}
+    location.reload();
+  }
+}
+$('startBtn').addEventListener('click', () => { if (S.running) closeHelp(); else startGame(); });
 $('resumeBtn').addEventListener('click', () => setPaused(false));
-$('pauseBtn').addEventListener('click', () => setPaused(!S.paused));
-$('muteBtn').addEventListener('click', () => { $('muteBtn').textContent = sfx.toggle() ? '✗' : '♪'; });
-$('resetBtn').addEventListener('click', () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} location.reload(); });
-$('newBtn').addEventListener('click', () => { try { localStorage.removeItem(SAVE_KEY); } catch (e) {} location.reload(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden && S.running) setPaused(true); });
+$('settingsBtn').addEventListener('click', () => {
+  sfx.ensure();
+  $('settingsMenu').classList.toggle('hidden');
+});
+$('menuSound').addEventListener('click', () => {
+  sfx.ensure();
+  const muted = sfx.toggle();
+  $('menuSound').textContent = muted ? '🔇 Sound off' : '♪ Sound on';
+});
+$('menuPause').addEventListener('click', () => {
+  if (!S.running) return;
+  setPaused(!S.paused);
+  closeSettings();
+});
+$('menuHelp').addEventListener('click', openHelp);
+$('menuSave').addEventListener('click', () => openSaveScreen('save'));
+$('menuLoad').addEventListener('click', () => openSaveScreen('load'));
+$('menuNew').addEventListener('click', () => openSaveScreen('fresh'));
+$('saveConfirm').addEventListener('click', confirmSaveScreen);
+$('saveClose').addEventListener('click', closeSaveScreen);
+$('saveName').addEventListener('keydown', e => e.stopPropagation());
+document.addEventListener('visibilitychange', () => { if (document.hidden && S.running && $('startScreen').classList.contains('hidden')) setPaused(true); });
 addEventListener('beforeunload', save);
 
 // =====================================================================
 // INIT
 // =====================================================================
-if (!AUTO && load()) $('newBtn').classList.remove('hidden');
+if (!AUTO) load();
 updateSaws();
 updateCutters(0);
 syncPile();
 updatePlanerLook();
 syncBoardStack();
 spawnTrucks(); spawnForklifts();
+if ((S.lv.tub | 0) > 0) resizeTub();
+else { placeChipper(); placeTubPad(); }
 for (const t of trucks) t.pop = 1;
 for (const f of forks) f.pop = 1;
 applyRoadLook();
+refreshShopLook();
+refreshYardLook();
 fillPiecesInstant(S.stockpile);
 resize();
 if (camera.aspect < 0.9) { cam.dist = 64; cam.target.set(-17, 0, -3); }
 applyCamera();
-refreshPads();
+try { if (localStorage.getItem(HELP_KEY) === '1' && !SIM) startGame(); } catch (e) {}
 
-window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, boards: S.boards, lv: { ...S.lv }, order: { on: order.on, kind: order.kind, have: order.have, need: order.need, left: +order.left.toFixed(1) }, hand: [+hand.x.toFixed(1), +hand.y.toFixed(2), +hand.z.toFixed(1), hand.state], trucks: trucks.map(t => [t.state, t.loaded, t.boards, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1)]), pieces: pieces.length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)] });
-window.__cheat = (id, n = 1) => { for (let i = 0; i < n; i++) { const c = upCost(id); if (c === null) break; S.money += c; buy(id); } refreshPads(); };
+window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, boards: S.boards, lv: { ...S.lv }, planers: { n: planerCount(), vis: planers.map(u => u.g.visible), ghost: planers.map(u => u.ghost.visible) }, order: { on: order.on, kind: order.kind, label: order.label, have: order.have, need: order.need, left: +order.left.toFixed(1), van: courier.phase, loaded: courier.loaded }, hand: [+hand.x.toFixed(1), +hand.y.toFixed(2), +hand.z.toFixed(1), hand.state], trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), +f.blockT.toFixed(1)]), pieces: pieces.length, settled: pieces.filter(p => p.settled).length, west: pieces.filter(p => p.settled && p.p.x < (TUB.x0 + TUB.x1) / 2).length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)], shop: { on: S.lv.shop, haul: S.lv.haul, pallets: pallets.slice(0, palletCount()), buyers: customers.filter(c => c.state !== 'pool').length, carry: hauler.carry, furn: furnPile.length, fire: firePile, joiner: joiner.state, splitter: splitter.state } });
+window.__cheat = (id, n = 1) => { for (let i = 0; i < n; i++) { const c = upCost(id); if (c === null) break; S.money += c; buy(id); } drawShop(); };
 window.__addMoney = v => { S.money += v; };
 window.__cam = (x, z, d) => { cam.tween = null; cam.target.set(x, 0, z); if (d) cam.dist = d; applyCamera(); };
 window.__start = () => startGame();
-window.__padScreen = id => { applyCamera(); const p = PADS.find(p => p.id === id); const [x, y] = toScreen(V(p.x, 0.2, p.z)); return [x, y]; };
+window.__padScreen = id => { applyCamera(); const st = STATIONS.find(s => s.ups.includes(id)); const spot = st ? spotsOf(st)[0] : { x: 0, z: 0 }; const [x, y] = toScreen(V(spot.x, 0.2, spot.z)); return [x, y]; };
 window.__camInfo = () => [+cam.target.x.toFixed(2), +cam.target.z.toFixed(2), +cam.dist.toFixed(1)];
 window.__step = (n, dt = 0.1) => { const was = instant; instant = true; S.running = true; for (let i = 0; i < n; i++) update(dt); instant = was; return window.__debug(); };
+window.__rush = (kind) => { if (courier.phase !== 'idle') return window.__debug(); order.gap = 0; rollOrder(kind || undefined); return window.__debug(); };
 
 if (SIM > 0) {
   instant = true;
@@ -2597,6 +3981,34 @@ if (SIM > 0) {
           if (id === 'planer' && S.stockpile < 12) w *= 3;
           if (id === 'planerSpd' && S.lv.planer === 0) w *= 5;
           if (id === 'planerSpd' && S.lv.planer > 0 && S.stockpile > 24) w *= 0.55;
+          if (id === 'planerCrew' && S.lv.planer === 0) w *= 5;
+          if (id === 'planerCrew' && S.lv.planer > 0 && S.stockpile > 20) w *= 0.6;
+          if (id === 'planerN' && S.lv.planer === 0) w *= 8;
+          if (id === 'planerN' && S.lv.planer > 0 && S.stockpile > 40 && S.boards > 8) w *= 0.5;
+          if (id === 'planerN' && S.stockpile < 16) w *= 3;
+          if (id === 'boardCap' && S.lv.planer === 0) w *= 4;
+          if (id === 'boardCap' && S.boards > 40) w *= 0.45;
+          if (id === 'tub' && S.stockpile < 50) w *= 3;
+          if (id === 'tub' && S.stockpile > 120) w *= 0.45;
+          if (id === 'chipper' && S.stockpile < 40) w *= 4;
+          if (id === 'chipper' && S.stockpile > 80) w *= 0.4;
+          if ((id === 'chipSpd' || id === 'chipBite') && S.lv.chipper === 0) w *= 6;
+          if ((id === 'chipSpd' || id === 'chipBite') && S.stockpile > 100) w *= 0.55;
+          if (id === 'shop' && S.stockpile < 30) w *= 4;
+          if (id === 'shop' && S.stockpile > 50) w *= 0.4;
+          if ((id === 'haul' || id === 'buyers' || id === 'palletN') && !S.lv.shop) w *= 8;
+          if (id === 'haul' && S.stockpile > 60) w *= 0.55;
+          if (id === 'buyers' && S.lv.shop && palletRoom() < 8) w *= 0.5;
+          if (id === 'palletN' && UP.buyers.vals[S.lv.buyers] > palletCount()) w *= 0.4;
+          if (id === 'palletN' && UP.buyers.vals[S.lv.buyers] <= palletCount()) w *= 2.4;
+          if (id === 'joinery' && S.boards < 10) w *= 4;
+          if (id === 'joinery' && S.boards > 20) w *= 0.45;
+          if ((id === 'joinSpd' || id === 'joinKind') && !S.lv.joinery) w *= 8;
+          if (id === 'joinKind' && S.lv.joinery && S.boards > 16) w *= 0.6;
+          if (id === 'firewood' && S.stockpile < 55) w *= 4.5;
+          if (id === 'firewood' && S.stockpile > 100) w *= 0.35;
+          if ((id === 'fireSpd' || id === 'fireSize' || id === 'fireHaul') && !S.lv.firewood) w *= 8;
+          if (id === 'fireHaul' && S.stockpile > 140) w *= 0.5;
           if ((id === 'truckN' || id === 'truckCap') && S.stockpile > 40) w *= 0.5;
           if (id === 'gate' && queue >= 2) w *= 0.4;
           if ((id === 'forkSpd' || id === 'forkCap' || id === 'forkN') && trucks.some(t => t.state === 'parked' && t.loaded < t.cap()) && S.stockpile > 30) w *= 0.6;
@@ -2614,7 +4026,7 @@ if (SIM > 0) {
     }
   }
   window.simLog = log;
-  window.simInfo = { money: S.money, earned: S.earned, rate: incomeRate(), allMaxMin: allMaxT && +(allMaxT / 60).toFixed(1), firstBuy, lv: S.lv, stock: S.stockpile, trucks: trucks.map(t => t.state) };
+  window.simInfo = { money: S.money, earned: S.earned, rate: incomeRate(), allMaxMin: allMaxT && +(allMaxT / 60).toFixed(1), firstBuy, lv: S.lv, stock: S.stockpile, boards: S.boards, trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.waitT.toFixed(1)]), forks: forks.map(f => [f.state, +f.blockT.toFixed(1), +f.pos.x.toFixed(1), +f.pos.z.toFixed(1)]) };
   document.title = 'SIMDONE';
   window.__simDone = true;
 } else {
@@ -2623,8 +4035,5 @@ if (SIM > 0) {
 
 </script>
 
-<!-- gameroom:back -->
-<a href="../../" id="gameroom-back" title="Back to Gameroom" aria-label="Back to Gameroom" style="position:fixed;right:max(14px,env(safe-area-inset-right));top:max(62px,calc(env(safe-area-inset-top) + 52px));width:42px;height:42px;border-radius:50%;background:#1e2a33d9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;text-decoration:none;z-index:50;box-shadow:0 3px 0 #0003;">⌂</a>
-<!-- /gameroom:back -->
 </body>
 </html>

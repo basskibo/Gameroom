@@ -33,10 +33,20 @@
   @keyframes bump { 50% { transform: scale(1.12); } }
   .pill.cap.full { background: #c0392bdd; }
   .pill.order { color: #ffe8a0; font-size: 18px; }
-  .btns { display: flex; gap: 6px; }
-  .btns button {
+  .btns { display: flex; gap: 6px; position: relative; z-index: 60; }
+  .btns button, #settingsMenu button, #settingsMenu a {
     pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800; color: #fff; background: #2a1b3dd9;
     border: none; border-radius: 12px; min-width: 42px; height: 42px; cursor: pointer;
+  }
+  #settingsMenu {
+    position: absolute; top: calc(100% + 8px); right: 0; width: min(260px, calc(100vw - 24px));
+    background: #2a1b3df5; border: 3px solid #ffd84a; border-radius: 18px; padding: 8px;
+    display: flex; flex-direction: column; gap: 6px; z-index: 61; pointer-events: auto;
+  }
+  #settingsMenu.hidden { display: none; }
+  #settingsMenu button, #settingsMenu a {
+    width: 100%; min-width: 0; height: 40px; font-size: 16px; text-decoration: none;
+    display: flex; align-items: center; justify-content: flex-start; padding: 0 12px; background: #3a2752;
   }
   #toast {
     position: absolute; top: 22%; left: 50%; transform: translate(-50%, -10px) scale(.8); opacity: 0;
@@ -107,8 +117,14 @@
       <div class="pill order stroke" id="orderPill" style="display:none"><span class="ic">🚚</span><span id="orderTxt"></span></div>
     </div>
     <div class="btns">
-      <button id="muteBtn" title="Zvuk">♪</button>
-      <button id="pauseBtn" title="Pauza (P)">II</button>
+      <button id="settingsBtn" type="button" title="Podešavanja">⚙</button>
+      <div id="settingsMenu" class="hidden">
+        <button id="menuSound" type="button">♪ Zvuk uključen</button>
+        <button id="menuPause" type="button">II Pauza</button>
+        <!-- gameroom:back -->
+        <a href="../../" id="gameroom-back" title="Nazad u Gameroom" aria-label="Nazad u Gameroom">⌂ Nazad u Gameroom</a>
+        <!-- /gameroom:back -->
+      </div>
     </div>
   </div>
   <div id="toast" class="stroke"></div>
@@ -1832,18 +1848,28 @@ function resetGame() {
   try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ }
   location.reload();
 }
+function closeSettings() { $('settingsMenu').classList.add('hidden'); }
 function setPaused(p) {
   if (!S.running) return;
   S.paused = p;
   $('pauseScreen').classList.toggle('hidden', !p);
-  if (p) save();
+  $('menuPause').textContent = p ? '▶ Nastavi' : 'II Pauza';
+  if (p) { closeSettings(); save(); }
 }
 $('startBtn').addEventListener('click', startGame);
 $('newBtn').addEventListener('click', () => { if (confirm('Obrisati sav napredak i početi ispočetka?')) resetGame(); });
 $('resumeBtn').addEventListener('click', () => setPaused(false));
 $('resetBtn').addEventListener('click', () => { if (confirm('Obrisati sav napredak i početi ispočetka?')) resetGame(); });
-$('pauseBtn').addEventListener('click', e => { e.stopPropagation(); setPaused(!S.paused); });
-$('muteBtn').addEventListener('click', e => { e.stopPropagation(); sfx.ensure(); $('muteBtn').style.opacity = sfx.toggle() ? '0.45' : '1'; });
+$('settingsBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  $('settingsMenu').classList.toggle('hidden');
+});
+$('menuPause').addEventListener('click', e => { e.stopPropagation(); setPaused(!S.paused); });
+$('menuSound').addEventListener('click', e => {
+  e.stopPropagation();
+  sfx.ensure();
+  $('menuSound').textContent = sfx.toggle() ? '🔇 Zvuk isključen' : '♪ Zvuk uključen';
+});
 document.addEventListener('visibilitychange', () => { if (document.hidden) { setPaused(true); save(); } });
 addEventListener('pagehide', save);
 
@@ -1852,6 +1878,7 @@ addEventListener('pagehide', save);
 // =====================================================================
 addEventListener('keydown', e => {
   keys.add(e.code);
+  if (e.code === 'Escape' && !$('settingsMenu').classList.contains('hidden')) { closeSettings(); return; }
   if (e.code === 'KeyP' || e.code === 'Escape') setPaused(!S.paused);
   if ((e.code === 'Enter' || e.code === 'Space') && !S.running) startGame();
 });
@@ -1974,11 +2001,5 @@ if (AUTO) {
   document.title = `t=${S.time.toFixed(0)} money=${Math.floor(S.money)} earned=${Math.floor(S.earned)} base=${S.lv.base} bag=${S.lv.bag} axe=${S.lv.axe} boots=${S.lv.boots} unlocked=${S.unlocked.size} customers=${customers.length}`;
 }
 </script>
-<!-- gameroom:back — link nazad na landing (ne brisati) -->
-<a href="../../" id="gameroom-back" title="Nazad u Gameroom" aria-label="Nazad u Gameroom">⌂</a>
-<style>
-#gameroom-back{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(12px,env(safe-area-inset-bottom));z-index:2147483647;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(15,12,30,.72);color:#fff;font:700 20px/1 system-ui,sans-serif;text-decoration:none;box-shadow:0 4px 14px rgba(0,0,0,.35);opacity:.75;transition:opacity .15s,transform .15s;-webkit-tap-highlight-color:transparent}
-#gameroom-back:hover,#gameroom-back:focus-visible{opacity:1;transform:scale(1.08)}
-</style>
 </body>
 </html>

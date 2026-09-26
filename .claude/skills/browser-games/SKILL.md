@@ -25,7 +25,7 @@ games/<slug>/...            # opciono — dodatni asseti igre (relativne putanje
 ## Dodavanje nove igre — checklist
 
 1. Napravi `games/<slug>/index.html`.
-2. Na kraju `<body>` ubaci blok **gameroom:back** (kopiraj tačno iz postojeće igre, npr. `games/surprizi/index.html` — traži komentar `gameroom:back`). To je okrugli ⌂ link dole desno ka `../../`. Ako igra već ima UI dole desno, pomeri link u taj ugao koji je slobodan, ali ga ne izbacuj.
+2. Link **gameroom:back** ka `../../` ide u meni podešavanja (jedno dugme ⚙), ne kao kružić po ekranu. Zvuk, pauza i ostala podešavanja su u istom meniju. Komentar `gameroom:back` ostaje oko linka. Kopiraj obrazac iz `games/surprizi/index.html` ili `games/pilana-tajkun/index.html`.
 3. Napravi screenshotove (vidi „Cover slike“ dole) → `cover.jpg` i `hero.jpg`.
 4. Dodaj objekat **na početak** `GAMES` niza u `index.html` (prva igra je istaknuta u hero-u):
    ```js
@@ -34,7 +34,7 @@ games/<slug>/...            # opciono — dodatni asseti igre (relativne putanje
      emoji: '🚀', tags: ['3D', 'Akcija'], isNew: true }
    ```
    `accent` boje uzmi iz palete igre (koriste se za glow). `emoji` je samo fallback kad nema slike. Skini `isNew` sa prethodne igre.
-5. Proveri lokalno (vidi dole) — landing kartica vodi na igru, ⌂ vraća nazad.
+5. Proveri lokalno (vidi dole) — landing kartica vodi na igru, a „Nazad u Gameroom“ u meniju vraća nazad.
 
 ## Landing dizajn
 
