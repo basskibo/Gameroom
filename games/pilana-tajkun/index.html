@@ -279,6 +279,25 @@ const box = (w, h, d) => new THREE.BoxGeometry(w, h, d);
 const cyl = (rt, rb, h, s = 12) => new THREE.CylinderGeometry(rt, rb, h, s);
 const UPV = V(0, 1, 0);
 function orientAlong(obj, dir) { obj.quaternion.setFromUnitVectors(UPV, dir.clone().normalize()); }
+// orient a flat (XY-plane, extruded along Z) mesh so its face normal points along `normalDir`,
+// with `hintRight` (projected orthogonal) used as its local +X ("length") direction
+function orientFace(obj, normalDir, hintRight) {
+  const z = normalDir.clone().normalize();
+  let x = hintRight.clone().sub(z.clone().multiplyScalar(hintRight.dot(z)));
+  if (x.lengthSq() < 1e-6) x = new THREE.Vector3(1, 0, 0);
+  x.normalize();
+  const y = z.clone().cross(x).normalize();
+  x.copy(y).cross(z).normalize();
+  obj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
+}
+const hazardTex = (() => {
+  const k = canvas(64, 64), c = k.ctx;
+  c.fillStyle = '#f2c336'; c.fillRect(0, 0, 64, 64);
+  c.fillStyle = '#22262a';
+  for (let i = -64; i < 128; i += 22) { c.save(); c.translate(i, 0); c.rotate(Math.PI / 4); c.fillRect(-6, -80, 12, 200); c.restore(); }
+  k.tex.wrapS = k.tex.wrapT = THREE.RepeatWrapping; k.tex.repeat.set(2, 1);
+  return new THREE.MeshToonMaterial({ map: k.tex, gradientMap: ramp });
+})();
 
 function canvas(w, h) {
   const c = document.createElement('canvas'); c.width = w; c.height = h;
@@ -435,107 +454,181 @@ class Pile {
 }
 
 // =====================================================================
-// SAW STATION
+// STOCKPILE BIN (collection pit) — walls with hazard trim, physics-lite pile
 // =====================================================================
-const SAW_POS = V(-9, 0, 0);
-const sawGroup = new THREE.Group(); sawGroup.position.copy(SAW_POS); scene.add(sawGroup);
-// giant tapered trunk jutting diagonally from the forest toward the cutting point
-const TRUNK_LEN = 8.6;
-const TRUNK_DIR = V(1, -0.16, 0.34).normalize();
-const TRUNK_BASE = V(-2.6, 4.3, -3.0);
-const TRUNK_TIP = TRUNK_BASE.clone().addScaledVector(TRUNK_DIR, TRUNK_LEN);
+const stockpilePos = V(-3.4, 0, 0.4);
+const BIN_HALF_X = 2.3, BIN_HALF_Z = 2.0;
+const BIN_MIN = { x: stockpilePos.x - BIN_HALF_X, z: stockpilePos.z - BIN_HALF_Z };
+const BIN_MAX = { x: stockpilePos.x + BIN_HALF_X, z: stockpilePos.z + BIN_HALF_Z };
 {
-  // forest-side support cradle
-  mesh(cyl(0.5, 0.7, 2.4, 10), 0x5c4128, sawGroup, TRUNK_BASE.x - 0.3, 1.2, TRUNK_BASE.z);
-  mesh(cyl(0.5, 0.7, 2.4, 10), 0x5c4128, sawGroup, TRUNK_BASE.x + 1.1, 2.6, TRUNK_BASE.z + 0.9);
-
-  // shorten the visible trunk slightly so it terminates flush behind the blade plane
-  const trunk = mesh(cyl(0.55, 1.25, TRUNK_LEN * 0.94, 16), 0x8a5a34, sawGroup);
-  trunk.position.copy(TRUNK_BASE).addScaledVector(TRUNK_DIR, TRUNK_LEN * 0.94 / 2);
-  orientAlong(trunk, TRUNK_DIR);
-  // bark ridge rings for texture detail
-  for (let i = 1; i < 6; i++) {
-    const t = i / 7, rr = lerp(1.22, 0.62, t);
-    const ring = mesh(new THREE.TorusGeometry(rr, 0.05, 6, 20), 0x7a4d2c, sawGroup);
-    ring.position.copy(TRUNK_BASE).addScaledVector(TRUNK_DIR, TRUNK_LEN * t);
-    orientAlong(ring, TRUNK_DIR);
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(BIN_HALF_X * 2, BIN_HALF_Z * 2), M(0xaab2b8));
+  floor.rotation.x = -Math.PI / 2; floor.position.set(stockpilePos.x, 0.02, stockpilePos.z); floor.receiveShadow = true; scene.add(floor);
+  const wallH = 0.85, wallT = 0.28;
+  const spans = [
+    { x: stockpilePos.x, z: BIN_MIN.z, w: BIN_HALF_X * 2 + wallT, d: wallT },
+    { x: stockpilePos.x, z: BIN_MAX.z, w: BIN_HALF_X * 2 + wallT, d: wallT },
+    { x: BIN_MIN.x, z: stockpilePos.z, w: wallT, d: BIN_HALF_Z * 2 + wallT },
+    { x: BIN_MAX.x, z: stockpilePos.z, w: wallT, d: BIN_HALF_Z * 2 + wallT },
+  ];
+  for (const s of spans) {
+    mesh(box(s.w, wallH, s.d), 0x9aa1a8, scene, s.x, wallH / 2, s.z);
+    const trim = new THREE.Mesh(box(s.w + 0.06, 0.16, s.d + 0.06), hazardTex);
+    trim.position.set(s.x, wallH + 0.08, s.z); trim.castShadow = trim.receiveShadow = true; scene.add(trim);
   }
 }
-// angled circular blade biting right into the tip, spinning about its own tilted axis
-const BLADE_AXIS = TRUNK_DIR.clone().applyAxisAngle(V(0, 0, 1), 1.15).applyAxisAngle(V(1, 0, 0), 0.15).normalize();
-const sawArm = new THREE.Group();
-sawArm.position.copy(TRUNK_TIP).addScaledVector(TRUNK_DIR, -0.42);
-orientAlong(sawArm, BLADE_AXIS);
-sawGroup.add(sawArm);
-const sawSpin = new THREE.Group(); sawArm.add(sawSpin);
-const bladeFaceTex = (() => {
-  const k = canvas(256, 256), c = k.ctx, cx = 128, cy = 128, R = 124;
-  c.fillStyle = '#c7d2d8'; c.beginPath(); c.arc(cx, cy, R, 0, 7); c.fill();
-  c.strokeStyle = '#8f9aa1'; c.lineWidth = 3;
-  for (let i = 0; i < 12; i++) { c.beginPath(); c.moveTo(cx, cy); c.lineTo(cx + Math.cos(i / 12 * 7) * R, cy + Math.sin(i / 12 * 7) * R); c.stroke(); }
-  c.fillStyle = '#eef3f5'; c.beginPath(); c.arc(cx, cy, R * 0.32, 0, 7); c.fill();
-  c.fillStyle = '#c0392b'; c.beginPath(); c.arc(cx, cy, R * 0.13, 0, 7); c.fill();
-  c.fillStyle = '#5b6469';
-  for (let i = 0; i < 22; i++) {
-    const a = i / 22 * 7;
-    c.save(); c.translate(cx + Math.cos(a) * R, cy + Math.sin(a) * R); c.rotate(a);
-    c.fillRect(-4, -10, 14, 20); c.restore();
+
+// =====================================================================
+// SAW STATION — giant suspended pencil-log + slow slicing blade
+// =====================================================================
+const SAW_POS = V(-8.5, 0.3, 0.9);
+const sawGroup = new THREE.Group(); sawGroup.position.copy(SAW_POS); scene.add(sawGroup);
+const TRUNK_LEN = 7.4;
+const TRUNK_DIR = V(1, -0.2, 0.22).normalize();
+const TRUNK_BASE = V(-1.6, 4.0, -1.6);
+const TRUNK_TIP = TRUNK_BASE.clone().addScaledVector(TRUNK_DIR, TRUNK_LEN);
+const grainTex = (() => {
+  const k = canvas(64, 256), c = k.ctx;
+  c.fillStyle = '#c79a63'; c.fillRect(0, 0, 64, 256);
+  c.strokeStyle = 'rgba(120,80,45,0.5)';
+  for (let i = 0; i < 26; i++) {
+    c.lineWidth = 1 + Math.random() * 2;
+    const x0 = Math.random() * 64;
+    c.beginPath(); c.moveTo(x0, 0);
+    c.bezierCurveTo(x0 + rand(-8, 8), 85, x0 + rand(-10, 10), 170, x0 + rand(-8, 8), 256);
+    c.stroke();
   }
+  k.tex.wrapS = THREE.RepeatWrapping; k.tex.wrapT = THREE.RepeatWrapping; k.tex.repeat.set(2, 1);
   return k.tex;
 })();
-const bladeFaceMat = new THREE.MeshToonMaterial({ map: bladeFaceTex, gradientMap: ramp });
-const bladeSideMat = M(0x9aa6ac);
-const sawBlade = new THREE.Mesh(new THREE.CylinderGeometry(1.75, 1.75, 0.16, 32), [bladeSideMat, bladeFaceMat, bladeFaceMat]);
-sawBlade.castShadow = true; sawSpin.add(sawBlade);
-// gantry arm holding the blade, running from the ground straight up to the rig
 {
-  const mountBase = V(TRUNK_BASE.x + 3.4, 0, TRUNK_BASE.z + 3.0);
-  const mountTop = sawArm.position.clone();
-  const beamDir = mountTop.clone().sub(mountBase);
-  const beamLen = beamDir.length();
-  const beam = mesh(box(0.32, beamLen, 0.32), 0x3a4650, sawGroup);
-  beam.position.copy(mountBase).addScaledVector(beamDir.clone().normalize(), beamLen / 2);
-  orientAlong(beam, beamDir);
-  mesh(cyl(0.4, 0.55, 0.5, 10), 0x2b2f33, sawGroup, mountBase.x, 0.25, mountBase.z);
-  mesh(box(0.36, 0.36, 0.9), 0x2b2f33, sawGroup).position.copy(mountTop).addScaledVector(beamDir.clone().normalize(), -0.3);
+  const trunk = mesh(cyl(0.5, 1.2, TRUNK_LEN * 0.93, 16), new THREE.MeshToonMaterial({ map: grainTex, gradientMap: ramp }), sawGroup);
+  trunk.position.copy(TRUNK_BASE).addScaledVector(TRUNK_DIR, TRUNK_LEN * 0.93 / 2);
+  orientAlong(trunk, TRUNK_DIR);
+  // painted red collar band near the back, like a giant pencil
+  const bandT0 = 0.1, bandT1 = 0.22;
+  const bandLen = TRUNK_LEN * (bandT1 - bandT0);
+  const bandR = lerp(1.2, 0.5, (bandT0 + bandT1) / 2) + 0.02;
+  const band = mesh(cyl(bandR, bandR, bandLen, 16), 0xc0392b, sawGroup);
+  band.position.copy(TRUNK_BASE).addScaledVector(TRUNK_DIR, TRUNK_LEN * (bandT0 + bandT1) / 2);
+  orientAlong(band, TRUNK_DIR);
+  // suspension cable up to an unseen anchor, plus a bolt at the pivot
+  const anchor = TRUNK_BASE.clone().addScaledVector(TRUNK_DIR, 0.7).add(V(1.6, 5.5, -1.3));
+  const pivot = TRUNK_BASE.clone().addScaledVector(TRUNK_DIR, 0.7);
+  const cableDir = anchor.clone().sub(pivot);
+  const cable = mesh(cyl(0.035, 0.035, cableDir.length(), 6), 0xd8dde0, sawGroup);
+  cable.position.copy(pivot).addScaledVector(cableDir.clone().normalize(), cableDir.length() / 2);
+  orientAlong(cable, cableDir);
+  mesh(new THREE.SphereGeometry(0.14, 10, 8), 0xc0392b, sawGroup, pivot.x, pivot.y, pivot.z);
 }
+// slicing blade: a flat tapered knife shape, hinged so it swings a slow "bite" stroke per cut
+const bladeShape = new THREE.Shape();
+bladeShape.moveTo(0, 0.62); bladeShape.lineTo(0, -0.62);
+bladeShape.lineTo(2.75, -0.08); bladeShape.lineTo(2.95, 0); bladeShape.lineTo(2.75, 0.08);
+bladeShape.lineTo(0, 0.62);
+const bladeGeo = new THREE.ExtrudeGeometry(bladeShape, { depth: 0.1, bevelEnabled: false });
+const BLADE_HINGE_POS = TRUNK_TIP.clone().addScaledVector(TRUNK_DIR, -0.85).add(V(0, -0.55, 0));
+const bladeHinge = new THREE.Group(); bladeHinge.position.copy(BLADE_HINGE_POS); sawGroup.add(bladeHinge);
+// face the blade toward the camera (so its full flat silhouette reads clearly), tip aimed back up at the log
+orientFace(bladeHinge, CAM_DIR, TRUNK_DIR.clone().negate().add(V(0, 0.5, 0)));
+const BASE_HINGE_Z = 0.18;
+bladeHinge.rotation.z = BASE_HINGE_Z;
+const bladeOutline = new THREE.Mesh(bladeGeo, M(0x2b2f33));
+bladeOutline.scale.set(1.05, 1.09, 1); bladeOutline.position.set(0, 0, -0.09); bladeHinge.add(bladeOutline);
+const bladeMesh = new THREE.Mesh(bladeGeo, M(0x5c6a72));
+bladeMesh.position.set(0, 0, -0.05); bladeMesh.castShadow = true; bladeHinge.add(bladeMesh);
+const mountCollar = mesh(box(0.32, 1.3, 0.16), 0xc0392b, bladeHinge, 0.12, 0, -0.02);
+const bolt = mesh(cyl(0.16, 0.16, 0.2, 12), 0x2b2f33, bladeHinge, 0, 0, 0.12);
+bolt.rotation.x = Math.PI / 2;
 
 // =====================================================================
-// FLYING CHIP PARTICLES (juice on every cut)
+// PHYSICS-LITE FALLING CHIPS — cut debris tumbles into the bin and settles
 // =====================================================================
-const chipParticles = [];
-const CHIP_PART_GEO = box(0.16, 0.07, 0.07);
-function spawnChips(originWorld, count = 7) {
-  for (let i = 0; i < count; i++) {
-    const m = new THREE.Mesh(CHIP_PART_GEO, M(i % 3 === 0 ? 0xd8451f : 0xe8b84a));
-    m.position.copy(originWorld).addScaledVector(V(rand(-0.2, 0.2), rand(-0.1, 0.1), rand(-0.2, 0.2)), 1);
-    m.rotation.set(rand(0, 6), rand(0, 6), rand(0, 6));
+const BIN_CELL = 0.36;
+const BIN_COLS = Math.ceil((BIN_MAX.x - BIN_MIN.x) / BIN_CELL);
+const BIN_ROWS = Math.ceil((BIN_MAX.z - BIN_MIN.z) / BIN_CELL);
+const binHeight = new Float32Array(BIN_COLS * BIN_ROWS);
+function binCellIdx(x, z) {
+  const cx = clamp(Math.floor((x - BIN_MIN.x) / BIN_CELL), 0, BIN_COLS - 1);
+  const cz = clamp(Math.floor((z - BIN_MIN.z) / BIN_CELL), 0, BIN_ROWS - 1);
+  return cz * BIN_COLS + cx;
+}
+const CHIP_STACK_H = 0.07;
+const STOCKPILE_CAP = 220;
+const chipPool = [];
+const CUT_POINT = SAW_POS.clone().add(TRUNK_TIP);
+function spawnFallingChip() {
+  if (instant) return;
+  const idx = chipPool.length;
+  const m = chipMesh(idx); m.castShadow = true;
+  m.position.copy(CUT_POINT).add(V(rand(-0.15, 0.15), rand(-0.1, 0.1), rand(-0.15, 0.15)));
+  m.rotation.set(rand(0, 6), rand(0, 6), rand(0, 6));
+  scene.add(m);
+  const toBinX = stockpilePos.x - CUT_POINT.x, toBinZ = stockpilePos.z - CUT_POINT.z;
+  const obj = {
+    mesh: m, settled: false, bounced: 0, cell: -1,
+    vel: V(toBinX * rand(0.35, 0.6) + rand(-0.6, 0.6), rand(0.6, 1.6), toBinZ * rand(0.35, 0.6) + rand(-0.6, 0.6)),
+    spin: V(rand(-7, 7), rand(-7, 7), rand(-7, 7)),
+  };
+  chipPool.push(obj);
+}
+function growStockpile(count) {
+  for (let i = 0; i < count; i++) { if (chipPool.length >= STOCKPILE_CAP) break; spawnFallingChip(); }
+}
+function settleChip(c, cellIdx, floorY) {
+  c.settled = true; c.cell = cellIdx;
+  c.mesh.position.y = floorY;
+  binHeight[cellIdx] += CHIP_STACK_H;
+}
+function updateChipPhysics(dt) {
+  const g = 9.4;
+  for (const c of chipPool) {
+    if (c.settled) continue;
+    c.vel.y -= g * dt;
+    c.mesh.position.addScaledVector(c.vel, dt);
+    c.mesh.rotation.x += c.spin.x * dt; c.mesh.rotation.y += c.spin.y * dt; c.mesh.rotation.z += c.spin.z * dt;
+    c.mesh.position.x = clamp(c.mesh.position.x, BIN_MIN.x + 0.18, BIN_MAX.x - 0.18);
+    c.mesh.position.z = clamp(c.mesh.position.z, BIN_MIN.z + 0.18, BIN_MAX.z - 0.18);
+    const cellIdx = binCellIdx(c.mesh.position.x, c.mesh.position.z);
+    const floorY = binHeight[cellIdx] + 0.08;
+    if (c.mesh.position.y <= floorY) {
+      if (c.vel.y < -1.0 && c.bounced < 2) {
+        c.mesh.position.y = floorY;
+        c.vel.y *= -0.3; c.vel.x *= 0.45; c.vel.z *= 0.45; c.spin.multiplyScalar(0.5);
+        c.bounced++;
+      } else {
+        settleChip(c, cellIdx, floorY);
+      }
+    }
+  }
+}
+function removeTopChips(n) {
+  if (instant) return;
+  for (let k = 0; k < n; k++) {
+    let best = -1, bestY = -Infinity;
+    for (let i = 0; i < chipPool.length; i++) {
+      if (chipPool[i].mesh.position.y > bestY) { bestY = chipPool[i].mesh.position.y; best = i; }
+    }
+    if (best === -1) return;
+    const c = chipPool[best];
+    if (c.settled && c.cell >= 0) binHeight[c.cell] = Math.max(0, binHeight[c.cell] - CHIP_STACK_H);
+    scene.remove(c.mesh);
+    chipPool.splice(best, 1);
+  }
+}
+function instantFillStockpile(n) {
+  for (const c of chipPool) scene.remove(c.mesh);
+  chipPool.length = 0;
+  binHeight.fill(0);
+  const shown = Math.min(n, STOCKPILE_CAP);
+  const layout = moundLayout(Math.min(BIN_HALF_X, BIN_HALF_Z) * 0.9, 1.8, 0.85);
+  for (let i = 0; i < shown; i++) {
+    const m = chipMesh(i); m.castShadow = true;
+    layout(i, slotOut);
+    m.position.set(stockpilePos.x + slotOut.p.x, slotOut.p.y, stockpilePos.z + slotOut.p.z);
+    m.rotation.y = slotOut.r;
     scene.add(m);
-    chipParticles.push({ mesh: m, vel: V(rand(-2.4, 1.4), rand(2.5, 5), rand(-2.2, 2.2)), t: 0, life: rand(0.55, 0.95) });
+    chipPool.push({ mesh: m, settled: true, bounced: 2, cell: -1, vel: V(), spin: V() });
   }
-}
-function updateChipParticles(dt) {
-  for (let i = chipParticles.length - 1; i >= 0; i--) {
-    const p = chipParticles[i];
-    p.t += dt;
-    p.vel.y -= 11 * dt;
-    p.mesh.position.addScaledVector(p.vel, dt);
-    p.mesh.rotation.x += dt * 12; p.mesh.rotation.z += dt * 9;
-    const k = p.t / p.life;
-    if (k >= 1 || p.mesh.position.y < -0.3) { scene.remove(p.mesh); chipParticles.splice(i, 1); continue; }
-    p.mesh.scale.setScalar(1 - k * 0.4);
-  }
-}
-
-// stockpile yard
-const stockpilePos = V(-3.4, 0, 0.4);
-const stockPile = new Pile(scene, stockpilePos, moundLayout(2.6, 2.4, 0.85), 220, chipMesh);
-{
-  const padK = canvas(128, 128), pc = padK.ctx;
-  pc.fillStyle = '#e9c27f55'; pc.strokeStyle = '#e9c27f'; pc.lineWidth = 6; pc.setLineDash([12, 8]);
-  pc.beginPath(); pc.roundRect(6, 6, 116, 116, 18); pc.fill(); pc.stroke();
-  const pad = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.6), new THREE.MeshBasicMaterial({ map: padK.tex, transparent: true, depthWrite: false }));
-  pad.rotation.x = -Math.PI / 2; pad.position.set(-3.4, 0.02, 0.4); scene.add(pad);
 }
 
 // =====================================================================
@@ -628,14 +721,6 @@ for (let i = 0; i < 4; i++) {
 }
 
 // bridge deck (widens visually with BRIDGE lvl)
-const hazardTex = (() => {
-  const k = canvas(64, 64), c = k.ctx;
-  c.fillStyle = '#f2c336'; c.fillRect(0, 0, 64, 64);
-  c.fillStyle = '#22262a';
-  for (let i = -64; i < 128; i += 22) { c.save(); c.translate(i, 0); c.rotate(Math.PI / 4); c.fillRect(-6, -80, 12, 200); c.restore(); }
-  k.tex.wrapS = k.tex.wrapT = THREE.RepeatWrapping; k.tex.repeat.set(2, 1);
-  return new THREE.MeshToonMaterial({ map: k.tex, gradientMap: ramp });
-})();
 const bridgeGroup = new THREE.Group(); bridgeGroup.position.set(BRIDGE_X, 0, 0); scene.add(bridgeGroup);
 function buildBridge(lvl) {
   while (bridgeGroup.children.length) bridgeGroup.remove(bridgeGroup.children[0]);
@@ -855,10 +940,9 @@ function pickLoadingBay() {
 }
 function doSawCut(count) {
   S.stockpile += count;
-  stockPile.setCount(S.stockpile);
+  growStockpile(count);
   sfx.saw();
-  sawKick = 1;
-  if (!instant) { const p = V(); sawArm.getWorldPosition(p); spawnChips(p, Math.min(10, 4 + count)); }
+  sawStrokeT = STROKE_DUR;
 }
 function tickSaw(dt) {
   S.sawTimer += dt;
@@ -885,7 +969,7 @@ function tickForklift(dt) {
       if (n > 0) {
         S.stockpile -= n;
         bay.loaded += n;
-        stockPile.setCount(S.stockpile);
+        removeTopChips(n);
         bay.load.setCount(bay.loaded);
         sfx.drop();
         if (!instant) startForkTrip(bay, int);
@@ -934,11 +1018,13 @@ function tickBays(dt) {
   }
 }
 
-let sawKick = 0;
+const STROKE_DUR = 0.85, MAX_SWING = 0.85;
+let sawStrokeT = 0;
 function updateVisuals(dt) {
-  sawSpin.rotation.y += dt * 9;
-  if (sawKick > 0) { sawKick = Math.max(0, sawKick - dt * 4); sawArm.scale.setScalar(1 + sawKick * 0.06); }
-  updateChipParticles(dt);
+  if (sawStrokeT > 0) sawStrokeT = Math.max(0, sawStrokeT - dt);
+  const k = 1 - sawStrokeT / STROKE_DUR;
+  bladeHinge.rotation.z = BASE_HINGE_Z - Math.sin(Math.min(1, k) * Math.PI) * MAX_SWING;
+  updateChipPhysics(dt);
   for (const b of bays) {
     if (b.active && (b.state === 'transit' || b.state === 'queued')) {
       const spin = b.state === 'transit' ? 12 : 2.2;
@@ -1054,7 +1140,7 @@ buildRouteProp(0);
 if (!AUTO) {
   if (load()) {
     $('newBtn').classList.remove('hidden');
-    stockPile.setCount(S.stockpile);
+    instantFillStockpile(S.stockpile);
     buildRouteProp(S.lv.route);
     bridgeWidth = buildBridge(S.lv.bridge);
     relayoutLanes(S.lv.lanes);
