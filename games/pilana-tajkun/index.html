@@ -242,7 +242,7 @@
         <span>🌲</span><span>The forest is not endless. Hire a lumberjack or the saws run out of logs.</span>
         <span>🪵</span><span>The planer turns cut wood into boards. Buy another planer, up to three, and each machine runs on its own.</span>
         <span>⚙️</span><span>When the bin is overflowing, a chipper chews the extra wood. Buy another tile to make the bin itself bigger.</span>
-        <span>🏪</span><span>A shop lot sits east of the saws, joined to the mill road. Customers drive in that way and bunch up the trucks until the road is wide enough for them to pull over. A worker carries the wood, then a cart, then a belt that splits: one lane to the shop, one to the firewood.</span>
+        <span>🏪</span><span>A shop lot sits east of the saws, joined to the mill road. Customers drive in that way and bunch up the trucks until the road is wide enough for them to pull over. A worker carries the wood, then a cart, then a belt that splits: one lane to the shop, one to the firewood. That firewood lane rises over the shop road, and the cars drive under it.</span>
         <span>🪑</span><span>South of the shop, a joiner turns spare boards into a stool, then a bench, then a table, and carries each one over to sell.</span>
         <span>🔥</span><span>A chopping block east of the shop splits extra cut logs into firewood. Each bundle takes several seconds. A worker, then a cart, then the mill belt carries them to the rack. The rack has to sell before the next one is split.</span>
         <span>🚢</span><span>When the mill is already busy, an export desk by the buyer is where the extra money goes. Each contract is a small bump in truck pay and costs a lot more than the last.</span>
@@ -995,6 +995,7 @@ function cleared(x, z) {
   if (x > 6.2 && x < 14 && z > -38 && z < 12) return true;         // delivery drive
   if (x > -10 && x < 14 && z > -25.2 && z < -22.2) return true;   // shop road off the delivery drive
   if (x > -21.6 && x < -3.2 && z > -36.2 && z < -13.2) return true; // shop, joinery, firewood — east of the saw belts
+  if (x > -31.2 && x < -16.2 && z > -28.4 && z < -13.4) return true; // planers south of the bin, off the forklift lane
   if (x > 55.5 && x < 84 && z > -3 && z < 18.5) return true;          // market
   if (x > 41 && x < 51 && z > 14 && z < 23) return true;              // toll booth
   if (x > -1 && x < 7 && z > 1 && z < 7) return true;                 // road upgrade pad
@@ -1341,7 +1342,8 @@ function alongPath(points, k) {
   for (let i = 0; i < seg.length; i++) {
     if (dist <= seg[i] || i === seg.length - 1) {
       const t = seg[i] ? clamp(dist / seg[i], 0, 1) : 0;
-      return { x: lerp(points[i].x, points[i + 1].x, t), z: lerp(points[i].z, points[i + 1].z, t) };
+      const a = points[i], b = points[i + 1];
+      return { x: lerp(a.x, b.x, t), z: lerp(a.z, b.z, t), y: lerp(a.y || 0, b.y || 0, t) };
     }
     dist -= seg[i];
   }
@@ -1952,8 +1954,7 @@ class Forklift {
               S.boardHold = (S.boardHold || 0) + n;
               this.boardReserve = n; this.boards = 0; this.n = 0; this.fromPile = true;
               this.path = [
-                { x: H.x, z: FORK_ROW_Z },
-                { x: BOARD_PILE.x + 1.3, z: FORK_ROW_Z },
+                { x: BOARD_PILE.x + 1.3, z: H.z },
                 { x: BOARD_PILE.x + 1.3, z: BOARD_PILE.z + 1.15, sm: 0.45 },
               ];
               this.state = 'toBoards';
@@ -1980,7 +1981,7 @@ class Forklift {
           const tx = SPOT_X[this.truck.bay];
           const tz = -0.35;
           this.path = this.fromPile ? [
-            { x: BOARD_PILE.x + 1.3, z: -11.2 },
+            { x: BOARD_PILE.x + 1.3, z: BOARD_PILE.z + 1.2 },
             { x: BOARD_PILE.x + 1.3, z: FORK_ROW_Z },
             { x: tx, z: FORK_ROW_Z },
             { x: tx, z: tz, sm: 0.5, yaw: 0 },
@@ -2197,14 +2198,10 @@ function incomeRate() {
 // =====================================================================
 // PLANER — cut pieces in, boards out (boards sell for more)
 // =====================================================================
-const PLANER_X = -4.2;
-const PLANER_Z = [-5.6, -10.8, -16.0];
+const PLANER_X = -25.6;
+const PLANER_Z = [-16.4, -21.4, -26.4];
 const PLANER_AT = { x: PLANER_X, z: PLANER_Z[0] };
-const BOARD_PILE = { x: PLANER_X + 6.4, z: PLANER_Z[1] };
-const TUB_PICK = { x: -20.8, z: -6.6 };
-const IN_DROP = { x: PLANER_AT.x - 4.6, z: PLANER_AT.z };
-const OUT_PICK = { x: PLANER_AT.x + 3.4, z: PLANER_AT.z + 2.3 };
-const HAND_HOME = { x: PLANER_AT.x, z: PLANER_AT.z + 2.6 };
+const BOARD_PILE = { x: -17.6, z: -14.6 };
 const OUT_MAX = 3;
 function buildPlanerUnit(x, z, index) {
   const viz = { g: null, ghost: null, roller: null, outRoll: null, head: null, cutter: null, feed: [], out: null, outs: [], t: 0 };
@@ -2264,7 +2261,11 @@ function buildPlanerUnit(x, z, index) {
   viz.g = g;
   return viz;
 }
-const planers = PLANER_Z.map((z, i) => buildPlanerUnit(PLANER_X, z, i));
+const planers = PLANER_Z.map((z, i) => {
+  const u = buildPlanerUnit(PLANER_X, z, i);
+  u.infeed = 0; u.out = 0;
+  return u;
+});
 part(rbox(1.9, 0.1, 1.35, 0.04, 1), 0x8a6240, scene, BOARD_PILE.x, 0.06, BOARD_PILE.z, 0, 0, 0, false);
 const kamara = [];
 for (let i = 0; i < 12; i++) {
@@ -2289,7 +2290,9 @@ function buildPlanerHand() {
   board.visible = false;
   return { g, body, pieces, board };
 }
-const hand = Object.assign(buildPlanerHand(), { x: HAND_HOME.x, z: HAND_HOME.z, y: 0, yaw: 0, state: 'idle', carry: '', wait: 0, moving: false, path: null });
+const hands = PLANER_Z.map((z, i) => Object.assign(buildPlanerHand(), {
+  i, x: PLANER_X + 1.4, z: z + 2.2, y: 0, yaw: 0, state: 'idle', carry: '', wait: 0, moving: false,
+}));
 function planerOn() { return UP.planer.vals[S.lv.planer] >= 1; }
 function planerCount() { return planerOn() ? UP.planerN.vals[S.lv.planerN] : 0; }
 function updatePlanerLook() {
@@ -2307,65 +2310,71 @@ function syncBoardStack() {
 function boardLimit() { return UP.boardCap.vals[S.lv.boardCap]; }
 function handSpeed() {
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
-  return (5.2 + (2.6 - interval) * 1.2) * UP.planerCrew.vals[S.lv.planerCrew];
+  return (4.2 + (2.6 - interval) * 0.8) * UP.planerCrew.vals[S.lv.planerCrew];
 }
-function stepHand(dt, tx, tz, ty = 0) {
-  const dx = tx - hand.x, dy = ty - hand.y, dz = tz - hand.z, dist = Math.hypot(dx, dy, dz);
-  if (dist < 0.12) { hand.x = tx; hand.z = tz; hand.y = ty; return true; }
+function boardsPending() {
+  let n = S.boards;
+  for (const u of planers) n += u.out;
+  for (const h of hands) if (h.carry === 'board') n++;
+  return n;
+}
+function stepHand(h, dt, tx, tz) {
+  const dx = tx - h.x, dz = tz - h.z, dist = Math.hypot(dx, dz);
+  if (dist < 0.12) { h.x = tx; h.z = tz; return true; }
   const step = Math.min(dist, handSpeed() * dt);
-  hand.x += dx / dist * step; hand.y += dy / dist * step; hand.z += dz / dist * step;
-  if (dx * dx + dz * dz > 1e-4) hand.yaw = yawOf(dx, dz);
-  hand.moving = true;
+  h.x += dx / dist * step; h.z += dz / dist * step;
+  h.yaw = yawOf(dx, dz); h.moving = true;
   return false;
 }
-function walkPath(dt) {
-  if (!hand.path || !hand.path.length) return true;
-  const w = hand.path[0];
-  if (stepHand(dt, w.x, w.z, w.y || 0)) hand.path.shift();
-  return !hand.path.length;
-}
-function updateHand(dt) {
-  if (!planerOn()) return;
-  hand.moving = false;
-  const room = S.boards + S.outBoard + (hand.carry === 'board' ? 1 : 0) < boardLimit();
-  switch (hand.state) {
+function updateHand(h, dt) {
+  if (!planerOn() || h.i >= planerCount()) { h.moving = false; return; }
+  const u = planers[h.i];
+  const z = PLANER_Z[h.i];
+  const home = { x: PLANER_X + 1.4, z: z + 2.2 };
+  const tub = { x: PLANER_X + (h.i - 1) * 1.4, z: -13.3 };
+  const drop = { x: PLANER_X - 3.1, z };
+  const take = { x: PLANER_X + 3.5, z };
+  const pile = { x: BOARD_PILE.x - 1.1, z: BOARD_PILE.z };
+  h.moving = false;
+  const room = boardsPending() < boardLimit();
+  switch (h.state) {
     case 'idle':
-      if (S.outBoard) hand.state = 'toOut';
-      else if (hand.carry === 'pieces') hand.state = 'toIn';
-      else if (hand.carry === 'board') hand.state = 'toPile';
-      else if (room && S.infeed < 8 && S.stockpile >= PLANER_KEEP + BOARD_IN) hand.state = 'toTub';
-      else stepHand(dt, HAND_HOME.x, HAND_HOME.z);
+      if (u.out) h.state = 'toOut';
+      else if (h.carry === 'pieces') h.state = 'toIn';
+      else if (h.carry === 'board') h.state = 'toPile';
+      else if (room && u.infeed < 6 && S.stockpile >= PLANER_KEEP + BOARD_IN) h.state = 'toTub';
+      else stepHand(h, dt, home.x, home.z);
       break;
-    case 'toTub': if (stepHand(dt, TUB_PICK.x, TUB_PICK.z)) { hand.state = 'scoop'; hand.wait = 0; } break;
+    case 'toTub': if (stepHand(h, dt, tub.x, tub.z)) { h.state = 'scoop'; h.wait = 0; } break;
     case 'scoop':
-      hand.wait += dt;
-      if (hand.wait > 0.22) {
+      h.wait += dt;
+      if (h.wait > 0.22) {
         if (S.stockpile >= PLANER_KEEP + BOARD_IN) {
           S.stockpile -= BOARD_IN;
           if (!instant) removePieces(BOARD_IN);
-          hand.carry = 'pieces'; hand.state = 'toIn';
-        } else hand.state = 'idle';
+          h.carry = 'pieces'; h.state = 'toIn';
+        } else h.state = 'idle';
       }
       break;
-    case 'toIn': if (stepHand(dt, IN_DROP.x, IN_DROP.z)) { hand.state = 'dropIn'; hand.wait = 0; } break;
+    case 'toIn': if (stepHand(h, dt, drop.x, drop.z)) { h.state = 'dropIn'; h.wait = 0; } break;
     case 'dropIn':
-      hand.wait += dt;
-      if (hand.wait > 0.28) { S.infeed += BOARD_IN; hand.carry = ''; hand.state = S.outBoard ? 'toOut' : 'idle'; }
+      h.wait += dt;
+      if (h.wait > 0.28) { u.infeed += BOARD_IN; h.carry = ''; h.state = u.out ? 'toOut' : 'idle'; }
       break;
-    case 'toOut': if (stepHand(dt, OUT_PICK.x, OUT_PICK.z)) { hand.state = 'takeOut'; hand.wait = 0; } break;
+    case 'toOut': if (stepHand(h, dt, take.x, take.z)) { h.state = 'takeOut'; h.wait = 0; } break;
     case 'takeOut':
-      hand.wait += dt;
-      if (hand.wait > 0.28) {
-        if (S.outBoard > 0) { S.outBoard--; hand.carry = 'board'; hand.state = 'toPile'; }
-        else hand.state = 'idle';
+      h.wait += dt;
+      if (h.wait > 0.28) {
+        if (u.out > 0) { u.out--; h.carry = 'board'; h.state = 'toPile'; }
+        else h.state = 'idle';
       }
       break;
-    case 'toPile': if (stepHand(dt, BOARD_PILE.x - 1.05, BOARD_PILE.z)) { hand.state = 'dropPile'; hand.wait = 0; } break;
+    case 'toPile': if (stepHand(h, dt, pile.x, pile.z)) { h.state = 'dropPile'; h.wait = 0; } break;
     case 'dropPile':
-      hand.wait += dt;
-      if (hand.wait > 0.28) {
-        if (hand.carry === 'board') { S.boards++; if (!instant) sfx.drop(); }
-        hand.carry = ''; hand.state = 'idle';
+      h.wait += dt;
+      if (h.wait > 0.28) {
+        if (h.carry === 'board') { S.boards++; if (!instant) sfx.drop(); }
+        h.carry = ''; h.state = 'idle';
       }
       break;
   }
@@ -2373,66 +2382,60 @@ function updateHand(dt) {
 function updatePlaner(dt) {
   if (!planerOn()) return;
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
-  const blocked = S.outBoard >= OUT_MAX || S.infeed < BOARD_IN || S.boards + S.outBoard >= boardLimit();
-  if (blocked) { S.planerT = Math.min(S.planerT, interval * 0.2); }
-  else {
-    S.planerT += dt;
-    if (S.planerT >= interval) {
-      S.planerT = 0;
-      S.infeed -= BOARD_IN;
-      S.outBoard++;
-      if (!instant) sfx.planer();
-    }
-  }
-  planers[0].t = S.planerT;
   const n = planerCount();
-  for (let i = 1; i < n; i++) {
+  for (let i = 0; i < n; i++) {
     const u = planers[i];
-    if (S.stockpile < PLANER_KEEP + BOARD_IN || S.boards >= boardLimit()) { u.t = Math.min(u.t, interval * 0.2); continue; }
-    u.t += dt;
-    if (u.t < interval) continue;
-    u.t = 0;
-    S.stockpile -= BOARD_IN;
-    S.boards++;
-    if (!instant) { removePieces(BOARD_IN); sfx.planer(); }
+    const blocked = u.out >= OUT_MAX || u.infeed < BOARD_IN || boardsPending() >= boardLimit();
+    if (blocked) u.t = Math.min(u.t, interval * 0.2);
+    else {
+      u.t += dt;
+      if (u.t >= interval) {
+        u.t = 0;
+        u.infeed -= BOARD_IN;
+        u.out++;
+        if (!instant) sfx.planer();
+      }
+    }
+    updateHand(hands[i], dt);
   }
+  S.infeed = planers[0].infeed;
+  S.outBoard = planers[0].out;
+  S.planerT = planers[0].t;
 }
-function planerBusy() {
-  return planerOn() && S.outBoard < OUT_MAX && S.infeed >= BOARD_IN && S.boards + S.outBoard < boardLimit();
+function planerBusy(i = 0) {
+  const u = planers[i];
+  return planerOn() && u.out < OUT_MAX && u.infeed >= BOARD_IN && boardsPending() < boardLimit();
 }
 function updatePlanerVisual(dt, time) {
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
   const running = S.running && !S.paused;
+  const n = planerCount();
   planers.forEach((u, mi) => {
     if (!u.g.visible) return;
-    const first = mi === 0;
-    const busy = running && (first ? planerBusy() : u.t > 0.05);
-    const phase = first
-      ? (busy ? clamp(S.planerT / interval, 0, 1) : 0)
-      : clamp(u.t / interval, 0, 1);
+    const busy = running && mi < n && planerBusy(mi);
+    const phase = busy ? clamp(u.t / interval, 0, 1) : 0;
     if (busy && u.roller) u.roller.rotation.y += dt * 10;
     if (busy && u.outRoll) u.outRoll.rotation.y += dt * 8;
     if (busy && u.cutter) u.cutter.rotation.y += dt * 18;
     if (u.head) u.head.position.y = 1.55 + (busy ? Math.sin(phase * Math.PI) * -0.12 : 0);
     u.feed.forEach((m, i) => {
-      const show = first ? i < Math.min(u.feed.length, S.infeed) : busy && i < 2;
-      m.visible = show;
+      m.visible = i < Math.min(u.feed.length, u.infeed);
       const col = i % 2, row = Math.floor(i / 2);
       let x = -3.6 + col * 0.7;
       if (busy && i === 0) x = lerp(-3.6, -1.2, phase);
       m.position.set(x, 1.2, row ? 0.28 : -0.28);
     });
-    if (first) {
-      const nOut = Math.min(OUT_MAX, S.outBoard | 0);
-      u.outs.forEach((m, i) => { m.visible = i < nOut; });
-    } else u.outs.forEach((m, i) => { m.visible = i === 0 && phase > 0.72; });
+    const nOut = Math.min(OUT_MAX, u.out | 0);
+    u.outs.forEach((m, i) => { m.visible = i < nOut; });
   });
-  hand.g.visible = planerOn();
-  hand.g.position.set(hand.x, hand.y, hand.z);
-  hand.g.rotation.y = hand.yaw;
-  hand.body.position.y = hand.moving ? Math.abs(Math.sin(time * 10)) * 0.06 : 0;
-  hand.pieces.visible = hand.carry === 'pieces';
-  hand.board.visible = hand.carry === 'board';
+  hands.forEach((h, i) => {
+    h.g.visible = planerOn() && i < n;
+    h.g.position.set(h.x, h.y, h.z);
+    h.g.rotation.y = h.yaw;
+    h.body.position.y = h.moving ? Math.abs(Math.sin(time * 10 + i)) * 0.06 : 0;
+    h.pieces.visible = h.carry === 'pieces';
+    h.board.visible = h.carry === 'board';
+  });
 }
 
 // =====================================================================
@@ -2499,7 +2502,9 @@ const HAUL_PTS = [
 const BELT_TEE = { x: -19.6, z: -19.6 };
 const BELT_TRUNK = [{ x: -20.9, z: -13.3 }, { x: -19.6, z: -15.2 }, BELT_TEE];
 const BELT_SHOP = [BELT_TEE, { x: -19.6, z: -21.4 }, { x: -14.4, z: -21.4 }, { x: -14.4, z: -22.5 }];
-const BELT_FIRE = [BELT_TEE, { x: -4.6, z: -19.6 }, { x: -4.6, z: -27.4 }, { x: -6.6, z: -28.3 }];
+// crosses east of the parking stalls, then climbs over the shop road so cars pass underneath
+const BELT_CROSS_X = 2.2;
+const BELT_FIRE = [BELT_TEE, { x: BELT_CROSS_X, z: -19.6 }, { x: BELT_CROSS_X, z: -21.7, y: 1.65 }, { x: BELT_CROSS_X, z: -25.7, y: 1.65 }, { x: BELT_CROSS_X, z: -27.4 }, { x: -6.6, z: -28.3 }];
 const SHOP_FLOW = [...BELT_TRUNK, ...BELT_SHOP.slice(1)];
 const FIRE_FLOW = [...BELT_TRUNK, ...BELT_FIRE.slice(1)];
 let HAUL_LEN = 0;
@@ -2618,15 +2623,38 @@ function buildPalletStack(x, z) {
   }
   return { g, logs };
 }
+function beltJoint(parent, p) {
+  const y = 0.32 + (p.y || 0);
+  part(rbox(0.84, 0.1, 0.84, 0.03, 1), 0x3a4048, parent, p.x, y, p.z, 0, 0, 0, false);
+  const ry = y + 0.09;
+  part(rbox(0.88, 0.1, 0.08, 0.02, 1), 0xf5c518, parent, p.x, ry, p.z + 0.38, 0, 0, 0, false);
+  part(rbox(0.88, 0.1, 0.08, 0.02, 1), 0xf5c518, parent, p.x, ry, p.z - 0.38, 0, 0, 0, false);
+  part(rbox(0.08, 0.1, 0.72, 0.02, 1), 0xf5c518, parent, p.x + 0.38, ry, p.z, 0, 0, 0, false);
+  part(rbox(0.08, 0.1, 0.72, 0.02, 1), 0xf5c518, parent, p.x - 0.38, ry, p.z, 0, 0, 0, false);
+}
 function layBelt(parent, pts) {
+  const ext = 0.38;
   for (let i = 1; i < pts.length; i++) {
     const a = pts[i - 1], b = pts[i];
-    const dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 1;
-    const yaw = Math.atan2(dx, dz);
-    const mx = (a.x + b.x) / 2, mz = (a.z + b.z) / 2;
-    part(rbox(0.62, 0.08, L, 0.02, 1), 0x3a4048, parent, mx, 0.32, mz, 0, yaw, 0, false);
-    const rx = dz / L, rz = -dx / L;
-    for (const s of [-1, 1]) part(rbox(0.06, 0.1, L, 0.02, 1), 0xf5c518, parent, mx + rx * s * 0.32, 0.4, mz + rz * s * 0.32, 0, yaw, 0, false);
+    const dx = b.x - a.x, dz = b.z - a.z, L = Math.hypot(dx, dz) || 0.001;
+    const ya = a.y || 0, yb = b.y || 0;
+    const g = new THREE.Group();
+    g.position.set((a.x + b.x) / 2, 0.32 + (ya + yb) / 2, (a.z + b.z) / 2);
+    g.rotation.order = 'YXZ';
+    g.rotation.y = Math.atan2(dx, dz);
+    g.rotation.x = -Math.atan2(yb - ya, L);
+    parent.add(g);
+    const len = L + ext * 2;
+    part(rbox(0.64, 0.08, len, 0.02, 1), 0x3a4048, g, 0, 0, 0, 0, 0, 0, false);
+    for (const s of [-1, 1]) part(rbox(0.07, 0.1, len, 0.02, 1), 0xf5c518, g, s * 0.33, 0.08, 0, 0, 0, 0, false);
+  }
+  for (let i = 1; i < pts.length - 1; i++) beltJoint(parent, pts[i]);
+}
+function layBeltBridge(parent) {
+  const x = BELT_CROSS_X, top = 0.32 + 1.65, foot = top - 0.14;
+  for (const z of [-21.7, -25.7]) {
+    for (const s of [-1, 1]) part(rbox(0.14, foot, 0.14, 0.02), 0x5c4632, parent, x + s * 0.55, foot / 2, z);
+    part(rbox(1.24, 0.1, 0.16, 0.02), 0x5c4632, parent, x, foot + 0.05, z, 0, 0, 0, false);
   }
 }
 function beltLogs(parent, n) {
@@ -2639,9 +2667,9 @@ function beltLogs(parent, n) {
 }
 function buildShopBelt() {
   const g = new THREE.Group(); scene.add(g);
-  const trunk = new THREE.Group(); g.add(trunk); layBelt(trunk, BELT_TRUNK);
+  const trunk = new THREE.Group(); g.add(trunk); layBelt(trunk, BELT_TRUNK); beltJoint(trunk, BELT_TEE);
   const shop = new THREE.Group(); g.add(shop); layBelt(shop, BELT_SHOP);
-  const fire = new THREE.Group(); g.add(fire); layBelt(fire, BELT_FIRE);
+  const fire = new THREE.Group(); g.add(fire); layBelt(fire, BELT_FIRE); layBeltBridge(fire);
   trunk.visible = shop.visible = fire.visible = false;
   return { g, trunk, shop, fire, shopRiders: beltLogs(g, 4), fireRiders: beltLogs(g, 4) };
 }
@@ -2993,7 +3021,7 @@ function syncRetail(dt, time) {
       m.visible = flow;
       if (!flow) return;
       const p = alongPath(SHOP_FLOW, (time * 0.07 + i / shopViz.belt.shopRiders.length) % 1);
-      m.position.set(p.x, 0.55, p.z);
+      m.position.set(p.x, 0.55 + (p.y || 0), p.z);
     });
   }
   const n = palletCount();
@@ -3284,7 +3312,7 @@ function syncYardGoods(dt, time) {
     m.visible = beltOn && S.stockpile > FIRE_KEEP && firePile < FIRE_CAP;
     if (!m.visible) return;
     const p = alongPath(FIRE_FLOW, (time * 0.07 + i / yardViz.fire.riders.length) % 1);
-    m.position.set(p.x, 0.55, p.z);
+    m.position.set(p.x, 0.55 + (p.y || 0), p.z);
   });
   const walk = fOn && S.lv.fireHaul < 2;
   const cartOn = fOn && S.lv.fireHaul === 2;
