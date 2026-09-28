@@ -240,8 +240,8 @@
         <span>👆</span><span>Tap a machine — the saw, a forklift, a truck, the planer — and buy its upgrades from the panel.</span>
         <span>🪚</span><span>Buy more saws. Each new lane cuts logs, and they all fall into the same bin.</span>
         <span>🌲</span><span>The forest is not endless. Hire a lumberjack or the saws run out of logs.</span>
-        <span>🪵</span><span>The planers sit west of the saw belts, beside the bin. Each machine has its own worker, who fetches wood along that west side so the forklifts never drive through them. Finished boards stack on pallets by the yard. Buy another pallet when you need room for more.</span>
-        <span>⚙️</span><span>When the bin is overflowing, a chipper chews the extra wood. Buy another tile to make the bin itself bigger.</span>
+        <span>🪵</span><span>The planers sit west of the saw belts, clear of the bin. Each machine has its own worker, who picks wood up at the bin's north gate. Forklifts use that same gate. Finished boards stack on pallets by the yard. Buy another pallet when you need room for more.</span>
+        <span>⚙️</span><span>When the bin is overflowing, a chipper on that gate chews the extra wood. Buy another tile to make the bin itself bigger.</span>
         <span>🏪</span><span>The shop sits further up the hill. People come out of a tunnel and line up. Each one asks for several logs, and only then does the hauler or the belt send that many. The logs stack on the pallets until the seller hands them over. The seller takes a wage. A long line just waits.</span>
         <span>🪑</span><span>The furniture stand is beside the shop. The joiner still builds from spare boards, then carries each piece over. People from the same tunnel queue there and ask for more than one. A seller works the stand and takes a wage. If the shelf is slow, they wait.</span>
         <span>🔥</span><span>A chopping block east of the shop splits extra cut logs into firewood. Each bundle takes several seconds. A worker, then a cart, then the mill belt carries them to the rack. The rack has to sell before the next one is split.</span>
@@ -397,7 +397,7 @@ scene.fog = new THREE.Fog(0x8cc8e0, 110, 230);
 const camera = new THREE.PerspectiveCamera(32, 1, 1, 500);
 const CAM_DIR = V(0.42, 1.2, 1).normalize();
 const cam = { target: V(-20, 0, -1), dist: 46, vel: V(), minD: 14, maxD: 95, tween: null };
-const BOUNDS = { x0: -72, x1: 80, z0: -66, z1: 28 };
+const BOUNDS = { x0: -86, x1: 80, z0: -66, z1: 28 };
 
 scene.add(new THREE.HemisphereLight(0xeaf6ff, 0x557a36, 1.15));
 const sun = new THREE.DirectionalLight(0xfff0d4, 2.7);
@@ -597,7 +597,11 @@ const YARD = { x0: -34, x1: 14, z0: -20, z1: 14 };
 const SPOT_X = [-27.2, -22.2, -17.2, -12.2, -7.2, -2.2];
 const SPOT_Z = 3.4;
 const AISLE_OUT_Z = 7.7 + LANE, AISLE_RET_Z = 7.7 - LANE;
-const TUB = { x0: -30.6, x1: -21.4, z0: -12.1, z1: -3.9 };
+const TUB = { x0: -30.6, x1: -21.4, z0: -12.1, z1: -6.8 };
+const DOCK_Z = -4.75;
+const DOCK_BAYS = [-28.6, -26.3, -24.0];
+const TUB_STOPS = [{ x: -31.4, z: -5.55 }, { x: -27.45, z: -5.7 }, { x: -25.15, z: -5.7 }];
+const CHIP_AT = { x: -33.6, z: -4.35 };
 const FORK_HOME = [V(-20.2, 0, -11.5), V(-17.7, 0, -11.5), V(-15.2, 0, -11.5), V(-12.7, 0, -11.5), V(-10.2, 0, -11.5)];
 const FORK_LANE_Z = -2.7;
 const FORK_ROW_Z = FORK_LANE_Z;
@@ -991,9 +995,10 @@ function distToPts(pts, x, z, lim) {
 function cleared(x, z) {
   if (x > YARD.x0 - 1.8 && x < YARD.x1 + 1.5 && z > YARD.z0 - 1.8 && z < YARD.z1 + 1.8) return true;
   if (x > -38 && x < -16 && z > -44 && z < -11) return true;        // conveyors + log deck + saw pads
-  if (x > -64 && x < -36 && z > -14 && z < 14) return true;         // logging camp
+  if (x > -82 && x < -52 && z > -16 && z < 16) return true;         // logging camp, west of the planers
   if (x > -46 && x < -30 && z > -42 && z < -6) return true;         // lumberjack path to the log deck
-  if (x > -50 && x < -16 && z > -21 && z < 2) return true;          // bin expansion, chipper, planer
+  if (x > -50 && x < -16 && z > -21 && z < 2) return true;          // bin expansion and the pickup apron
+  if (x > -56 && x < -46 && z > -36 && z < 2) return true;          // planers, clear of the bin
   if (x > 6.2 && x < 14 && z > -38 && z < 12) return true;         // delivery drive
   if (x > -10 && x < 14 && z > -25.2 && z < -22.2) return true;   // shop road off the delivery drive
   if (x > -21.6 && x < -3.2 && z > -36.2 && z < -13.2) return true; // shop, joinery, firewood — east of the saw belts
@@ -1209,15 +1214,15 @@ function cutLogPiece(lane) {
 // =====================================================================
 // LOGGING CAMP — cutters refill timber, saws stop when the pile is empty
 // =====================================================================
-const CAMP = { x: -50, z: 0 };
-const CAMP_PILE = V(-40.2, 0, 0.2);
-const CAMP_TREES_POS = [V(-45.5, 0, -4.2), V(-47.6, 0, 4.4), V(-53.2, 0, -4.6), V(-42.8, 0, 2.2)];
-const CUTTER_HOME = [V(-53.2, 0, -0.6), V(-54.4, 0, 2.2), V(-51.6, 0, 3.4)];
+const CAMP = { x: -66, z: 0 };
+const CAMP_PILE = V(CAMP.x + 9.8, 0, 0.2);
+const CAMP_TREES_POS = [V(CAMP.x + 4.5, 0, -4.2), V(CAMP.x + 2.4, 0, 4.4), V(CAMP.x - 3.2, 0, -4.6), V(CAMP.x + 7.2, 0, 2.2)];
+const CUTTER_HOME = [V(CAMP.x - 3.2, 0, -0.6), V(CAMP.x - 4.4, 0, 2.2), V(CAMP.x - 1.6, 0, 3.4)];
 {
   const g = new THREE.Group(); scene.add(g);
   part(rbox(20, 0.1, 15, 0.08, 1), 0xc6ad78, g, CAMP.x, 0.02, CAMP.z, 0, 0, 0, false);
   part(rbox(16, 0.08, 11, 0.05, 1), 0xb8956a, g, CAMP.x - 0.4, 0.06, CAMP.z, 0, 0, 0, false);
-  const hut = new THREE.Group(); hut.position.set(-56.2, 0, 1.1); g.add(hut);
+  const hut = new THREE.Group(); hut.position.set(CAMP.x - 6.2, 0, 1.1); g.add(hut);
   part(rbox(4.4, 2.5, 3.6, 0.1, 1), 0x8d5a32, hut, 0, 1.25, 0);
   part(rbox(1.1, 1.6, 0.12, 0.04, 1), 0x4a3424, hut, 0, 0.85, 1.82);
   for (const s of [-1, 1]) {
@@ -1395,12 +1400,25 @@ function buildTubWalls() {
   const g = new THREE.Group(); scene.add(g); tubGroup = g;
   const w = TUB.x1 - TUB.x0, d = TUB.z1 - TUB.z0, cx = (TUB.x0 + TUB.x1) / 2, cz = (TUB.z0 + TUB.z1) / 2, H = 1.25, T = 0.34;
   part(rbox(w, 0.1, d, 0.03, 1), 0xb4b9be, g, cx, 0.12, cz, 0, 0, 0, false);
-  const walls = [[cx, TUB.z0, w + T, T], [cx, TUB.z1, w + T, T], [TUB.x0, cz, T, d + T], [TUB.x1, cz, T, d + T]];
-  for (const [x, z, ww, dd] of walls) {
+  const addWall = (x, z, ww, dd) => {
     part(rbox(ww, H, dd, 0.06, 1), 0xc9cdd1, g, x, H / 2 + 0.06, z);
     const cap = new THREE.Mesh(dd > ww ? boxG(dd + 0.02, 0.12, ww + 0.02) : boxG(ww + 0.02, 0.12, dd + 0.02), hazardMat(Math.max(ww, dd)));
     if (dd > ww) cap.rotation.y = Math.PI / 2;
     cap.position.set(x, H + 0.12, z); cap.castShadow = true; g.add(cap);
+  };
+  addWall(cx, TUB.z0, w + T, T);
+  addWall(TUB.x0, cz, T, d + T);
+  addWall(TUB.x1, cz, T, d + T);
+  const gap0 = -29.7, gap1 = -22.7;
+  const leftW = gap0 - TUB.x0, rightW = TUB.x1 - gap1;
+  if (leftW > 0.4) addWall((TUB.x0 + gap0) / 2, TUB.z1, leftW, T);
+  if (rightW > 0.4) addWall((gap1 + TUB.x1) / 2, TUB.z1, rightW, T);
+  for (const x of [gap0, gap1]) part(rbox(0.28, 1.7, 0.28, 0.04, 1), 0xf2a93b, g, x, 0.9, TUB.z1 + 0.05);
+  const ax0 = -35.4, ax1 = -21.3, az0 = -6.7, az1 = -3.4;
+  part(rbox(ax1 - ax0, 0.08, az1 - az0, 0.04, 1), 0xc5c9cd, g, (ax0 + ax1) / 2, 0.16, (az0 + az1) / 2, 0, 0, 0, false);
+  for (const x of DOCK_BAYS) {
+    part(boxG(0.1, 0.02, 2.2), lineYellow, g, x - 0.85, 0.22, DOCK_Z, 0, 0, 0, false);
+    part(boxG(0.1, 0.02, 2.2), lineYellow, g, x + 0.85, 0.22, DOCK_Z, 0, 0, 0, false);
   }
 }
 function resizeTub() {
@@ -1805,8 +1823,15 @@ class Truck {
 }
 
 // =====================================================================
-// FORKLIFT LOGIC — scoop from the tub, drive, load the truck from behind, back out
+// FORKLIFT LOGIC — pull into the bin gate, drive, load the truck from behind, back out
 // =====================================================================
+function forkLaneLock(state, x, z) {
+  if (state === 'toHome' || z >= FORK_LANE_Z) return false;
+  if (state !== 'toTruck' && state !== 'toBoards' && state !== 'toTub') return false;
+  if (x > -8.5) return false;
+  if (x > -36.2 && x < -20.6 && z > -6.65) return false;
+  return true;
+}
 const forks = [];
 const F_ACC = 6.5, F_TURN = 4.6;
 class Forklift {
@@ -1814,7 +1839,7 @@ class Forklift {
     this.i = i; this.home = FORK_HOME[i].clone();
     this.m = buildForklift(); scene.add(this.m.g);
     this.pos = this.home.clone(); this.yaw = -Math.PI / 2; this.v = 0; this.dir = 1;
-    this.state = 'idle'; this.n = 0; this.boards = 0; this.boardReserve = 0; this.fromPile = false; this.vanJob = false; this.lift = 0; this.timer = 0; this.truck = null; this.path = []; this.waitT = 0; this.blockT = 0; this.wheelA = 0; this.pop = 0;
+    this.state = 'idle'; this.n = 0; this.boards = 0; this.boardReserve = 0; this.fromPile = false; this.fromTub = false; this.dockX = 0; this.vanJob = false; this.lift = 0; this.timer = 0; this.truck = null; this.path = []; this.waitT = 0; this.blockT = 0; this.wheelA = 0; this.pop = 0;
   }
   spd() { return UP.forkSpd.vals[S.lv.forkSpd]; }
   parkedHere() { return this.state === 'unload' || this.state === 'scoop'; }
@@ -1852,13 +1877,13 @@ class Forklift {
       this.pos.x += dx / d * push;
       this.pos.z += dz / d * push;
     }
-    if ((this.state === 'toTruck' || this.state === 'toBoards') && this.pos.z < FORK_LANE_Z) this.pos.z = FORK_LANE_Z;
+    if (forkLaneLock(this.state, this.pos.x, this.pos.z)) this.pos.z = FORK_LANE_Z;
   }
   giveWay(dt) {
     const step = 2.6 * dt;
     let bx = this.pos.x - Math.sin(this.yaw) * this.dir * step;
     let bz = this.pos.z - Math.cos(this.yaw) * this.dir * step;
-    if (this.state !== 'toHome' && bz < FORK_LANE_Z) bz = FORK_LANE_Z;
+    if (forkLaneLock(this.state, bx, bz)) bz = FORK_LANE_Z;
     for (const o of forks) {
       if (o === this) continue;
       const next = Math.hypot(o.pos.x - bx, o.pos.z - bz);
@@ -1933,6 +1958,15 @@ class Forklift {
     return !forks.some(f => f !== this && f.truck === t && f.state !== 'idle'
       && !(f.state === 'toHome' && Math.hypot(f.pos.x - x, f.pos.z + 0.35) > 3.2));
   }
+  dockFree() {
+    const used = new Set();
+    for (const f of forks) {
+      if (f === this || !f.dockX) continue;
+      if (f.state === 'toTub' || f.state === 'scoop' || f.state === 'toTruck') used.add(f.dockX);
+    }
+    for (const x of DOCK_BAYS) if (!used.has(x)) return x;
+    return 0;
+  }
   pickTruck() {
     let best = null, bf = -1;
     for (const t of trucks) {
@@ -1962,23 +1996,37 @@ class Forklift {
           const pile = useBoards ? boardsFree : S.stockpile;
           if (pile > 0 && (pile >= want || this.waitT > 2.5)) {
             const n = Math.min(want, pile);
+            const bay = useBoards ? 0 : this.dockFree();
+            if (!useBoards && !bay) { this.waitT += dt; break; }
             this.truck = t; t.incoming += n; this.waitT = 0;
             if (useBoards) {
               S.boardHold = (S.boardHold || 0) + n;
               this.boardReserve = n; this.boards = 0; this.n = 0; this.fromPile = true;
               this.path = [
-                { x: BOARD_PILE.x + 1.3, z: H.z },
-                { x: BOARD_PILE.x + 1.3, z: BOARD_PILE.z + 1.15, sm: 0.45 },
+                { x: H.x, z: FORK_LANE_Z },
+                { x: BOARD_PILE.x, z: FORK_LANE_Z },
+                { x: BOARD_PILE.x, z: BOARD_PILE.z + 1.9, sm: 0.45 },
               ];
               this.state = 'toBoards';
             } else {
-              S.stockpile -= n; this.boards = 0; this.n = n; if (!instant) removePieces(n);
-              this.state = 'scoop'; this.timer = 0;
+              S.stockpile -= n; this.boards = 0; this.n = n; this.fromPile = false; this.fromTub = true; this.dockX = bay;
+              this.path = [
+                { x: H.x, z: FORK_LANE_Z },
+                { x: bay, z: FORK_LANE_Z },
+                { x: bay, z: DOCK_Z, sm: 0.45, yaw: Math.PI },
+              ];
+              this.state = 'toTub';
             }
           } else this.waitT = pile > 0 ? this.waitT + dt : 0;
         } else this.waitT = 0;
         break;
       }
+      case 'toTub':
+        if (this.followPath(dt)) {
+          if (!instant) removePieces(this.n);
+          this.state = 'scoop'; this.timer = 0;
+        }
+        break;
       case 'toBoards':
         if (this.followPath(dt)) {
           const n = this.boardReserve;
@@ -1994,12 +2042,17 @@ class Forklift {
           const tx = SPOT_X[this.truck.bay];
           const tz = -0.35;
           this.path = this.fromPile ? [
-            { x: BOARD_PILE.x + 1.3, z: BOARD_PILE.z + 1.2 },
-            { x: BOARD_PILE.x + 1.3, z: FORK_LANE_Z },
+            { x: BOARD_PILE.x, z: BOARD_PILE.z + 1.9 },
+            { x: BOARD_PILE.x, z: FORK_LANE_Z },
+            { x: tx, z: FORK_LANE_Z },
+            { x: tx, z: tz, sm: 0.5, yaw: 0 },
+          ] : this.fromTub ? [
+            { x: this.dockX, z: DOCK_Z },
+            { x: this.dockX, z: FORK_LANE_Z },
             { x: tx, z: FORK_LANE_Z },
             { x: tx, z: tz, sm: 0.5, yaw: 0 },
           ] : this.outPath(tx, tz);
-          this.fromPile = false;
+          this.fromPile = false; this.fromTub = false;
           this.state = 'toTruck';
         }
         break;
@@ -2008,6 +2061,7 @@ class Forklift {
         if (this.followPath(dt)) { this.state = 'unload'; this.timer = 0; }
         break;
       case 'unload':
+        this.dockX = 0;
         this.timer += dt; this.v = 0;
         this.lift = Math.min(1, 0.42 + this.timer / 0.45 * 0.58);
         if (this.timer >= 0.7) {
@@ -2212,10 +2266,10 @@ function incomeRate() {
 // =====================================================================
 // PLANER — cut pieces in, boards out (boards sell for more)
 // =====================================================================
-const PLANER_X = -35.4;
+const PLANER_X = -50.6;
 const PLANER_Z = [-8.0, -19.2, -30.4];
 const PLANER_AT = { x: PLANER_X, z: PLANER_Z[0] };
-const BOARD_SLOTS = [-18.8, -16.2, -13.6, -11.0].map(x => ({ x, z: -4.9 }));
+const BOARD_SLOTS = [-6.2, -3.6, -1.0, 1.6].map(x => ({ x, z: -6.6 }));
 const BOARD_PILE = BOARD_SLOTS[0];
 const PLANER_WALK = PLANER_X + 2.45;
 const OUT_MAX = 3;
@@ -2369,8 +2423,10 @@ function planerRoute(h, dest) {
   const onMachine = Math.abs(h.x - PLANER_X) < 1.9 && Math.abs(h.z - cz) < 4.9;
   const pts = [];
   if (onMachine || Math.abs(h.x - PLANER_WALK) > 0.8) pts.push({ x: PLANER_WALK, z: h.z });
-  if (dest.x < -28) pts.push({ x: PLANER_WALK, z: dest.z }, dest);
-  else pts.push({ x: PLANER_WALK, z: -2.7 }, { x: dest.x, z: -2.7 }, dest);
+  const atGate = dest.x < -20 && dest.z > -6.6 && dest.z < -4.8;
+  if (atGate) pts.push({ x: PLANER_WALK, z: -5.85 }, { x: dest.x, z: -5.85 }, dest);
+  else if (dest.x < -28) pts.push({ x: PLANER_WALK, z: dest.z }, dest);
+  else pts.push({ x: PLANER_WALK, z: -15.2 }, { x: dest.x, z: -15.2 }, dest);
   return pts;
 }
 function setHandPath(h, pts) { h.path = pts; h.pi = 0; }
@@ -2385,7 +2441,7 @@ function updateHand(h, dt) {
   const u = planers[h.i];
   const z = PLANER_Z[h.i];
   const home = { x: PLANER_WALK, z };
-  const tub = { x: -31.45, z: -5.4 - h.i * 1.7 };
+  const tub = TUB_STOPS[h.i];
   const drop = { x: PLANER_X, z: z + 3.7 };
   const take = { x: PLANER_X, z: z - 3.7 };
   const pile = { x: BOARD_PILE.x - 1.35, z: BOARD_PILE.z };
@@ -2504,7 +2560,7 @@ function updatePlanerVisual(dt, time) {
 // =====================================================================
 const CHIP_PRICE = 5, CHIP_MIN = 36;
 const chipViz = { g: null, ghost: null, drum: null, t: 0 };
-function chipSpot() { return { x: TUB.x0 - 2.7, z: (TUB.z0 + TUB.z1) / 2 }; }
+function chipSpot() { return CHIP_AT; }
 function buildChipBody(parent) {
   part(rbox(2.2, 0.16, 1.6, 0.04, 1), 0x6d767e, parent, 0, 0.2, 0);
   part(rbox(1.5, 1.1, 1.2, 0.08, 1), 0x3c4650, parent, 0.15, 0.85, 0);
@@ -2527,6 +2583,8 @@ function placeChipper() {
   const p = chipSpot();
   chipViz.g.position.set(p.x, 0, p.z);
   chipViz.ghost.position.set(p.x, 0, p.z);
+  chipViz.g.rotation.y = Math.PI;
+  chipViz.ghost.rotation.y = Math.PI;
   const on = S.lv.chipper > 0;
   chipViz.g.visible = on;
   chipViz.ghost.visible = !on;
@@ -3575,7 +3633,7 @@ function syncYardGoods(dt, time) {
 // =====================================================================
 const STATIONS = [
   { id: 'saw', name: 'Sawmill', icon: '🪚', ups: ['saw', 'sawN', 'yield'], spots: [{ x: -26, z: -20, r: 8 }, { x: -26, z: -30, r: 7 }] },
-  { id: 'forest', name: 'Forest', icon: '🪓', ups: ['cutterN', 'cutterSpd'], spots: [{ x: -50, z: 2, r: 16 }] },
+  { id: 'forest', name: 'Forest', icon: '🪓', ups: ['cutterN', 'cutterSpd'], spots: [{ x: CAMP.x, z: 2, r: 18 }] },
   { id: 'forks', name: 'Forklifts', icon: '🚜', ups: ['forkN', 'forkSpd', 'forkCap'], spots: [{ x: -15.2, z: -11.5, r: 5 }] },
   { id: 'trucks', name: 'Trucks', icon: '🚚', ups: ['truckN', 'truckCap'], spots: [{ x: -14.5, z: 5.5, r: 5.5 }] },
   { id: 'planer', name: 'Planer', icon: '🪵', ups: ['planer', 'planerN', 'planerSpd', 'planerCrew', 'boardCap', 'boardN'], spots: PLANER_Z.map(z => ({ x: PLANER_X, z, r: 4.2 })) },
@@ -3894,7 +3952,7 @@ addEventListener('keydown', e => {
   keys.add(e.key.toLowerCase());
 });
 addEventListener('keyup', e => keys.delete(e.key.toLowerCase()));
-const NAV = { saw: [V(-24, 0, -15), 30], forest: [V(-49, 0, 0), 30], yard: [V(-14, 0, 1), 40], bridge: [V(38, 0, 14), 38], market: [V(67, 0, 8), 36] };
+const NAV = { saw: [V(-24, 0, -15), 30], forest: [V(CAMP.x + 6, 0, -2), 38], yard: [V(-14, 0, 1), 40], bridge: [V(38, 0, 14), 38], market: [V(67, 0, 8), 36] };
 document.querySelectorAll('#nav button').forEach(b => b.addEventListener('click', () => {
   sfx.ensure(); const [t, d] = NAV[b.dataset.go];
   cam.tween = { from: cam.target.clone(), to: t.clone(), d0: cam.dist, d1: d, t: 0 }; cam.vel.set(0, 0, 0); hideHint();
@@ -4237,9 +4295,14 @@ function rushRoute(from, to) {
     rushPush(pts, PORTER_CORRIDOR_X, PORTER_SPINE_Z);
   }
   rushPush(pts, PORTER_CORRIDOR_X, PORTER_SPINE_Z);
+  const dock = to.x < -20 && to.z < -3.4 && to.z > -7;
   if (onRushLot(to)) {
     rushPush(pts, PORTER_SIDE_X, PORTER_SPINE_Z);
     rushPush(pts, PORTER_SIDE_X, PORTER_BACK_Z);
+    rushPush(pts, to.x, PORTER_BACK_Z);
+    rushPush(pts, to.x, to.z);
+  } else if (dock) {
+    rushPush(pts, PORTER_CORRIDOR_X, PORTER_BACK_Z);
     rushPush(pts, to.x, PORTER_BACK_Z);
     rushPush(pts, to.x, to.z);
   } else {
@@ -4249,10 +4312,10 @@ function rushRoute(from, to) {
   return pts;
 }
 function porterPickup(kind) {
-  if (kind === 'boards') return { x: BOARD_PILE.x, z: -3.15, fx: BOARD_PILE.x, fz: BOARD_PILE.z };
+  if (kind === 'boards') return { x: BOARD_PILE.x + 1.7, z: BOARD_PILE.z, fx: BOARD_PILE.x, fz: BOARD_PILE.z };
   if (kind === 'fire') return { x: FIRE_SHOW.x + 1.9, z: FIRE_SHOW.z, fx: FIRE_SHOW.x, fz: FIRE_SHOW.z };
   if (kind === 'furn') return { x: FURN_SHOW.x + 1.5, z: FURN_SHOW.z - 5.2, fx: FURN_SHOW.x, fz: FURN_SHOW.z };
-  return { x: -19.5, z: -1.15, fx: -21.2, fz: -1.15 };
+  return { x: -22.5, z: DOCK_Z, fx: -22.5, fz: TUB.z1 - 0.4 };
 }
 class Porter {
   constructor(i) {
