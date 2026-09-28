@@ -77,11 +77,10 @@
   #toast small { display: block; font-size: 14px; color: #ffe8a0; font-weight: 600; }
   #toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
   #deal {
-    position: absolute; left: 50%; top: 86px; transform: translateX(-50%);
-    width: min(420px, calc(100vw - 16px));
-    background: #1e2a33f2; border: 3px solid #ffd84a; border-radius: 18px;
-    box-shadow: 0 6px 0 #0004; pointer-events: auto; z-index: 7;
-    padding: 10px 12px 12px;
+    flex: 1 0 100%; width: min(340px, 100%); max-width: 340px; align-self: flex-start;
+    background: #1e2a33f2; border: 2px solid #ffd84a; border-radius: 14px;
+    box-shadow: 0 3px 0 #0003; pointer-events: auto;
+    padding: 8px 10px;
   }
   #deal.hidden { display: none; }
   #deal b { display: block; font-size: 18px; line-height: 1.15; }
@@ -251,7 +250,6 @@
     #nav button span { font-size: 20px; }
     #hint { font-size: 13px; bottom: 64px; }
     #orderBar { font-size: 14px; padding: 5px 10px; }
-    #deal { top: 214px; }
     #deal b { font-size: 16px; }
     #deal small { font-size: 12px; }
   }
@@ -271,6 +269,17 @@
         <div class="pill stock stroke hidden" id="firePill" title="Firewood bundles at the shop"><span class="ico-slot"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="14.2" width="13" height="4" rx="2" fill="#c47a32"/><circle cx="16.2" cy="16.2" r="2.05" fill="#f3d7a0"/><circle cx="16.2" cy="16.2" r=".45" fill="#c4843a"/><rect x="6" y="9.2" width="13" height="4" rx="2" fill="#e8a03a"/><circle cx="6" cy="11.2" r="2.05" fill="#ffe7ad"/><circle cx="6" cy="11.2" r=".45" fill="#c4843a"/><rect x="4" y="4.4" width="12.2" height="3.8" rx="1.9" fill="#d4922e"/><circle cx="16.2" cy="6.3" r="1.95" fill="#f7e2a8"/></svg></span><span id="fireN">0</span></div>
       </div>
       <div id="orderWrap" class="hidden"><div id="orderBar" class="stroke" title="Rush order from the buyer"><span id="orderIcon"></span><span id="orderLabel">Boards</span><span id="orderCount">0/0</span><b id="orderTime">0s</b></div></div>
+      <div id="deal" class="hidden">
+        <b id="dealTitle">Buyer offer</b>
+        <small id="dealText"></small>
+        <div class="row">
+          <div id="dealActs">
+            <button id="dealYes" type="button">Take it</button>
+            <button id="dealNo" type="button">Not now</button>
+          </div>
+          <b id="dealTime">0s</b>
+        </div>
+      </div>
     </div>
     <div class="btns">
       <button id="settingsBtn" type="button" title="Settings">⚙</button>
@@ -288,17 +297,6 @@
     </div>
   </div>
   <div id="toast" class="stroke"></div>
-  <div id="deal" class="hidden">
-    <b id="dealTitle">Buyer offer</b>
-    <small id="dealText"></small>
-    <div class="row">
-      <div id="dealActs">
-        <button id="dealYes" type="button">Take it</button>
-        <button id="dealNo" type="button">Not now</button>
-      </div>
-      <b id="dealTime">0s</b>
-    </div>
-  </div>
   <div id="hint">🖐️ drag · 🔍 zoom · tap a machine to upgrade</div>
   <div id="shop" class="hidden">
     <div class="shop-head">
@@ -5903,7 +5901,6 @@ function acceptDeal() {
   if (deal.phase !== 'offer') return;
   deal.phase = 'run';
   deal.left = DEAL_RUN;
-  if (!instant) toast(deal.kind === 'boards' ? 'Boards ×2' : 'Logs ×2', 'Forklifts load that. The shop and rush orders wait.');
   drawDeal();
 }
 function declineDeal() {
