@@ -76,6 +76,26 @@
   #toast.err { border-color: #ff6b5b; }
   #toast small { display: block; font-size: 14px; color: #ffe8a0; font-weight: 600; }
   #toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  #deal {
+    position: absolute; left: 50%; top: 86px; transform: translateX(-50%);
+    width: min(420px, calc(100vw - 16px));
+    background: #1e2a33f2; border: 3px solid #ffd84a; border-radius: 18px;
+    box-shadow: 0 6px 0 #0004; pointer-events: auto; z-index: 7;
+    padding: 10px 12px 12px;
+  }
+  #deal.hidden { display: none; }
+  #deal b { display: block; font-size: 18px; line-height: 1.15; }
+  #deal small { display: block; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; color: #d5dee4; line-height: 1.35; margin-top: 3px; }
+  #deal .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
+  #dealTime { color: #ffd84a; font-size: 20px; white-space: nowrap; }
+  #dealActs { display: flex; gap: 8px; }
+  #dealActs.hidden { display: none; }
+  #deal button {
+    pointer-events: auto; font-family: inherit; font-weight: 800; font-size: 15px;
+    border: none; border-radius: 12px; padding: 8px 14px; cursor: pointer;
+  }
+  #dealYes { background: #ffd84a; color: #1e2a33; }
+  #dealNo { background: #2b3842; color: #fff; }
   .float {
     position: absolute; transform: translate(-50%, -50%); font-size: 24px; font-weight: 800; white-space: nowrap;
     animation: floatUp 1.3s ease-out forwards; color: #ffe066;
@@ -231,6 +251,9 @@
     #nav button span { font-size: 20px; }
     #hint { font-size: 13px; bottom: 64px; }
     #orderBar { font-size: 14px; padding: 5px 10px; }
+    #deal { top: 214px; }
+    #deal b { font-size: 16px; }
+    #deal small { font-size: 12px; }
   }
 </style>
 </head>
@@ -265,6 +288,17 @@
     </div>
   </div>
   <div id="toast" class="stroke"></div>
+  <div id="deal" class="hidden">
+    <b id="dealTitle">Buyer offer</b>
+    <small id="dealText"></small>
+    <div class="row">
+      <div id="dealActs">
+        <button id="dealYes" type="button">Take it</button>
+        <button id="dealNo" type="button">Not now</button>
+      </div>
+      <b id="dealTime">0s</b>
+    </div>
+  </div>
   <div id="hint">🖐️ drag · 🔍 zoom · tap a machine to upgrade</div>
   <div id="shop" class="hidden">
     <div class="shop-head">
@@ -312,6 +346,7 @@
         <span>🔥</span><span>The woodshed beside the joinery splits extra cut logs into firewood. You can see the axe working. A worker, then a cart, then a short belt spur carries the bundles to the rack out front. The rack has to sell before the next one is split.</span>
         <span>📦</span><span>The kit shop combines cut logs and boards into a crate, a shed kit, or a cabin kit. The fitter fetches both, and the build is slow. Each finished kit sells for more than the parts would on their own.</span>
         <span>🚢</span><span>When the mill is already busy, an export desk by the buyer is where the extra money goes. Each contract is a small bump in truck pay and costs a lot more than the last.</span>
+        <span>🏭</span><span>Every so often the buyer offers double price on logs or on boards. Take it and the forklifts load only that for a short run. On a logs offer the planer waits. The shop and the rush vans hold, and a truck that pulls out keeps the higher price until it dumps.</span>
         <span>🏗️</span><span>The highway turns in at the timber buyer, then a second turn runs south to the frame yard. The yard buys finished boards. It pays more per board than the log trucks, but only a few at a time, and it leaves some boards at the mill for furniture and rush orders.</span>
         <span>🚐</span><span>Rush vans use their own lot off the highway, down a short drive that meets the road at the edge. A blue forklift drives around the back of the stalls, fetches the wood, boards, firewood, or furniture, and loads the van from the rear. Buy another bay when you want two or three loaded at once — extra vans wait beside the drive. The same lot also buys a bigger grab, a faster loader, quicker vans, more time on the clock, and better pay when an order is filled.</span>
         <span>🚚</span><span>Buy more trucks on the empty parking spots, including two more on the east end of the row, and bigger beds so each trip hauls more. Diesel comes out of the sale when a truck dumps. The fuel yard just north of the parking holds the tanks — buy a bigger tank there and each load costs less. Coming back, a truck takes the first free spot. The whole crew takes a wage about once a minute, so a big crew with slow sales will spend the cash as fast as it comes in.</span>
@@ -1943,6 +1978,8 @@ function buildForklift(color = FORK_ORANGE) {
 // =====================================================================
 const trucks = [];
 const T_ACC = 4.0, T_DEC = 6.5, GAP = 5.5, DUMP_DUR = 1.9;
+const DEAL_OFFER = 18, DEAL_RUN = 50, DEAL_GAP = 80;
+let deal = { phase: 'idle', kind: '', left: 0, gap: 55 };
 const tv1 = V(), tv2 = V();
 class Truck {
   constructor(i) {
@@ -1950,7 +1987,7 @@ class Truck {
     this.m = buildTruck(); scene.add(this.m.g);
     this.state = 'parked'; this.loaded = 0; this.boards = 0; this.incoming = 0;
     this.s = 0; this.v = 0; this.u = 0; this.pos = V(SPOT_X[i], 0, SPOT_Z); this.yaw = 0; this.dir = 1;
-    this.gatePass = false; this.dumped = false; this.paid = false; this.waitT = 0; this.dumpT = 0; this.wheelA = 0; this.pop = 0;
+    this.gatePass = false; this.dumped = false; this.paid = false; this.dealKind = ''; this.waitT = 0; this.dumpT = 0; this.wheelA = 0; this.pop = 0;
     this.setBay(i);
   }
   setBay(b) {
@@ -1992,7 +2029,7 @@ class Truck {
         if (this.loaded >= this.cap() && this.incoming === 0) this.state = 'waitExit';
         break;
       case 'waitExit':
-        if (this.canExit()) { this.state = 'exiting'; this.u = 0; this.v = 0; sfx.horn(this); }
+        if (this.canExit()) { this.state = 'exiting'; this.u = 0; this.v = 0; this.dealKind = deal.phase === 'run' ? deal.kind : ''; sfx.horn(this); }
         break;
       case 'exiting': {
         this.v = Math.min(3.6, this.v + T_ACC * dt); this.u += this.v * dt; this.dir = 1;
@@ -2007,8 +2044,8 @@ class Truck {
           this.paid = true;
           const mult = UP.market.vals[S.lv.market] * UP.export.vals[S.lv.export];
           const raw = Math.max(0, this.loaded - this.boards);
-          const logPay = raw * PIECE_PRICE * mult;
-          const boardPay = this.boards * BOARD_PRICE * mult;
+          const logPay = raw * PIECE_PRICE * mult * (this.dealKind === 'logs' ? 2 : 1);
+          const boardPay = this.boards * BOARD_PRICE * mult * (this.dealKind === 'boards' ? 2 : 1);
           const fuel = truckFuel();
           if (raw) bookIn('logs', logPay, 'logs', raw);
           if (this.boards) bookIn('boards', boardPay, 'boards', this.boards);
@@ -2025,7 +2062,7 @@ class Truck {
         this.v = Math.min(2.2, this.v + 2.2 * dt); this.u += this.v * dt; this.dir = -1;
         if (this.u >= this.revLen) {
           this.state = 'parked'; this.pos.set(SPOT_X[this.bay], 0, SPOT_Z); this.yaw = 0; this.v = 0;
-          this.gatePass = false; this.dumped = false; this.paid = false; this.loaded = 0; this.boards = 0; this.incoming = 0;
+          this.gatePass = false; this.dumped = false; this.paid = false; this.dealKind = ''; this.loaded = 0; this.boards = 0; this.incoming = 0;
         } else { const t = this.u / this.revLen; this.revCurve.getPointAt(t, this.pos); this.revCurve.getTangentAt(t, tv1); this.yaw = yawOf(-tv1.x, -tv1.z); }
         if (!instant) sfx.beep(this);
         break;
@@ -2290,10 +2327,14 @@ class Forklift {
     const need = t.cap() - t.loaded - t.incoming;
     const want = Math.min(UP.forkCap.vals[S.lv.forkCap], need);
     const boardsFree = S.boards - (S.boardHold || 0);
+    const focus = deal.phase === 'run' ? deal.kind : '';
     let useBoards = boardsFree >= want || (boardsFree > 0 && S.stockpile <= 0);
     const pileTaken = forks.some(f => f !== this && (f.state === 'toBoards' || f.boardReserve > 0
       || (f.state === 'scoop' && Math.hypot(f.pos.x - BOARD_PILE.x, f.pos.z - BOARD_PILE.z) < 3.6)));
     if (useBoards && pileTaken) useBoards = false;
+    if (focus === 'logs') useBoards = false;
+    if (focus === 'boards') useBoards = boardsFree > 0 && !pileTaken;
+    if (focus === 'boards' && !useBoards) { this.waitT = boardsFree > 0 ? this.waitT + dt : 0; return false; }
     const pile = useBoards ? boardsFree : S.stockpile;
     if (!(pile > 0 && (pile >= want || this.waitT > 2.5))) {
       this.waitT = pile > 0 ? this.waitT + dt : 0;
@@ -2856,7 +2897,7 @@ function updateHand(h, dt) {
       if (u.out) go('toOut', take);
       else if (h.carry === 'pieces') go('toIn', drop);
       else if (h.carry === 'board') go('toPile', pile);
-      else if (room && u.infeed < 6 && S.stockpile >= PLANER_KEEP + BOARD_IN) go('toTub', tub);
+      else if (room && u.infeed < 6 && S.stockpile >= PLANER_KEEP + BOARD_IN && !(deal.phase === 'run' && deal.kind === 'logs')) go('toTub', tub);
       else {
         if (!h.path) setHandPath(h, planerRoute(h, home));
         if (followHand(h, dt)) h.path = null;
@@ -2994,7 +3035,7 @@ function placeChipper() {
 }
 function placeTubPad() {}
 function updateChipper(dt) {
-  const running = S.lv.chipper > 0 && S.stockpile > CHIP_MIN && S.running && !S.paused;
+  const running = S.lv.chipper > 0 && S.stockpile > CHIP_MIN && S.running && !S.paused && deal.phase !== 'run';
   if (chipViz.drum && running) chipViz.drum.rotation.x += dt * 7;
   if (!running) return;
   chipViz.t += dt;
@@ -3322,6 +3363,7 @@ function updateHauler(dt) {
     return;
   }
   if (hauler.u > 0) { hauler.u = Math.max(0, hauler.u - spd * dt / HAUL_LEN); return; }
+  if (deal.phase === 'run') return;
   const need = woodNeed();
   if (need <= 0) return;
   const n = takeShopWood(Math.min(carryMax, need));
@@ -3333,7 +3375,7 @@ function updateHauler(dt) {
 function updateBelt(dt) {
   if (!shopOn() || S.lv.haul < 4) { beltShip.length = 0; return; }
   beltAcc += dt;
-  if (woodNeed() > 0 && beltShip.length < shopViz.belt.shopRiders.length && beltAcc > 0.22 / beltSpeed()) {
+  if (deal.phase !== 'run' && woodNeed() > 0 && beltShip.length < shopViz.belt.shopRiders.length && beltAcc > 0.22 / beltSpeed()) {
     if (takeShopWood(1)) { beltAcc = 0; beltShip.push({ u: 0 }); }
   }
   for (let i = beltShip.length - 1; i >= 0; i--) {
@@ -3705,7 +3747,7 @@ function mouthBusy() {
   return customers.some(c => c.state !== 'pool' && c.z < -55.15 && Math.abs(c.x + 13.7) < 1.15);
 }
 function trySpawnCustomer() {
-  if (mouthBusy()) return;
+  if (deal.phase === 'run' || mouthBusy()) return;
   const choices = [];
   const queued = (stand) => customers.filter(c => c.stand === stand && c.state !== 'pool' && c.state !== 'leave').length;
   if (shopOn() && queued('wood') < WOOD_LINE.length) choices.push('wood');
@@ -3812,13 +3854,15 @@ function updateCustomers(dt) {
     const pathDone = !c.legs || c.leg >= c.legs.length - 1;
     if (c.state === 'walk' && !c.via && pathDone) tryJoinLine(c);
     const blocked = c.state !== 'leave' && personAhead(c);
-    if (c.state === 'walk') {
-      if (blocked) c.wait += dt; else c.wait = 0;
-      if (c.wait > (standWorking(c.stand) ? 20 : 12)) startLeave(c, true);
-    } else if (c.state === 'queue' && c.slot > 0) {
-      if (!standWorking(c.stand)) c.wait += dt;
-      if (c.wait > 22) startLeave(c, true);
-    } else if (c.state === 'queue') c.wait += dt;
+    if (deal.phase !== 'run') {
+      if (c.state === 'walk') {
+        if (blocked) c.wait += dt; else c.wait = 0;
+        if (c.wait > (standWorking(c.stand) ? 20 : 12)) startLeave(c, true);
+      } else if (c.state === 'queue' && c.slot > 0) {
+        if (!standWorking(c.stand)) c.wait += dt;
+        if (c.wait > 22) startLeave(c, true);
+      } else if (c.state === 'queue') c.wait += dt;
+    }
     if (c.state !== 'leave') {
       if (c.stand === 'wood') serveWood(c, dt);
       else if (c.stand === 'furn') serveFurn(c, dt);
@@ -4270,6 +4314,7 @@ function updateJoiner(dt) {
   const bench = { x: JOIN_AT.x + 0.9, z: JOIN_AT.z + 3.15 };
   if (j.state === 'idle') {
     j.x = bench.x; j.z = bench.z;
+    if (deal.phase === 'run') return;
     const job = joinJob();
     if (!job) return;
     j.kind = job.kind; j.haul = job.haul; j.n = job.n; j.carry = -1;
@@ -4333,6 +4378,7 @@ function updateSplitter(dt) {
   if (!S.lv.firewood) return;
   const f = splitter;
   f.moving = false;
+  if (deal.phase === 'run' && (f.state === 'idle' || S.lv.fireHaul >= 3)) return;
   if (S.lv.fireHaul >= 3) {
     f.x = FIRE_AT.x; f.z = FIRE_AT.z;
     f.t += dt;
@@ -4380,6 +4426,7 @@ function updateKit(dt) {
   const bench = kitBench();
   if (f.state === 'idle') {
     f.x = bench.x; f.z = bench.z;
+    if (deal.phase === 'run') return;
     f.gotBoards = false; f.gotLogs = false;
     if (!kitReady()) return;
     const r = kitRecipe();
@@ -4549,7 +4596,7 @@ const STATIONS = [
   { id: 'bin', name: 'Wood bin', icon: '📦', blurb: 'Holds the cut wood. Widen it, open another gate for the forklifts, or chip the overflow.', ups: ['tub', 'dockN', 'chipper', 'chipSpd', 'chipBite'], spots: [] },
   { id: 'road', name: 'Road', icon: '🛣️', blurb: 'A wider road gives the trucks room to spread out instead of bunching up.', ups: ['road'], spots: [{ x: 16, z: 12, r: 18 }] },
   { id: 'gate', name: 'Toll gate', icon: '🚧', blurb: 'The arm on the bridge. A faster gate means trucks spend less time waiting.', ups: ['gate'], spots: [{ x: 46, z: 18, r: 9 }] },
-  { id: 'buyer', name: 'Buyer', icon: '💰', blurb: 'The mill across the river. A better price multiplies what every truck load pays.', ups: ['market'], spots: [{ x: 70, z: 8, r: 14 }] },
+  { id: 'buyer', name: 'Buyer', icon: '💰', blurb: 'The mill across the river. A better price multiplies what every truck load pays. Every so often they offer double price on logs or boards for a short run.', ups: ['market'], spots: [{ x: 70, z: 8, r: 14 }] },
   { id: 'export', name: 'Export', icon: '🚢', blurb: 'A contract on top of the buyer price. Each step is a small bump and costs more than the last.', ups: ['export'], spots: [{ x: 57.4, z: 12.2, r: 3.2 }] },
   { id: 'frame', name: 'Frame yard', icon: '🏗️', blurb: 'Buys finished boards for more than the log trucks pay, a few at a time, and leaves some boards at the mill.', ups: ['frame', 'frameSpd', 'frameBite', 'framePay'], spots: [{ x: FRAME_AT.x, z: FRAME_AT.z, r: 6.4 }] },
   { id: 'rush', name: 'Rush yard', icon: '🚐', blurb: 'A van arrives with a timed order for logs, boards, firewood, or furniture. Fill it before it leaves for a bonus.', ups: ['rushN', 'rushBite', 'rushCrew', 'rushVan', 'rushWait', 'rushPay'], spots: [{ x: 15.4, z: -2.4, r: 2.6 }, { x: 19.0, z: -2.4, r: 2.6 }, { x: 22.6, z: -2.4, r: 2.6 }] },
@@ -4631,6 +4678,7 @@ function updateFrame(dt) {
   const every = UP.frameSpd.vals[S.lv.frameSpd];
   if (frameAcc < every) return;
   frameAcc -= every;
+  if (deal.phase === 'run' && deal.kind === 'boards') return;
   const bite = UP.frameBite.vals[S.lv.frameBite];
   if (S.boards - FRAME_KEEP - (S.boardHold || 0) < bite) return;
   S.boards -= bite;
@@ -5030,6 +5078,8 @@ function buy(id, fromUi) {
 }
 $('shopClose').addEventListener('click', () => { sfx.ensure(); closeShop(); });
 $('booksClose').addEventListener('click', () => { sfx.ensure(); closeBooks(); });
+$('dealYes').addEventListener('click', () => { sfx.ensure(); acceptDeal(); });
+$('dealNo').addEventListener('click', () => { sfx.ensure(); declineDeal(); });
 for (const btn of document.querySelectorAll('#booksTabs button')) {
   btn.addEventListener('click', () => { booksTab = btn.dataset.book; drawBooks(); });
 }
@@ -5398,7 +5448,8 @@ function makeSlot(i) {
       ];
       this.pi = 0;
     },
-    available() {
+      available() {
+      if (deal.phase === 'run') return 0;
       if (this.phase !== 'parked' || !this.on || this.filled || this.expired || this.incoming > 0) return 0;
       const left = this.need - this.have;
       if (left <= 0) return 0;
@@ -5716,7 +5767,7 @@ function updateOrder(dt) {
   const n = rushCount();
   for (const s of rushes) {
     if (s.on) {
-      if (!s.filled && !s.expired) {
+      if (!s.filled && !s.expired && deal.phase !== 'run') {
         s.left -= dt;
         s.visT += dt;
         if (s.visT > 0.4) { s.visT = 0; s.dirty = true; }
@@ -5727,7 +5778,7 @@ function updateOrder(dt) {
           if (!instant) toast('Order missed', 'The van is leaving with what it has', true);
         }
       }
-    } else if (s.phase === 'idle') {
+    } else if (s.phase === 'idle' && deal.phase !== 'run') {
       s.gap -= dt;
       if (s.gap <= 0) rollOrder(s);
     }
@@ -5841,9 +5892,67 @@ function assignBays() {
     if (t.bay !== best) t.setBay(best);
   }
 }
+function offerDeal(kind) {
+  if (kind === 'boards' && !planerOn()) kind = 'logs';
+  deal.phase = 'offer';
+  deal.kind = kind === 'boards' ? 'boards' : 'logs';
+  deal.left = DEAL_OFFER;
+  drawDeal();
+}
+function acceptDeal() {
+  if (deal.phase !== 'offer') return;
+  deal.phase = 'run';
+  deal.left = DEAL_RUN;
+  if (!instant) toast(deal.kind === 'boards' ? 'Boards ×2' : 'Logs ×2', 'Forklifts load that. The shop and rush orders wait.');
+  drawDeal();
+}
+function declineDeal() {
+  if (deal.phase !== 'offer') return;
+  deal.phase = 'idle';
+  deal.kind = '';
+  deal.gap = DEAL_GAP;
+  drawDeal();
+}
+function drawDeal() {
+  const el = $('deal');
+  if (!el) return;
+  if (deal.phase === 'idle') { el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  const logs = deal.kind !== 'boards';
+  const secs = Math.max(0, Math.ceil(deal.left));
+  $('dealTime').textContent = secs + 's';
+  const offer = deal.phase === 'offer';
+  $('dealActs').classList.toggle('hidden', !offer);
+  $('dealTitle').textContent = offer
+    ? (logs ? 'Logs at double price?' : 'Boards at double price?')
+    : (logs ? 'Logs ×2' : 'Boards ×2');
+  $('dealText').textContent = offer
+    ? (logs
+      ? 'Forklifts load logs and the planer waits. The shop and rush orders hold. A truck that pulls out keeps the price.'
+      : 'Forklifts load boards. The shop and rush orders hold. A truck that pulls out keeps the price.')
+    : 'Loading that now. The higher price sticks until the truck dumps.';
+}
+function updateDeal(dt) {
+  if (deal.phase === 'offer' || deal.phase === 'run') {
+    deal.left -= dt;
+    if (deal.left <= 0) {
+      const ended = deal.phase === 'run';
+      deal.phase = 'idle';
+      deal.kind = '';
+      deal.left = 0;
+      deal.gap = DEAL_GAP;
+      if (ended && !instant) toast('Offer over', 'The buyer is back to the regular price');
+    }
+    drawDeal();
+    return;
+  }
+  deal.gap -= dt;
+  if (deal.gap <= 0) offerDeal(planerOn() && Math.random() < 0.5 ? 'boards' : 'logs');
+}
 function update(dt) {
   if (!S.running || S.paused) return;
   S.time += dt;
+  updateDeal(dt);
   tickBooks();
   const int = UP.saw.vals[S.lv.saw];
   const nLanes = sawCount();
@@ -6125,6 +6234,7 @@ window.__start = () => startGame();
 window.__padScreen = id => { applyCamera(); const st = STATIONS.find(s => s.ups.includes(id)); const spot = st ? spotsOf(st)[0] : { x: 0, z: 0 }; const [x, y] = toScreen(V(spot.x, 0.2, spot.z)); return [x, y]; };
 window.__camInfo = () => [+cam.target.x.toFixed(2), +cam.target.z.toFixed(2), +cam.dist.toFixed(1)];
 window.__step = (n, dt = 0.1) => { const was = instant; instant = true; S.running = true; for (let i = 0; i < n; i++) update(dt); instant = was; return window.__debug(); };
+window.__deal = (kind) => { offerDeal(kind || 'logs'); return { phase: deal.phase, kind: deal.kind, left: deal.left }; };
 window.__rush = (kind) => {
   const slot = rushes.find(s => s.phase === 'idle' && !s.on);
   if (!slot) return window.__debug();
