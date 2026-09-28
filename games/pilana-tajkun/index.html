@@ -123,7 +123,9 @@
   .bk-line { margin-top: 4px; }
   .bk-line span { display: flex; justify-content: space-between; gap: 8px; font-size: 15px; }
   .bk-line small { display: block; font-family: system-ui, sans-serif; font-size: 11px; font-weight: 600; color: #9aabb4; margin-top: 1px; }
-  table.bk td.cash { color: #7fe39a; font-weight: 800; }
+  table.bk td.cash, table.bk td.hi { color: #7fe39a; font-weight: 800; }
+  table.bk td.lo { color: #ff8b7a; font-weight: 800; }
+  table.bk tr.sum td { border-top: 1px solid #ffffff22; padding-top: 5px; font-weight: 800; }
   .bk-bar { height: 7px; background: #3c4852; border-radius: 6px; overflow: hidden; margin-top: 2px; }
   .bk-bar i { display: block; height: 100%; border-radius: 6px; }
   .bk-bar i.in { background: #3d9a55; }
@@ -312,7 +314,7 @@
         <span>🚢</span><span>When the mill is already busy, an export desk by the buyer is where the extra money goes. Each contract is a small bump in truck pay and costs a lot more than the last.</span>
         <span>🏗️</span><span>The highway turns in at the timber buyer, then a second turn runs south to the frame yard. The yard buys finished boards. It pays more per board than the log trucks, but only a few at a time, and it leaves some boards at the mill for furniture and rush orders.</span>
         <span>🚐</span><span>Rush vans use their own lot off the highway, down a short drive that meets the road at the edge. A blue forklift drives around the back of the stalls, fetches the wood, boards, firewood, or furniture, and loads the van from the rear. Buy another bay when you want two or three loaded at once — extra vans wait beside the drive. The same lot also buys a bigger grab, a faster loader, quicker vans, more time on the clock, and better pay when an order is filled.</span>
-        <span>🚚</span><span>Buy more trucks on the empty parking spots, including two more on the east end of the row, and bigger beds so each trip hauls more. Diesel comes out of the sale when a truck dumps. The fuel yard just north of the parking holds the tanks — buy a bigger tank there and each load costs less. Coming back, a truck takes the first free spot. The whole crew takes a wage every few seconds, so a big crew with slow sales will spend the cash as fast as it comes in.</span>
+        <span>🚚</span><span>Buy more trucks on the empty parking spots, including two more on the east end of the row, and bigger beds so each trip hauls more. Diesel comes out of the sale when a truck dumps. The fuel yard just north of the parking holds the tanks — buy a bigger tank there and each load costs less. Coming back, a truck takes the first free spot. The whole crew takes a wage about once a minute, so a big crew with slow sales will spend the cash as fast as it comes in.</span>
         <span>🚧</span><span>There's a toll gate on the bridge. When trucks get stuck and angry, speed it up.</span>
         <span>🛣️</span><span>Widen the road. A wider road gives the trucks more room. The sign by the pad shows the new speed.</span>
       </div>
@@ -3656,7 +3658,7 @@ function takeStacked(n) {
   return n - left;
 }
 function truckFuel() { return Math.round((40 + S.lv.truckCap * 35) * UP.diesel.vals[S.lv.diesel | 0]); }
-const WAGE_EVERY = 16;
+const WAGE_EVERY = 60;
 function wageParts() {
   const parts = {
     saw: sawCount() * (4 + S.lv.saw * 8),
@@ -4826,6 +4828,43 @@ function clockTxt(t) {
   const s = Math.max(0, Math.floor(t));
   return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
 }
+function splitPool(pool, weights) {
+  const sum = weights.reduce((s, x) => s + x.w, 0);
+  const out = {};
+  if (sum <= 0 || pool <= 0) return out;
+  let used = 0;
+  for (const x of weights) { out[x.key] = Math.floor(pool * x.w / sum); used += out[x.key]; }
+  let rem = Math.round(pool) - used;
+  for (const x of weights.slice().sort((a, b) => b.w - a.w)) {
+    if (rem <= 0) break;
+    out[x.key]++;
+    rem--;
+  }
+  return out;
+}
+function saleCosts(b) {
+  const keys = ['logs', 'boards', 'shop', 'furn', 'fire', 'frame', 'chips', 'rush', 'kits'];
+  const w = b.wages || {};
+  const direct = { logs: 0, boards: w.planer || 0, shop: w.shop || 0, furn: w.joinery || 0, fire: w.fire || 0, frame: 0, chips: 0, rush: w.rush || 0, kits: w.kit || 0 };
+  const haul = (w.trucks || 0) + (b.out.fuel || 0);
+  const haulWeights = [{ key: 'logs', w: b.in.logs || 0 }, { key: 'boards', w: b.in.boards || 0 }].filter(x => x.w > 0);
+  if (haulWeights.length) {
+    const part = splitPool(haul, haulWeights);
+    direct.logs += part.logs || 0;
+    direct.boards += part.boards || 0;
+  }
+  const splitSum = Object.values(w).reduce((s, n) => s + (n || 0), 0);
+  const unsplit = Math.max(0, Math.round(b.out.wages || 0) - splitSum);
+  const shared = (w.saw || 0) + (w.forks || 0) + (w.forest || 0) + unsplit + (b.out.stumpage || 0) + (b.out.upgrades || 0);
+  const weights = keys.filter(k => (b.in[k] || 0) > 0).map(k => ({ key: k, w: b.in[k] }));
+  const share = splitPool(shared, weights);
+  const cost = {};
+  for (const k of keys) cost[k] = (direct[k] || 0) + (share[k] || 0);
+  let loose = haulWeights.length ? 0 : haul;
+  for (const k of keys) if ((b.in[k] || 0) <= 0 && cost[k]) { loose += cost[k]; cost[k] = 0; }
+  if (!weights.length) loose += shared;
+  return { cost, loose };
+}
 function bookTop(map, labels) {
   let key = '', best = 0;
   for (const k of Object.keys(labels)) if ((map[k] || 0) > best) { best = map[k]; key = k; }
@@ -4884,14 +4923,25 @@ function drawBooks() {
   } else if (booksTab === 'pieces') {
     const madeRows = [['Trees felled', m.logs], ['Pieces cut', m.pieces], ['Chips made', m.chips], ['Boards planed', m.boards], ['Furniture built', m.furn], ['Firewood split', m.fire], ['Kits built', m.kits]].filter(([, n]) => n > 0);
     const soldRows = [
-      ['Shop', s.shop, b.in.shop], ['Exported logs', s.logs, b.in.logs], ['Exported boards', s.boards, b.in.boards],
-      ['Furniture', s.furn, b.in.furn], ['Firewood', s.fire, b.in.fire], ['Frame yard', s.frame, b.in.frame],
-      ['Chips', s.chips, b.in.chips], ['Kits', s.kits, b.in.kits],
-      ['Rush logs', s.rushLogs, 0], ['Rush boards', s.rushBoards, 0], ['Rush furniture', s.rushFurn, 0], ['Rush firewood', s.rushFire, 0],
+      ['Shop', s.shop, b.in.shop, 'shop'], ['Exported logs', s.logs, b.in.logs, 'logs'], ['Exported boards', s.boards, b.in.boards, 'boards'],
+      ['Furniture', s.furn, b.in.furn, 'furn'], ['Firewood', s.fire, b.in.fire, 'fire'], ['Frame yard', s.frame, b.in.frame, 'frame'],
+      ['Chips', s.chips, b.in.chips, 'chips'], ['Kits', s.kits, b.in.kits, 'kits'],
+      ['Rush logs', s.rushLogs, 0, ''], ['Rush boards', s.rushBoards, 0, ''], ['Rush furniture', s.rushFurn, 0, ''], ['Rush firewood', s.rushFire, 0, ''],
     ].filter(([, n, cash]) => n > 0 || cash > 0);
     const madeHtml = madeRows.length ? madeRows.map(([name, n]) => `<div class="bk-line"><span><b>${name}</b><b>${q(n)}</b></span></div>`).join('') : '<p class="bk-note">Nothing made yet.</p>';
-    const soldHtml = soldRows.length ? `<table class="bk"><tr><th></th><th>Pieces</th><th>Cash</th><th>Each</th></tr>${soldRows.map(([name, n, cash]) => `<tr><td>${name}</td><td>${q(n)}</td><td class="cash">${cash ? money(cash) : '—'}</td><td>${n && cash ? eachMoney(cash, n) : '—'}</td></tr>`).join('')}${b.in.rush ? `<tr><td>Rush orders</td><td>${q((s.rushLogs || 0) + (s.rushBoards || 0) + (s.rushFurn || 0) + (s.rushFire || 0))}</td><td class="cash">${money(b.in.rush)}</td><td>—</td></tr>` : ''}</table>` : '<p class="bk-note">Nothing sold yet.</p>';
-    body = `<div class="bk-h">Made</div>${madeHtml}<div class="bk-h">Sold and exported</div>${soldHtml}<p class="bk-note">Counts have no dollar sign. Cash is what that sale booked. Rush lines share one cash total.</p>`;
+    const { cost, loose } = saleCosts(b);
+    const balCell = (n) => `<td class="${n >= 0 ? 'hi' : 'lo'}">${n > 0 ? '+' : ''}${money(n)}</td>`;
+    const costCells = (key, cash) => {
+      if (!cash) return '<td>—</td><td>—</td>';
+      const c = cost[key] || 0;
+      return `<td class="lo">${money(c)}</td>${balCell(cash - c)}`;
+    };
+    const soldBody = soldRows.map(([name, n, cash, key]) => `<tr><td>${name}</td><td>${q(n)}</td><td class="cash">${cash ? money(cash) : '—'}</td><td>${n && cash ? eachMoney(cash, n) : '—'}</td>${costCells(key, cash)}</tr>`).join('');
+    const rushRow = b.in.rush ? `<tr><td>Rush orders</td><td>${q((s.rushLogs || 0) + (s.rushBoards || 0) + (s.rushFurn || 0) + (s.rushFire || 0))}</td><td class="cash">${money(b.in.rush)}</td><td>—</td>${costCells('rush', b.in.rush)}</tr>` : '';
+    const looseRow = loose > 0 ? `<tr><td>No sale yet</td><td>—</td><td>—</td><td>—</td><td class="lo">${money(loose)}</td>${balCell(-loose)}</tr>` : '';
+    const sumRow = `<tr class="sum"><td>Balance</td><td></td><td class="cash">${money(inn)}</td><td></td><td class="lo">${money(out)}</td>${balCell(net)}</tr>`;
+    const soldHtml = (soldRows.length || b.in.rush || loose) ? `<table class="bk"><tr><th></th><th>Pieces</th><th>Cash</th><th>Each</th><th>Cost</th><th>Balance</th></tr>${soldBody}${rushRow}${looseRow}${sumRow}</table>` : '<p class="bk-note">Nothing sold yet.</p>';
+    body = `<div class="bk-h">Made</div>${madeHtml}<div class="bk-h">Sold and exported</div>${soldHtml}<p class="bk-note">Cost is that line's own pay and diesel, plus a share of the saw, forklifts, stumpage, and upgrades, split by what each line earned. Balance is cash minus cost. The last row is the whole mill.</p>`;
   } else {
     body = `
       <div class="bk-top">
