@@ -437,7 +437,7 @@ const UP = {
   dockN:    { vals: [1, 2, 3], costs: [1600, 5200] },
   shop:     { vals: [0, 1], costs: [420] },
   haul:     { vals: [0, 1, 2, 3, 4], costs: [260, 640, 1500, 4200] },
-  beltSpd:  { vals: [0.08, 0.10, 0.12, 0.15, 0.18, 0.20, 0.22], costs: [220, 420, 700, 1100, 6000, 18000] },
+  beltSpd:  { vals: [0.04, 0.05, 0.06, 0.075, 0.09, 0.10, 0.11], costs: [220, 420, 700, 1100, 6000, 18000] },
   buyers:   { vals: [1, 2, 3, 4, 5, 6], costs: [180, 420, 800, 1400, 2600] },
   palletN:  { vals: [1, 2, 3, 4], costs: [320, 780, 1900] },
   joinery:  { vals: [0, 1], costs: [240] },
@@ -3077,9 +3077,9 @@ const HAUL_PTS = [
   { x: -17.8, z: -36.2 },
   { x: -12.4, z: -36.2 },
 ];
-const BELT_TEE = { x: -19.6, z: -19.6 };
+const BELT_TEE = { x: -32.15, z: -27.4 };
 const BELT_SPLIT = { x: -17.8, z: -27.4 };
-const BELT_TRUNK = [{ x: -20.9, z: -13.3 }, { x: -19.6, z: -15.2 }, BELT_TEE, { x: -17.8, z: -19.6 }, BELT_SPLIT];
+const BELT_TRUNK = [{ x: -32.15, z: -13.2 }, BELT_TEE, BELT_SPLIT];
 const BELT_SHOP = [BELT_SPLIT, { x: -17.8, z: -36.2 }, { x: -12.4, z: -36.2 }];
 const BELT_FIRE = [BELT_SPLIT, { x: -3.4, z: -27.4 }];
 const SHOP_FLOW = [...BELT_TRUNK, ...BELT_SHOP.slice(1)];
@@ -4633,7 +4633,7 @@ const STATIONS = [
   { id: 'export', name: 'Export', icon: '🚢', blurb: 'A contract on top of the buyer price. Each step is a small bump and costs more than the last.', ups: ['export'], spots: [{ x: 57.4, z: 12.2, r: 3.2 }] },
   { id: 'frame', name: 'Frame yard', icon: '🏗️', blurb: 'Buys finished boards for more than the log trucks pay, a few at a time, and leaves some boards at the mill.', ups: ['frame', 'frameSpd', 'frameBite', 'framePay'], spots: [{ x: FRAME_AT.x, z: FRAME_AT.z, r: 6.4 }] },
   { id: 'rush', name: 'Rush yard', icon: '🚐', blurb: 'A van arrives with a timed order for logs, boards, firewood, or furniture. Fill it before it leaves for a bonus.', ups: ['rushN', 'rushBite', 'rushCrew', 'rushVan', 'rushWait', 'rushPay'], spots: [{ x: 15.4, z: -2.4, r: 2.6 }, { x: 19.0, z: -2.4, r: 2.6 }, { x: 22.6, z: -2.4, r: 2.6 }] },
-  { id: 'shop', name: 'Shop', icon: '🏪', blurb: 'People walk up and buy cut logs. A worker, then a cart, then the belt carries the wood to the stall.', ups: ['shop', 'haul', 'beltSpd', 'buyers', 'palletN'], spots: [{ x: -9.4, z: -44.2, r: 7.2 }] },
+  { id: 'shop', name: 'Shop', icon: '🏪', blurb: 'People walk up and buy cut logs. A worker, then a cart, then the belt carries the wood to the stall.', ups: ['shop', 'haul', 'beltSpd', 'buyers', 'palletN'], spots: [{ x: SHOP_AT.x, z: SHOP_AT.z, r: 4.8 }] },
   { id: 'joinery', name: 'Joinery', icon: '🪑', blurb: 'The joiner fetches boards or cut logs and builds a stool, bench, or table. People pay more than the raw wood.', ups: ['joinery', 'joinSpd', 'joinKind'], spots: [{ x: JOIN_AT.x, z: JOIN_AT.z, r: 4.6 }, { x: FURN_SHOW.x, z: FURN_SHOW.z, r: 4.2 }] },
   { id: 'firewood', name: 'Firewood', icon: '🔥', blurb: 'Splits extra cut logs into bundles and sells them at the rack out front.', ups: ['firewood', 'fireSpd', 'fireSize', 'fireHaul'], spots: [{ x: FIRE_AT.x, z: FIRE_AT.z, r: 4.8 }] },
   { id: 'kit', name: 'Kit shop', icon: '📦', blurb: 'Combines boards and cut logs into a crate, a shed kit, or a cabin kit. Slow to build, and each one sells for more than the parts.', ups: ['kit', 'kitSpd', 'kitKind'], spots: [{ x: KIT_AT.x, z: KIT_AT.z, r: 5.2 }, { x: KIT_SHOW.x, z: KIT_SHOW.z, r: 3.4 }] },
