@@ -2339,7 +2339,9 @@ class Forklift {
     if (focus === 'boards' && boardsFree >= want && !pileTaken) useBoards = true;
     if (focus === 'logs' && S.stockpile >= want) useBoards = false;
     const pile = useBoards ? boardsFree : S.stockpile;
-    if (!(pile > 0 && (pile >= want || this.waitT > 2.5))) {
+    // At the truck, or already leaving it, take whatever is there. A full fork is only worth waiting for while parked at home.
+    const eager = this.state === 'unload' || this.state === 'toHome';
+    if (!(pile > 0 && (pile >= want || this.waitT > 2.5 || eager))) {
       this.waitT = pile > 0 ? this.waitT + dt : 0;
       return false;
     }
@@ -2386,16 +2388,17 @@ class Forklift {
           }
         }
         const mouthBusy = forks.some(f => f !== this && (f.state === 'toTub' || f.state === 'scoop' || (f.state === 'toTruck' && Math.abs(f.pos.x - PIT_MOUTH_X) < 2.6 && f.pos.z < FORK_LANE_Z + 1)));
-        const slotX = pitSpot(place + (mouthBusy ? 1 : 0)).x;
-        const off = Math.abs(this.pos.z - FORK_LANE_Z) > 0.45;
-        const approach = off ? { x: slotX, z: this.pos.z } : { x: slotX, z: FORK_LANE_Z };
+        const slot = pitSpot(place + (mouthBusy ? 1 : 0));
         const first = this.path[0];
-        const stale = !first || Math.abs(first.x - approach.x) > 0.45 || Math.abs(first.z - approach.z) > 0.45;
-        if (this.pitSpotX == null || Math.abs(this.pitSpotX - slotX) > 0.4 || stale) {
-          this.pitSpotX = slotX;
+        const stale = !first || Math.abs(first.x - slot.x) > 0.45 || Math.abs(first.z - slot.z) > 0.45;
+        if (this.pitSpotX == null || Math.abs(this.pitSpotX - slot.x) > 0.4 || stale) {
+          this.pitSpotX = slot.x;
           const pts = [];
-          if (off && Math.abs(this.pos.x - slotX) > 0.45) pts.push({ x: slotX, z: this.pos.z });
-          pts.push({ x: slotX, z: FORK_LANE_Z, yaw: Math.PI });
+          const onLane = Math.abs(this.pos.z - FORK_LANE_Z) < 0.8;
+          // Queue south of the lane. A loaded forklift has to drive that lane to the trucks.
+          if (onLane && Math.abs(this.pos.x - slot.x) > 0.45) pts.push({ x: slot.x, z: FORK_LANE_Z });
+          else if (!onLane && Math.abs(this.pos.x - slot.x) > 0.45) pts.push({ x: slot.x, z: this.pos.z });
+          pts.push({ x: slot.x, z: slot.z, yaw: Math.PI });
           this.path = pts;
         }
         this.followPath(dt);
@@ -2461,6 +2464,7 @@ class Forklift {
         break;
       case 'toHome':
         this.lift = Math.max(0, this.lift - dt * 1.2);
+        if (this.claimJob(dt)) break;
         if (this.followPath(dt)) { this.state = 'idle'; this.truck = null; }
         break;
     }
