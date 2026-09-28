@@ -4902,14 +4902,13 @@ function saleCosts(b) {
   const splitSum = Object.values(w).reduce((s, n) => s + (n || 0), 0);
   const unsplit = Math.max(0, Math.round(b.out.wages || 0) - splitSum);
   const shared = (w.saw || 0) + (w.forks || 0) + (w.forest || 0) + unsplit + (b.out.stumpage || 0) + (b.out.upgrades || 0);
-  const weights = keys.filter(k => (b.in[k] || 0) > 0).map(k => ({ key: k, w: b.in[k] }));
-  const share = splitPool(shared, weights);
   const cost = {};
-  for (const k of keys) cost[k] = (direct[k] || 0) + (share[k] || 0);
   let loose = haulWeights.length ? 0 : haul;
-  for (const k of keys) if ((b.in[k] || 0) <= 0 && cost[k]) { loose += cost[k]; cost[k] = 0; }
-  if (!weights.length) loose += shared;
-  return { cost, loose };
+  for (const k of keys) {
+    if ((b.in[k] || 0) > 0) cost[k] = direct[k] || 0;
+    else loose += direct[k] || 0;
+  }
+  return { cost, loose, shared };
 }
 function bookTop(map, labels) {
   let key = '', best = 0;
@@ -4975,7 +4974,7 @@ function drawBooks() {
       ['Rush logs', s.rushLogs, 0, ''], ['Rush boards', s.rushBoards, 0, ''], ['Rush furniture', s.rushFurn, 0, ''], ['Rush firewood', s.rushFire, 0, ''],
     ].filter(([, n, cash]) => n > 0 || cash > 0);
     const madeHtml = madeRows.length ? madeRows.map(([name, n]) => `<div class="bk-line"><span><b>${name}</b><b>${q(n)}</b></span></div>`).join('') : '<p class="bk-note">Nothing made yet.</p>';
-    const { cost, loose } = saleCosts(b);
+    const { cost, loose, shared } = saleCosts(b);
     const balCell = (n) => `<td class="${n >= 0 ? 'hi' : 'lo'}">${n > 0 ? '+' : ''}${money(n)}</td>`;
     const costCells = (key, cash) => {
       if (!cash) return '<td>—</td><td>—</td>';
@@ -4985,9 +4984,10 @@ function drawBooks() {
     const soldBody = soldRows.map(([name, n, cash, key]) => `<tr><td>${name}</td><td>${q(n)}</td><td class="cash">${cash ? money(cash) : '—'}</td><td>${n && cash ? eachMoney(cash, n) : '—'}</td>${costCells(key, cash)}</tr>`).join('');
     const rushRow = b.in.rush ? `<tr><td>Rush orders</td><td>${q((s.rushLogs || 0) + (s.rushBoards || 0) + (s.rushFurn || 0) + (s.rushFire || 0))}</td><td class="cash">${money(b.in.rush)}</td><td>—</td>${costCells('rush', b.in.rush)}</tr>` : '';
     const looseRow = loose > 0 ? `<tr><td>No sale yet</td><td>—</td><td>—</td><td>—</td><td class="lo">${money(loose)}</td>${balCell(-loose)}</tr>` : '';
+    const sharedRow = shared > 0 ? `<tr><td>Shared costs</td><td></td><td>—</td><td></td><td class="lo">${money(shared)}</td>${balCell(-shared)}</tr>` : '';
     const sumRow = `<tr class="sum"><td>Balance</td><td></td><td class="cash">${money(inn)}</td><td></td><td class="lo">${money(out)}</td>${balCell(net)}</tr>`;
-    const soldHtml = (soldRows.length || b.in.rush || loose) ? `<table class="bk"><tr><th></th><th>Pieces</th><th>Cash</th><th>Each</th><th>Cost</th><th>Balance</th></tr>${soldBody}${rushRow}${looseRow}${sumRow}</table>` : '<p class="bk-note">Nothing sold yet.</p>';
-    body = `<div class="bk-h">Made</div>${madeHtml}<div class="bk-h">Sold and exported</div>${soldHtml}<p class="bk-note">Cost is that line's own pay and diesel, plus a share of the saw, forklifts, stumpage, and upgrades, split by what each line earned. Balance is cash minus cost. The last row is the whole mill.</p>`;
+    const soldHtml = (soldRows.length || b.in.rush || loose || shared) ? `<table class="bk"><tr><th></th><th>Pieces</th><th>Cash</th><th>Each</th><th>Cost</th><th>Balance</th></tr>${soldBody}${rushRow}${looseRow}${sharedRow}${sumRow}</table>` : '<p class="bk-note">Nothing sold yet.</p>';
+    body = `<div class="bk-h">Made</div>${madeHtml}<div class="bk-h">Sold and exported</div>${soldHtml}<p class="bk-note">Cost on a sale is that line's own pay and diesel. Shared costs are the saw, forklifts, stumpage, and upgrades for the whole yard. The last row subtracts all of it.</p>`;
   } else {
     body = `
       <div class="bk-top">
