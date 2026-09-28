@@ -107,6 +107,7 @@
   }
   #booksBody { overflow: auto; padding: 8px 12px 14px; display: flex; flex-direction: column; gap: 10px; }
   .bk-top { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .bk-card.wide { grid-column: 1 / -1; }
   .bk-card { background: #2b3842; border-radius: 14px; padding: 8px 10px; }
   .bk-card b { display: block; font-size: 16px; line-height: 1.15; }
   .bk-card small { display: block; font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; color: #c5d0d6; }
@@ -135,10 +136,10 @@
   table.bk td { text-align: right; padding: 1px 0; }
   table.bk tr.sec td { text-align: left; color: #ffe8a0; font-size: 12px; padding-top: 6px; }
   .shop-head {
-    display: flex; align-items: center; gap: 10px; padding: 10px 12px 8px; border-bottom: 2px solid #ffffff18;
+    display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px 8px; border-bottom: 2px solid #ffffff18;
   }
   .shop-head h3 { font-size: 22px; line-height: 1; }
-  .shop-head p { font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; color: #c5d0d6; }
+  .shop-head p { font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; color: #c5d0d6; line-height: 1.35; margin-top: 4px; }
   #shopIcon { font-size: 28px; }
   #shopClose, #booksClose {
     margin-left: auto; pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800;
@@ -254,7 +255,7 @@
   <div id="shop" class="hidden">
     <div class="shop-head">
       <span id="shopIcon">🪚</span>
-      <div><h3 id="shopTitle">Sawmill</h3><p>Buy the next small step</p></div>
+      <div><h3 id="shopTitle">Sawmill</h3><p id="shopBlurb">Logs ride the belt into the saw, and the pieces fall into the bin.</p></div>
       <button id="shopClose" type="button" title="Close">✕</button>
     </div>
     <div id="shopRows"></div>
@@ -363,7 +364,7 @@ const UP = {
   export:   { vals: [1, 1.03, 1.06, 1.09, 1.12, 1.15, 1.18, 1.22, 1.24, 1.26], costs: [150000, 350000, 700000, 1200000, 2000000, 3200000, 5000000, 9000000, 15000000] },
   rushN:    { vals: [1, 2, 3], costs: [900, 2400] },
   rushBite: { vals: [4, 5, 6, 8, 10], costs: [3500, 12000, 40000, 400000] },
-  rushCrew: { vals: [13, 15, 17.5, 20, 22], costs: [2800, 9000, 28000, 280000] },
+  rushCrew: { vals: [6, 7, 8, 9, 10], costs: [2800, 9000, 28000, 280000] },
   rushVan:  { vals: [6.2, 7.0, 7.8, 8.6, 9.4], costs: [2200, 8000, 24000, 220000] },
   rushWait: { vals: [0, 8, 18, 30, 44], costs: [1800, 6000, 20000, 200000] },
   rushPay:  { vals: [0.8, 0.95, 1.15, 1.35, 1.6, 1.85], costs: [12000, 45000, 150000, 500000, 1600000] },
@@ -604,7 +605,7 @@ function riverDist(x, z) {
 }
 
 const RS_STEP = 0.5;
-const ROAD_PTS = [[-29, 7.7], [-8, 7.7], [-1, 7.7], [7, 7.9], [14, 10.2], [20, 13.4], [25, 14], [41, 14], [47, 13.6], [53, 11.3], [59, 9.4]];
+const ROAD_PTS = [[-44, 7.7], [-29, 7.7], [-8, 7.7], [-1, 7.7], [7, 7.9], [14, 10.2], [20, 13.4], [25, 14], [41, 14], [47, 13.6], [53, 11.3], [59, 9.4]];
 const roadCurve = new THREE.CatmullRomCurve3(ROAD_PTS.map(p => V(p[0], 0, p[1])), false, 'centripetal');
 const roadPts = roadCurve.getSpacedPoints(Math.ceil(roadCurve.getLength() / RS_STEP));
 function rightsOf(pts) {
@@ -658,8 +659,8 @@ function zoneLimit(s) {
 }
 
 // yard & spots
-const YARD = { x0: -34, x1: 14, z0: -20, z1: 14 };
-const SPOT_X = [-27.2, -22.2, -17.2, -12.2, -7.2, -2.2, 2.8, 7.8];
+const YARD = { x0: -41.5, x1: 14, z0: -20, z1: 14 };
+const SPOT_X = [-37.2, -32.2, -27.2, -22.2, -17.2, -12.2, -7.2, -2.2];
 const SPOT_Z = 3.4;
 const AISLE_OUT_Z = 7.7 + LANE, AISLE_RET_Z = 7.7 - LANE;
 const TUB = { x0: -30.6, x1: -21.4, z0: -12.1, z1: -6.8 };
@@ -812,7 +813,7 @@ roadSignCanvas.width = 256; roadSignCanvas.height = 320;
 const roadSignTex = new THREE.CanvasTexture(roadSignCanvas);
 roadSignTex.colorSpace = THREE.SRGBColorSpace;
 const roadSign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.75), new THREE.MeshBasicMaterial({ map: roadSignTex, transparent: true, toneMapped: false }));
-roadSign.position.set(5.7, 1.9, 2.15);
+roadSign.position.set(7.6, 1.9, 2.15);
 roadSign.rotation.y = Math.atan2(CAM_DIR.x, CAM_DIR.z);
 scene.add(roadSign);
 function drawRoadSign() {
@@ -874,7 +875,7 @@ for (let i = ROAD_I0 + 10; i < roadPts.length - 4; i += 26) {
     part(boxG(0.08, 0.02, 2.7), lineWhite, scene, x - 1.2, 0.16, -23.7, 0, 0, 0, false);
     part(boxG(0.08, 0.02, 2.7), lineWhite, scene, x + 1.2, 0.16, -23.7, 0, 0, 0, false);
   }
-  for (let x = -30.6; x < 8.6; x += 1.7) {
+  for (let x = -39.1; x < 8.6; x += 1.7) {
     part(boxG(0.62, 0.015, 0.05), lineYellow, scene, x, Y, FORK_LANE_Z, 0, 0, 0, false);
   }
 }
@@ -2110,61 +2111,48 @@ function clearOfBin(x, z) {
 }
 const forks = [];
 let pitTicket = 1;
-const F_ACC = 6.5, F_TURN = 4.6, F_BODY = 1.7;
+const F_ACC = 6.5, F_TURN = 4.6;
 class Forklift {
   constructor(i) {
     this.i = i; this.home = FORK_HOME[i].clone();
     this.m = buildForklift(); scene.add(this.m.g);
-    this.pos = this.home.clone(); this.yaw = -Math.PI / 2; this.v = 0; this.dir = 1;
+    this.pos = this.home.clone(); this.yaw = 0; this.v = 0; this.dir = 1;
     this.state = 'idle'; this.n = 0; this.hold = 0; this.boards = 0; this.boardReserve = 0; this.fromPile = false; this.fromTub = false; this.dockX = 0; this.vanJob = false; this.lift = 0; this.timer = 0; this.truck = null; this.path = []; this.waitT = 0; this.blockT = 0; this.wheelA = 0; this.pop = 0;
   }
   spd() { return UP.forkSpd.vals[S.lv.forkSpd]; }
-  parkedHere() { return this.state === 'unload' || this.state === 'scoop'; }
-  blocked() {
-    const fx = Math.sin(this.yaw) * this.dir, fz = Math.cos(this.yaw) * this.dir;
-    let ahead = false;
+  resting() {
+    return this.state === 'idle' && Math.hypot(this.pos.x - this.home.x, this.pos.z - this.home.z) < 0.75;
+  }
+  crowds(x, z) {
+    const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
+    let hit = null, best = 99;
     for (const o of forks) {
-      if (o === this || o.parkedHere()) continue;
-      const dx = o.pos.x - this.pos.x, dz = o.pos.z - this.pos.z;
-      const d = Math.hypot(dx, dz);
-      if (d < F_BODY) return 'in';
-      if (d > 3.4) continue;
-      const forward = dx * fx + dz * fz;
-      if (forward < 0.3) continue;
-      const lateral = Math.abs(dx * fz - dz * fx);
-      if (lateral > 1.45) continue;
-      const ofx = Math.sin(o.yaw) * o.dir, ofz = Math.cos(o.yaw) * o.dir;
-      const oncoming = dx * ofx + dz * ofz < -0.15;
-      if (oncoming && this.n > 0 && o.n === 0) continue;
-      if (oncoming && this.n === 0 && o.n > 0) return 'oncoming';
-      if (oncoming && this.i < o.i) continue;
-      if (oncoming) return 'oncoming';
-      ahead = true;
+      if (o === this || (this.resting() && o.resting())) continue;
+      const dx = o.pos.x - x, dz = o.pos.z - z;
+      const dist = Math.hypot(dx, dz);
+      const along = dx * fx + dz * fz;
+      const side = Math.abs(dx * fz - dz * fx);
+      if (dist < 2.4 || (along > -0.95 && along < 2.75 && side < 1.4)) {
+        const rank = along > 0.2 ? along : 8 + dist;
+        if (rank < best) { hit = o; best = rank; }
+      }
     }
-    const crowd = [];
-    for (const h of hands) if (h.moving || h.state !== 'idle') crowd.push(h);
-    for (const c of customers) if (c.state !== 'pool') crowd.push(c);
-    for (const p of crowd) {
-      const dx = p.x - this.pos.x, dz = p.z - this.pos.z;
-      const d = Math.hypot(dx, dz);
-      if (d > 2.2 || d < 0.05) continue;
-      const forward = dx * fx + dz * fz;
-      if (forward > 0.3 && Math.abs(dx * fz - dz * fx) < 0.9) return 'ahead';
-    }
-    return ahead ? 'ahead' : null;
+    return hit;
   }
   shoveOut() {
-    const mine = this.parkedHere();
+    if (this.resting()) return;
     for (const o of forks) {
-      if (o === this) continue;
+      if (o === this || o.resting()) continue;
       const dx = this.pos.x - o.pos.x, dz = this.pos.z - o.pos.z;
       const d = Math.hypot(dx, dz) || 0.001;
-      if (d >= F_BODY) continue;
-      if (mine && !o.parkedHere()) continue;
-      if (mine && o.parkedHere() && this.i < o.i) continue;
-      const push = (F_BODY - d) * 0.85 + 0.04;
-      this.pos.x += dx / d * push;
-      this.pos.z += dz / d * push;
+      if (d > 2.8) continue;
+      const fx = Math.sin(this.yaw), fz = Math.cos(this.yaw);
+      const along = dx * fx + dz * fz;
+      const side = Math.abs(dx * fz - dz * fx);
+      if (d >= 2.25 && (along <= -0.95 || along >= 2.75 || side >= 1.4)) continue;
+      const push = Math.min(0.32, 0.1 + Math.max(0, 1.4 - d) * 0.4);
+      this.pos.x += (dx / d) * push;
+      this.pos.z += (dz / d) * push;
     }
     const out = clearOfBin(this.pos.x, this.pos.z);
     if (out) {
@@ -2173,49 +2161,44 @@ class Forklift {
       this.pos.z += (out.z - this.pos.z) * k;
     }
   }
-  giveWay(dt) {
-    const step = 2.6 * dt;
-    let bx = this.pos.x - Math.sin(this.yaw) * this.dir * step;
-    let bz = this.pos.z - Math.cos(this.yaw) * this.dir * step;
-    if (clearOfBin(bx, bz)) return;
-    for (const o of forks) {
-      if (o === this) continue;
-      const next = Math.hypot(o.pos.x - bx, o.pos.z - bz);
-      const now = Math.hypot(o.pos.x - this.pos.x, o.pos.z - this.pos.z);
-      if (next < F_BODY + 0.08 && next < now - 0.02) return;
-    }
-    this.pos.x = bx; this.pos.z = bz;
+  yieldTo(o) {
+    const me = this.n > 0 || this.hold > 0, them = o.n > 0 || o.hold > 0;
+    if (me !== them) return !me;
+    return this.i > o.i;
   }
   driveTo(dt, tx, tz, spd, rev) {
     const dx = tx - this.pos.x, dz = tz - this.pos.z, dist = Math.hypot(dx, dz);
     this.dir = rev ? -1 : 1;
-    if (dist < 0.04) { this.pos.x = tx; this.pos.z = tz; return true; }
-    const block = this.blocked();
-    if (block) {
-      const want = rev ? yawOf(-dx, -dz) : yawOf(dx, dz);
-      this.yaw += clamp(angDiff(this.yaw, want), -F_TURN * dt, F_TURN * dt);
-      this.v = 0;
-      if (block === 'in') this.shoveOut();
-      else if (block === 'oncoming') this.giveWay(dt);
-      return false;
-    }
-    this.blockT = 0;
-    if (dist < 0.35) {
-      for (const o of forks) {
-        if (o !== this && !o.parkedHere() && Math.hypot(o.pos.x - tx, o.pos.z - tz) < 2.15) { this.v = 0; return false; }
-      }
-      const step = Math.min(dist, Math.max(0.6, this.v) * dt);
-      this.pos.x += dx / dist * step; this.pos.z += dz / dist * step; this.v = Math.max(0.3, this.v * 0.9);
-      return Math.hypot(tx - this.pos.x, tz - this.pos.z) < 0.04 ? (this.pos.x = tx, this.pos.z = tz, true) : false;
+    if (dist < 0.12) {
+      const taken = forks.some(o => o !== this && Math.hypot(o.pos.x - tx, o.pos.z - tz) < 1.8);
+      if (!taken && !this.crowds(tx, tz)) { this.pos.x = tx; this.pos.z = tz; }
+      return Math.hypot(tx - this.pos.x, tz - this.pos.z) < 0.2;
     }
     const want = rev ? yawOf(-dx, -dz) : yawOf(dx, dz);
+    this.yaw += clamp(angDiff(this.yaw, want), -F_TURN * dt, F_TURN * dt);
+    const fx = Math.sin(this.yaw) * this.dir, fz = Math.cos(this.yaw) * this.dir;
+    const ahead = this.crowds(this.pos.x + fx * 1.7, this.pos.z + fz * 1.7) || this.crowds(this.pos.x, this.pos.z);
+    if (ahead) {
+      this.v = 0;
+      const odx = ahead.pos.x - this.pos.x, odz = ahead.pos.z - this.pos.z;
+      const ofx = Math.sin(ahead.yaw) * ahead.dir, ofz = Math.cos(ahead.yaw) * ahead.dir;
+      const facing = odx * fx + odz * fz > 0.3;
+      const opposed = fx * ofx + fz * ofz < -0.35;
+      if (facing && opposed && this.yieldTo(ahead) && this.pos.z > FORK_LANE_Z - 1.6) {
+        const nz = this.pos.z - 2.2 * dt;
+        if (!this.crowds(this.pos.x, nz) && !clearOfBin(this.pos.x, nz)) this.pos.z = nz;
+      }
+      return false;
+    }
     const err = angDiff(this.yaw, want);
-    this.yaw += clamp(err, -F_TURN * dt, F_TURN * dt);
     const al = Math.max(0, Math.cos(err));
-    const vT = Math.min(spd * (0.08 + 0.92 * al * al), Math.sqrt(2 * 5 * dist) + 0.1);
-    this.v = this.v < vT ? Math.min(vT, this.v + F_ACC * dt) : Math.max(vT, this.v - 9 * dt);
+    const vT = Math.min(spd * (0.12 + 0.88 * al * al), Math.sqrt(2 * 4 * dist) + 0.12);
+    this.v = this.v < vT ? Math.min(vT, this.v + F_ACC * dt) : Math.max(vT, this.v - 8 * dt);
+    if (this.v < 0.08 || al < 0.2) return false;
     const step = Math.min(this.v * dt, dist);
-    this.pos.x += Math.sin(this.yaw) * step * this.dir; this.pos.z += Math.cos(this.yaw) * step * this.dir;
+    const nx = this.pos.x + fx * step, nz = this.pos.z + fz * step;
+    if (this.crowds(nx, nz) || clearOfBin(nx, nz)) { this.v = 0; return false; }
+    this.pos.x = nx; this.pos.z = nz;
     return false;
   }
   outPath(tx, tz) {
@@ -2231,7 +2214,7 @@ class Forklift {
     return [
       { x: tx, z: FORK_LANE_Z, rev: true, sm: 0.55 },
       { x: H.x, z: FORK_LANE_Z },
-      { x: H.x, z: H.z, sm: 0.5, yaw: -Math.PI / 2 },
+      { x: H.x, z: H.z, sm: 0.5, yaw: 0 },
     ];
   }
   followPath(dt) {
@@ -2270,63 +2253,69 @@ class Forklift {
     }
     return best;
   }
+  claimJob(dt) {
+    const t = this.pickTruck();
+    if (!t) { this.waitT = 0; return false; }
+    const need = t.cap() - t.loaded - t.incoming;
+    const want = Math.min(UP.forkCap.vals[S.lv.forkCap], need);
+    const boardsFree = S.boards - (S.boardHold || 0);
+    let useBoards = boardsFree >= want || (boardsFree > 0 && S.stockpile <= 0);
+    const pileTaken = forks.some(f => f !== this && (f.state === 'toBoards' || f.boardReserve > 0
+      || (f.state === 'scoop' && Math.hypot(f.pos.x - BOARD_PILE.x, f.pos.z - BOARD_PILE.z) < 3.6)));
+    if (useBoards && pileTaken) useBoards = false;
+    const pile = useBoards ? boardsFree : S.stockpile;
+    if (!(pile > 0 && (pile >= want || this.waitT > 2.5))) {
+      this.waitT = pile > 0 ? this.waitT + dt : 0;
+      return false;
+    }
+    const n = Math.min(want, pile);
+    this.truck = t; t.incoming += n; this.waitT = 0;
+    if (useBoards) {
+      S.boardHold = (S.boardHold || 0) + n;
+      this.boardReserve = n; this.boards = 0; this.n = 0; this.hold = 0; this.fromPile = true; this.fromTub = false;
+      this.path = [
+        { x: this.pos.x, z: FORK_OUT_Z },
+        { x: BOARD_PILE.x, z: FORK_OUT_Z },
+        { x: BOARD_PILE.x, z: BOARD_PILE.z + 1.9, sm: 0.45 },
+      ];
+      this.state = 'toBoards';
+    } else {
+      S.stockpile -= n; this.boards = 0; this.n = 0; this.hold = n; this.fromPile = false; this.fromTub = true; this.dockX = 0;
+      this.pitTicket = pitTicket++;
+      this.pitSpotX = null;
+      this.path = [];
+      this.state = 'toQueue';
+    }
+    return true;
+  }
   update(dt) {
     const prev = this.pos.clone();
     const H = this.home;
     switch (this.state) {
       case 'idle': {
         this.v = 0; this.lift = Math.max(0, this.lift - dt * 2);
-        const t = this.pickTruck();
-        if (t) {
-          const need = t.cap() - t.loaded - t.incoming;
-          const want = Math.min(UP.forkCap.vals[S.lv.forkCap], need);
-          const boardsFree = S.boards - (S.boardHold || 0);
-          let useBoards = boardsFree >= want || (boardsFree > 0 && S.stockpile <= 0);
-          const pileTaken = forks.some(f => f !== this && (f.state === 'toBoards' || f.boardReserve > 0
-            || (f.state === 'scoop' && Math.hypot(f.pos.x - BOARD_PILE.x, f.pos.z - BOARD_PILE.z) < 3.6)));
-          if (useBoards && pileTaken) useBoards = false;
-          const pile = useBoards ? boardsFree : S.stockpile;
-          if (pile > 0 && (pile >= want || this.waitT > 2.5)) {
-            const n = Math.min(want, pile);
-            this.truck = t; t.incoming += n; this.waitT = 0;
-            if (useBoards) {
-              S.boardHold = (S.boardHold || 0) + n;
-              this.boardReserve = n; this.boards = 0; this.n = 0; this.fromPile = true;
-              this.path = [
-                { x: H.x, z: FORK_OUT_Z },
-                { x: BOARD_PILE.x, z: FORK_OUT_Z },
-                { x: BOARD_PILE.x, z: BOARD_PILE.z + 1.9, sm: 0.45 },
-              ];
-              this.state = 'toBoards';
-            } else {
-              S.stockpile -= n; this.boards = 0; this.n = 0; this.hold = n; this.fromPile = false; this.fromTub = true; this.dockX = 0;
-              this.pitTicket = pitTicket++;
-              this.pitSpotX = null;
-              this.path = [];
-              this.state = 'toQueue';
-            }
-          } else this.waitT = pile > 0 ? this.waitT + dt : 0;
-        } else this.waitT = 0;
+        this.claimJob(dt);
         break;
       }
       case 'toQueue': {
-        const line = forks.filter(f => f.state === 'toQueue').sort((a, b) => a.pos.x - b.pos.x || a.pitTicket - b.pitTicket);
+        this.lift = Math.max(0, this.lift - dt * 1.2);
+        const line = forks.filter(f => f.state === 'toQueue').sort((a, b) => a.pitTicket - b.pitTicket);
         const place = Math.max(0, line.indexOf(this));
-        const lead = place > 0 ? line[place - 1] : null;
-        let spot = pitSpot(place);
-        if (lead) spot = { x: Math.max(spot.x, lead.pos.x + 3.45), z: PIT_Z };
+        const mouthBusy = forks.some(f => f !== this && (f.state === 'toTub' || f.state === 'scoop' || (f.state === 'toTruck' && Math.abs(f.pos.x - PIT_MOUTH_X) < 2.6 && f.pos.z < FORK_LANE_Z + 1)));
+        const spot = pitSpot(place + (mouthBusy ? 1 : 0));
         const gap = Math.hypot(this.pos.x - spot.x, this.pos.z - spot.z);
-        if (this.pitSpotX == null || Math.abs(this.pitSpotX - spot.x) > 0.85 || (this.path.length === 0 && gap > 0.45)) {
+        if (this.pitSpotX == null || Math.abs(this.pitSpotX - spot.x) > 0.4 || this.path.length === 0) {
           this.pitSpotX = spot.x;
-          const onLine = Math.abs(this.pos.z - PIT_Z) < 0.7;
-          this.path = onLine
-            ? [{ x: spot.x, z: PIT_Z, sm: 0.7, yaw: -Math.PI / 2 }]
+          const onPit = Math.abs(this.pos.z - PIT_Z) < 0.85;
+          this.path = onPit
+            ? [{ x: spot.x, z: PIT_Z, sm: 0.62, yaw: -Math.PI / 2 }]
             : [
-                { x: this.pos.x, z: PIT_Z },
-                { x: spot.x, z: PIT_Z, sm: 0.7, yaw: -Math.PI / 2 },
+                { x: this.pos.x, z: FORK_LANE_Z },
+                { x: spot.x, z: FORK_LANE_Z },
+                { x: spot.x, z: PIT_Z, sm: 0.55, yaw: -Math.PI / 2 },
               ];
         }
-        const there = gap < 0.45 || this.followPath(dt);
+        const there = gap < 0.55 || this.followPath(dt);
         if (there && place === 0 && this.pos.x < PIT_MOUTH_X + 0.7 && Math.abs(this.pos.z - PIT_Z) < 0.7) {
           const bay = this.dockFree();
           if (bay) {
@@ -2349,6 +2338,7 @@ class Forklift {
         }
         break;
       case 'toBoards':
+        this.lift = Math.max(0, this.lift - dt * 1.2);
         if (this.followPath(dt)) {
           const n = this.boardReserve;
           S.boards = Math.max(0, S.boards - n);
@@ -2391,8 +2381,12 @@ class Forklift {
           sfx.drop();
           const t = this.truck;
           t.loaded += this.n; t.boards += this.boards; t.incoming -= this.n; this.n = 0; this.boards = 0;
-          this.path = this.homePath(SPOT_X[t.bay]);
-          this.state = 'toHome';
+          const bay = t.bay;
+          if (!this.claimJob(0)) {
+            this.truck = t;
+            this.path = this.homePath(SPOT_X[bay]);
+            this.state = 'toHome';
+          }
         }
         break;
       case 'toHome':
@@ -2402,7 +2396,7 @@ class Forklift {
     }
     this.shoveOut();
     this.moved = prev.distanceTo(this.pos);
-    this.pos.x = clamp(this.pos.x, -32, 9.5);
+    this.pos.x = clamp(this.pos.x, -40, 9.5);
     this.pos.z = clamp(this.pos.z, -19.2, -0.35);
   }
   sync(dt, time) {
@@ -2448,6 +2442,7 @@ function freshBooks() {
   return {
     in: { logs: 0, boards: 0, shop: 0, furn: 0, fire: 0, frame: 0, chips: 0, rush: 0, kits: 0 },
     out: { wages: 0, fuel: 0, stumpage: 0, upgrades: 0 },
+    wages: { saw: 0, forks: 0, trucks: 0, planer: 0, forest: 0, shop: 0, joinery: 0, fire: 0, kit: 0, rush: 0 },
     made: { logs: 0, pieces: 0, boards: 0, furn: 0, fire: 0, chips: 0, kits: 0 },
     sold: { logs: 0, boards: 0, shop: 0, furn: 0, fire: 0, frame: 0, chips: 0, rushLogs: 0, rushBoards: 0, rushFurn: 0, rushFire: 0, loads: 0, kits: 0 },
     chart: [],
@@ -2458,6 +2453,7 @@ function takeBooks(raw) {
   if (!raw || typeof raw !== 'object') return b;
   for (const k of Object.keys(b.in)) b.in[k] = Math.max(0, +raw.in?.[k] || 0);
   for (const k of Object.keys(b.out)) b.out[k] = Math.max(0, +raw.out?.[k] || 0);
+  for (const k of Object.keys(b.wages)) b.wages[k] = Math.max(0, +raw.wages?.[k] || 0);
   for (const k of Object.keys(b.made)) b.made[k] = Math.max(0, +raw.made?.[k] || 0);
   for (const k of Object.keys(b.sold)) b.sold[k] = Math.max(0, +raw.sold?.[k] || 0);
   if (Array.isArray(raw.chart)) {
@@ -3626,27 +3622,45 @@ function takeStacked(n) {
   return n - left;
 }
 function truckFuel() { return Math.round((40 + S.lv.truckCap * 35) * UP.diesel.vals[S.lv.diesel | 0]); }
+const WAGE_EVERY = 16;
+function wageParts() {
+  const parts = {
+    saw: sawCount() * (4 + S.lv.saw * 8),
+    forks: UP.forkN.vals[S.lv.forkN] * (6 + S.lv.forkCap * 12),
+    trucks: UP.truckN.vals[S.lv.truckN] * (8 + S.lv.truckCap * 18),
+    forest: UP.cutterN.vals[S.lv.cutterN] * 6,
+    rush: rushCount() * 8,
+  };
+  if (S.lv.planer) parts.planer = planerCount() * 20;
+  if (shopOn()) parts.shop = 8;
+  if (S.lv.joinery) parts.joinery = 10;
+  if (S.lv.firewood) parts.fire = 6;
+  if (S.lv.kit) parts.kit = 12;
+  return parts;
+}
 function wageBill() {
-  let n = sawCount() * (4 + S.lv.saw * 8);
-  n += UP.forkN.vals[S.lv.forkN] * (6 + S.lv.forkCap * 12);
-  n += UP.truckN.vals[S.lv.truckN] * (8 + S.lv.truckCap * 18);
-  if (S.lv.planer) n += planerCount() * 20;
-  n += UP.cutterN.vals[S.lv.cutterN] * 6;
-  if (shopOn()) n += 8;
-  if (S.lv.joinery) n += 10;
-  if (S.lv.firewood) n += 6;
-  if (S.lv.kit) n += 12;
-  n += rushCount() * 8;
-  return n;
+  return Object.values(wageParts()).reduce((s, n) => s + n, 0);
 }
 function updateWages(dt) {
   wageAcc += dt;
-  if (wageAcc < 12) return;
+  if (wageAcc < WAGE_EVERY) return;
   wageAcc = 0;
-  const bill = wageBill();
+  const parts = wageParts();
+  const keys = Object.keys(parts).filter(k => parts[k] > 0);
+  const bill = keys.reduce((s, k) => s + parts[k], 0);
   if (bill <= 0) return;
   const paid = Math.min(S.money, bill);
   S.money -= paid;
+  const shares = {};
+  let used = 0;
+  for (const k of keys) { shares[k] = Math.floor(parts[k] * paid / bill); used += shares[k]; }
+  let rem = paid - used;
+  for (const k of keys.slice().sort((a, b) => parts[b] - parts[a])) {
+    if (rem <= 0) break;
+    shares[k]++;
+    rem--;
+  }
+  for (const k of keys) if (shares[k] > 0) S.books.wages[k] = (S.books.wages[k] || 0) + shares[k];
   bookOut('wages', paid);
   if (!instant && paid > 0) floatText(`-${fmt(paid)}`, V(-12, 2.8, 1.4), '#e07a6a');
   if (paid < bill && !instant) toast('Short on wages', 'The crew took what was left', true);
@@ -4292,7 +4306,7 @@ function updateSplitter(dt) {
     if (f.t < every) return;
     f.t = 0;
     if (firePile >= FIRE_CAP) return;
-    if (pullFire(1)) firePile++;
+    if (pullFire(1)) { firePile++; bookMade('fire', 1); }
     return;
   }
   const spd = [1.7, 2.2, 4.3][S.lv.fireHaul];
@@ -4492,23 +4506,23 @@ function syncYardGoods(dt, time) {
 // UPGRADES — tap a machine, buy from the panel
 // =====================================================================
 const STATIONS = [
-  { id: 'saw', name: 'Sawmill', icon: '🪚', ups: ['saw', 'sawN', 'yield'], spots: [{ x: -26, z: -20, r: 8 }, { x: -26, z: -30, r: 7 }] },
-  { id: 'forest', name: 'Forest', icon: '🪓', ups: ['cutterN', 'cutterSpd', 'grove'], spots: [{ x: CAMP.x, z: 2, r: 18 }] },
-  { id: 'forks', name: 'Forklifts', icon: '🚜', ups: ['forkN', 'forkSpd', 'forkCap'], spots: [{ x: -13.0, z: -16.4, r: 6.2 }] },
-  { id: 'trucks', name: 'Trucks', icon: '🚚', ups: ['truckN', 'truckCap'], spots: [{ x: -14.5, z: 5.5, r: 5.5 }] },
-  { id: 'diesel', name: 'Fuel yard', icon: '⛽', ups: ['diesel'], spots: [{ x: -8, z: 20.4, r: 9 }] },
-  { id: 'planer', name: 'Planer', icon: '🪵', ups: ['planer', 'planerN', 'planerSpd', 'planerCrew', 'boardCap', 'boardN'], spots: PLANER_Z.map(z => ({ x: PLANER_X, z, r: 4.2 })) },
-  { id: 'bin', name: 'Wood bin', icon: '📦', ups: ['tub', 'dockN', 'chipper', 'chipSpd', 'chipBite'], spots: [] },
-  { id: 'road', name: 'Road', icon: '🛣️', ups: ['road'], spots: [{ x: 16, z: 12, r: 18 }] },
-  { id: 'gate', name: 'Toll gate', icon: '🚧', ups: ['gate'], spots: [{ x: 46, z: 18, r: 9 }] },
-  { id: 'buyer', name: 'Buyer', icon: '💰', ups: ['market'], spots: [{ x: 70, z: 8, r: 14 }] },
-  { id: 'export', name: 'Export', icon: '🚢', ups: ['export'], spots: [{ x: 57.4, z: 12.2, r: 3.2 }] },
-  { id: 'frame', name: 'Frame yard', icon: '🏗️', ups: ['frame', 'frameSpd', 'frameBite', 'framePay'], spots: [{ x: FRAME_AT.x, z: FRAME_AT.z, r: 6.4 }] },
-  { id: 'rush', name: 'Rush yard', icon: '🚐', ups: ['rushN', 'rushBite', 'rushCrew', 'rushVan', 'rushWait', 'rushPay'], spots: [{ x: 15.4, z: -2.4, r: 2.6 }, { x: 19.0, z: -2.4, r: 2.6 }, { x: 22.6, z: -2.4, r: 2.6 }] },
-  { id: 'shop', name: 'Shop', icon: '🏪', ups: ['shop', 'haul', 'beltSpd', 'buyers', 'palletN'], spots: [{ x: -9.4, z: -44.2, r: 7.2 }] },
-  { id: 'joinery', name: 'Joinery', icon: '🪑', ups: ['joinery', 'joinSpd', 'joinKind'], spots: [{ x: JOIN_AT.x, z: JOIN_AT.z, r: 4.6 }, { x: FURN_SHOW.x, z: FURN_SHOW.z, r: 4.2 }] },
-  { id: 'firewood', name: 'Firewood', icon: '🔥', ups: ['firewood', 'fireSpd', 'fireSize', 'fireHaul'], spots: [{ x: FIRE_AT.x, z: FIRE_AT.z, r: 4.8 }] },
-  { id: 'kit', name: 'Kit shop', icon: '📦', ups: ['kit', 'kitSpd', 'kitKind'], spots: [{ x: KIT_AT.x, z: KIT_AT.z, r: 5.2 }, { x: KIT_SHOW.x, z: KIT_SHOW.z, r: 3.4 }] },
+  { id: 'saw', name: 'Sawmill', icon: '🪚', blurb: 'Logs ride the belt into the saw. Each cut drops pieces into the bin.', ups: ['saw', 'sawN', 'yield'], spots: [{ x: -26, z: -20, r: 8 }, { x: -26, z: -30, r: 7 }] },
+  { id: 'forest', name: 'Forest', icon: '🪓', blurb: 'Lumberjacks fell trees and carry the logs to the deck. Trees grow back, and each one costs stumpage.', ups: ['cutterN', 'cutterSpd', 'grove'], spots: [{ x: CAMP.x, z: 2, r: 18 }] },
+  { id: 'forks', name: 'Forklifts', icon: '🚜', blurb: 'They take cut wood from the bin, or boards from the pile, and load the trucks. They wait in one line at the bin.', ups: ['forkN', 'forkSpd', 'forkCap'], spots: [{ x: -13.0, z: -16.4, r: 6.2 }] },
+  { id: 'trucks', name: 'Trucks', icon: '🚚', blurb: 'Trucks haul cut wood and boards over the bridge to the buyer. Diesel comes out of what the load pays.', ups: ['truckN', 'truckCap'], spots: [{ x: -14.5, z: 5.5, r: 5.5 }] },
+  { id: 'diesel', name: 'Fuel yard', icon: '⛽', blurb: 'The tanks north of the parking. A bigger tank cuts the diesel taken from every truck load.', ups: ['diesel'], spots: [{ x: -8, z: 20.4, r: 9 }] },
+  { id: 'planer', name: 'Planer', icon: '🪵', blurb: 'Turns spare cut wood into boards. A worker fetches from the bin and stacks the boards on pallets.', ups: ['planer', 'planerN', 'planerSpd', 'planerCrew', 'boardCap', 'boardN'], spots: PLANER_Z.map(z => ({ x: PLANER_X, z, r: 4.2 })) },
+  { id: 'bin', name: 'Wood bin', icon: '📦', blurb: 'Holds the cut wood. Widen it, open another gate for the forklifts, or chip the overflow.', ups: ['tub', 'dockN', 'chipper', 'chipSpd', 'chipBite'], spots: [] },
+  { id: 'road', name: 'Road', icon: '🛣️', blurb: 'A wider road gives the trucks room to spread out instead of bunching up.', ups: ['road'], spots: [{ x: 16, z: 12, r: 18 }] },
+  { id: 'gate', name: 'Toll gate', icon: '🚧', blurb: 'The arm on the bridge. A faster gate means trucks spend less time waiting.', ups: ['gate'], spots: [{ x: 46, z: 18, r: 9 }] },
+  { id: 'buyer', name: 'Buyer', icon: '💰', blurb: 'The mill across the river. A better price multiplies what every truck load pays.', ups: ['market'], spots: [{ x: 70, z: 8, r: 14 }] },
+  { id: 'export', name: 'Export', icon: '🚢', blurb: 'A contract on top of the buyer price. Each step is a small bump and costs more than the last.', ups: ['export'], spots: [{ x: 57.4, z: 12.2, r: 3.2 }] },
+  { id: 'frame', name: 'Frame yard', icon: '🏗️', blurb: 'Buys finished boards for more than the log trucks pay, a few at a time, and leaves some boards at the mill.', ups: ['frame', 'frameSpd', 'frameBite', 'framePay'], spots: [{ x: FRAME_AT.x, z: FRAME_AT.z, r: 6.4 }] },
+  { id: 'rush', name: 'Rush yard', icon: '🚐', blurb: 'A van arrives with a timed order for logs, boards, firewood, or furniture. Fill it before it leaves for a bonus.', ups: ['rushN', 'rushBite', 'rushCrew', 'rushVan', 'rushWait', 'rushPay'], spots: [{ x: 15.4, z: -2.4, r: 2.6 }, { x: 19.0, z: -2.4, r: 2.6 }, { x: 22.6, z: -2.4, r: 2.6 }] },
+  { id: 'shop', name: 'Shop', icon: '🏪', blurb: 'People walk up and buy cut logs. A worker, then a cart, then the belt carries the wood to the stall.', ups: ['shop', 'haul', 'beltSpd', 'buyers', 'palletN'], spots: [{ x: -9.4, z: -44.2, r: 7.2 }] },
+  { id: 'joinery', name: 'Joinery', icon: '🪑', blurb: 'The joiner fetches boards or cut logs and builds a stool, bench, or table. People pay more than the raw wood.', ups: ['joinery', 'joinSpd', 'joinKind'], spots: [{ x: JOIN_AT.x, z: JOIN_AT.z, r: 4.6 }, { x: FURN_SHOW.x, z: FURN_SHOW.z, r: 4.2 }] },
+  { id: 'firewood', name: 'Firewood', icon: '🔥', blurb: 'Splits extra cut logs into bundles and sells them at the rack out front.', ups: ['firewood', 'fireSpd', 'fireSize', 'fireHaul'], spots: [{ x: FIRE_AT.x, z: FIRE_AT.z, r: 4.8 }] },
+  { id: 'kit', name: 'Kit shop', icon: '📦', blurb: 'Combines boards and cut logs into a crate, a shed kit, or a cabin kit. Slow to build, and each one sells for more than the parts.', ups: ['kit', 'kitSpd', 'kitKind'], spots: [{ x: KIT_AT.x, z: KIT_AT.z, r: 5.2 }, { x: KIT_SHOW.x, z: KIT_SHOW.z, r: 3.4 }] },
 ];
 const exportOffice = (() => {
   const ghost = new THREE.Group(); scene.add(ghost);
@@ -4749,6 +4763,7 @@ function openShop(st) {
   $('shop').classList.remove('hidden');
   $('shopIcon').textContent = st.icon;
   $('shopTitle').textContent = st.name;
+  $('shopBlurb').textContent = st.blurb || '';
   drawShop();
 }
 function closeShop() {
@@ -4757,6 +4772,8 @@ function closeShop() {
 }
 const BOOK_IN = { logs: 'Exported logs', boards: 'Exported boards', shop: 'Shop', furn: 'Furniture', fire: 'Firewood', frame: 'Frame yard', chips: 'Chips', rush: 'Rush orders', kits: 'Kits' };
 const BOOK_OUT = { wages: 'Wages', fuel: 'Diesel', stumpage: 'Stumpage', upgrades: 'Upgrades' };
+const WAGE_NAME = { saw: 'Sawmill', forks: 'Forklifts', trucks: 'Trucks', planer: 'Planers', forest: 'Lumberjacks', shop: 'Shop', joinery: 'Joinery', fire: 'Firewood', kit: 'Kit shop', rush: 'Rush yard' };
+const money = n => '$' + fmt(n);
 function bookTop(map, labels) {
   let key = '', best = 0;
   for (const k of Object.keys(labels)) if ((map[k] || 0) > best) { best = map[k]; key = k; }
@@ -4765,7 +4782,7 @@ function bookTop(map, labels) {
 function bookRows(map, labels, cls) {
   const entries = Object.keys(labels).map(k => [labels[k], map[k] || 0]).sort((a, b) => b[1] - a[1]);
   const max = Math.max(1, ...entries.map(e => e[1]));
-  return entries.map(([name, v]) => `<div class="bk-line"><span><b>${name}</b><b>${fmt(v)}</b></span><div class="bk-bar"><i class="${cls}" style="width:${Math.max(v ? 4 : 0, (v / max) * 100)}%"></i></div></div>`).join('');
+  return entries.map(([name, v]) => `<div class="bk-line"><span><b>${name}</b><b>${money(v)}</b></span><div class="bk-bar"><i class="${cls}" style="width:${Math.max(v ? 4 : 0, (v / max) * 100)}%"></i></div></div>`).join('');
 }
 function booksChart(chart) {
   const live = (bookInn > 0 || bookOutN > 0) ? [[bookSlot * BOOK_SPAN, Math.round(bookInn), Math.round(bookOutN)]] : [];
@@ -4786,14 +4803,16 @@ function drawBooks() {
   const net = inn - out;
   const earner = bookTop(b.in, BOOK_IN);
   const cost = bookTop(b.out, BOOK_OUT);
+  const wageTop = bookTop(b.wages, WAGE_NAME);
   const q = (n) => String(n | 0);
   const m = b.made, s = b.sold;
   $('booksBody').innerHTML = `
     <div class="bk-top">
-      <div class="bk-card"><small>Cash</small><b>${fmt(S.money)}</b><small>Booked net <span class="${net >= 0 ? 'hi' : 'lo'}">${net >= 0 ? '+' : '−'}${fmt(Math.abs(net))}</span></small></div>
-      <div class="bk-card"><small>Best earner</small><b class="hi">${earner ? earner.name : '—'}</b><small>${earner ? fmt(earner.v) : 'nothing yet'}</small></div>
-      <div class="bk-card"><small>Biggest cost</small><b class="lo">${cost ? cost.name : '—'}</b><small>${cost ? fmt(cost.v) : 'nothing yet'}</small></div>
-      <div class="bk-card"><small>In / out</small><b><span class="hi">${fmt(inn)}</span> · <span class="lo">${fmt(out)}</span></b><small>${q(s.loads)} truck load${s.loads === 1 ? '' : 's'}</small></div>
+      <div class="bk-card"><small>Cash</small><b>${money(S.money)}</b><small>Booked net <span class="${net >= 0 ? 'hi' : 'lo'}">${net >= 0 ? '+' : '−'}${money(Math.abs(net))}</span></small></div>
+      <div class="bk-card"><small>Best earner</small><b class="hi">${earner ? earner.name : '—'}</b><small>${earner ? money(earner.v) : 'nothing yet'}</small></div>
+      <div class="bk-card"><small>Biggest cost</small><b class="lo">${cost ? cost.name : '—'}</b><small>${cost ? money(cost.v) : 'nothing yet'}</small></div>
+      <div class="bk-card"><small>Biggest wage</small><b class="lo">${wageTop ? wageTop.name : '—'}</b><small>${wageTop ? money(wageTop.v) : 'nothing yet'}</small></div>
+      <div class="bk-card wide"><small>In / out</small><b><span class="hi">${money(inn)}</span> · <span class="lo">${money(out)}</span></b><small>${q(s.loads)} load${s.loads === 1 ? '' : 's'} hauled, not cash</small></div>
     </div>
     <div class="bk-h">Recent</div>
     ${booksChart(b.chart)}
@@ -4801,7 +4820,10 @@ function drawBooks() {
     ${bookRows(b.in, BOOK_IN, 'in')}
     <div class="bk-h">Costs</div>
     ${bookRows(b.out, BOOK_OUT, 'out')}
-    <div class="bk-h">Made, sold, exported</div>
+    <div class="bk-h">Wages by crew</div>
+    ${bookRows(b.wages, WAGE_NAME, 'out')}
+    <p class="bk-note">Each line is pay since this list opened. The Wages total above also includes earlier pay.</p>
+    <div class="bk-h">Pieces made, sold, exported</div>
     <table class="bk">
       <tr><th></th><th>Made</th><th>Sold</th><th>Exported</th></tr>
       <tr class="sec"><td colspan="4">Cut wood</td></tr>
@@ -4815,10 +4837,12 @@ function drawBooks() {
       <tr><td>Firewood</td><td>${q(m.fire)}</td><td>${q(s.fire)}</td><td></td></tr>
       <tr><td>Kits</td><td>${q(m.kits)}</td><td>${q(s.kits)}</td><td></td></tr>
       <tr class="sec"><td colspan="4">Rush orders</td></tr>
-      <tr><td>Logs / boards</td><td></td><td>${q(s.rushLogs)} / ${q(s.rushBoards)}</td><td></td></tr>
-      <tr><td>Furniture / fire</td><td></td><td>${q(s.rushFurn)} / ${q(s.rushFire)}</td><td></td></tr>
+      <tr><td>Cut wood</td><td></td><td>${q(s.rushLogs)}</td><td></td></tr>
+      <tr><td>Boards</td><td></td><td>${q(s.rushBoards)}</td><td></td></tr>
+      <tr><td>Furniture</td><td></td><td>${q(s.rushFurn)}</td><td></td></tr>
+      <tr><td>Firewood</td><td></td><td>${q(s.rushFire)}</td><td></td></tr>
     </table>
-    <p class="bk-note">Sold is the shop, the frame yard, chips, kits, and rush. Exported is what the trucks carry over the bridge. These books start from when they opened, so an older mill can show cash with an empty ledger until the next sale.</p>`;
+    <p class="bk-note">Rows with $ are cash. The table is pieces: made, sold at a stall, or exported on a truck. Rush rows are what the vans drove off with. These books start from when they opened, so an older mill can show cash with an empty ledger until the next sale.</p>`;
 }
 let booksHeld = false;
 function openBooks() {
@@ -5393,7 +5417,7 @@ function urgentOrder() {
   return best;
 }
 function rushPorterSpd() { return UP.rushCrew.vals[S.lv.rushCrew | 0]; }
-function rushScoop(base) { return Math.max(0.2, base * 13 / rushPorterSpd()); }
+function rushScoop(base) { return Math.max(0.2, base * UP.rushCrew.vals[0] / rushPorterSpd()); }
 const PORTER_SIDE_X = 12.2;
 const PORTER_CORRIDOR_X = 6.2;
 const PORTER_BACK_Z = -6.4;
