@@ -2195,8 +2195,9 @@ class Forklift {
       }
       // In front of the nose, or in front of a reversing forklift. Someone purely behind does not freeze the leader.
       const ahead = along > 0.35 && along < 3.4 && side < 1.12;
+      const close = dist < 2.15 && along > -0.2;
       const inside = dist < 1.4;
-      if (!ahead && !inside) continue;
+      if (!ahead && !close && !inside) continue;
       const rank = ahead ? along : 8 + dist;
       if (rank < best) { hit = o; best = rank; }
     }
@@ -2225,15 +2226,35 @@ class Forklift {
     if (me !== them) return !me;
     return this.i > o.i;
   }
+  stepClear(other) {
+    const lane = FORK_LANE_Z;
+    const opts = [
+      { x: this.pos.x + 3.2, z: this.pos.z },
+      { x: this.pos.x - 3.2, z: this.pos.z },
+      { x: this.pos.x, z: Math.min(this.pos.z + 3.2, lane) },
+      { x: this.pos.x, z: this.pos.z - 3.2 },
+    ];
+    let best = null, score = 2.6;
+    for (const p of opts) {
+      if (clearOfBin(p.x, p.z)) continue;
+      if (p.z > -0.4 || p.z < -18.5 || p.x < -43 || p.x > 9) continue;
+      const nearest = forks.reduce((m, o) => o === this ? m : Math.min(m, Math.hypot(o.pos.x - p.x, o.pos.z - p.z)), 99);
+      if (nearest < 2.8) continue;
+      const gain = Math.hypot(p.x - other.pos.x, p.z - other.pos.z);
+      if (gain > score) { score = gain; best = p; }
+    }
+    return best;
+  }
   driveTo(dt, tx, tz, spd, rev) {
     const dx = tx - this.pos.x, dz = tz - this.pos.z, dist = Math.hypot(dx, dz);
     this.dir = rev ? -1 : 1;
     if (dist < 0.34) {
-      const taken = forks.some(o => o !== this && Math.hypot(o.pos.x - tx, o.pos.z - tz) < 1.8);
+      const taken = forks.some(o => o !== this && Math.hypot(o.pos.x - tx, o.pos.z - tz) < 2.4);
       if (!taken && !this.crowds(tx, tz) && !clearOfBin(tx, tz)) {
         this.pos.x = tx; this.pos.z = tz; this.v = 0;
+        return true;
       }
-      return dist < 0.34;
+      return false;
     }
     const want = rev ? yawOf(-dx, -dz) : yawOf(dx, dz);
     const err = angDiff(this.yaw, want);
@@ -2243,13 +2264,10 @@ class Forklift {
     if (ahead) {
       this.v = 0;
       this.blockT += dt;
-      if (this.yieldTo(ahead) && this.blockT > 0.45 && ahead.v < 0.4 && ahead.state !== 'scoop' && ahead.state !== 'unload') {
-        const awayZ = this.pos.z <= ahead.pos.z ? -1 : 1;
-        const awayX = Math.sign(this.pos.x - ahead.pos.x) || 1;
-        const nx = this.pos.x + awayX * 0.55;
-        const nz = this.pos.z + awayZ * 1.35;
-        const third = forks.some(o => o !== this && o !== ahead && Math.hypot(o.pos.x - nx, o.pos.z - nz) < 1.5);
-        if (!third && !clearOfBin(nx, nz)) { this.pos.x = nx; this.pos.z = nz; this.blockT = 0; }
+      const overlapped = Math.hypot(this.pos.x - ahead.pos.x, this.pos.z - ahead.pos.z) < 1.7;
+      if (this.yieldTo(ahead) && (overlapped || this.blockT > 0.45) && (ahead.v < 0.4 || this.blockT > 1.2) && ahead.state !== 'scoop' && ahead.state !== 'unload') {
+        const step = this.stepClear(ahead);
+        if (step) { this.pos.x = step.x; this.pos.z = step.z; this.blockT = 0; }
       }
       return false;
     }
@@ -2389,15 +2407,17 @@ class Forklift {
         }
         const mouthBusy = forks.some(f => f !== this && (f.state === 'toTub' || f.state === 'scoop' || (f.state === 'toTruck' && Math.abs(f.pos.x - PIT_MOUTH_X) < 2.6 && f.pos.z < FORK_LANE_Z + 1)));
         const slot = pitSpot(place + (mouthBusy ? 1 : 0));
-        const first = this.path[0];
-        const stale = !first || Math.abs(first.x - slot.x) > 0.45 || Math.abs(first.z - slot.z) > 0.45;
-        if (this.pitSpotX == null || Math.abs(this.pitSpotX - slot.x) > 0.4 || stale) {
+        const last = this.path[this.path.length - 1];
+        const slotMoved = !last || Math.abs(last.x - slot.x) > 0.45 || Math.abs(last.z - slot.z) > 0.45;
+        if (this.pitSpotX == null || Math.abs(this.pitSpotX - slot.x) > 0.4 || slotMoved) {
           this.pitSpotX = slot.x;
           const pts = [];
           const onLane = Math.abs(this.pos.z - FORK_LANE_Z) < 0.8;
-          // Queue south of the lane. A loaded forklift has to drive that lane to the trucks.
-          if (onLane && Math.abs(this.pos.x - slot.x) > 0.45) pts.push({ x: slot.x, z: FORK_LANE_Z });
+          const northOfLane = this.pos.z > FORK_LANE_Z + 0.45;
+          if (northOfLane) pts.push({ x: this.pos.x, z: FORK_LANE_Z, rev: true });
+          else if (onLane && Math.abs(this.pos.x - slot.x) > 0.45) pts.push({ x: slot.x, z: FORK_LANE_Z });
           else if (!onLane && Math.abs(this.pos.x - slot.x) > 0.45) pts.push({ x: slot.x, z: this.pos.z });
+          if (northOfLane && Math.abs(this.pos.x - slot.x) > 0.45) pts.push({ x: slot.x, z: FORK_LANE_Z });
           pts.push({ x: slot.x, z: slot.z, yaw: Math.PI });
           this.path = pts;
         }
