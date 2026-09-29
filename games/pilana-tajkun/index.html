@@ -47,9 +47,9 @@
   }
   #orderBar b { color: #ffd84a; font-weight: 800; }
   #jobBar {
-    flex-basis: 100%; width: max-content; display: flex; align-items: center; gap: 8px;
-    background: #1e2a33ee; border: 2px solid #7dcea0; border-radius: 14px; padding: 6px 12px;
-    font-weight: 800; font-size: 16px; box-shadow: 0 3px 0 #0003;
+    flex: 0 0 auto; width: max-content; max-width: 100%; display: flex; align-items: center; gap: 5px;
+    background: #1e2a33ee; border: 2px solid #7dcea0; border-radius: 12px; padding: 2px 8px;
+    font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 #0003;
   }
   #jobBar.hidden { display: none; }
   #jobBar b { color: #b6f5a0; font-weight: 800; }
@@ -207,6 +207,8 @@
   .uprice { font-size: 20px; font-weight: 800; color: #ffd84a; white-space: nowrap; text-align: right; }
   button.urow.maxed .uprice { color: #7fe39a; font-size: 16px; }
   button.urow:not(.can):not(.maxed) .uprice { color: #9aa6ae; }
+  button.urow.act { border-color: #7dcea0; }
+  button.urow.act .uprice { color: #b6f5a0; font-size: 16px; }
   .overlay {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     background: #0d1418bb; pointer-events: auto; padding: 16px; z-index: 30;
@@ -257,7 +259,7 @@
     #nav button span { font-size: 20px; }
     #hint { font-size: 13px; bottom: 64px; }
     #orderBar { font-size: 14px; padding: 5px 10px; }
-    #jobBar { font-size: 14px; padding: 5px 10px; }
+    #jobBar { font-size: 13px; padding: 2px 7px; }
     #deal b { font-size: 16px; }
     #deal small { font-size: 12px; }
   }
@@ -347,7 +349,7 @@
         <span>🪚</span><span>Buy more saws. Each new lane cuts logs, and they all fall into the same bin. Sacks between the belts sell the sawdust from those cuts.</span>
         <span>📋</span><span>The green card by the money is the next job. Finish it and the mill pays a bonus. Shop buyers also leave a tip once the stall learns how.</span>
         <span>🌲</span><span>The forest is not endless. A lumberjack takes several swings to fell a tree, then carries the log along the path to the deck at the belts. It counts only when he drops it there. Trees grow back slowly, and each one has a stumpage fee. Buy more forest when the deck starts to fall, or the saws run out.</span>
-        <span>🪵</span><span>The planers sit on the east side of the bin, where the saw used to be. The saw belts are on the west side and still drop pieces into the bin. Each planer has its own worker, who picks wood up at the bin's east side and stacks the boards on the pallets just east of the machines. If a forklift blocks him he steps past after a moment. Forklifts share one dashed line between the bin and the trucks, and they park well back from the truck row so the concrete between them stays open. At the bin they use one gate: the rest wait in a line to the east, and the one inside backs onto that line before the next one drives in. Two more gates can be bought on the bin. Buy another pallet when you need room for more boards.</span>
+        <span>🪵</span><span>The planers sit on the east side of the bin, where the saw used to be. The saw belts are on the west side and still drop pieces into the bin. Each planer has its own worker, who picks wood up at the bin's east side and stacks the boards on the pallets just east of the machines. If a forklift blocks him he steps past after a moment. Forklifts share one dashed line between the bin and the trucks, and they park well back from the truck row so the concrete between them stays open. They drive through each other, so a pile-up does not freeze the lane. If they still sit still, open the forklift panel and tap Unstick. At the bin they use one gate: the rest wait in a line to the east, and the one inside backs onto that line before the next one drives in. Two more gates can be bought on the bin. Buy another pallet when you need room for more boards.</span>
         <span>⚙️</span><span>When the bin is overflowing, a chipper on that gate chews the extra wood. Buy another tile to make the bin itself bigger.</span>
         <span>🏪</span><span>The shop stands in the row with the joinery, the woodshed, and the kit shop. People come out of a tunnel and follow the path to the stall, one behind another. The hauler, cart, or belt keeps a few logs on the pallets and brings more while people are waiting. The logs stay stacked until the seller hands them over. If the stall has nothing coming, a long wait sends them back into the tunnel. The seller takes a wage.</span>
         <span>🪑</span><span>The furniture stand is beside the shop. The joiner walks to the log deck, or to the board pile when boards are spare, carries the wood back, and you can see the saw working on the bench. Then he carries the stool, bench, or table over. People from the same tunnel take the other branch of the path and wait while he is on a trip. If nothing is being built, they give up and walk back.</span>
@@ -2206,78 +2208,19 @@ class Forklift {
   resting() {
     return this.state === 'idle' && Math.hypot(this.pos.x - this.home.x, this.pos.z - this.home.z) < 0.75;
   }
-  crowds(x, z) {
-    const noses = [[Math.sin(this.yaw), Math.cos(this.yaw)]];
-    if (this.dir < 0) noses.push([-noses[0][0], -noses[0][1]]);
-    let hit = null, best = 99;
-    for (const o of forks) {
-      if (o === this || (this.resting() && o.resting())) continue;
-      const dx = o.pos.x - x, dz = o.pos.z - z;
-      const dist = Math.hypot(dx, dz);
-      let along = -99, side = 99;
-      for (const [fx, fz] of noses) {
-        const a = dx * fx + dz * fz;
-        const s = Math.abs(dx * fz - dz * fx);
-        if (a > along) { along = a; side = s; }
-      }
-      // In front of the nose, or in front of a reversing forklift. Someone purely behind does not freeze the leader.
-      const ahead = along > 0.35 && along < 3.4 && side < 1.12;
-      const close = dist < 2.15 && along > -0.2;
-      const inside = dist < 1.4;
-      if (!ahead && !close && !inside) continue;
-      const rank = ahead ? along : 8 + dist;
-      if (rank < best) { hit = o; best = rank; }
-    }
-    return hit;
-  }
   shoveOut() {
     if (this.resting()) return;
-    for (const o of forks) {
-      if (o === this || o.resting()) continue;
-      const dx = this.pos.x - o.pos.x, dz = this.pos.z - o.pos.z;
-      const d = Math.hypot(dx, dz) || 0.001;
-      if (d > 1.75) continue;
-      const push = Math.min(0.42, (1.75 - d) * 0.7);
-      this.pos.x += (dx / d) * push;
-      this.pos.z += (dz / d) * push;
-    }
     const out = clearOfBin(this.pos.x, this.pos.z);
-    if (out) {
-      const k = Math.min(1, 1.2 / (out.d || 0.001));
-      this.pos.x += (out.x - this.pos.x) * k;
-      this.pos.z += (out.z - this.pos.z) * k;
-    }
-  }
-  yieldTo(o) {
-    const me = this.n > 0 || this.hold > 0, them = o.n > 0 || o.hold > 0;
-    if (me !== them) return !me;
-    return this.i > o.i;
-  }
-  stepClear(other) {
-    const lane = FORK_LANE_Z;
-    const opts = [
-      { x: this.pos.x + 3.2, z: this.pos.z },
-      { x: this.pos.x - 3.2, z: this.pos.z },
-      { x: this.pos.x, z: Math.min(this.pos.z + 3.2, lane) },
-      { x: this.pos.x, z: this.pos.z - 3.2 },
-    ];
-    let best = null, score = 2.6;
-    for (const p of opts) {
-      if (clearOfBin(p.x, p.z)) continue;
-      if (p.z > -0.4 || p.z < -18.5 || p.x < -43 || p.x > 9) continue;
-      const nearest = forks.reduce((m, o) => o === this ? m : Math.min(m, Math.hypot(o.pos.x - p.x, o.pos.z - p.z)), 99);
-      if (nearest < 2.8) continue;
-      const gain = Math.hypot(p.x - other.pos.x, p.z - other.pos.z);
-      if (gain > score) { score = gain; best = p; }
-    }
-    return best;
+    if (!out) return;
+    const k = Math.min(1, 1.2 / (out.d || 0.001));
+    this.pos.x += (out.x - this.pos.x) * k;
+    this.pos.z += (out.z - this.pos.z) * k;
   }
   driveTo(dt, tx, tz, spd, rev) {
     const dx = tx - this.pos.x, dz = tz - this.pos.z, dist = Math.hypot(dx, dz);
     this.dir = rev ? -1 : 1;
     if (dist < 0.34) {
-      const taken = forks.some(o => o !== this && Math.hypot(o.pos.x - tx, o.pos.z - tz) < 2.4);
-      if (!taken && !this.crowds(tx, tz) && !clearOfBin(tx, tz)) {
+      if (!clearOfBin(tx, tz)) {
         this.pos.x = tx; this.pos.z = tz; this.v = 0;
         return true;
       }
@@ -2287,25 +2230,14 @@ class Forklift {
     const err = angDiff(this.yaw, want);
     this.yaw += clamp(err, -F_TURN * dt, F_TURN * dt);
     const fx = Math.sin(this.yaw) * this.dir, fz = Math.cos(this.yaw) * this.dir;
-    const ahead = this.crowds(this.pos.x + fx * 0.55, this.pos.z + fz * 0.55) || this.crowds(this.pos.x, this.pos.z);
-    if (ahead) {
-      this.v = 0;
-      this.blockT += dt;
-      const overlapped = Math.hypot(this.pos.x - ahead.pos.x, this.pos.z - ahead.pos.z) < 1.7;
-      if (this.yieldTo(ahead) && (overlapped || this.blockT > 0.45) && (ahead.v < 0.4 || this.blockT > 1.2) && ahead.state !== 'scoop' && ahead.state !== 'unload') {
-        const step = this.stepClear(ahead);
-        if (step) { this.pos.x = step.x; this.pos.z = step.z; this.blockT = 0; }
-      }
-      return false;
-    }
-    // Pivot on the spot until the nose is lined up, then drive straight.
+    // Pivot on the spot until the nose is lined up, then drive straight. Other forklifts are not solid.
     if (Math.cos(angDiff(this.yaw, want)) < 0.9) { this.v = 0; return false; }
     const vT = Math.min(spd, Math.sqrt(2 * 4 * dist) + 0.15);
     this.v = this.v < vT ? Math.min(vT, this.v + F_ACC * dt) : Math.max(vT, this.v - 8 * dt);
     if (this.v < 0.08) return false;
     const step = Math.min(this.v * dt, dist);
     const nx = this.pos.x + fx * step, nz = this.pos.z + fz * step;
-    if (this.crowds(nx, nz) || clearOfBin(nx, nz)) { this.v = 0; this.blockT += dt; return false; }
+    if (clearOfBin(nx, nz)) { this.v = 0; this.blockT += dt; return false; }
     this.blockT = 0;
     this.pos.x = nx; this.pos.z = nz;
     return false;
@@ -2535,6 +2467,70 @@ class Forklift {
     m.beacon.material.emissiveIntensity = (Math.sin(time * 9 + this.i) > 0) ? 1.6 : 0.15;
     if (this.dir < 0 && this.moved > 0.001) sfx.beep(this);
   }
+}
+
+function unstickForks() {
+  const n = UP.forkN.vals[S.lv.forkN];
+  const live = forks.slice(0, n);
+  const taken = [];
+  const laneX = (x) => {
+    x = clamp(x, -43, 8);
+    let guard = 0;
+    while (taken.some(p => Math.abs(p - x) < 3.4) && guard < 12) {
+      x = x + 3.4 <= 8 ? x + 3.4 : clamp(x - 3.4, -43, 8);
+      guard++;
+    }
+    taken.push(x);
+    return x;
+  };
+  for (const f of live) {
+    f.blockT = 0;
+    f.v = 0;
+    const buried = clearOfBin(f.pos.x, f.pos.z);
+    if (buried) { f.pos.x = buried.x; f.pos.z = buried.z; }
+    if (f.state === 'scoop' || f.state === 'unload') continue;
+    if (f.state === 'idle' && f.resting()) continue;
+    f.pos.x = laneX(f.pos.x);
+    f.pos.z = FORK_LANE_Z;
+    f.path = [];
+    if (f.state === 'toQueue' || f.state === 'idle') {
+      f.pitSpotX = null;
+      if (f.state === 'idle') { f.path = f.homePath(f.pos.x); f.state = 'toHome'; }
+      continue;
+    }
+    if (f.state === 'toTub') {
+      if (!f.dockX) f.dockX = f.dockFree() || 0;
+      if (f.dockX) f.path = f.dockPath(f.dockX);
+      else { f.pitSpotX = null; f.state = 'toQueue'; }
+      continue;
+    }
+    if (f.state === 'toBoards') {
+      f.path = [
+        { x: f.pos.x, z: FORK_LANE_Z },
+        { x: BOARD_PILE.x, z: FORK_LANE_Z },
+        { x: BOARD_PILE.x, z: BOARD_PILE.z + 1.9, sm: 0.45 },
+      ];
+      continue;
+    }
+    if (f.state === 'toTruck' && f.truck) {
+      const tx = SPOT_X[f.truck.bay];
+      f.dockX = 0;
+      f.path = [
+        { x: f.pos.x, z: FORK_LANE_Z },
+        { x: tx, z: FORK_LANE_Z },
+        { x: tx, z: FORK_DROP_Z, sm: 0.5, yaw: 0 },
+      ];
+      continue;
+    }
+    if (f.state === 'toHome') {
+      f.path = f.homePath(f.pos.x);
+      continue;
+    }
+    f.dockX = 0;
+    f.path = f.homePath(f.pos.x);
+    f.state = 'toHome';
+  }
+  if (!instant) toast('Forklifts freed', 'Back on the lane, and they drive through each other');
 }
 
 // =====================================================================
@@ -4694,7 +4690,7 @@ function syncYardGoods(dt, time) {
 const STATIONS = [
   { id: 'saw', name: 'Sawmill', icon: '🪚', blurb: 'Logs ride the belt into the saw. Each cut drops pieces into the bin. The belts sit on the west side of the bin. Sacks between the belts sell the sawdust.', ups: ['saw', 'sawN', 'yield', 'dust', 'dustPay'], spots: [{ x: -36.6, z: -20, r: 8 }, { x: -36.6, z: -30, r: 7 }] },
   { id: 'forest', name: 'Forest', icon: '🪓', blurb: 'Lumberjacks fell trees and carry the logs to the deck. Trees grow back, and each one costs stumpage.', ups: ['cutterN', 'cutterSpd', 'grove'], spots: [{ x: CAMP.x, z: 2, r: 18 }] },
-  { id: 'forks', name: 'Forklifts', icon: '🚜', blurb: 'They take cut wood from the bin, or boards from the pile, and load the trucks. They wait in one line at the bin.', ups: ['forkN', 'forkSpd', 'forkCap'], spots: [{ x: -13.0, z: -16.4, r: 6.2 }] },
+  { id: 'forks', name: 'Forklifts', icon: '🚜', blurb: 'They take cut wood from the bin, or boards from the pile, and load the trucks. They drive through each other. Unstick pulls a stuck bunch back onto the lane.', ups: ['forkN', 'forkSpd', 'forkCap'], spots: [{ x: -13.0, z: -16.4, r: 6.2 }] },
   { id: 'trucks', name: 'Trucks', icon: '🚚', blurb: 'Trucks haul cut wood and boards over the bridge to the buyer. Diesel comes out of what the load pays.', ups: ['truckN', 'truckCap'], spots: [{ x: -14.5, z: 5.5, r: 5.5 }] },
   { id: 'diesel', name: 'Fuel yard', icon: '⛽', blurb: 'The tanks north of the parking. A bigger tank cuts the diesel taken from every truck load.', ups: ['diesel'], spots: [{ x: -8, z: 20.4, r: 9 }] },
   { id: 'planer', name: 'Planer', icon: '🪵', blurb: 'Turns spare cut wood into boards. The machines sit on the east side of the bin. A worker fetches from the east side and stacks the boards on the pallets just east of the machines.', ups: ['planer', 'planerN', 'planerSpd', 'planerCrew', 'boardCap', 'boardN'], spots: PLANER_Z.map(z => ({ x: PLANER_X, z, r: 4.2 })) },
@@ -5153,6 +5149,14 @@ function drawShop() {
     btn.innerHTML = `<span class="uico">${icon}</span><span><b>${name} <span class="ulv">${lv}/${max}</span></b><small>${upEffect(id)}</small><span class="usteps">${steps}</span></span><span class="uprice">${cost === null ? 'MAX' : fmt(cost)}</span>`;
     btn.addEventListener('click', () => buy(id, true));
     box.appendChild(btn);
+  }
+  if (openStation.id === 'forks') {
+    const free = document.createElement('button');
+    free.type = 'button';
+    free.className = 'urow act';
+    free.innerHTML = `<span class="uico">🔧</span><span><b>Unstick</b><small>Pull a stuck bunch back onto the lane and send them to work</small></span><span class="uprice">NOW</span>`;
+    free.addEventListener('click', () => { sfx.ensure(); unstickForks(); });
+    box.appendChild(free);
   }
 }
 function buy(id, fromUi) {
