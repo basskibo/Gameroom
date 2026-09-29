@@ -3240,11 +3240,21 @@ function takeShopWood(n) {
 function buildPerson(shirt, hat) {
   const g = new THREE.Group();
   const body = new THREE.Group(); g.add(body);
-  part(rbox(0.36, 0.4, 0.26, 0.08), 0x3a342c, body, 0, 0.4, 0);
-  part(rbox(0.44, 0.52, 0.28, 0.1), shirt, body, 0, 0.84, 0);
-  part(new THREE.SphereGeometry(0.15, 10, 8), 0xf1c8a0, body, 0, 1.26, 0.02);
-  part(new THREE.SphereGeometry(0.18, 10, 8, 0, Math.PI * 2, 0, Math.PI / 2), hat, body, 0, 1.3, 0.02);
-  const wait = emojiSprite(g, '⏳', 2.05, 0.62);
+  const skin = 0xf1c8a0, pants = 0x3a4250, shoe = 0x2a2420;
+  for (const s of [-1, 1]) {
+    part(rbox(0.15, 0.08, 0.26, 0.03), shoe, body, s * 0.1, 0.06, 0.03);
+    part(rbox(0.13, 0.38, 0.15, 0.04), pants, body, s * 0.1, 0.28, 0);
+    part(rbox(0.11, 0.32, 0.11, 0.04), shirt, body, s * 0.28, 0.7, 0.02);
+    part(new THREE.SphereGeometry(0.055, 8, 6), skin, body, s * 0.28, 0.5, 0.05);
+    part(new THREE.SphereGeometry(0.028, 6, 5), 0x2a2420, body, s * 0.055, 1.24, 0.175);
+  }
+  part(rbox(0.4, 0.42, 0.22, 0.08), shirt, body, 0, 0.72, 0);
+  part(rbox(0.42, 0.06, 0.16, 0.02), 0x2a2420, body, 0, 0.52, 0.04);
+  part(rbox(0.1, 0.08, 0.1, 0.03), skin, body, 0, 0.98, 0.02);
+  part(new THREE.SphereGeometry(0.155, 12, 10), skin, body, 0, 1.18, 0.02);
+  part(cylG(0.2, 0.2, 0.035, 12), hat, body, 0, 1.32, 0.02);
+  part(cylG(0.12, 0.15, 0.16, 10), hat, body, 0, 1.42, 0.02);
+  const wait = emojiSprite(g, '⏳', 2.2, 0.62);
   return { g, body, wait };
 }
 function buildWalker() {
@@ -3287,20 +3297,31 @@ function buildStall() {
   const hatch = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 2.6), bayHatchMat);
   hatch.rotation.x = -Math.PI / 2; hatch.position.y = 0.12; ghost.add(hatch);
   const g = new THREE.Group(); g.position.set(SHOP_AT.x, 0, SHOP_AT.z); g.visible = false; scene.add(g);
-  part(rbox(8.6, 0.12, 4.6, 0.05, 1), 0xd8dbdd, g, 0.2, 0.06, 1.15, 0, 0, 0, false);
-  part(rbox(6.4, 0.16, 2.8, 0.05, 1), 0xc6ad78, g, 0, 0.1, 0, 0, 0, 0, false);
-  for (const x of [-2.7, 2.7]) for (const z of [-1.15, 1.15]) part(rbox(0.18, 2.5, 0.18, 0.04), 0x8d5a32, g, x, 1.3, z);
-  part(rbox(6.2, 0.14, 3.3, 0.04), 0xd8473b, g, 0, 2.55, 0.15);
-  part(rbox(6.4, 0.1, 0.55, 0.04), 0xf4f5f7, g, 0, 2.48, 1.35);
-  part(rbox(5.2, 0.9, 0.16, 0.04), 0xf7ebc8, g, 0, 1.15, 1.42);
-  part(rbox(1.1, 1.5, 0.12, 0.04), 0x6e3d28, g, 0, 0.85, -1.42);
+  part(rbox(8.2, 0.1, 4.4, 0.04, 1), 0xd8dbdd, g, 0.1, 0.05, 0.85, 0, 0, 0, false);
+  part(rbox(6.6, 0.08, 3.4, 0.03, 1), 0xc6ad78, g, 0, 0.12, 0.05, 0, 0, 0, false);
+  for (const x of [-3.05, 3.05]) for (const z of [-1.25, 1.45]) part(rbox(0.16, 2.75, 0.16, 0.03), 0x6e4a2c, g, x, 1.42, z);
+  for (let i = 0; i < 8; i++) part(rbox(0.74, 0.07, 1.7, 0.02), i % 2 ? 0xd8473b : 0xf7f1e4, g, -2.6 + i * 0.74, 2.72, 1.15, 0.14, 0, 0);
+  part(rbox(6.2, 0.12, 0.1, 0.02), 0xd8473b, g, 0, 2.35, 0.4);
+  part(rbox(0.08, 0.7, 2.2, 0.02), 0xe7d3b0, g, -3.05, 0.48, 0.1);
+  part(rbox(0.08, 0.7, 2.2, 0.02), 0xe7d3b0, g, 3.05, 0.48, 0.1);
+  part(rbox(5.4, 0.1, 0.62, 0.03), 0x8d5a32, g, 0, 1.02, 1.32);
+  part(rbox(5.4, 0.72, 0.1, 0.03), 0xf3e0bc, g, 0, 0.62, 1.58);
+  part(rbox(1.7, 0.55, 0.1, 0.02), 0x8d5a32, g, -1.5, 0.4, -0.85);
+  for (let i = 0; i < 4; i++) {
+    const crib = new THREE.Mesh(logGeo, logMats);
+    crib.scale.set(0.18, 1.15, 0.18); crib.rotation.z = Math.PI / 2;
+    crib.position.set(-1.7 + (i % 2) * 0.32, 0.78 + Math.floor(i / 2) * 0.22, -0.85); g.add(crib);
+  }
+  part(rbox(0.4, 0.2, 0.3, 0.04), 0xf2a93b, g, 1.85, 1.2, 1.18);
+  part(cylG(0.02, 0.02, 0.45, 6), 0x3a4048, g, 0.4, 2.35, -0.7);
+  part(cylG(0.16, 0.22, 0.16, 8), mat(0xfff5cc, { e: 0xffe9a0, ei: 0.85 }), g, 0.4, 2.05, -0.7, 0, 0, 0, false);
   const signTex = canvasTex(512, 160, (c, w, h) => {
     c.fillStyle = '#d8473b'; c.beginPath(); c.roundRect(8, 8, w - 16, h - 16, 28); c.fill();
     c.fillStyle = '#fff6e4'; c.font = '800 78px "Baloo 2", Arial Black, sans-serif';
     c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('SHOP', w / 2, h / 2 + 4);
   });
-  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.82), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.7 }));
-  sign.position.set(0, 2.05, 1.48); g.add(sign);
+  const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.82), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.7, side: THREE.DoubleSide }));
+  sign.position.set(0, 1.7, -1.35); sign.rotation.y = Math.PI; g.add(sign);
   part(rbox(0.28, 0.16, 0.28, 0.04), mat(0xfff5cc, { e: 0xffe9a0, ei: 0.7 }), g, 2.2, 2.35, 1.3, 0, 0, 0, false);
   const saleLog = new THREE.Mesh(logGeo, logMats);
   saleLog.scale.set(0.18, 0.72, 0.18); saleLog.rotation.z = Math.PI / 2;
@@ -4185,18 +4206,17 @@ function buildJoinery() {
   const hatch = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.4), bayHatchMat);
   hatch.rotation.x = -Math.PI / 2; hatch.position.y = 0.12; ghost.add(hatch);
   const g = new THREE.Group(); g.position.set(JOIN_AT.x, 0, JOIN_AT.z); g.visible = false; scene.add(g);
-  part(rbox(6.2, 0.12, 5.0, 0.04, 1), 0xc8b49a, g, 0, 0.06, 0, 0, 0, 0, false);
-  part(rbox(0.16, 1.7, 3.5, 0.04), 0xf4efe4, g, -3.02, 0.92, -0.45);
-  part(rbox(0.16, 1.7, 3.5, 0.04), 0xf4efe4, g, 3.02, 0.92, -0.45);
-  part(rbox(2.15, 1.7, 0.16, 0.04), 0xf4efe4, g, -1.95, 0.92, -2.2);
-  part(rbox(2.15, 1.7, 0.16, 0.04), 0xf4efe4, g, 1.95, 0.92, -2.2);
-  part(rbox(1.7, 0.36, 0.16, 0.03), 0xf4efe4, g, 0, 1.6, -2.2);
-  part(rbox(1.6, 0.9, 0.14, 0.03), 0xf4efe4, g, 0, 2.15, -2.18);
-  part(rbox(0.86, 1.4, 0.08, 0.03), 0x6e3d28, g, 0.28, 0.76, -2.16);
-  part(rbox(0.85, 0.62, 0.06, 0.02), glassMat, g, 3.08, 1.15, -0.2, 0, 0, 0, false);
-  part(rbox(6.4, 0.18, 0.16, 0.03), 0x6e4a2c, g, 0, 1.82, 1.15);
-  for (const x of [-3.05, 3.05]) for (const z of [-2.2, 1.15]) part(rbox(0.18, 1.85, 0.18, 0.03), 0x6e4a2c, g, x, 0.98, z);
-  pitchRoof(g, 6.8, 4.2, 1.78, 0x8d4a32, -0.45);
+  part(rbox(6.2, 0.12, 5.0, 0.04, 1), 0xc4a574, g, 0, 0.06, 0, 0, 0, 0, false);
+  for (const x of [-2.9, 2.9]) for (const z of [-1.9, 1.15]) part(rbox(0.2, 2.45, 0.2, 0.04), 0x6e4a2c, g, x, 1.28, z);
+  part(rbox(0.1, 0.7, 2.5, 0.03), 0xf4efe4, g, -2.9, 0.42, -0.35);
+  part(rbox(0.1, 0.7, 2.5, 0.03), 0xf4efe4, g, 2.9, 0.42, -0.35);
+  part(rbox(1.55, 1.35, 0.12, 0.03), 0xf4efe4, g, -1.75, 0.78, -1.95);
+  part(rbox(1.55, 1.35, 0.12, 0.03), 0xf4efe4, g, 1.75, 0.78, -1.95);
+  part(rbox(1.2, 0.4, 0.1, 0.02), 0xf4efe4, g, 0, 1.45, -1.95);
+  part(rbox(1.15, 0.7, 0.04, 0.01), glassMat, g, 0, 0.85, -1.88, 0, 0, 0, false);
+  for (let i = 0; i < 4; i++) part(rbox(1.15, 0.07, 0.34, 0.01), i % 2 ? 0xf7ebc8 : 0xe7c98a, g, -1.55, 0.2 + i * 0.09, 1.85);
+  part(rbox(6.1, 0.14, 0.14, 0.03), 0x6e4a2c, g, 0, 2.4, 1.2);
+  pitchRoof(g, 6.5, 3.1, 2.28, 0x8d4a32, -0.55);
   const sign = yardSign('JOINERY', '#8d4a32'); sign.position.set(-2.15, 1.35, 1.85); g.add(sign);
   part(rbox(2.4, 0.1, 1.05, 0.03), 0x8d5a32, g, 0.15, 0.82, 2.55);
   for (const x of [-0.9, 0.9]) for (const z of [2.15, 2.95]) part(rbox(0.08, 0.74, 0.08, 0.02), 0x6e4a2c, g, x, 0.4, z);
@@ -4243,14 +4263,19 @@ function buildFirewood() {
   hatch.rotation.x = -Math.PI / 2; hatch.position.y = 0.12; ghost.add(hatch);
   const g = new THREE.Group(); g.position.set(FIRE_AT.x, 0, FIRE_AT.z); g.visible = false; scene.add(g);
   part(rbox(6.0, 0.12, 5.0, 0.04, 1), 0xb7a48a, g, 0, 0.06, 0.3, 0, 0, 0, false);
-  part(rbox(0.16, 1.7, 3.2, 0.04), 0xe7d3b0, g, -2.9, 0.92, -0.4);
-  part(rbox(0.16, 1.7, 3.2, 0.04), 0xe7d3b0, g, 2.9, 0.92, -0.4);
-  part(rbox(2.05, 1.7, 0.16, 0.04), 0xe7d3b0, g, -1.85, 0.92, -1.9);
-  part(rbox(2.05, 1.7, 0.16, 0.04), 0xe7d3b0, g, 1.85, 0.92, -1.9);
-  part(rbox(1.6, 0.85, 0.14, 0.03), 0xe7d3b0, g, 0, 2.1, -1.88);
-  for (const x of [-2.9, 2.9]) for (const z of [-1.9, 1.15]) part(rbox(0.2, 1.85, 0.2, 0.03), 0x5c4632, g, x, 0.98, z);
-  part(rbox(6.3, 0.16, 0.16, 0.03), 0x5c4632, g, 0, 1.82, 1.15);
-  pitchRoof(g, 6.6, 4.0, 1.76, 0x8a3e2a, -0.4);
+  for (const x of [-2.85, 2.85]) for (const z of [-1.7, 0.9]) part(rbox(0.22, 2.2, 0.22, 0.04), 0x5c4632, g, x, 1.15, z);
+  for (let i = 0; i < 4; i++) {
+    for (const x of [-2.85, 2.85]) {
+      const side = new THREE.Mesh(logGeo, logMats);
+      side.scale.set(0.2, 2.3, 0.2); side.rotation.x = Math.PI / 2;
+      side.position.set(x, 0.32 + i * 0.28, -0.4); g.add(side);
+    }
+    const back = new THREE.Mesh(logGeo, logMats);
+    back.scale.set(0.2, 5.2, 0.2); back.rotation.z = Math.PI / 2;
+    back.position.set(0, 0.32 + i * 0.28, -1.7); g.add(back);
+  }
+  part(rbox(6.2, 0.12, 3.4, 0.03), 0x6e3d28, g, 0, 2.05, -0.35, -0.28, 0, 0);
+  part(rbox(6.2, 0.1, 0.12, 0.02), 0x5c4632, g, 0, 1.55, 1.05);
   const sign = yardSign('FIREWOOD', '#a33b24'); sign.position.set(1.85, 1.32, 1.9); g.add(sign);
   for (let row = 0; row < 4; row++) for (let i = 0; i < 3; i++) {
     const log = new THREE.Mesh(logGeo, logMats);
@@ -4308,14 +4333,19 @@ function buildKitShop() {
   hatch.rotation.x = -Math.PI / 2; hatch.position.set(0, 0.12, 0.3); ghost.add(hatch);
   const g = new THREE.Group(); g.position.set(KIT_AT.x, 0, KIT_AT.z); g.visible = false; scene.add(g);
   part(rbox(7.0, 0.12, 5.4, 0.04, 1), 0xc8b49a, g, 0, 0.06, 0.2, 0, 0, 0, false);
-  part(rbox(0.16, 1.7, 3.6, 0.04), 0xf4efe4, g, -3.35, 0.92, -0.2);
-  part(rbox(0.16, 1.7, 3.6, 0.04), 0xf4efe4, g, 3.35, 0.92, -0.2);
-  part(rbox(6.5, 1.7, 0.16, 0.04), 0xf4efe4, g, 0, 0.92, -2.0);
-  part(rbox(1.5, 0.9, 0.14, 0.03), 0xf4efe4, g, 0, 2.1, -1.96);
-  part(rbox(0.9, 1.35, 0.08, 0.03), 0x6e3d28, g, -1.7, 0.74, -1.94);
-  part(rbox(0.8, 0.6, 0.06, 0.02), glassMat, g, 3.4, 1.15, 0.1, 0, 0, 0, false);
-  for (const x of [-3.35, 3.35]) for (const z of [-2.0, 1.35]) part(rbox(0.18, 1.85, 0.18, 0.03), 0x6e4a2c, g, x, 0.98, z);
-  pitchRoof(g, 7.2, 4.0, 1.78, 0x2f6f4e, -0.3);
+  for (const x of [-3.2, 3.2]) for (const z of [-1.7, 1.2]) part(rbox(0.18, 2.5, 0.18, 0.04), 0x6e4a2c, g, x, 1.3, z);
+  part(rbox(0.1, 0.65, 2.4, 0.02), 0xe7d7b0, g, -3.2, 0.4, -0.2);
+  part(rbox(0.1, 0.65, 2.4, 0.02), 0xe7d7b0, g, 3.2, 0.4, -0.2);
+  part(rbox(2.2, 1.2, 0.12, 0.03), 0xf4efe4, g, -1.6, 0.7, -1.75);
+  part(rbox(2.2, 1.2, 0.12, 0.03), 0xf4efe4, g, 1.6, 0.7, -1.75);
+  part(rbox(1.1, 0.35, 0.1, 0.02), 0xf4efe4, g, 0, 1.35, -1.75);
+  for (const x of [-2.15, 2.05]) {
+    part(rbox(0.7, 0.45, 0.5, 0.03), 0xc48a3a, g, x, 0.32, 1.7);
+    part(rbox(0.74, 0.06, 0.54, 0.02), 0x8d5a32, g, x, 0.56, 1.7);
+    part(rbox(0.55, 0.32, 0.4, 0.02), 0xe7d7b0, g, x, 0.78, 1.7);
+  }
+  part(rbox(6.8, 0.14, 0.14, 0.03), 0x6e4a2c, g, 0, 2.45, 1.25);
+  pitchRoof(g, 7.0, 3.2, 2.32, 0x2f6f4e, -0.45);
   const sign = yardSign('KITS', '#2f6f4e'); sign.position.set(-2.2, 1.35, 1.7); g.add(sign);
   part(rbox(2.6, 0.1, 1.15, 0.03), 0x8d5a32, g, 0.35, 0.82, 2.55);
   for (const x of [-0.8, 1.5]) for (const z of [2.15, 2.95]) part(rbox(0.08, 0.74, 0.08, 0.02), 0x6e4a2c, g, x, 0.4, z);
