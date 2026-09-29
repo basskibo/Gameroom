@@ -3468,9 +3468,10 @@ layFoot(-22.2, -42.6, 12.2, -42.6, 1.2);
 layFoot(-12.4, -42.6, -12.4, -37.6, 1.05);
 layFoot(-22.2, -42.6, -22.2, -37.6, 1.05);
 layFoot(-3.4, -42.6, -3.4, -37.6, 1.05);
-layFoot(12.2, -42.6, 12.2, -25.7, 1.05);
-layFoot(-10.2, -25.7, 12.2, -25.7, 1.05);
-layFoot(6.4, -25.7, 6.4, -26.8, 1.05);
+const SHOP_WALK_Z = -26.35;
+layFoot(12.2, -42.6, 12.2, SHOP_WALK_Z, 1.6);
+layFoot(-11.2, SHOP_WALK_Z, 12.2, SHOP_WALK_Z, 2.4);
+layFoot(6.4, SHOP_WALK_Z, 6.4, -26.85, 1.6);
 layFoot(HAUL_GATE.x, HAUL_GATE.z, HAUL_NORTH.x, HAUL_NORTH.z, 1.2);
 layFoot(HAUL_NORTH.x, HAUL_NORTH.z, HAUL_SOUTH.x, HAUL_SOUTH.z, 1.2);
 layFoot(HAUL_SOUTH.x, HAUL_SOUTH.z, HAUL_DROP.x, HAUL_DROP.z, 1.2);
@@ -3660,17 +3661,17 @@ function carStand() {
   return choices[(Math.random() * choices.length) | 0];
 }
 function carApproach(stand, car) {
-  const out = [{ x: car.x, z: -25.7 }];
+  const out = [{ x: car.x, z: SHOP_WALK_Z }];
   if (stand === 'kit') {
     out.push(
-      { x: KIT_SHOW.x + 1.6, z: -25.7 },
+      { x: KIT_SHOW.x + 1.6, z: SHOP_WALK_Z },
       { x: KIT_SHOW.x + 1.6, z: KIT_SHOW.z + 0.15 },
     );
     return out;
   }
   const door = lineSpots(stand)[0];
   out.push(
-    { x: 12.2, z: -25.7 },
+    { x: 12.2, z: SHOP_WALK_Z },
     { x: 12.2, z: -42.6 },
     { x: door.x, z: -42.6 },
     door,
@@ -3686,11 +3687,12 @@ function carArrive(car) {
   c.want = rollWant(stand);
   c.got = 0; c.wait = 0; c.t = 0; c.fedup = false; c.slot = null;
   c.state = 'walk';
-  c.x = car.x; c.z = car.z - 0.9;
   c.legs = carApproach(stand, car);
-  c.leg = 0;
-  c.via = c.legs[0];
-  c.tx = c.x; c.tz = c.z;
+  c.x = c.legs[0].x; c.z = c.legs[0].z;
+  c.leg = c.legs.length > 1 ? 1 : 0;
+  c.via = c.legs[c.leg];
+  const end = c.legs[c.legs.length - 1];
+  c.tx = end.x; c.tz = end.z;
 }
 function carDepart(car) {
   if (car.slot < 0) { car.phase = 'idle'; return; }
@@ -3802,8 +3804,8 @@ function approachLegs(stand) {
   if (stand === 'wood') return spine.concat([{ x: -12.4, z: -42.6 }, { x: -12.4, z: -37.8 }]);
   if (stand === 'furn') return spine.concat([{ x: -22.2, z: -42.6 }, { x: -22.2, z: -41.1 }]);
   if (stand === 'kit') return spine.concat([
-    { x: 12.2, z: -42.6 }, { x: 12.2, z: -25.7 },
-    { x: KIT_SHOW.x + 1.6, z: -25.7 }, { x: KIT_SHOW.x + 1.6, z: KIT_SHOW.z + 0.15 },
+    { x: 12.2, z: -42.6 }, { x: 12.2, z: SHOP_WALK_Z },
+    { x: KIT_SHOW.x + 1.6, z: SHOP_WALK_Z }, { x: KIT_SHOW.x + 1.6, z: KIT_SHOW.z + 0.15 },
   ]);
   return spine.concat([
     { x: -3.4, z: -42.6 }, { x: FIRE_SHOW.x, z: FIRE_SHOW.z - 1.6 },
@@ -3849,11 +3851,11 @@ function outsideLeave(c) {
   };
   let x = c.x, z = c.z;
   if (z < -26.0 && z > -36.2 && x < 10.6) {
-    z = z > -31.5 ? -25.7 : -42.6;
+    z = z > -31.5 ? SHOP_WALK_Z : -42.6;
     push({ x, z });
   }
   if (z > -34) {
-    push({ x: 12.2, z: -25.7 });
+    push({ x: 12.2, z: SHOP_WALK_Z });
     push({ x: 12.2, z: -42.6 });
   } else push({ x, z: -42.6 });
   push({ x: -13.8, z: -42.6 });
@@ -3868,7 +3870,7 @@ function startLeave(c, fedup) {
   c.fedup = !!fedup;
   c.slot = null;
   const back = (c.car && c.car.phase === 'parked')
-    ? carApproach(c.stand, c.car).slice().reverse().concat([{ x: c.car.x, z: c.car.z - 0.9 }])
+    ? carApproach(c.stand, c.car).slice().reverse()
     : outsideLeave(c);
   c.legs = back;
   c.leg = 0;
@@ -4064,7 +4066,10 @@ function updateCustomers(dt) {
   for (const c of customers) {
     if (c.state === 'pool') continue;
     const pathDone = !c.legs || c.leg >= c.legs.length - 1;
-    if (c.state === 'walk' && !c.via && pathDone) tryJoinLine(c);
+    if (c.state === 'walk' && !c.via && pathDone) {
+      tryJoinLine(c);
+      if (c.slot == null) startLeave(c, true);
+    }
     const blocked = c.state !== 'leave' && personAhead(c);
     if (c.state === 'walk') {
       if (blocked) c.wait += dt; else c.wait = 0;
@@ -4497,7 +4502,7 @@ const yardViz = { join: buildJoinery(), fire: buildFirewood(), kit: buildKitShop
 const joiner = { x: JOIN_AT.x + 0.9, z: JOIN_AT.z + 3.15, yaw: 0, state: 'idle', t: 0, carry: -1, kind: 0, moving: false, haul: '', n: 0, path: null, pi: 0 };
 const splitter = { x: FIRE_AT.x, z: FIRE_AT.z, yaw: 0, state: 'idle', t: 0, carry: 0, moving: false };
 const kitPile = [];
-const fitter = { x: KIT_AT.x + 0.35, z: KIT_AT.z + 2.55, yaw: 0, state: 'idle', t: 0, kind: 0, boards: 0, logs: 0, gotBoards: false, gotLogs: false, moving: false, path: null, pi: 0 };
+const fitter = { x: KIT_AT.x + 2.35, z: KIT_AT.z + 2.55, yaw: -Math.PI / 2, state: 'idle', t: 0, kind: 0, boards: 0, logs: 0, gotBoards: false, gotLogs: false, moving: false, path: null, pi: 0 };
 function kitRecipe() { return KITS[Math.min(S.lv.kitKind | 0, KITS.length - 1)]; }
 function kitReady() {
   if (kitPile.length >= KIT_CAP) return false;
@@ -4517,7 +4522,7 @@ function kitPath(from, dest) {
   push(dest);
   return pts;
 }
-function kitBench() { return { x: KIT_AT.x + 0.35, z: KIT_AT.z + 2.55 }; }
+function kitBench() { return { x: KIT_AT.x + 2.35, z: KIT_AT.z + 2.55 }; }
 function refreshYardLook() {
   const jOn = S.lv.joinery > 0, fOn = S.lv.firewood > 0, kOn = S.lv.kit > 0;
   yardViz.join.g.visible = jOn;
@@ -4824,7 +4829,7 @@ function syncYardGoods(dt, time) {
   kp.g.visible = kOn;
   if (assembling) kp.g.position.set(kitBench().x, 0, kitBench().z);
   else kp.g.position.set(fitter.x, 0, fitter.z);
-  kp.g.rotation.y = assembling ? yawOf(-1.4, -0.2) : fitter.yaw;
+  kp.g.rotation.y = (assembling || fitter.state === 'idle') ? -Math.PI / 2 : fitter.yaw;
   kp.body.position.y = fitter.moving || assembling ? Math.abs(Math.sin(time * (assembling ? 6.5 : 9))) * 0.05 : 0;
   poseArms(kp, assembling ? 'saw' : fitter.moving ? 'walk' : 'idle', time);
   for (let i = 0; i < yardViz.kit.slots.length; i++) {
