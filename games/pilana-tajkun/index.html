@@ -351,10 +351,10 @@
         <span>🌲</span><span>The forest is not endless. A lumberjack takes several swings to fell a tree, then carries the log along the path to the deck at the belts. It counts only when he drops it there. Trees grow back slowly, and each one has a stumpage fee. Buy more forest when the deck starts to fall, or the saws run out.</span>
         <span>🪵</span><span>The planers sit on the east side of the bin, where the saw used to be. The saw belts are on the west side and still drop pieces into the bin. Each planer has its own worker, who picks wood up at the bin's east side and stacks the boards on the pallets just east of the machines. If a forklift blocks him he steps past after a moment. Forklifts share one dashed line between the bin and the trucks, and they park well back from the truck row so the concrete between them stays open. They drive through each other, so a pile-up does not freeze the lane. If they still sit still, open the forklift panel and tap Unstick. At the bin they use one gate: the rest wait in a line to the east, and the one inside backs onto that line before the next one drives in. Two more gates can be bought on the bin. Buy another pallet when you need room for more boards.</span>
         <span>⚙️</span><span>When the bin is overflowing, a chipper beside the saw chews the extra wood. Buy another tile to make the bin itself bigger.</span>
-        <span>🏪</span><span>The shop stands in the row with the joinery, the woodshed, and the kit shop. People come out of a tunnel and follow the path to the stall, one behind another. Other buyers drive around to the far side of that square, park in the marked bays, and walk back to a stall. The hauler, cart, or belt keeps a few logs on the pallets and brings more while people are waiting. The logs stay stacked until the seller hands them over. If the stall has nothing coming, a long wait sends them back into the tunnel. The seller takes a wage.</span>
+        <span>🏪</span><span>The shop stands in the row with the joinery, the woodshed, and the kit shop. People come out of a tunnel and follow the path to the stall, one behind another. Other buyers drive around to the far side of that square, park in the marked bays, and walk back to a stall. The hauler, cart, or belt keeps filling the pallets whenever there is room, even when nobody is waiting. The logs stay stacked until the seller hands them over. If the stall has nothing coming, a long wait sends them back into the tunnel. The seller takes a wage.</span>
         <span>🪑</span><span>The furniture stand is beside the shop. The joiner walks to the log deck, or to the board pile when boards are spare, carries the wood back, and you can see the saw working on the bench. Then he carries the stool, bench, or table over. People from the same tunnel take the other branch of the path and wait while he is on a trip. If nothing is being built, they give up and walk back.</span>
         <span>🔥</span><span>The woodshed in the shop row splits extra cut logs into firewood. You can see the axe working. A worker, then a cart, then the mill belt all the way to the shed carries the bundles to the rack out front. The rack has to sell before the next one is split.</span>
-        <span>📦</span><span>The kit shop combines cut logs and boards into a crate, a shed kit, or a cabin kit. The fitter fetches both, and the build is slow. Each finished kit sells for more than the parts would on their own.</span>
+        <span>📦</span><span>The kit shop combines cut logs and boards into a crate, a shed kit, or a cabin kit. The fitter fetches both, then walks the finished kit down the side of the shop to the stand. At full speed a belt carries it there. Each finished kit sells for more than the parts would on their own.</span>
         <span>🚢</span><span>When the mill is already busy, an export desk by the buyer is where the extra money goes. Each contract is a small bump in truck pay and costs a lot more than the last.</span>
         <span>🏭</span><span>Every so often the buyer offers double price on logs or on boards. Take it and a truck that pulls out before the timer ends sells that cargo for double. The yard keeps working. If a full fork of that cargo is ready, the forklifts load it first.</span>
         <span>🏗️</span><span>The highway turns in at the timber buyer, then a second turn runs south to the frame yard. The yard buys finished boards. It pays more per board than the log trucks, but only a few at a time, and it leaves some boards at the mill for furniture and rush orders.</span>
@@ -3193,13 +3193,8 @@ function haulerTraveling() {
   return shopOn() && S.lv.haul < 4 && (hauler.leg === 'out' || hauler.u > 0.02 || hauler.dwell > 0);
 }
 function woodNeed() {
-  let want = 0;
-  for (const c of customers) {
-    if (c.stand !== 'wood' || c.state === 'pool' || c.state === 'leave') continue;
-    want += Math.max(0, c.want - c.got);
-  }
-  const target = Math.max(4, want);
-  return Math.max(0, target - woodStacked() - woodIncoming());
+  const cap = palletCount() * PALLET_CAP;
+  return Math.max(0, cap - woodStacked() - woodIncoming());
 }
 function fireQueuedNeed() {
   let n = 0;
@@ -3212,8 +3207,8 @@ function fireQueuedNeed() {
 function standWorking(stand) {
   if (stand === 'wood') return woodStacked() > 0 || woodIncoming() > 0 || haulerTraveling();
   if (stand === 'fire') return firePile > 0 || firePending > 0 || fireShip.length > 0 || fireTransit > 0 || splitter.state !== 'idle' || (S.lv.fireHaul >= 3 && S.stockpile > 6);
-  if (stand === 'furn') return furnPile.length > 0 || joiner.state !== 'idle';
-  if (stand === 'kit') return kitPile.length > 0 || fitter.state !== 'idle';
+  if (stand === 'furn') return furnPile.length > 0 || furnShip.length > 0 || joiner.state !== 'idle';
+  if (stand === 'kit') return kitPile.length > 0 || kitShip.length > 0 || fitter.state !== 'idle';
   return false;
 }
 function giveToPallets(n) {
@@ -3980,7 +3975,7 @@ function serveFurn(c, dt) {
   if (c !== standFront('furn')) return;
   if (c.state === 'queue') {
     if (furnPile.length && c.got < c.want) { c.state = 'buy'; c.t = 0; }
-    else if (joiner.state !== 'idle') c.wait = Math.min(c.wait, 8);
+    else if (joiner.state !== 'idle' || furnShip.length) c.wait = Math.min(c.wait, 8);
     else if (c.wait > 26) startLeave(c, true);
     return;
   }
@@ -4018,7 +4013,7 @@ function serveKit(c, dt) {
   if (c !== standFront('kit')) return;
   if (c.state === 'queue') {
     if (kitPile.length) { c.state = 'buy'; c.t = 0; }
-    else if (fitter.state !== 'idle') c.wait = Math.min(c.wait, 8);
+    else if (fitter.state !== 'idle' || kitShip.length) c.wait = Math.min(c.wait, 8);
     else if (c.wait > 28) startLeave(c, true);
     return;
   }
@@ -4475,9 +4470,41 @@ function buildKitShop() {
   return { g, ghost, benchKits, slots, person, carried, saw, logs, planks };
 }
 const yardViz = { join: buildJoinery(), fire: buildFirewood(), kit: buildKitShop() };
+const JOIN_FLOW = [
+  { x: JOIN_AT.x + 2.2, z: JOIN_AT.z + 1.55 },
+  { x: JOIN_AT.x + 2.2, z: FURN_SHOW.z + 1.35 },
+];
+const KIT_FLOW = [
+  { x: KIT_AT.x + 2.15, z: KIT_AT.z + 2.15 },
+  { x: KIT_AT.x + 2.15, z: KIT_SHOW.z + 0.9 },
+];
+function buildLocalBelt(pts) {
+  const g = new THREE.Group();
+  scene.add(g);
+  layBelt(g, pts);
+  g.visible = false;
+  return g;
+}
+const joinBeltMesh = buildLocalBelt(JOIN_FLOW);
+const kitBeltMesh = buildLocalBelt(KIT_FLOW);
+const furnRiders = [0, 1, 2].map(k => {
+  const m = buildSeat(joinBeltMesh, k);
+  m.visible = false;
+  m.scale.setScalar(0.5);
+  return m;
+});
+const kitRiders = [0, 1, 2].map(k => {
+  const m = kitMesh(k);
+  m.visible = false;
+  m.scale.setScalar(0.7);
+  kitBeltMesh.add(m);
+  return m;
+});
 const joiner = { x: JOIN_AT.x + 0.9, z: JOIN_AT.z + 3.15, yaw: 0, state: 'idle', t: 0, carry: -1, kind: 0, moving: false, haul: '', n: 0, path: null, pi: 0 };
+const furnShip = [];
 const splitter = { x: FIRE_AT.x, z: FIRE_AT.z, yaw: 0, state: 'idle', t: 0, carry: 0, moving: false };
 const kitPile = [];
+const kitShip = [];
 const fitter = { x: KIT_AT.x + 2.35, z: KIT_AT.z + 2.55, yaw: -Math.PI / 2, state: 'idle', t: 0, kind: 0, boards: 0, logs: 0, gotBoards: false, gotLogs: false, moving: false, path: null, pi: 0 };
 function kitRecipe() { return KITS[Math.min(S.lv.kitKind | 0, KITS.length - 1)]; }
 function kitReady() {
@@ -4499,6 +4526,29 @@ function kitPath(from, dest) {
   return pts;
 }
 function kitBench() { return { x: KIT_AT.x + 2.35, z: KIT_AT.z + 2.55 }; }
+function kitDrop() { return { x: KIT_AT.x + 1.15, z: KIT_SHOW.z + 0.85 }; }
+function kitShopPath(from, dest) {
+  const x = KIT_AT.x + 2.15;
+  const pts = [];
+  const push = (p) => {
+    const last = pts[pts.length - 1];
+    if (!last || Math.hypot(last.x - p.x, last.z - p.z) > 0.35) pts.push(p);
+  };
+  push({ x: from.x, z: from.z });
+  push({ x, z: from.z });
+  push({ x, z: dest.z });
+  push(dest);
+  return pts;
+}
+function joinMax() { return (S.lv.joinSpd | 0) >= UP.joinSpd.vals.length - 1; }
+function kitMax() { return (S.lv.kitSpd | 0) >= UP.kitSpd.vals.length - 1; }
+function rideBelt(ships, dt, onArrive) {
+  for (let i = ships.length - 1; i >= 0; i--) {
+    ships[i].u += dt * 0.35;
+    if (ships[i].u < 1) continue;
+    onArrive(ships.splice(i, 1)[0]);
+  }
+}
 function refreshYardLook() {
   const jOn = S.lv.joinery > 0, fOn = S.lv.firewood > 0, kOn = S.lv.kit > 0;
   yardViz.join.g.visible = jOn;
@@ -4515,11 +4565,36 @@ function refreshYardLook() {
   yardViz.fire.cart.visible = fOn && S.lv.fireHaul === 2;
 }
 function updateJoiner(dt) {
+  rideBelt(furnShip, dt, (item) => {
+    if (furnPile.length < FURN_CAP) { furnPile.push({ kind: item.kind }); bookMade('furn', 1); }
+    else if (item.paid === 'boards') S.boards += item.n;
+    else S.stockpile += item.n;
+    if (!instant) sfx.drop();
+  });
   if (!S.lv.joinery) return;
   const j = joiner;
   j.moving = false;
   const spd = 3.1 + (S.lv.joinSpd | 0) * 0.16;
   const bench = { x: JOIN_AT.x + 0.9, z: JOIN_AT.z + 3.15 };
+  if (joinMax() && (j.state === 'idle' || j.state === 'build')) {
+    j.x = bench.x; j.z = bench.z;
+    if (j.state === 'build') {
+      j.t += dt;
+      if (j.t >= UP.joinSpd.vals[S.lv.joinSpd | 0]) {
+        furnShip.push({ u: 0, kind: j.kind, paid: j.paid, n: j.n });
+        j.carry = -1; j.haul = ''; j.state = 'idle'; j.t = 0;
+      }
+      return;
+    }
+    if (furnPile.length + furnShip.length >= FURN_CAP) return;
+    const job = joinJob();
+    if (!job) return;
+    if (job.haul === 'boards') S.boards -= job.n;
+    else { S.stockpile -= job.n; if (!instant) removePieces(job.n); }
+    j.kind = job.kind; j.haul = ''; j.n = job.n; j.paid = job.haul; j.carry = -1;
+    j.state = 'build'; j.t = 0;
+    return;
+  }
   if (j.state === 'idle') {
     j.x = bench.x; j.z = bench.z;
     const job = joinJob();
@@ -4641,11 +4716,37 @@ function updateSplitter(dt) {
   if (stepActor(f, dt, FIRE_AT.x, FIRE_AT.z, spd)) f.state = 'idle';
 }
 function updateKit(dt) {
+  rideBelt(kitShip, dt, (item) => {
+    if (kitPile.length < KIT_CAP) { kitPile.push({ kind: item.kind }); bookMade('kits', 1); }
+    else { S.boards += item.boards; S.stockpile += item.logs; }
+    if (!instant) sfx.drop();
+  });
   if (!S.lv.kit) return;
   const f = fitter;
   f.moving = false;
   const spd = 2.65 + (S.lv.kitSpd | 0) * 0.1;
   const bench = kitBench();
+  if (kitMax() && (f.state === 'idle' || f.state === 'build')) {
+    f.x = bench.x; f.z = bench.z;
+    if (f.state === 'build') {
+      f.t += dt;
+      const need = KITS[f.kind].time * UP.kitSpd.vals[S.lv.kitSpd | 0];
+      if (f.t >= need) {
+        kitShip.push({ u: 0, kind: f.kind, boards: f.boards, logs: f.logs });
+        f.gotBoards = false; f.gotLogs = false;
+        f.state = 'idle'; f.t = 0;
+      }
+      return;
+    }
+    if (kitPile.length + kitShip.length >= KIT_CAP || !kitReady()) return;
+    const r = kitRecipe();
+    S.boards -= r.boards;
+    S.stockpile -= r.logs;
+    if (!instant) removePieces(r.logs);
+    f.kind = S.lv.kitKind | 0; f.boards = r.boards; f.logs = r.logs;
+    f.state = 'build'; f.t = 0;
+    return;
+  }
   if (f.state === 'idle') {
     f.x = bench.x; f.z = bench.z;
     f.gotBoards = false; f.gotLogs = false;
@@ -4695,7 +4796,7 @@ function updateKit(dt) {
     f.x = bench.x; f.z = bench.z;
     const need = KITS[f.kind].time * UP.kitSpd.vals[S.lv.kitSpd | 0];
     if (f.t < need) return;
-    f.path = kitPath(f, { x: KIT_SHOW.x, z: KIT_SHOW.z + 0.7 });
+    f.path = kitShopPath(f, kitDrop());
     f.pi = 0; f.state = 'toStand';
     return;
   }
@@ -4712,7 +4813,7 @@ function updateKit(dt) {
       if (f.gotLogs) S.stockpile += f.logs;
     }
     f.gotBoards = false; f.gotLogs = false;
-    f.path = kitPath(f, bench); f.pi = 0; f.state = 'back';
+    f.path = kitShopPath(f, bench); f.pi = 0; f.state = 'back';
     return;
   }
   if (followActor(f, dt, spd)) f.state = 'idle';
@@ -4741,6 +4842,15 @@ function syncYardGoods(dt, time) {
     const item = furnPile[i];
     yardViz.join.slots[i].forEach((m, k) => { m.visible = !!item && item.kind === k; });
   }
+  joinBeltMesh.visible = jOn && joinMax();
+  furnRiders.forEach((m, i) => {
+    const s = furnShip[i];
+    m.visible = joinBeltMesh.visible && !!s;
+    if (!s) return;
+    const at = alongPath(JOIN_FLOW, Math.min(1, s.u));
+    m.position.set(at.x, 0.38, at.z);
+    m.rotation.y = 0;
+  });
   const fOn = S.lv.firewood > 0;
   const shown = firePile <= 0 ? 0 : clamp(Math.ceil(firePile / FIRE_CAP * yardViz.fire.bundles.length), 1, yardViz.fire.bundles.length);
   yardViz.fire.bundles.forEach((m, i) => { m.visible = fOn && i < shown; });
@@ -4812,6 +4922,14 @@ function syncYardGoods(dt, time) {
     const item = kitPile[i];
     yardViz.kit.slots[i].forEach((m, k) => { m.visible = !!item && item.kind === k; });
   }
+  kitBeltMesh.visible = kOn && kitMax();
+  kitRiders.forEach((m, i) => {
+    const s = kitShip[i];
+    m.visible = kitBeltMesh.visible && !!s;
+    if (!s) return;
+    const at = alongPath(KIT_FLOW, Math.min(1, s.u));
+    m.position.set(at.x, 0.42, at.z);
+  });
 }
 
 // =====================================================================
@@ -4831,10 +4949,10 @@ const STATIONS = [
   { id: 'export', name: 'Export', icon: '🚢', blurb: 'A contract on top of the buyer price. Each step is a small bump and costs more than the last.', ups: ['export'], spots: [{ x: 57.4, z: 12.2, r: 3.2 }] },
   { id: 'frame', name: 'Frame yard', icon: '🏗️', blurb: 'Buys finished boards for more than the log trucks pay, a few at a time, and leaves some boards at the mill.', ups: ['frame', 'frameSpd', 'frameBite', 'framePay'], spots: [{ x: FRAME_AT.x, z: FRAME_AT.z, r: 6.4 }] },
   { id: 'rush', name: 'Rush yard', icon: '🚐', blurb: 'A van arrives with a timed order for logs, boards, firewood, or furniture. Fill it before it leaves for a bonus.', ups: ['rushN', 'rushBite', 'rushCrew', 'rushVan', 'rushWait', 'rushPay'], spots: [{ x: 15.4, z: -2.4, r: 2.6 }, { x: 19.0, z: -2.4, r: 2.6 }, { x: 22.6, z: -2.4, r: 2.6 }] },
-  { id: 'shop', name: 'Shop', icon: '🏪', blurb: 'People walk up and buy cut logs. A worker, then a cart, then the belt carries the wood to the stall. Buyers leave a tip once the stall learns how.', ups: ['shop', 'haul', 'beltSpd', 'buyers', 'palletN', 'tip'], spots: [{ x: SHOP_AT.x, z: SHOP_AT.z, r: 4.8 }] },
-  { id: 'joinery', name: 'Joinery', icon: '🪑', blurb: 'The joiner fetches boards or cut logs and builds a stool, bench, or table. People pay more than the raw wood.', ups: ['joinery', 'joinSpd', 'joinKind'], spots: [{ x: JOIN_AT.x, z: JOIN_AT.z, r: 4.6 }, { x: FURN_SHOW.x, z: FURN_SHOW.z, r: 4.2 }] },
+  { id: 'shop', name: 'Shop', icon: '🏪', blurb: 'People walk up and buy cut logs. A worker, then a cart, then the belt carries the wood to the stall. The belt keeps filling the pallets while there is room. Buyers leave a tip once the stall learns how.', ups: ['shop', 'haul', 'beltSpd', 'buyers', 'palletN', 'tip'], spots: [{ x: SHOP_AT.x, z: SHOP_AT.z, r: 4.8 }] },
+  { id: 'joinery', name: 'Joinery', icon: '🪑', blurb: 'The joiner fetches boards or cut logs and builds a stool, bench, or table. At full speed a belt carries the piece to the stand. People pay more than the raw wood.', ups: ['joinery', 'joinSpd', 'joinKind'], spots: [{ x: JOIN_AT.x, z: JOIN_AT.z, r: 4.6 }, { x: FURN_SHOW.x, z: FURN_SHOW.z, r: 4.2 }] },
   { id: 'firewood', name: 'Firewood', icon: '🔥', blurb: 'Splits extra cut logs into bundles and sells them at the rack out front.', ups: ['firewood', 'fireSpd', 'fireSize', 'fireHaul'], spots: [{ x: FIRE_AT.x, z: FIRE_AT.z, r: 4.8 }] },
-  { id: 'kit', name: 'Kit shop', icon: '📦', blurb: 'Combines boards and cut logs into a crate, a shed kit, or a cabin kit. Slow to build, and each one sells for more than the parts.', ups: ['kit', 'kitSpd', 'kitKind'], spots: [{ x: KIT_AT.x, z: KIT_AT.z, r: 5.2 }, { x: KIT_SHOW.x, z: KIT_SHOW.z, r: 3.4 }] },
+  { id: 'kit', name: 'Kit shop', icon: '📦', blurb: 'Combines boards and cut logs into a crate, a shed kit, or a cabin kit. The fitter walks the finished kit down the side of the shop. At full speed a belt carries it to the stand.', ups: ['kit', 'kitSpd', 'kitKind'], spots: [{ x: KIT_AT.x, z: KIT_AT.z, r: 5.2 }, { x: KIT_SHOW.x, z: KIT_SHOW.z, r: 3.4 }] },
 ];
 const exportOffice = (() => {
   const ghost = new THREE.Group(); scene.add(ghost);
@@ -5013,7 +5131,7 @@ function upEffect(id) {
   if (id === 'buyers') return b == null ? `${a} buyers, extras wait in line` : `${a} → ${b} buyers`;
   if (id === 'palletN') return b == null ? `${a} sale pallets` : `${a} → ${b} sale pallets`;
   if (id === 'joinery') return b ? 'Turns boards into furniture' : 'The bench is open';
-  if (id === 'joinSpd') return `A piece every ${arrow}s`;
+  if (id === 'joinSpd') return b == null ? `A piece every ${numTxt(a)}s. The belt carries it to the stand` : `A piece every ${arrow}s`;
   if (id === 'joinKind') return ['Stool from 2 boards', 'Bench from 3 boards', 'Table from 4 boards'][lv];
   if (id === 'firewood') return b ? 'Splits extra logs into firewood' : 'The block is in use';
   if (id === 'fireSpd') return `A bundle every ${arrow}s`;
@@ -5026,7 +5144,7 @@ function upEffect(id) {
   if (id === 'kit') return b ? 'Combines logs and boards into kits' : 'The kit shop is open';
   if (id === 'kitSpd') {
     const now = Math.round(KITS[0].time * vals[lv]);
-    if (b == null) return `A crate in ${now}s`;
+    if (b == null) return `A crate in ${now}s. The belt carries it to the stand`;
     return `A crate in ${now}s → ${Math.round(KITS[0].time * b)}s`;
   }
   if (id === 'kitKind') {
@@ -6614,7 +6732,7 @@ if (camera.aspect < 0.9) { cam.dist = 64; cam.target.set(-17, 0, -3); }
 applyCamera();
 try { if (localStorage.getItem(HELP_KEY) === '1' && !SIM) startGame(); } catch (e) {}
 
-window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, grove: +S.grove.toFixed(1), boards: S.boards, frameTrip: +frameTrip.toFixed(2), boardLim: boardLimit(), slots: boardSlots(), pallets: boardPallets.map(p => p.g.visible), shopWood: pallets.slice(), ships: beltShip.length, custs: customers.filter(c => c.state !== 'pool').map(c => [c.state, c.stand, c.want, c.got, +c.x.toFixed(1), +c.z.toFixed(1)]), lv: { ...S.lv }, planers: { n: planerCount(), vis: planers.map(u => u.g.visible), ghost: planers.map(u => u.ghost.visible) }, order: rushes.map(s => ({ on: s.on, kind: s.kind, phase: s.phase, bay: s.bayI, have: s.have, need: s.need, left: +s.left.toFixed(1), x: +s.x.toFixed(1), z: +s.z.toFixed(1), yaw: +s.yaw.toFixed(2), loaded: s.loaded })), porters: porters.map(p => [p.state, +p.x.toFixed(1), +p.z.toFixed(1), +p.yaw.toFixed(2), p.n]), forksVan: forks.map(f => f.vanJob), pit: forks.map(f => [f.i, f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), f.dockX || 0, f.n, f.hold || 0]), jacks: cutters.filter(c => c.g.visible).map(c => [c.state, +c.g.position.x.toFixed(1), +c.g.position.z.toFixed(1), !!c.carrying]), hands: hands.map(h => [h.i, h.state, +h.x.toFixed(1), +h.z.toFixed(1), h.carry]), feeds: planers.map(u => [u.infeed, u.out, +u.t.toFixed(1)]), trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), +f.blockT.toFixed(1)]), cutters: cutters.filter(c => c.g.visible).map(c => [+c.g.position.x.toFixed(2), +c.g.position.z.toFixed(2)]), pieces: pieces.length, settled: pieces.filter(p => p.settled).length, west: pieces.filter(p => p.settled && p.p.x < (TUB.x0 + TUB.x1) / 2).length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)], shop: { on: S.lv.shop, haul: S.lv.haul, pallets: pallets.slice(0, palletCount()), buyers: customers.filter(c => c.state !== 'pool').length, carry: hauler.carry, furn: furnPile.length, fire: firePile, pending: firePending, ship: fireShip.length, joiner: joiner.state, splitter: splitter.state, kit: fitter.state, kits: kitPile.length }, cars: shopCars.filter(c => c.phase !== 'idle').map(c => [c.phase, +c.x.toFixed(1), +c.z.toFixed(1), +c.s.toFixed(1), c.slot]), people: customers.filter(c => c.state !== 'pool').map(c => [c.state, +c.x.toFixed(1), +c.z.toFixed(1)]), road: { band: roadBand(), lv: S.lv.road, junc: [+JUNC_OUT.toFixed(1), +JUNC_RET.toFixed(1)], enter: +CAR_ENTER.toFixed(1), exit: +CAR_EXIT.toFixed(1), z: [+OUT_Z.toFixed(1), +RET_Z.toFixed(1)] }, jam: trucks.filter(t => t.state === 'route').map(t => { const j = shopJam(t.s); return [t.i, +t.s.toFixed(1), +t.v.toFixed(2), j ? (j.stop != null ? 'stop' : 'creep') : 'free']; }), jobs: { ...S.jobs }, dustN: S.dustN | 0, tipN: S.tipN | 0, booksIn: { dust: S.books.in.dust | 0, tips: S.books.in.tips | 0, jobs: S.books.in.jobs | 0 } });
+window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, grove: +S.grove.toFixed(1), boards: S.boards, frameTrip: +frameTrip.toFixed(2), boardLim: boardLimit(), slots: boardSlots(), pallets: boardPallets.map(p => p.g.visible), shopWood: pallets.slice(), ships: beltShip.length, custs: customers.filter(c => c.state !== 'pool').map(c => [c.state, c.stand, c.want, c.got, +c.x.toFixed(1), +c.z.toFixed(1)]), lv: { ...S.lv }, planers: { n: planerCount(), vis: planers.map(u => u.g.visible), ghost: planers.map(u => u.ghost.visible) }, order: rushes.map(s => ({ on: s.on, kind: s.kind, phase: s.phase, bay: s.bayI, have: s.have, need: s.need, left: +s.left.toFixed(1), x: +s.x.toFixed(1), z: +s.z.toFixed(1), yaw: +s.yaw.toFixed(2), loaded: s.loaded })), porters: porters.map(p => [p.state, +p.x.toFixed(1), +p.z.toFixed(1), +p.yaw.toFixed(2), p.n]), forksVan: forks.map(f => f.vanJob), pit: forks.map(f => [f.i, f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), f.dockX || 0, f.n, f.hold || 0]), jacks: cutters.filter(c => c.g.visible).map(c => [c.state, +c.g.position.x.toFixed(1), +c.g.position.z.toFixed(1), !!c.carrying]), hands: hands.map(h => [h.i, h.state, +h.x.toFixed(1), +h.z.toFixed(1), h.carry]), feeds: planers.map(u => [u.infeed, u.out, +u.t.toFixed(1)]), trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), +f.blockT.toFixed(1)]), cutters: cutters.filter(c => c.g.visible).map(c => [+c.g.position.x.toFixed(2), +c.g.position.z.toFixed(2)]), pieces: pieces.length, settled: pieces.filter(p => p.settled).length, west: pieces.filter(p => p.settled && p.p.x < (TUB.x0 + TUB.x1) / 2).length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)], shop: { on: S.lv.shop, haul: S.lv.haul, pallets: pallets.slice(0, palletCount()), buyers: customers.filter(c => c.state !== 'pool').length, carry: hauler.carry, furn: furnPile.length, fire: firePile, pending: firePending, ship: fireShip.length, joiner: joiner.state, splitter: splitter.state, kit: fitter.state, kitX: +fitter.x.toFixed(1), kitZ: +fitter.z.toFixed(1), kitShip: kitShip.length, kits: kitPile.length, furnShip: furnShip.length, joinX: +joiner.x.toFixed(1), joinZ: +joiner.z.toFixed(1), joinBelt: joinBeltMesh.visible, kitBelt: kitBeltMesh.visible }, cars: shopCars.filter(c => c.phase !== 'idle').map(c => [c.phase, +c.x.toFixed(1), +c.z.toFixed(1), +c.s.toFixed(1), c.slot]), people: customers.filter(c => c.state !== 'pool').map(c => [c.state, +c.x.toFixed(1), +c.z.toFixed(1)]), road: { band: roadBand(), lv: S.lv.road, junc: [+JUNC_OUT.toFixed(1), +JUNC_RET.toFixed(1)], enter: +CAR_ENTER.toFixed(1), exit: +CAR_EXIT.toFixed(1), z: [+OUT_Z.toFixed(1), +RET_Z.toFixed(1)] }, jam: trucks.filter(t => t.state === 'route').map(t => { const j = shopJam(t.s); return [t.i, +t.s.toFixed(1), +t.v.toFixed(2), j ? (j.stop != null ? 'stop' : 'creep') : 'free']; }), jobs: { ...S.jobs }, dustN: S.dustN | 0, tipN: S.tipN | 0, booksIn: { dust: S.books.in.dust | 0, tips: S.books.in.tips | 0, jobs: S.books.in.jobs | 0 } });
 window.__cheat = (id, n = 1) => { for (let i = 0; i < n; i++) { const c = upCost(id); if (c === null) break; S.money += c; buy(id); } drawShop(); };
 window.__addMoney = v => { S.money += v; };
 window.__cam = (x, z, d) => { cam.tween = null; cam.target.set(x, 0, z); if (d) cam.dist = d; applyCamera(); };
