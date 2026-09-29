@@ -350,15 +350,15 @@
         <span>📋</span><span>The green card by the money is the next job. Finish it and the mill pays a bonus. Shop buyers also leave a tip once the stall learns how.</span>
         <span>🌲</span><span>The forest is not endless. A lumberjack takes several swings to fell a tree, then carries the log along the path to the deck at the belts. It counts only when he drops it there. Trees grow back slowly, and each one has a stumpage fee. Buy more forest when the deck starts to fall, or the saws run out.</span>
         <span>🪵</span><span>The planers sit on the east side of the bin, where the saw used to be. The saw belts are on the west side and still drop pieces into the bin. Each planer has its own worker, who picks wood up at the bin's east side and stacks the boards on the pallets just east of the machines. If a forklift blocks him he steps past after a moment. Forklifts share one dashed line between the bin and the trucks, and they park well back from the truck row so the concrete between them stays open. They drive through each other, so a pile-up does not freeze the lane. If they still sit still, open the forklift panel and tap Unstick. At the bin they use one gate: the rest wait in a line to the east, and the one inside backs onto that line before the next one drives in. Two more gates can be bought on the bin. Buy another pallet when you need room for more boards.</span>
-        <span>⚙️</span><span>When the bin is overflowing, a chipper on that gate chews the extra wood. Buy another tile to make the bin itself bigger.</span>
-        <span>🏪</span><span>The shop stands in the row with the joinery, the woodshed, and the kit shop. People come out of a tunnel and follow the path to the stall, one behind another. Other buyers drive in on the lane east of that row, park in the marked bays, walk to a stall, and drive back out. The hauler, cart, or belt keeps a few logs on the pallets and brings more while people are waiting. The logs stay stacked until the seller hands them over. If the stall has nothing coming, a long wait sends them back into the tunnel. The seller takes a wage.</span>
+        <span>⚙️</span><span>When the bin is overflowing, a chipper beside the saw chews the extra wood. Buy another tile to make the bin itself bigger.</span>
+        <span>🏪</span><span>The shop stands in the row with the joinery, the woodshed, and the kit shop. People come out of a tunnel and follow the path to the stall, one behind another. Other buyers drive around to the far side of that square, park in the marked bays, and walk back to a stall. The hauler, cart, or belt keeps a few logs on the pallets and brings more while people are waiting. The logs stay stacked until the seller hands them over. If the stall has nothing coming, a long wait sends them back into the tunnel. The seller takes a wage.</span>
         <span>🪑</span><span>The furniture stand is beside the shop. The joiner walks to the log deck, or to the board pile when boards are spare, carries the wood back, and you can see the saw working on the bench. Then he carries the stool, bench, or table over. People from the same tunnel take the other branch of the path and wait while he is on a trip. If nothing is being built, they give up and walk back.</span>
         <span>🔥</span><span>The woodshed in the shop row splits extra cut logs into firewood. You can see the axe working. A worker, then a cart, then the mill belt all the way to the shed carries the bundles to the rack out front. The rack has to sell before the next one is split.</span>
         <span>📦</span><span>The kit shop combines cut logs and boards into a crate, a shed kit, or a cabin kit. The fitter fetches both, and the build is slow. Each finished kit sells for more than the parts would on their own.</span>
         <span>🚢</span><span>When the mill is already busy, an export desk by the buyer is where the extra money goes. Each contract is a small bump in truck pay and costs a lot more than the last.</span>
         <span>🏭</span><span>Every so often the buyer offers double price on logs or on boards. Take it and a truck that pulls out before the timer ends sells that cargo for double. The yard keeps working. If a full fork of that cargo is ready, the forklifts load it first.</span>
         <span>🏗️</span><span>The highway turns in at the timber buyer, then a second turn runs south to the frame yard. The yard buys finished boards. It pays more per board than the log trucks, but only a few at a time, and it leaves some boards at the mill for furniture and rush orders.</span>
-        <span>🚐</span><span>Rush vans use their own lot off the highway, down a short drive that meets the road at the edge. A blue forklift drives around the back of the stalls, fetches the wood, boards, firewood, or furniture, and loads the van from the rear. Buy another bay when you want two or three loaded at once — extra vans wait beside the drive. The same lot also buys a bigger grab, a faster loader, quicker vans, more time on the clock, and better pay when an order is filled.</span>
+        <span>🚐</span><span>Rush vans use their own lot off the highway, down a short drive that meets the road at the edge. A blue forklift stays behind the shops, picks up wood, boards, firewood, or furniture there, and loads the van from the rear. Buy another bay when you want two or three loaded at once — extra vans wait beside the drive. The same lot also buys a bigger grab, a faster loader, quicker vans, more time on the clock, and better pay when an order is filled.</span>
         <span>🚚</span><span>Buy more trucks on the empty parking spots, including two more on the east end of the row, and bigger beds so each trip hauls more. Diesel comes out of the sale when a truck dumps. The fuel yard just north of the parking holds the tanks — buy a bigger tank there and each load costs less. Coming back, a truck takes the first free spot. The whole crew takes a wage about once a minute, so a big crew with slow sales will spend the cash as fast as it comes in.</span>
         <span>🚧</span><span>There's a toll gate on the bridge. When trucks get stuck and angry, speed it up.</span>
         <span>🛣️</span><span>Widen the road. A wider road gives the trucks more room. The sign by the pad shows the new speed.</span>
@@ -745,7 +745,7 @@ function openDockXs() {
 }
 function pitSpot(place) { return { x: PIT_MOUTH_X + place * 3.6, z: PIT_Z }; }
 const TUB_STOPS = [{ x: -30.6, z: -10.0 }, { x: -30.6, z: -8.6 }, { x: -30.6, z: -7.4 }];
-const CHIP_AT = { x: -27.5, z: -4.0 };
+const CHIP_AT = { x: -43.0, z: -13.5 };
 const FORK_HOME = [V(-18.0, 0, -16.4), V(-15.5, 0, -16.4), V(-13.0, 0, -16.4), V(-10.5, 0, -16.4), V(-8.0, 0, -16.4)];
 const FORK_LANE_Z = -2.95;
 const FORK_OUT_Z = FORK_LANE_Z;
@@ -937,12 +937,7 @@ for (let i = ROAD_I0 + 10; i < roadPts.length - 4; i += 26) {
     for (const s of [-1, 1]) part(boxG(0.12, 0.02, 5.8), lineWhite, scene, x + s * 2.2, Y, SPOT_Z, 0, 0, 0, false);
     part(boxG(4.52, 0.02, 0.12), lineWhite, scene, x, Y, SPOT_Z - 2.9, 0, 0, 0, false);
   }
-  // customer bays. the driveway up to the highway is built once the road edge is known
-  part(rbox(22.6, 0.04, 3.4, 0.04, 1), roadMat, scene, 0.1, 0.125, -23.7, 0, 0, 0, false);
-  for (const x of [-9.4, -6.5, -3.6, -0.7]) {
-    part(boxG(0.08, 0.02, 2.7), lineWhite, scene, x - 1.2, 0.16, -23.7, 0, 0, 0, false);
-    part(boxG(0.08, 0.02, 2.7), lineWhite, scene, x + 1.2, 0.16, -23.7, 0, 0, 0, false);
-  }
+  // customer bays sit on the far side of the square; buildShopDrive paints them
   for (let x = -44; x < 8.6; x += 1.7) {
     part(boxG(0.62, 0.015, 0.05), lineYellow, scene, x, Y, FORK_LANE_Z, 0, 0, 0, false);
   }
@@ -1183,8 +1178,10 @@ function cleared(x, z) {
   if (x > -53 && x < -34 && z > -42.2 && z < -35.2) return true;   // last stretch east to the log deck
   if (x > -60 && x < -40 && z > -1.2 && z < 8.2) return true;      // haul north of the planers, off the camp pad
   if (x > -50 && x < -16 && z > -21 && z < 2) return true;          // bin expansion and the pickup apron
-  if (x > 6.2 && x < 14 && z > -26.2 && z < 12) return true;       // shop drive, from the yard to the turn
-  if (x > -12.2 && x < 14 && z > -25.8 && z < -21.6) return true; // west into the shop parking
+  if (x > 8.2 && x < 11.0 && z > -27.2 && z < -5.2) return true;   // forklift link behind the shop row
+  if (x > -22 && x < 12 && z > -27.1 && z < -24.7) return true;    // forklift lane along the back of the shops
+  if (x > 26.2 && x < 31.2 && z > -56.5 && z < 14) return true;    // customer drive, east of the rush lot
+  if (x > -30 && x < 20 && z > -56.5 && z < -32.4) return true;    // customer square, pushed into the trees
   if (x > -30 && x < 16 && z > -48 && z < -24) return true;         // shop row: joinery, stall, firewood, kits
   if (x > -20.6 && x < -1.4 && z > -34.6 && z < -21.8) return true; // firewood belt and the grass it crosses
   if (x > -21.2 && x < -15.6 && z > -28.8 && z < -17.2) return true; // spine of that belt, up to the split
@@ -3444,7 +3441,7 @@ const woodClerk = buildPerson(0xf4f5f7, 0xf2c14d);
 woodClerk.g.visible = false; scene.add(woodClerk.g);
 const furnClerk = buildPerson(0xc47a3a, 0xf2c14d);
 furnClerk.g.visible = false; scene.add(furnClerk.g);
-part(rbox(36, 0.08, 12, 0.04, 1), pathMat, scene, -8, 0.03, -39.2, 0, 0, 0, false);
+part(rbox(46, 0.08, 23, 0.04, 1), pathMat, scene, -5, 0.03, -44.5, 0, 0, 0, false);
 function buildCustomerTunnel() {
   const g = new THREE.Group();
   g.position.set(TUNNEL.x, 0, TUNNEL.z);
@@ -3464,14 +3461,11 @@ function layFoot(x0, z0, x1, z1, w) {
   part(rbox(w, 0.04, L + 0.15, 0.02, 1), pathMat, scene, (x0 + x1) / 2, 0.085, (z0 + z1) / 2, 0, Math.atan2(dx, dz), 0, false);
 }
 layFoot(-13.8, -56.35, -13.8, -42.6, 2.5);
-layFoot(-22.2, -42.6, 12.2, -42.6, 1.2);
+layFoot(-22.2, -42.6, 16.4, -42.6, 1.6);
 layFoot(-12.4, -42.6, -12.4, -37.6, 1.05);
 layFoot(-22.2, -42.6, -22.2, -37.6, 1.05);
 layFoot(-3.4, -42.6, -3.4, -37.6, 1.05);
-const SHOP_WALK_Z = -26.35;
-layFoot(12.2, -42.6, 12.2, SHOP_WALK_Z, 1.6);
-layFoot(-11.2, SHOP_WALK_Z, 12.2, SHOP_WALK_Z, 2.4);
-layFoot(6.4, SHOP_WALK_Z, 6.4, -26.85, 1.6);
+layFoot(6.4, -42.6, 6.4, -36.6, 1.5);
 layFoot(HAUL_GATE.x, HAUL_GATE.z, HAUL_NORTH.x, HAUL_NORTH.z, 1.2);
 layFoot(HAUL_NORTH.x, HAUL_NORTH.z, HAUL_SOUTH.x, HAUL_SOUTH.z, 1.2);
 layFoot(HAUL_SOUTH.x, HAUL_SOUTH.z, HAUL_DROP.x, HAUL_DROP.z, 1.2);
@@ -3533,8 +3527,8 @@ function grabCustomer() {
 }
 const CAR_SPD = 5.0;
 const SHOP_PARKS = [-9.4, -6.5, -3.6, -0.7];
-const SHOP_PARK_Z = -23.7;
-const SPUR_X = 10.2;
+const SHOP_PARK_Z = -51.2;
+const SPUR_X = 28.4;
 const shopTmp = V(), shopTmp2 = V();
 let JUNC_OUT = 0, JUNC_RET = 0, CAR_ENTER = 0, CAR_EXIT = 0, RET_Z = 7, OUT_Z = 9;
 function sameRoadLeg(a, b) {
@@ -3603,8 +3597,8 @@ function spurToPark(slot) {
   return [
     { x: retJ.x, z: retJ.z },
     { x: SPUR_X, z: retJ.z },
-    { x: SPUR_X, z: SHOP_PARK_Z + 1.15 },
-    { x: x, z: SHOP_PARK_Z + 1.15 },
+    { x: SPUR_X, z: SHOP_PARK_Z - 2.2 },
+    { x: x, z: SHOP_PARK_Z - 2.2 },
     { x: x, z: SHOP_PARK_Z },
   ];
 }
@@ -3612,8 +3606,8 @@ function spurToRoad(slot) {
   const outJ = routeAt(JUNC_OUT, V());
   const x = SHOP_PARKS[slot];
   return [
-    { x: x, z: SHOP_PARK_Z + 1.15 },
-    { x: SPUR_X, z: SHOP_PARK_Z + 1.15 },
+    { x: x, z: SHOP_PARK_Z - 2.2 },
+    { x: SPUR_X, z: SHOP_PARK_Z - 2.2 },
     { x: SPUR_X, z: outJ.z },
     { x: outJ.x, z: outJ.z },
   ];
@@ -3661,22 +3655,12 @@ function carStand() {
   return choices[(Math.random() * choices.length) | 0];
 }
 function carApproach(stand, car) {
-  const out = [{ x: car.x, z: SHOP_WALK_Z }];
-  if (stand === 'kit') {
-    out.push(
-      { x: KIT_SHOW.x + 1.6, z: SHOP_WALK_Z },
-      { x: KIT_SHOW.x + 1.6, z: KIT_SHOW.z + 0.15 },
-    );
-    return out;
-  }
   const door = lineSpots(stand)[0];
-  out.push(
-    { x: 12.2, z: SHOP_WALK_Z },
-    { x: 12.2, z: -42.6 },
-    { x: door.x, z: -42.6 },
+  return [
+    { x: car.x, z: -47.6 },
+    { x: door.x, z: -47.6 },
     door,
-  );
-  return out;
+  ];
 }
 function carArrive(car) {
   const stand = carStand();
@@ -3718,8 +3702,8 @@ function placeShopLine() {
     if (car.phase !== 'line') continue;
     const x = SHOP_LINE[Math.min(car.q, SHOP_LINE.length - 1)];
     car.x = x;
-    car.z = SHOP_PARK_Z + 0.35;
-    car.yaw = Math.PI;
+    car.z = SHOP_PARK_Z - 2.2;
+    car.yaw = 0;
   }
 }
 function releaseShopLine() {
@@ -3734,7 +3718,7 @@ function releaseShopLine() {
   next.phase = 'spurIn';
   next.pi = 0;
   next.path = [
-    { x: SHOP_PARKS[slot], z: SHOP_PARK_Z + 1.15 },
+    { x: SHOP_PARKS[slot], z: SHOP_PARK_Z - 2.2 },
     { x: SHOP_PARKS[slot], z: SHOP_PARK_Z },
   ];
 }
@@ -3796,7 +3780,7 @@ const FURN_LINE = [
 function lineSpots(stand) {
   if (stand === 'furn') return FURN_LINE;
   if (stand === 'fire') return [0, 1, 2, 3].map(i => ({ x: FIRE_SHOW.x, z: FIRE_SHOW.z - 1.6 - i * 1.05 }));
-  if (stand === 'kit') return [0, 1, 2].map(i => ({ x: KIT_SHOW.x + 1.6 + i * 1.15, z: KIT_SHOW.z + 0.15 }));
+  if (stand === 'kit') return [0, 1, 2].map(i => ({ x: KIT_SHOW.x - 1.2 + i * 1.2, z: KIT_SHOW.z - 1.45 }));
   return WOOD_LINE;
 }
 function approachLegs(stand) {
@@ -3804,8 +3788,7 @@ function approachLegs(stand) {
   if (stand === 'wood') return spine.concat([{ x: -12.4, z: -42.6 }, { x: -12.4, z: -37.8 }]);
   if (stand === 'furn') return spine.concat([{ x: -22.2, z: -42.6 }, { x: -22.2, z: -41.1 }]);
   if (stand === 'kit') return spine.concat([
-    { x: 12.2, z: -42.6 }, { x: 12.2, z: SHOP_WALK_Z },
-    { x: KIT_SHOW.x + 1.6, z: SHOP_WALK_Z }, { x: KIT_SHOW.x + 1.6, z: KIT_SHOW.z + 0.15 },
+    { x: KIT_SHOW.x + 0.6, z: -42.6 }, { x: KIT_SHOW.x + 0.6, z: KIT_SHOW.z - 1.45 },
   ]);
   return spine.concat([
     { x: -3.4, z: -42.6 }, { x: FIRE_SHOW.x, z: FIRE_SHOW.z - 1.6 },
@@ -3849,15 +3832,8 @@ function outsideLeave(c) {
     const last = pts.length ? pts[pts.length - 1] : c;
     if (Math.hypot(last.x - p.x, last.z - p.z) > 0.35) pts.push(p);
   };
-  let x = c.x, z = c.z;
-  if (z < -26.0 && z > -36.2 && x < 10.6) {
-    z = z > -31.5 ? SHOP_WALK_Z : -42.6;
-    push({ x, z });
-  }
-  if (z > -34) {
-    push({ x: 12.2, z: SHOP_WALK_Z });
-    push({ x: 12.2, z: -42.6 });
-  } else push({ x, z: -42.6 });
+  if (c.z > -33.5) push({ x: Math.min(c.x, 14), z: -42.6 });
+  else push({ x: c.x, z: -42.6 });
   push({ x: -13.8, z: -42.6 });
   push({ x: -13.8, z: -52.45 });
   push({ x: -12.55, z: -52.45 });
@@ -4085,7 +4061,7 @@ function updateCustomers(dt) {
       else if (c.stand === 'kit') serveKit(c, dt);
     }
     if (c.state === 'pool') continue;
-    if (c.state === 'queue' || c.state === 'buy') c.yaw = (c.stand === 'fire' || c.stand === 'kit') ? Math.PI : 0;
+    if (c.state === 'queue' || c.state === 'buy') c.yaw = c.stand === 'fire' ? Math.PI : 0;
     if (blocked && c.state !== 'leave') {
       const tx = c.via ? c.via.x : c.tx, tz = c.via ? c.via.z : c.tz;
       if (Math.hypot(tx - c.x, tz - c.z) > 0.2) c.yaw = yawOf(tx - c.x, tz - c.z);
@@ -4210,7 +4186,7 @@ const KITS = [
 ];
 const KIT_CAP = 3;
 const KIT_AT = { x: 4.8, z: -31.2 };
-const KIT_SHOW = { x: 4.8, z: -27.0 };
+const KIT_SHOW = { x: 4.8, z: -35.25 };
 const furnPile = [];
 let firePile = 0, fireTransit = 0, firePending = 0, furnBusy = false, fireBusy = false;
 const fireShip = [];
@@ -4474,14 +4450,14 @@ function buildKitShop() {
     const m = kitMesh(k); m.visible = false; m.position.set(-0.35, 0.82, 2.55); g.add(m); return m;
   });
   const stand = new THREE.Group(); g.add(stand);
-  part(rbox(4.2, 0.1, 1.35, 0.04, 1), 0x8a6240, stand, 0, 0.06, 4.2, 0, 0, 0, false);
-  part(rbox(3.8, 0.9, 0.1, 0.03), 0xf3e6cf, stand, 0, 0.55, 3.85);
+  part(rbox(4.2, 0.1, 1.35, 0.04, 1), 0x8a6240, stand, 0, 0.06, -4.05, 0, 0, 0, false);
+  part(rbox(3.8, 0.9, 0.1, 0.03), 0xf3e6cf, stand, 0, 0.55, -3.55);
   const kitSign = yardSign('KITS', '#2f6f4e');
-  kitSign.position.set(2.5, 0.7, 4.2); stand.add(kitSign);
+  kitSign.position.set(2.5, 0.7, -4.05); stand.add(kitSign);
   const slots = [];
   for (let i = 0; i < KIT_CAP; i++) {
     const slot = new THREE.Group();
-    slot.position.set((i - 1) * 1.15, 0, 4.2);
+    slot.position.set((i - 1) * 1.15, 0, -4.05);
     stand.add(slot);
     slots.push([0, 1, 2].map(k => { const m = kitMesh(k); m.visible = false; slot.add(m); return m; }));
   }
@@ -4719,7 +4695,7 @@ function updateKit(dt) {
     f.x = bench.x; f.z = bench.z;
     const need = KITS[f.kind].time * UP.kitSpd.vals[S.lv.kitSpd | 0];
     if (f.t < need) return;
-    f.path = kitPath(f, { x: KIT_SHOW.x, z: KIT_SHOW.z + 0.55 });
+    f.path = kitPath(f, { x: KIT_SHOW.x, z: KIT_SHOW.z + 0.7 });
     f.pi = 0; f.state = 'toStand';
     return;
   }
@@ -5619,12 +5595,22 @@ function buildShopDrive() {
   }
   const x = SPUR_X;
   const edge = roadSouthEdge(x);
-  const z0 = SHOP_PARK_Z;
-  const z1 = edge.z - 0.05;
+  const zRoad = edge.z - 0.05;
+  const zLot = SHOP_PARK_Z - 2.4;
   shopDrive = new THREE.Group();
   scene.add(shopDrive);
-  part(rbox(2.8, 0.04, Math.abs(z1 - z0) + 0.2, 0.04, 1), roadMat, shopDrive, x, 0.14, (z0 + z1) / 2, 0, 0, 0, false);
-  part(rbox(4.4, 0.04, 2.4, 0.04, 1), roadMat, shopDrive, x, 0.142, z1, 0, 0, 0, false);
+  part(rbox(3.2, 0.04, Math.abs(zRoad - zLot) + 0.6, 0.04, 1), roadMat, shopDrive, x, 0.14, (zRoad + zLot) / 2, 0, 0, 0, false);
+  part(rbox(5.4, 0.04, 2.8, 0.04, 1), roadMat, shopDrive, x, 0.145, zRoad, 0, 0, 0, false);
+  part(rbox(40, 0.04, 3.4, 0.04, 1), roadMat, shopDrive, 6.2, 0.142, SHOP_PARK_Z - 2.2, 0, 0, 0, false);
+  part(rbox(16.8, 0.04, 3.8, 0.04, 1), roadMat, shopDrive, -5.05, 0.155, SHOP_PARK_Z, 0, 0, 0, false);
+  for (const bx of SHOP_PARKS) {
+    for (const s of [-1, 1]) part(boxG(0.08, 0.02, 2.8), lineWhite, shopDrive, bx + s * 1.2, 0.19, SHOP_PARK_Z, 0, 0, 0, false);
+  }
+  part(rbox(32, 0.04, 2.0, 0.04, 1), roadMat, shopDrive, -5, 0.14, PORTER_SHOP_Z, 0, 0, 0, false);
+  const linkZ = (PORTER_BACK_Z + PORTER_SHOP_Z) / 2;
+  part(rbox(2.4, 0.04, Math.abs(PORTER_BACK_Z - PORTER_SHOP_Z) + 0.4, 0.04, 1), roadMat, shopDrive, PORTER_LINK_X, 0.14, linkZ, 0, 0, 0, false);
+  part(rbox(3.6, 0.04, 2.2, 0.04, 1), roadMat, shopDrive, -20.2, 0.15, PORTER_SHOP_Z, 0, 0, 0, false);
+  part(rbox(3.6, 0.04, 2.2, 0.04, 1), roadMat, shopDrive, FIRE_AT.x, 0.15, PORTER_SHOP_Z, 0, 0, 0, false);
 }
 function buildPorter() {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
@@ -5908,14 +5894,41 @@ function rushScoop(base) { return Math.max(0.2, base * UP.rushCrew.vals[0] / rus
 const PORTER_SIDE_X = 12.2;
 const PORTER_CORRIDOR_X = 6.2;
 const PORTER_BACK_Z = -6.4;
+const PORTER_SHOP_Z = -25.9;
+const PORTER_LINK_X = 9.6;
 function rushPush(pts, x, z) {
   const last = pts[pts.length - 1];
   if (last && Math.hypot(last.x - x, last.z - z) < 0.3) return;
   pts.push({ x, z });
 }
 function onRushLot(p) { return p.x > 11.2 && p.x < 26 && p.z < 4.6 && p.z > -9.2; }
+function shopBack(p) { return p.z < -24.2 && p.z > -28.4 && p.x < 12; }
 function rushRoute(from, to) {
   const pts = [{ x: from.x, z: from.z }];
+  const fromBack = shopBack(from);
+  const toBack = shopBack(to);
+  if (fromBack || toBack) {
+    if (onRushLot(from)) {
+      rushPush(pts, from.x, PORTER_BACK_Z);
+      rushPush(pts, PORTER_SIDE_X, PORTER_BACK_Z);
+      rushPush(pts, PORTER_LINK_X, PORTER_BACK_Z);
+    } else if (!fromBack) rushPush(pts, PORTER_LINK_X, from.z);
+    if (fromBack) rushPush(pts, from.x, PORTER_SHOP_Z);
+    rushPush(pts, PORTER_LINK_X, PORTER_SHOP_Z);
+    if (toBack) {
+      rushPush(pts, to.x, PORTER_SHOP_Z);
+      rushPush(pts, to.x, to.z);
+    } else if (onRushLot(to)) {
+      rushPush(pts, PORTER_LINK_X, PORTER_BACK_Z);
+      rushPush(pts, PORTER_SIDE_X, PORTER_BACK_Z);
+      rushPush(pts, to.x, PORTER_BACK_Z);
+      rushPush(pts, to.x, to.z);
+    } else {
+      rushPush(pts, PORTER_LINK_X, to.z);
+      rushPush(pts, to.x, to.z);
+    }
+    return pts;
+  }
   if (onRushLot(from) && onRushLot(to)) {
     rushPush(pts, from.x, PORTER_BACK_Z);
     rushPush(pts, to.x, PORTER_BACK_Z);
@@ -5945,8 +5958,8 @@ function rushRoute(from, to) {
 }
 function porterPickup(kind) {
   if (kind === 'boards') return { x: BOARD_PILE.x + 1.7, z: BOARD_PILE.z, fx: BOARD_PILE.x, fz: BOARD_PILE.z };
-  if (kind === 'fire') return { x: FIRE_SHOW.x + 1.9, z: FIRE_SHOW.z, fx: FIRE_SHOW.x, fz: FIRE_SHOW.z };
-  if (kind === 'furn') return { x: FURN_SHOW.x + 1.5, z: FURN_SHOW.z - 5.2, fx: FURN_SHOW.x, fz: FURN_SHOW.z };
+  if (kind === 'fire') return { x: FIRE_AT.x, z: PORTER_SHOP_Z, fx: FIRE_AT.x, fz: FIRE_AT.z };
+  if (kind === 'furn') return { x: -20.2, z: PORTER_SHOP_Z, fx: JOIN_AT.x, fz: JOIN_AT.z };
   return { x: -22.5, z: DOCK_Z, fx: -22.5, fz: TUB.z1 - 0.4 };
 }
 class Porter {
