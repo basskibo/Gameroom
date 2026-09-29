@@ -5094,6 +5094,38 @@ function pickStation(x, z) {
   for (const t of trucks) consider(trucksSt, t.pos.x, t.pos.z, 3.2);
   return best;
 }
+const tapRings = [];
+const tapRingGeo = new THREE.RingGeometry(0.92, 1.28, 40);
+let hotStation = null;
+function syncTapRings(time) {
+  const spots = [];
+  for (const st of STATIONS) for (const s of spotsOf(st)) spots.push({ st, x: s.x, z: s.z, r: s.r });
+  while (tapRings.length < spots.length) {
+    const m = new THREE.Mesh(tapRingGeo, new THREE.MeshBasicMaterial({
+      color: 0xffe7a3, transparent: true, opacity: 0.2, depthWrite: false,
+      polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2,
+    }));
+    m.rotation.x = -Math.PI / 2;
+    m.position.y = 0.2;
+    m.renderOrder = 4;
+    scene.add(m);
+    tapRings.push(m);
+  }
+  const breathe = 0.17 + Math.sin(time * 1.25) * 0.035;
+  for (let i = 0; i < tapRings.length; i++) {
+    const m = tapRings[i];
+    if (i >= spots.length) { m.visible = false; continue; }
+    const s = spots[i];
+    const reach = s.r >= 4.4 ? Math.min(2.7, s.r * 0.55) : Math.min(0.7, s.r * 0.25);
+    const camN = Math.hypot(CAM_DIR.x, CAM_DIR.z) || 1;
+    m.visible = true;
+    m.position.x = s.x + CAM_DIR.x / camN * reach;
+    m.position.z = s.z + CAM_DIR.z / camN * reach;
+    const hot = s.st === hotStation || s.st === openStation;
+    m.material.opacity = hot ? 0.48 : breathe;
+    m.scale.setScalar(hot ? 1.08 : 1);
+  }
+}
 let openStation = null, shopKey = '';
 function openShop(st) {
   openStation = st; shopKey = '';
@@ -5463,7 +5495,8 @@ function hover(e) {
   const now = performance.now(); if (now - hoverT < 60) return; hoverT = now;
   applyCamera();
   const g = groundAt(e.clientX, e.clientY);
-  canvasEl.classList.toggle('hot', !!(g && pickStation(g.x, g.z)));
+  hotStation = g ? pickStation(g.x, g.z) : null;
+  canvasEl.classList.toggle('hot', !!hotStation);
 }
 const keys = new Set();
 addEventListener('keydown', e => {
@@ -6357,6 +6390,7 @@ function updateVisuals(dt, time) {
   gateViz.lightG.material.emissiveIntensity = gate.arm >= 0.5 ? 1.4 : 0.05;
   waterTex.offset.y += dt * 0.03; waterTex.offset.x = Math.sin(time * 0.3) * 0.02;
   updateConfetti(dt);
+  syncTapRings(time);
 }
 
 // =====================================================================
