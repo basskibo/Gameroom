@@ -351,7 +351,7 @@
         <span>🌲</span><span>The forest is not endless. A lumberjack takes several swings to fell a tree, then carries the log along the path to the deck at the belts. It counts only when he drops it there. Trees grow back slowly, and each one has a stumpage fee. Buy more forest when the deck starts to fall, or the saws run out.</span>
         <span>🪵</span><span>The planers sit on the east side of the bin, where the saw used to be. The saw belts are on the west side and still drop pieces into the bin. Each planer has its own worker, who picks wood up at the bin's east side and stacks the boards on the pallets just east of the machines. If a forklift blocks him he steps past after a moment. Forklifts share one dashed line between the bin and the trucks, and they park well back from the truck row so the concrete between them stays open. They drive through each other, so a pile-up does not freeze the lane. If they still sit still, open the forklift panel and tap Unstick. At the bin they use one gate: the rest wait in a line to the east, and the one inside backs onto that line before the next one drives in. Two more gates can be bought on the bin. Buy another pallet when you need room for more boards.</span>
         <span>⚙️</span><span>When the bin is overflowing, a chipper on that gate chews the extra wood. Buy another tile to make the bin itself bigger.</span>
-        <span>🏪</span><span>The shop stands in the row with the joinery, the woodshed, and the kit shop. People come out of a tunnel and follow the path to the stall, one behind another. The hauler, cart, or belt keeps a few logs on the pallets and brings more while people are waiting. The logs stay stacked until the seller hands them over. If the stall has nothing coming, a long wait sends them back into the tunnel. The seller takes a wage.</span>
+        <span>🏪</span><span>The shop stands in the row with the joinery, the woodshed, and the kit shop. People come out of a tunnel and follow the path to the stall, one behind another. Other buyers drive in on the lane east of that row, park in the marked bays, walk to a stall, and drive back out. The hauler, cart, or belt keeps a few logs on the pallets and brings more while people are waiting. The logs stay stacked until the seller hands them over. If the stall has nothing coming, a long wait sends them back into the tunnel. The seller takes a wage.</span>
         <span>🪑</span><span>The furniture stand is beside the shop. The joiner walks to the log deck, or to the board pile when boards are spare, carries the wood back, and you can see the saw working on the bench. Then he carries the stool, bench, or table over. People from the same tunnel take the other branch of the path and wait while he is on a trip. If nothing is being built, they give up and walk back.</span>
         <span>🔥</span><span>The woodshed in the shop row splits extra cut logs into firewood. You can see the axe working. A worker, then a cart, then the mill belt all the way to the shed carries the bundles to the rack out front. The rack has to sell before the next one is split.</span>
         <span>📦</span><span>The kit shop combines cut logs and boards into a crate, a shed kit, or a cabin kit. The fitter fetches both, and the build is slow. Each finished kit sells for more than the parts would on their own.</span>
@@ -875,6 +875,7 @@ function applyRoadLook() {
   roadLines.visible = band >= 1;
   drawRoadSign();
   if (typeof buildRushDrive === 'function') buildRushDrive();
+  if (typeof buildShopDrive === 'function') buildShopDrive();
 }
 const roadSignCanvas = document.createElement('canvas');
 roadSignCanvas.width = 256; roadSignCanvas.height = 320;
@@ -936,8 +937,7 @@ for (let i = ROAD_I0 + 10; i < roadPts.length - 4; i += 26) {
     for (const s of [-1, 1]) part(boxG(0.12, 0.02, 5.8), lineWhite, scene, x + s * 2.2, Y, SPOT_Z, 0, 0, 0, false);
     part(boxG(4.52, 0.02, 0.12), lineWhite, scene, x, Y, SPOT_Z - 2.9, 0, 0, 0, false);
   }
-  // shop drive: off the yard, then west into the customer bays. nothing continues south into the trees
-  part(rbox(3.4, 0.04, 6.4, 0.04, 1), roadMat, scene, 10.2, 0.125, -21.4, 0, 0, 0, false);
+  // customer bays. the driveway up to the highway is built once the road edge is known
   part(rbox(22.6, 0.04, 3.4, 0.04, 1), roadMat, scene, 0.1, 0.125, -23.7, 0, 0, 0, false);
   for (const x of [-9.4, -6.5, -3.6, -0.7]) {
     part(boxG(0.08, 0.02, 2.7), lineWhite, scene, x - 1.2, 0.16, -23.7, 0, 0, 0, false);
@@ -3162,10 +3162,11 @@ const TUNNEL = { x: -13.8, z: -58.4 };
 const pallets = [0, 0, 0, 0];
 const palletBusy = [false, false, false, false];
 const hauler = { u: 0, leg: 'back', carry: 0, dwell: 0, yaw: 0 };
-let beltAcc = 0, custGap = 0.2, wageAcc = 0;
+let beltAcc = 0, custGap = 0.2, carGap = 1.2, wageAcc = 0;
 const beltShip = [];
 const customers = [];
 function shopOn() { return S.lv.shop > 0; }
+function retailOpen() { return shopOn() || S.lv.joinery > 0 || S.lv.firewood > 0 || S.lv.kit > 0; }
 function palletCount() { return shopOn() ? UP.palletN.vals[S.lv.palletN] : 0; }
 function palletRoom() {
   let r = 0;
@@ -3241,12 +3242,17 @@ function buildPerson(shirt, hat) {
   const g = new THREE.Group();
   const body = new THREE.Group(); g.add(body);
   const skin = 0xf1c8a0, pants = 0x3a4250, shoe = 0x2a2420;
+  const arms = [];
   for (const s of [-1, 1]) {
     part(rbox(0.15, 0.08, 0.26, 0.03), shoe, body, s * 0.1, 0.06, 0.03);
     part(rbox(0.13, 0.38, 0.15, 0.04), pants, body, s * 0.1, 0.28, 0);
-    part(rbox(0.11, 0.32, 0.11, 0.04), shirt, body, s * 0.28, 0.7, 0.02);
-    part(new THREE.SphereGeometry(0.055, 8, 6), skin, body, s * 0.28, 0.5, 0.05);
     part(new THREE.SphereGeometry(0.028, 6, 5), 0x2a2420, body, s * 0.055, 1.24, 0.175);
+    const arm = new THREE.Group();
+    arm.position.set(s * 0.27, 0.88, 0.02);
+    body.add(arm);
+    part(rbox(0.11, 0.32, 0.11, 0.04), shirt, arm, 0, -0.16, 0);
+    part(new THREE.SphereGeometry(0.055, 8, 6), skin, arm, 0, -0.34, 0.03);
+    arms.push(arm);
   }
   part(rbox(0.4, 0.42, 0.22, 0.08), shirt, body, 0, 0.72, 0);
   part(rbox(0.42, 0.06, 0.16, 0.02), 0x2a2420, body, 0, 0.52, 0.04);
@@ -3255,7 +3261,32 @@ function buildPerson(shirt, hat) {
   part(cylG(0.2, 0.2, 0.035, 12), hat, body, 0, 1.32, 0.02);
   part(cylG(0.12, 0.15, 0.16, 10), hat, body, 0, 1.42, 0.02);
   const wait = emojiSprite(g, '⏳', 2.2, 0.62);
-  return { g, body, wait };
+  return { g, body, wait, arms };
+}
+function poseArms(p, mode, time) {
+  const L = p.arms && p.arms[0], R = p.arms && p.arms[1];
+  if (!L || !R) return;
+  if (mode === 'chop') {
+    const s = Math.sin(time * 5.2);
+    const up = s > 0 ? s * s : 0;
+    R.rotation.set(-0.2 - up * 2.15, 0.15, -0.35);
+    L.rotation.set(-0.55, 0, 0.7);
+    p.body.rotation.x = 0.12 + up * 0.35;
+  } else if (mode === 'saw') {
+    const s = Math.sin(time * 9);
+    L.rotation.set(-1.2, 0, 0.25);
+    R.rotation.set(-1.15 + s * 0.18, 0, -0.2);
+    p.body.rotation.x = 0.28;
+  } else if (mode === 'walk') {
+    const s = Math.sin(time * 8);
+    L.rotation.set(s * 0.55, 0, 0);
+    R.rotation.set(-s * 0.55, 0, 0);
+    p.body.rotation.x = 0.06;
+  } else {
+    L.rotation.set(0, 0, 0);
+    R.rotation.set(0, 0, 0);
+    p.body.rotation.x = 0;
+  }
 }
 function buildWalker() {
   const p = buildPerson(0x2f8a4a, 0xf2a93b);
@@ -3433,13 +3464,13 @@ function layFoot(x0, z0, x1, z1, w) {
   part(rbox(w, 0.04, L + 0.15, 0.02, 1), pathMat, scene, (x0 + x1) / 2, 0.085, (z0 + z1) / 2, 0, Math.atan2(dx, dz), 0, false);
 }
 layFoot(-13.8, -56.35, -13.8, -42.6, 2.5);
-layFoot(-22.2, -42.6, 9.2, -42.6, 1.2);
+layFoot(-22.2, -42.6, 12.2, -42.6, 1.2);
 layFoot(-12.4, -42.6, -12.4, -37.6, 1.05);
 layFoot(-22.2, -42.6, -22.2, -37.6, 1.05);
 layFoot(-3.4, -42.6, -3.4, -37.6, 1.05);
-layFoot(9.2, -42.6, 9.2, -29.4, 1.05);
-layFoot(9.2, -29.4, 6.4, -29.4, 1.05);
-layFoot(6.4, -29.4, 6.4, -26.8, 1.05);
+layFoot(12.2, -42.6, 12.2, -25.7, 1.05);
+layFoot(-10.2, -25.7, 12.2, -25.7, 1.05);
+layFoot(6.4, -25.7, 6.4, -26.8, 1.05);
 layFoot(HAUL_GATE.x, HAUL_GATE.z, HAUL_NORTH.x, HAUL_NORTH.z, 1.2);
 layFoot(HAUL_NORTH.x, HAUL_NORTH.z, HAUL_SOUTH.x, HAUL_SOUTH.z, 1.2);
 layFoot(HAUL_SOUTH.x, HAUL_SOUTH.z, HAUL_DROP.x, HAUL_DROP.z, 1.2);
@@ -3453,7 +3484,10 @@ function refreshShopLook() {
   syncMillBelt();
   const n = palletCount();
   for (let i = 0; i < shopViz.pallets.length; i++) shopViz.pallets[i].g.visible = i < n;
-  if (!on) { for (const c of customers) c.mesh.g.visible = false; resetShopCars(); }
+  if (!on) {
+    for (const c of customers) c.mesh.g.visible = false;
+    if (!retailOpen()) resetShopCars();
+  }
 }
 function updateHauler(dt) {
   if (!shopOn() || S.lv.haul >= 4) return;
@@ -3499,7 +3533,7 @@ function grabCustomer() {
 const CAR_SPD = 5.0;
 const SHOP_PARKS = [-9.4, -6.5, -3.6, -0.7];
 const SHOP_PARK_Z = -23.7;
-const SPUR_X = 11.2;
+const SPUR_X = 10.2;
 const shopTmp = V(), shopTmp2 = V();
 let JUNC_OUT = 0, JUNC_RET = 0, CAR_ENTER = 0, CAR_EXIT = 0, RET_Z = 7, OUT_Z = 9;
 function sameRoadLeg(a, b) {
@@ -3539,7 +3573,7 @@ function buildBuyerCar(color) {
   for (const z of [0.62, -0.62]) for (const s of [-1, 1]) wheels.push(wheel(g, s * 0.52, 0.22, z, 0.22, 0.14));
   return { g, wheels, spin: 0 };
 }
-const SHOP_LINE = [5.6, 8.0, 10.2];
+const SHOP_LINE = [3.2, 5.6, 8.0];
 const shopCars = [0x2f6fb5, 0xd8473b, 0xf2a93b, 0x3e9a3a, 0xf4f5f7, 0x7a4ea3, 0x3d8b8b, 0xc46b4a].map(color => {
   const mesh = buildBuyerCar(color);
   return { mesh, phase: 'idle', s: 0, x: 0, z: 0, yaw: 0, pi: 0, path: null, slot: -1, cust: null, q: 0 };
@@ -3564,18 +3598,21 @@ function freePark() {
 }
 function spurToPark(slot) {
   const retJ = routeAt(JUNC_RET, V());
+  const x = SHOP_PARKS[slot];
   return [
     { x: retJ.x, z: retJ.z },
     { x: SPUR_X, z: retJ.z },
-    { x: SPUR_X, z: SHOP_PARK_Z },
-    { x: SHOP_PARKS[slot], z: SHOP_PARK_Z },
+    { x: SPUR_X, z: SHOP_PARK_Z + 1.15 },
+    { x: x, z: SHOP_PARK_Z + 1.15 },
+    { x: x, z: SHOP_PARK_Z },
   ];
 }
 function spurToRoad(slot) {
   const outJ = routeAt(JUNC_OUT, V());
+  const x = SHOP_PARKS[slot];
   return [
-    { x: SHOP_PARKS[slot], z: SHOP_PARK_Z },
-    { x: SPUR_X, z: SHOP_PARK_Z },
+    { x: x, z: SHOP_PARK_Z + 1.15 },
+    { x: SPUR_X, z: SHOP_PARK_Z + 1.15 },
     { x: SPUR_X, z: outJ.z },
     { x: outJ.x, z: outJ.z },
   ];
@@ -3613,11 +3650,47 @@ function carLaunch(car) {
   car.s = Math.max(RSUM[IDX_RET0] + 0.5, s);
   putCarOnRoute(car);
 }
+function carStand() {
+  const choices = [];
+  if (shopOn()) choices.push('wood');
+  if (S.lv.joinery > 0) choices.push('furn');
+  if (S.lv.firewood > 0) choices.push('fire');
+  if (S.lv.kit > 0) choices.push('kit');
+  if (!choices.length) return '';
+  return choices[(Math.random() * choices.length) | 0];
+}
+function carApproach(stand, car) {
+  const out = [{ x: car.x, z: -25.7 }];
+  if (stand === 'kit') {
+    out.push(
+      { x: KIT_SHOW.x + 1.6, z: -25.7 },
+      { x: KIT_SHOW.x + 1.6, z: KIT_SHOW.z + 0.15 },
+    );
+    return out;
+  }
+  const door = lineSpots(stand)[0];
+  out.push(
+    { x: 12.2, z: -25.7 },
+    { x: 12.2, z: -42.6 },
+    { x: door.x, z: -42.6 },
+    door,
+  );
+  return out;
+}
 function carArrive(car) {
-  const c = grabCustomer();
-  if (!c) { car.phase = 'idle'; car.slot = -1; return; }
+  const stand = carStand();
+  const c = stand && grabCustomer();
+  if (!c) { car.phase = 'waitOut'; return; }
   car.phase = 'parked'; car.cust = c; c.car = car;
-  c.state = 'arrive'; c.x = car.x; c.z = car.z; c.wait = 0; c.pallet = -1; c.job = '';
+  c.stand = stand;
+  c.want = rollWant(stand);
+  c.got = 0; c.wait = 0; c.t = 0; c.fedup = false; c.slot = null;
+  c.state = 'walk';
+  c.x = car.x; c.z = car.z - 0.9;
+  c.legs = carApproach(stand, car);
+  c.leg = 0;
+  c.via = c.legs[0];
+  c.tx = c.x; c.tz = c.z;
 }
 function carDepart(car) {
   if (car.slot < 0) { car.phase = 'idle'; return; }
@@ -3643,8 +3716,8 @@ function placeShopLine() {
     if (car.phase !== 'line') continue;
     const x = SHOP_LINE[Math.min(car.q, SHOP_LINE.length - 1)];
     car.x = x;
-    car.z = SHOP_PARK_Z;
-    car.yaw = -Math.PI / 2;
+    car.z = SHOP_PARK_Z + 0.35;
+    car.yaw = Math.PI;
   }
 }
 function releaseShopLine() {
@@ -3658,7 +3731,10 @@ function releaseShopLine() {
   next.slot = slot;
   next.phase = 'spurIn';
   next.pi = 0;
-  next.path = [{ x: SHOP_PARKS[slot], z: SHOP_PARK_Z }];
+  next.path = [
+    { x: SHOP_PARKS[slot], z: SHOP_PARK_Z + 1.15 },
+    { x: SHOP_PARKS[slot], z: SHOP_PARK_Z },
+  ];
 }
 function holdForLine(car) {
   let stop = JUNC_RET - 0.4;
@@ -3671,9 +3747,16 @@ function holdForLine(car) {
   if (car.s > stop) car.s = stop;
 }
 function updateShopCars(dt) {
-  if (!shopOn()) { if (shopCars.some(c => c.phase !== 'idle')) resetShopCars(); return; }
+  if (!retailOpen()) { if (shopCars.some(c => c.phase !== 'idle')) resetShopCars(); return; }
   placeShopLine();
   releaseShopLine();
+  carGap += dt;
+  if (carGap > 5.5) {
+    carGap = 0;
+    const idle = shopCars.find(c => c.phase === 'idle');
+    const lined = shopCars.filter(c => c.phase === 'line').length;
+    if (idle && shopTraffic() < 2 && carStand() && (freePark() >= 0 || lined < SHOP_LINE.length)) carLaunch(idle);
+  }
   for (const car of shopCars) {
     if (car.phase === 'roadIn') {
       if (!carHeld(car)) car.s += CAR_SPD * dt;
@@ -3716,11 +3799,11 @@ function lineSpots(stand) {
 }
 function approachLegs(stand) {
   const spine = [{ x: -13.8, z: -55.85 }, { x: -13.8, z: -42.6 }];
-  if (stand === 'wood') return spine.concat([{ x: -12.4, z: -42.6 }, { x: -12.4, z: -38.9 }]);
+  if (stand === 'wood') return spine.concat([{ x: -12.4, z: -42.6 }, { x: -12.4, z: -37.8 }]);
   if (stand === 'furn') return spine.concat([{ x: -22.2, z: -42.6 }, { x: -22.2, z: -41.1 }]);
   if (stand === 'kit') return spine.concat([
-    { x: 9.2, z: -42.6 }, { x: 9.2, z: -29.4 },
-    { x: KIT_SHOW.x + 1.6, z: -29.4 }, { x: KIT_SHOW.x + 1.6, z: KIT_SHOW.z + 0.15 },
+    { x: 12.2, z: -42.6 }, { x: 12.2, z: -25.7 },
+    { x: KIT_SHOW.x + 1.6, z: -25.7 }, { x: KIT_SHOW.x + 1.6, z: KIT_SHOW.z + 0.15 },
   ]);
   return spine.concat([
     { x: -3.4, z: -42.6 }, { x: FIRE_SHOW.x, z: FIRE_SHOW.z - 1.6 },
@@ -3757,18 +3840,41 @@ function tryJoinLine(c) {
   c.wait = 0;
   c.tx = spots[n].x; c.tz = spots[n].z;
 }
+function outsideLeave(c) {
+  const mouth = { x: TUNNEL.x + 0.15, z: TUNNEL.z + 1.15 };
+  const pts = [];
+  const push = (p) => {
+    const last = pts.length ? pts[pts.length - 1] : c;
+    if (Math.hypot(last.x - p.x, last.z - p.z) > 0.35) pts.push(p);
+  };
+  let x = c.x, z = c.z;
+  if (z < -26.0 && z > -36.2 && x < 10.6) {
+    z = z > -31.5 ? -25.7 : -42.6;
+    push({ x, z });
+  }
+  if (z > -34) {
+    push({ x: 12.2, z: -25.7 });
+    push({ x: 12.2, z: -42.6 });
+  } else push({ x, z: -42.6 });
+  push({ x: -13.8, z: -42.6 });
+  push({ x: -13.8, z: -52.45 });
+  push({ x: -12.55, z: -52.45 });
+  push({ x: -12.55, z: -55.9 });
+  push(mouth);
+  return pts;
+}
 function startLeave(c, fedup) {
   c.state = 'leave';
   c.fedup = !!fedup;
   c.slot = null;
-  const mouth = { x: TUNNEL.x + 0.15, z: TUNNEL.z + 1.15 };
-  const back = (c.stand === 'fire' || c.stand === 'kit')
-    ? [{ x: -4.3, z: c.z }, { x: -4.3, z: -52.45 }, { x: -12.55, z: -52.45 }, { x: -12.55, z: -55.9 }, mouth]
-    : [{ x: -12.55, z: c.z }, { x: -12.55, z: -55.9 }, mouth];
+  const back = (c.car && c.car.phase === 'parked')
+    ? carApproach(c.stand, c.car).slice().reverse().concat([{ x: c.car.x, z: c.car.z - 0.9 }])
+    : outsideLeave(c);
   c.legs = back;
   c.leg = 0;
   c.via = back[0];
-  c.tx = mouth.x; c.tz = mouth.z;
+  c.tx = back[back.length - 1].x;
+  c.tz = back[back.length - 1].z;
 }
 function stepPerson(c, dt, spd) {
   const tx = c.via ? c.via.x : c.tx, tz = c.via ? c.via.z : c.tz;
@@ -3990,6 +4096,7 @@ function updateCustomers(dt) {
     if (c.via) c.via = null;
     if (c.state === 'walk' && c.slot != null) { c.state = 'queue'; c.wait = 0; }
     else if (c.state === 'leave') {
+      if (c.car && c.car.phase === 'parked') { carDepart(c.car); c.car = null; }
       c.state = 'pool'; c.stand = ''; c.want = 0; c.got = 0; c.via = null; c.legs = null; c.fedup = false; c.slot = null;
     }
   }
@@ -3999,6 +4106,7 @@ function updateRetail(dt) {
   updateBelt(dt);
   updateWages(dt);
   updateCustomers(dt);
+  updateShopCars(dt);
 }
 function syncRetail(dt, time) {
   if (shopOn()) {
@@ -4057,11 +4165,12 @@ function syncRetail(dt, time) {
     c.mesh.g.position.set(c.x, 0, c.z);
     c.mesh.g.rotation.y = c.yaw;
     c.mesh.body.position.y = (c.state === 'walk' || c.state === 'leave') ? Math.abs(Math.sin(time * 8 + c.x)) * 0.04 : 0;
+    poseArms(c.mesh, (c.state === 'walk' || c.state === 'leave') ? 'walk' : 'idle', time + c.x);
     c.mesh.wait.visible = c.state === 'queue' && c.wait > 6 && !c.fedup;
     c.mesh.mad.visible = c.state === 'leave' && c.fedup;
   }
   for (const car of shopCars) {
-    const on = shopOn() && car.phase !== 'idle';
+    const on = car.phase !== 'idle';
     car.mesh.g.visible = on;
     if (!on) continue;
     car.mesh.g.position.set(car.x, 0, car.z);
@@ -4277,20 +4386,18 @@ function buildFirewood() {
   part(rbox(6.2, 0.12, 3.4, 0.03), 0x6e3d28, g, 0, 2.05, -0.35, -0.28, 0, 0);
   part(rbox(6.2, 0.1, 0.12, 0.02), 0x5c4632, g, 0, 1.55, 1.05);
   const sign = yardSign('FIREWOOD', '#a33b24'); sign.position.set(1.85, 1.32, 1.9); g.add(sign);
+  const pile = [];
   for (let row = 0; row < 4; row++) for (let i = 0; i < 3; i++) {
     const log = new THREE.Mesh(logGeo, logMats);
-    log.scale.set(0.24, 1.2, 0.24); log.rotation.z = Math.PI / 2;
-    log.position.set(-1.85, 0.28 + row * 0.26, 0.35 + i * 0.4);
-    g.add(log);
+    log.scale.set(0.3, 1.45, 0.3); log.rotation.z = Math.PI / 2;
+    log.position.set(-2.05, 0.32 + row * 0.28, 1.25 + i * 0.42);
+    log.visible = false; g.add(log); pile.push(log);
   }
   const stump = part(cylG(0.48, 0.56, 0.52, 12), 0x6e4a2c, g, -0.85, 0.28, 1.55);
   part(cylG(0.52, 0.52, 0.07, 12), 0xe7c98a, g, -0.85, 0.56, 1.55);
   const blockLog = new THREE.Mesh(logGeo, logMats);
   blockLog.scale.set(0.3, 0.85, 0.3); blockLog.rotation.z = Math.PI / 2;
   blockLog.position.set(-0.85, 0.74, 1.55); blockLog.visible = false; g.add(blockLog);
-  const axe = new THREE.Group(); axe.position.set(-0.15, 0.95, 1.7); axe.scale.setScalar(1.55); g.add(axe);
-  part(cylG(0.04, 0.045, 0.95, 6), 0x6e4a2c, axe, 0, 0.42, 0);
-  part(rbox(0.38, 0.2, 0.08, 0.02), 0xc5ced6, axe, 0, 0.86, 0.03);
   const rack = new THREE.Group(); rack.position.set(FIRE_SHOW.x - FIRE_AT.x, 0, FIRE_SHOW.z - FIRE_AT.z); g.add(rack);
   part(rbox(2.4, 0.1, 1.2, 0.03, 1), 0x8a6240, rack, 0, 0.08, 0);
   for (const x of [-1.05, 1.05]) part(rbox(0.1, 1.15, 0.1, 0.02), 0x6e4a2c, rack, x, 0.62, 0);
@@ -4300,6 +4407,12 @@ function buildFirewood() {
   const belt = shopViz.belt.fire;
   const riders = shopViz.belt.fireRiders;
   const walker = buildPerson(0x8d3a2a, 0x2a2f34);
+  const axe = new THREE.Group();
+  walker.arms[1].add(axe);
+  axe.position.set(0.02, -0.32, 0.06);
+  axe.rotation.set(-0.15, 0, 0.15);
+  part(cylG(0.04, 0.045, 0.95, 6), 0x6e4a2c, axe, 0, 0.42, 0);
+  part(rbox(0.46, 0.22, 0.08, 0.02), 0xd5dee6, axe, 0, 0.88, 0.02);
   const arm = buildBundle(walker.g, 0.05, 1.05, 0.28); arm.visible = false;
   walker.g.visible = false; scene.add(walker.g);
   const cart = new THREE.Group(); cart.visible = false; scene.add(cart);
@@ -4309,7 +4422,7 @@ function buildFirewood() {
   for (const s of [-1, 1]) wheels.push(wheel(cart, s * 0.48, 0.2, 0.15, 0.2, 0.12));
   const cartLoad = [];
   for (let i = 0; i < 4; i++) cartLoad.push(buildBundle(cart, (i % 2 - 0.5) * 0.38, 0.55, -0.15 + Math.floor(i / 2) * 0.4));
-  return { g, ghost, stump, bundles, belt, riders, walker, arm, cart, wheels, cartLoad, spin: 0, axe, blockLog };
+  return { g, ghost, stump, bundles, belt, riders, walker, arm, cart, wheels, cartLoad, spin: 0, axe, blockLog, pile };
 }
 function kitMesh(kind) {
   const g = new THREE.Group();
@@ -4642,6 +4755,7 @@ function syncYardGoods(dt, time) {
   else p.g.position.set(joiner.x, 0, joiner.z);
   p.g.rotation.y = building ? yawOf(-1.6, -0.25) : joiner.yaw;
   p.body.position.y = joiner.moving || joiner.state === 'build' ? Math.abs(Math.sin(time * (joiner.state === 'build' ? 7 : 9))) * 0.05 : 0;
+  poseArms(p, building ? 'saw' : joiner.moving ? 'walk' : 'idle', time);
   for (let i = 0; i < yardViz.join.slots.length; i++) {
     const item = furnPile[i];
     yardViz.join.slots[i].forEach((m, k) => { m.visible = !!item && item.kind === k; });
@@ -4662,8 +4776,10 @@ function syncYardGoods(dt, time) {
     m.rotation.set(Math.PI / 2, Math.atan2(ahead.x - p.x, ahead.z - p.z), 0);
   });
   const chopping = fOn && (splitter.state === 'chop' || (beltOn && (fireShip.length > 0 || firePending > 0)));
-  yardViz.fire.blockLog.visible = fOn;
-  yardViz.fire.axe.rotation.x = chopping ? -0.35 + Math.sin(time * 3.4) * 0.85 : (fOn ? -0.18 + Math.sin(time * 1.2) * 0.14 : -0.25);
+  const splitNeed = FIRE_PIECES[S.lv.fireSize] || 4;
+  const stacked = Math.min(yardViz.fire.pile.length, firePending + firePile * splitNeed);
+  yardViz.fire.pile.forEach((m, i) => { m.visible = fOn && i < stacked; });
+  yardViz.fire.blockLog.visible = fOn && (firePending > 0 || splitter.state === 'chop');
   const walk = fOn && S.lv.fireHaul < 2;
   const cartOn = fOn && S.lv.fireHaul === 2;
   const beltWork = fOn && S.lv.fireHaul >= 3;
@@ -4673,15 +4789,17 @@ function syncYardGoods(dt, time) {
   const moving = splitter.moving;
   if (beltWork) {
     const w = yardViz.fire.walker;
-    w.g.position.set(FIRE_AT.x + 0.35, 0, FIRE_AT.z + 0.85);
-    w.g.rotation.y = yawOf(-1.2, 0.7);
-    w.body.position.y = chopping ? Math.abs(Math.sin(time * 6.5)) * 0.045 : 0;
+    w.g.position.set(FIRE_AT.x + 0.15, 0, FIRE_AT.z + 1.42);
+    w.g.rotation.y = -Math.PI / 2;
+    w.body.position.y = chopping ? Math.abs(Math.sin(time * 3.6)) * 0.03 : 0;
+    poseArms(w, chopping ? 'chop' : 'idle', time);
   }
   if (walk) {
     const w = yardViz.fire.walker;
     w.g.position.set(splitter.x, 0, splitter.z);
     w.g.rotation.y = splitter.yaw;
     w.body.position.y = moving ? Math.abs(Math.sin(time * 9)) * 0.05 : 0;
+    poseArms(w, splitter.state === 'chop' ? 'chop' : moving ? 'walk' : 'idle', time);
   }
   if (cartOn) {
     const c = yardViz.fire.cart;
@@ -4708,6 +4826,7 @@ function syncYardGoods(dt, time) {
   else kp.g.position.set(fitter.x, 0, fitter.z);
   kp.g.rotation.y = assembling ? yawOf(-1.4, -0.2) : fitter.yaw;
   kp.body.position.y = fitter.moving || assembling ? Math.abs(Math.sin(time * (assembling ? 6.5 : 9))) * 0.05 : 0;
+  poseArms(kp, assembling ? 'saw' : fitter.moving ? 'walk' : 'idle', time);
   for (let i = 0; i < yardViz.kit.slots.length; i++) {
     const item = kitPile[i];
     yardViz.kit.slots[i].forEach((m, k) => { m.visible = !!item && item.kind === k; });
@@ -5453,6 +5572,22 @@ function buildRushYard() {
   buildRushDrive();
 }
 buildRushYard();
+let shopDrive = null;
+function buildShopDrive() {
+  if (shopDrive) {
+    scene.remove(shopDrive);
+    shopDrive.traverse(o => { if (o.geometry) o.geometry.dispose(); });
+    shopDrive = null;
+  }
+  const x = SPUR_X;
+  const edge = roadSouthEdge(x);
+  const z0 = SHOP_PARK_Z;
+  const z1 = edge.z - 0.05;
+  shopDrive = new THREE.Group();
+  scene.add(shopDrive);
+  part(rbox(2.8, 0.04, Math.abs(z1 - z0) + 0.2, 0.04, 1), roadMat, shopDrive, x, 0.14, (z0 + z1) / 2, 0, 0, 0, false);
+  part(rbox(4.4, 0.04, 2.4, 0.04, 1), roadMat, shopDrive, x, 0.142, z1, 0, 0, 0, false);
+}
 function buildPorter() {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   const blue = 0x2a6fd4;
@@ -6427,7 +6562,7 @@ if (camera.aspect < 0.9) { cam.dist = 64; cam.target.set(-17, 0, -3); }
 applyCamera();
 try { if (localStorage.getItem(HELP_KEY) === '1' && !SIM) startGame(); } catch (e) {}
 
-window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, grove: +S.grove.toFixed(1), boards: S.boards, frameTrip: +frameTrip.toFixed(2), boardLim: boardLimit(), slots: boardSlots(), pallets: boardPallets.map(p => p.g.visible), shopWood: pallets.slice(), ships: beltShip.length, custs: customers.filter(c => c.state !== 'pool').map(c => [c.state, c.stand, c.want, c.got, +c.x.toFixed(1), +c.z.toFixed(1)]), lv: { ...S.lv }, planers: { n: planerCount(), vis: planers.map(u => u.g.visible), ghost: planers.map(u => u.ghost.visible) }, order: rushes.map(s => ({ on: s.on, kind: s.kind, phase: s.phase, bay: s.bayI, have: s.have, need: s.need, left: +s.left.toFixed(1), x: +s.x.toFixed(1), z: +s.z.toFixed(1), yaw: +s.yaw.toFixed(2), loaded: s.loaded })), porters: porters.map(p => [p.state, +p.x.toFixed(1), +p.z.toFixed(1), +p.yaw.toFixed(2), p.n]), forksVan: forks.map(f => f.vanJob), pit: forks.map(f => [f.i, f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), f.dockX || 0, f.n, f.hold || 0]), jacks: cutters.filter(c => c.g.visible).map(c => [c.state, +c.g.position.x.toFixed(1), +c.g.position.z.toFixed(1), !!c.carrying]), hands: hands.map(h => [h.i, h.state, +h.x.toFixed(1), +h.z.toFixed(1), h.carry]), feeds: planers.map(u => [u.infeed, u.out, +u.t.toFixed(1)]), trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), +f.blockT.toFixed(1)]), cutters: cutters.filter(c => c.g.visible).map(c => [+c.g.position.x.toFixed(2), +c.g.position.z.toFixed(2)]), pieces: pieces.length, settled: pieces.filter(p => p.settled).length, west: pieces.filter(p => p.settled && p.p.x < (TUB.x0 + TUB.x1) / 2).length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)], shop: { on: S.lv.shop, haul: S.lv.haul, pallets: pallets.slice(0, palletCount()), buyers: customers.filter(c => c.state !== 'pool').length, carry: hauler.carry, furn: furnPile.length, fire: firePile, joiner: joiner.state, splitter: splitter.state, kit: fitter.state, kits: kitPile.length }, cars: shopCars.filter(c => c.phase !== 'idle').map(c => [c.phase, +c.x.toFixed(1), +c.z.toFixed(1), +c.s.toFixed(1), c.slot]), people: customers.filter(c => c.state !== 'pool').map(c => [c.state, +c.x.toFixed(1), +c.z.toFixed(1)]), road: { band: roadBand(), lv: S.lv.road, junc: [+JUNC_OUT.toFixed(1), +JUNC_RET.toFixed(1)], enter: +CAR_ENTER.toFixed(1), exit: +CAR_EXIT.toFixed(1), z: [+OUT_Z.toFixed(1), +RET_Z.toFixed(1)] }, jam: trucks.filter(t => t.state === 'route').map(t => { const j = shopJam(t.s); return [t.i, +t.s.toFixed(1), +t.v.toFixed(2), j ? (j.stop != null ? 'stop' : 'creep') : 'free']; }), jobs: { ...S.jobs }, dustN: S.dustN | 0, tipN: S.tipN | 0, booksIn: { dust: S.books.in.dust | 0, tips: S.books.in.tips | 0, jobs: S.books.in.jobs | 0 } });
+window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, grove: +S.grove.toFixed(1), boards: S.boards, frameTrip: +frameTrip.toFixed(2), boardLim: boardLimit(), slots: boardSlots(), pallets: boardPallets.map(p => p.g.visible), shopWood: pallets.slice(), ships: beltShip.length, custs: customers.filter(c => c.state !== 'pool').map(c => [c.state, c.stand, c.want, c.got, +c.x.toFixed(1), +c.z.toFixed(1)]), lv: { ...S.lv }, planers: { n: planerCount(), vis: planers.map(u => u.g.visible), ghost: planers.map(u => u.ghost.visible) }, order: rushes.map(s => ({ on: s.on, kind: s.kind, phase: s.phase, bay: s.bayI, have: s.have, need: s.need, left: +s.left.toFixed(1), x: +s.x.toFixed(1), z: +s.z.toFixed(1), yaw: +s.yaw.toFixed(2), loaded: s.loaded })), porters: porters.map(p => [p.state, +p.x.toFixed(1), +p.z.toFixed(1), +p.yaw.toFixed(2), p.n]), forksVan: forks.map(f => f.vanJob), pit: forks.map(f => [f.i, f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), f.dockX || 0, f.n, f.hold || 0]), jacks: cutters.filter(c => c.g.visible).map(c => [c.state, +c.g.position.x.toFixed(1), +c.g.position.z.toFixed(1), !!c.carrying]), hands: hands.map(h => [h.i, h.state, +h.x.toFixed(1), +h.z.toFixed(1), h.carry]), feeds: planers.map(u => [u.infeed, u.out, +u.t.toFixed(1)]), trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), +f.blockT.toFixed(1)]), cutters: cutters.filter(c => c.g.visible).map(c => [+c.g.position.x.toFixed(2), +c.g.position.z.toFixed(2)]), pieces: pieces.length, settled: pieces.filter(p => p.settled).length, west: pieces.filter(p => p.settled && p.p.x < (TUB.x0 + TUB.x1) / 2).length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)], shop: { on: S.lv.shop, haul: S.lv.haul, pallets: pallets.slice(0, palletCount()), buyers: customers.filter(c => c.state !== 'pool').length, carry: hauler.carry, furn: furnPile.length, fire: firePile, pending: firePending, ship: fireShip.length, joiner: joiner.state, splitter: splitter.state, kit: fitter.state, kits: kitPile.length }, cars: shopCars.filter(c => c.phase !== 'idle').map(c => [c.phase, +c.x.toFixed(1), +c.z.toFixed(1), +c.s.toFixed(1), c.slot]), people: customers.filter(c => c.state !== 'pool').map(c => [c.state, +c.x.toFixed(1), +c.z.toFixed(1)]), road: { band: roadBand(), lv: S.lv.road, junc: [+JUNC_OUT.toFixed(1), +JUNC_RET.toFixed(1)], enter: +CAR_ENTER.toFixed(1), exit: +CAR_EXIT.toFixed(1), z: [+OUT_Z.toFixed(1), +RET_Z.toFixed(1)] }, jam: trucks.filter(t => t.state === 'route').map(t => { const j = shopJam(t.s); return [t.i, +t.s.toFixed(1), +t.v.toFixed(2), j ? (j.stop != null ? 'stop' : 'creep') : 'free']; }), jobs: { ...S.jobs }, dustN: S.dustN | 0, tipN: S.tipN | 0, booksIn: { dust: S.books.in.dust | 0, tips: S.books.in.tips | 0, jobs: S.books.in.jobs | 0 } });
 window.__cheat = (id, n = 1) => { for (let i = 0; i < n; i++) { const c = upCost(id); if (c === null) break; S.money += c; buy(id); } drawShop(); };
 window.__addMoney = v => { S.money += v; };
 window.__cam = (x, z, d) => { cam.tween = null; cam.target.set(x, 0, z); if (d) cam.dist = d; applyCamera(); };
