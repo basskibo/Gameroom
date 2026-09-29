@@ -46,6 +46,13 @@
     font-weight: 800; font-size: 16px; box-shadow: 0 3px 0 #0003;
   }
   #orderBar b { color: #ffd84a; font-weight: 800; }
+  #jobBar {
+    flex-basis: 100%; width: max-content; display: flex; align-items: center; gap: 8px;
+    background: #1e2a33ee; border: 2px solid #7dcea0; border-radius: 14px; padding: 6px 12px;
+    font-weight: 800; font-size: 16px; box-shadow: 0 3px 0 #0003;
+  }
+  #jobBar.hidden { display: none; }
+  #jobBar b { color: #b6f5a0; font-weight: 800; }
   .btns { display: flex; gap: 6px; position: relative; z-index: 60; }
   .btns button, #nav button, #settingsMenu button, #settingsMenu a {
     pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800; color: #fff; background: #1e2a33d9;
@@ -250,6 +257,7 @@
     #nav button span { font-size: 20px; }
     #hint { font-size: 13px; bottom: 64px; }
     #orderBar { font-size: 14px; padding: 5px 10px; }
+    #jobBar { font-size: 14px; padding: 5px 10px; }
     #deal b { font-size: 16px; }
     #deal small { font-size: 12px; }
   }
@@ -269,6 +277,7 @@
         <div class="pill stock stroke hidden" id="firePill" title="Firewood bundles at the shop"><span class="ico-slot"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="14.2" width="13" height="4" rx="2" fill="#c47a32"/><circle cx="16.2" cy="16.2" r="2.05" fill="#f3d7a0"/><circle cx="16.2" cy="16.2" r=".45" fill="#c4843a"/><rect x="6" y="9.2" width="13" height="4" rx="2" fill="#e8a03a"/><circle cx="6" cy="11.2" r="2.05" fill="#ffe7ad"/><circle cx="6" cy="11.2" r=".45" fill="#c4843a"/><rect x="4" y="4.4" width="12.2" height="3.8" rx="1.9" fill="#d4922e"/><circle cx="16.2" cy="6.3" r="1.95" fill="#f7e2a8"/></svg></span><span id="fireN">0</span></div>
       </div>
       <div id="orderWrap" class="hidden"><div id="orderBar" class="stroke" title="Rush order from the buyer"><span id="orderIcon"></span><span id="orderLabel">Boards</span><span id="orderCount">0/0</span><b id="orderTime">0s</b></div></div>
+      <div id="jobBar" class="stroke hidden" title="The next job. The mill pays this once."><span>📋</span><span id="jobName">Next job</span><b id="jobPay">+$0</b></div>
       <div id="deal" class="hidden">
         <b id="dealTitle">Buyer offer</b>
         <small id="dealText"></small>
@@ -335,7 +344,8 @@
       <div class="steps">
         <span>🖐️</span><span>Drag to look around the map. Scroll or pinch to zoom.</span>
         <span>👆</span><span>Tap a machine — the saw, a forklift, a truck, the planer — and buy its upgrades from the panel.</span>
-        <span>🪚</span><span>Buy more saws. Each new lane cuts logs, and they all fall into the same bin.</span>
+        <span>🪚</span><span>Buy more saws. Each new lane cuts logs, and they all fall into the same bin. Sacks between the belts sell the sawdust from those cuts.</span>
+        <span>📋</span><span>The green card by the money is the next job. Finish it and the mill pays a bonus. Shop buyers also leave a tip once the stall learns how.</span>
         <span>🌲</span><span>The forest is not endless. A lumberjack takes several swings to fell a tree, then carries the log along the path to the deck at the belts. It counts only when he drops it there. Trees grow back slowly, and each one has a stumpage fee. Buy more forest when the deck starts to fall, or the saws run out.</span>
         <span>🪵</span><span>The planers sit on the east side of the bin, where the saw used to be. The saw belts are on the west side and still drop pieces into the bin. Each planer has its own worker, who picks wood up at the bin's east side and stacks the boards on the pallets just east of the machines. If a forklift blocks him he steps past after a moment. Forklifts share one dashed line between the bin and the trucks, and they park well back from the truck row so the concrete between them stays open. At the bin they use one gate: the rest wait in a line to the east, and the one inside backs onto that line before the next one drives in. Two more gates can be bought on the bin. Buy another pallet when you need room for more boards.</span>
         <span>⚙️</span><span>When the bin is overflowing, a chipper on that gate chews the extra wood. Buy another tile to make the bin itself bigger.</span>
@@ -455,6 +465,9 @@ const UP = {
   kitSpd:   { vals: [1, 0.9, 0.8, 0.72, 0.64, 0.58], costs: [400, 900, 1800, 6000, 20000] },
   kitKind:  { vals: [0, 1, 2], costs: [900, 2600] },
   diesel:   { vals: [1, 0.84, 0.7, 0.58], costs: [900, 2400, 7000] },
+  dust:     { vals: [0, 1], costs: [180] },
+  dustPay:  { vals: [3, 5, 8, 12], costs: [240, 520, 1100] },
+  tip:      { vals: [0, 3, 2, 1], costs: [160, 420, 980] },
 };
 const UP_VER = 2;
 const TUB_EXTRA = [0, 2.2, 4.4, 6.6, 8.8, 11.0, 12.9];
@@ -1316,6 +1329,20 @@ const lanes = LANE_X.map((x, i) => {
   return lane;
 });
 const laneGhosts = LANE_X.map((x, i) => i === 0 ? null : buildLaneGhost(x, i + 1));
+const DUST_EVERY = 6;
+const dustViz = (() => {
+  const g = new THREE.Group(); scene.add(g); g.visible = false;
+  const sacks = [];
+  for (let i = 0; i < 3; i++) {
+    const s = new THREE.Group();
+    s.position.set(-35.02, 0, -16.2 - i * 1.15);
+    part(rbox(0.58, 0.7, 0.46, 0.12, 1), 0xc4a06a, s, 0, 0.42, 0);
+    part(rbox(0.26, 0.1, 0.2, 0.04, 1), 0x8d5a32, s, 0, 0.82, 0);
+    g.add(s);
+    sacks.push(s);
+  }
+  return { g, sacks };
+})();
 function sawCount() { return UP.sawN.vals[S.lv.sawN]; }
 function updateSaws() {
   const n = sawCount();
@@ -2534,11 +2561,11 @@ const BOOK_SPAN = 20, BOOK_KEEP = 30;
 let bookSlot = 0, bookInn = 0, bookOutN = 0;
 function freshBooks() {
   return {
-    in: { logs: 0, boards: 0, shop: 0, furn: 0, fire: 0, frame: 0, chips: 0, rush: 0, kits: 0 },
+    in: { logs: 0, boards: 0, shop: 0, furn: 0, fire: 0, frame: 0, chips: 0, rush: 0, kits: 0, dust: 0, tips: 0, jobs: 0 },
     out: { wages: 0, fuel: 0, stumpage: 0, upgrades: 0 },
     wages: { saw: 0, forks: 0, trucks: 0, planer: 0, forest: 0, shop: 0, joinery: 0, fire: 0, kit: 0, rush: 0 },
-    made: { logs: 0, pieces: 0, boards: 0, furn: 0, fire: 0, chips: 0, kits: 0 },
-    sold: { logs: 0, boards: 0, shop: 0, furn: 0, fire: 0, frame: 0, chips: 0, rushLogs: 0, rushBoards: 0, rushFurn: 0, rushFire: 0, loads: 0, kits: 0 },
+    made: { logs: 0, pieces: 0, boards: 0, furn: 0, fire: 0, chips: 0, kits: 0, dust: 0 },
+    sold: { logs: 0, boards: 0, shop: 0, furn: 0, fire: 0, frame: 0, chips: 0, rushLogs: 0, rushBoards: 0, rushFurn: 0, rushFire: 0, loads: 0, kits: 0, dust: 0, tips: 0, jobs: 0 },
     chart: [],
   };
 }
@@ -2586,8 +2613,26 @@ function armBooks() {
   bookInn = 0; bookOutN = 0;
 }
 const LV_KEYS = Object.keys(UP);
+const JOBS = [
+  { id: 'load', name: 'Sell a truck load', pay: 45, met: () => (S.books.sold.loads | 0) >= 1 },
+  { id: 'shop', name: 'Open the shop', pay: 55, met: () => S.lv.shop >= 1 },
+  { id: 'dust', name: 'Sell a sack of sawdust', pay: 40, met: () => (S.books.sold.dust | 0) >= 1 },
+  { id: 'earn', name: 'Earn $1,000', pay: 120, met: () => S.earned >= 1000 },
+];
+function freshJobs() { return Object.fromEntries(JOBS.map(j => [j.id, 0])); }
+function takeJobs(raw) {
+  const had = raw && typeof raw === 'object';
+  const jobs = {};
+  for (const j of JOBS) {
+    if (had && raw[j.id]) jobs[j.id] = 1;
+    else if (had && Object.prototype.hasOwnProperty.call(raw, j.id)) jobs[j.id] = 0;
+    else jobs[j.id] = j.met() ? 1 : 0;
+  }
+  return jobs;
+}
 const freshState = () => ({
   money: START_MONEY, earned: 0, stockpile: 14, timber: START_TIMBER, grove: 32, boards: 0, infeed: 0, outBoard: 0, boardHold: 0, planerT: 0, sawT: 0, time: 0,
+  dustN: 0, tipN: 0, jobs: freshJobs(),
   lv: Object.fromEntries(LV_KEYS.map(k => [k, 0])),
   books: freshBooks(),
   running: false, paused: false,
@@ -2595,7 +2640,7 @@ const freshState = () => ({
 let S = freshState();
 let suppressSave = false;
 function snapshot() {
-  return { v: UP_VER, money: S.money, earned: S.earned, stockpile: S.stockpile, timber: S.timber, grove: S.grove, boards: S.boards, infeed: S.infeed, outBoard: S.outBoard, time: S.time, lv: { ...S.lv }, books: S.books };
+  return { v: UP_VER, money: S.money, earned: S.earned, stockpile: S.stockpile, timber: S.timber, grove: S.grove, boards: S.boards, infeed: S.infeed, outBoard: S.outBoard, time: S.time, dustN: S.dustN | 0, tipN: S.tipN | 0, jobs: { ...S.jobs }, lv: { ...S.lv }, books: S.books };
 }
 function save() {
   if (instant || suppressSave) return;
@@ -2655,6 +2700,9 @@ function load() {
     S.boardHold = 0;
     S.time = Math.max(0, d.time || 0);
     S.books = takeBooks(d.books);
+    S.dustN = Math.max(0, d.dustN | 0);
+    S.tipN = Math.max(0, d.tipN | 0);
+    S.jobs = takeJobs(d.jobs);
     armBooks();
     return true;
   } catch (e) { return false; }
@@ -3823,7 +3871,7 @@ function serveWood(c, dt) {
   c.t += dt;
   if (c.t < 0.32 * c.want) return;
   const n = takeStacked(c.want);
-  if (n > 0) { bookIn('shop', n * SHOP_PRICE, 'shop', n); addMoney(n * SHOP_PRICE, V(c.x, 1.8, c.z)); if (!instant) sfx.shop(); }
+  if (n > 0) { bookIn('shop', n * SHOP_PRICE, 'shop', n); addMoney(n * SHOP_PRICE, V(c.x, 1.8, c.z)); shopTip(c.x, c.z); if (!instant) sfx.shop(); }
   c.got = n;
   startLeave(c);
 }
@@ -4644,7 +4692,7 @@ function syncYardGoods(dt, time) {
 // UPGRADES — tap a machine, buy from the panel
 // =====================================================================
 const STATIONS = [
-  { id: 'saw', name: 'Sawmill', icon: '🪚', blurb: 'Logs ride the belt into the saw. Each cut drops pieces into the bin. The belts sit on the west side of the bin.', ups: ['saw', 'sawN', 'yield'], spots: [{ x: -36.6, z: -20, r: 8 }, { x: -36.6, z: -30, r: 7 }] },
+  { id: 'saw', name: 'Sawmill', icon: '🪚', blurb: 'Logs ride the belt into the saw. Each cut drops pieces into the bin. The belts sit on the west side of the bin. Sacks between the belts sell the sawdust.', ups: ['saw', 'sawN', 'yield', 'dust', 'dustPay'], spots: [{ x: -36.6, z: -20, r: 8 }, { x: -36.6, z: -30, r: 7 }] },
   { id: 'forest', name: 'Forest', icon: '🪓', blurb: 'Lumberjacks fell trees and carry the logs to the deck. Trees grow back, and each one costs stumpage.', ups: ['cutterN', 'cutterSpd', 'grove'], spots: [{ x: CAMP.x, z: 2, r: 18 }] },
   { id: 'forks', name: 'Forklifts', icon: '🚜', blurb: 'They take cut wood from the bin, or boards from the pile, and load the trucks. They wait in one line at the bin.', ups: ['forkN', 'forkSpd', 'forkCap'], spots: [{ x: -13.0, z: -16.4, r: 6.2 }] },
   { id: 'trucks', name: 'Trucks', icon: '🚚', blurb: 'Trucks haul cut wood and boards over the bridge to the buyer. Diesel comes out of what the load pays.', ups: ['truckN', 'truckCap'], spots: [{ x: -14.5, z: 5.5, r: 5.5 }] },
@@ -4657,7 +4705,7 @@ const STATIONS = [
   { id: 'export', name: 'Export', icon: '🚢', blurb: 'A contract on top of the buyer price. Each step is a small bump and costs more than the last.', ups: ['export'], spots: [{ x: 57.4, z: 12.2, r: 3.2 }] },
   { id: 'frame', name: 'Frame yard', icon: '🏗️', blurb: 'Buys finished boards for more than the log trucks pay, a few at a time, and leaves some boards at the mill.', ups: ['frame', 'frameSpd', 'frameBite', 'framePay'], spots: [{ x: FRAME_AT.x, z: FRAME_AT.z, r: 6.4 }] },
   { id: 'rush', name: 'Rush yard', icon: '🚐', blurb: 'A van arrives with a timed order for logs, boards, firewood, or furniture. Fill it before it leaves for a bonus.', ups: ['rushN', 'rushBite', 'rushCrew', 'rushVan', 'rushWait', 'rushPay'], spots: [{ x: 15.4, z: -2.4, r: 2.6 }, { x: 19.0, z: -2.4, r: 2.6 }, { x: 22.6, z: -2.4, r: 2.6 }] },
-  { id: 'shop', name: 'Shop', icon: '🏪', blurb: 'People walk up and buy cut logs. A worker, then a cart, then the belt carries the wood to the stall.', ups: ['shop', 'haul', 'beltSpd', 'buyers', 'palletN'], spots: [{ x: SHOP_AT.x, z: SHOP_AT.z, r: 4.8 }] },
+  { id: 'shop', name: 'Shop', icon: '🏪', blurb: 'People walk up and buy cut logs. A worker, then a cart, then the belt carries the wood to the stall. Buyers leave a tip once the stall learns how.', ups: ['shop', 'haul', 'beltSpd', 'buyers', 'palletN', 'tip'], spots: [{ x: SHOP_AT.x, z: SHOP_AT.z, r: 4.8 }] },
   { id: 'joinery', name: 'Joinery', icon: '🪑', blurb: 'The joiner fetches boards or cut logs and builds a stool, bench, or table. People pay more than the raw wood.', ups: ['joinery', 'joinSpd', 'joinKind'], spots: [{ x: JOIN_AT.x, z: JOIN_AT.z, r: 4.6 }, { x: FURN_SHOW.x, z: FURN_SHOW.z, r: 4.2 }] },
   { id: 'firewood', name: 'Firewood', icon: '🔥', blurb: 'Splits extra cut logs into bundles and sells them at the rack out front.', ups: ['firewood', 'fireSpd', 'fireSize', 'fireHaul'], spots: [{ x: FIRE_AT.x, z: FIRE_AT.z, r: 4.8 }] },
   { id: 'kit', name: 'Kit shop', icon: '📦', blurb: 'Combines boards and cut logs into a crate, a shed kit, or a cabin kit. Slow to build, and each one sells for more than the parts.', ups: ['kit', 'kitSpd', 'kitKind'], spots: [{ x: KIT_AT.x, z: KIT_AT.z, r: 5.2 }, { x: KIT_SHOW.x, z: KIT_SHOW.z, r: 3.4 }] },
@@ -4781,6 +4829,7 @@ const UP_INFO = {
   firewood: ['Firewood', '🔥'], fireSpd: ['Faster split', '⚡'], fireSize: ['Bigger bundle', '🪵'], fireHaul: ['Haul bundles', '🛒'],
   kit: ['Kit shop', '📦'], kitSpd: ['Faster kits', '⚡'], kitKind: ['Finer kits', '📦'],
   diesel: ['Bigger tanks', '⛽'],
+  dust: ['Sawdust sacks', '🧺'], dustPay: ['Better sack price', '💰'], tip: ['Shop tips', '🪙'],
   frame: ['Frame yard', '🏗️'], frameSpd: ['Quicker loads', '⚡'], frameBite: ['Bigger load', '📚'], framePay: ['Better board price', '💰'],
 };
 const upCost = id => { const lv = S.lv[id]; return lv < UP[id].costs.length ? UP[id].costs[lv] : null; };
@@ -4860,6 +4909,9 @@ function upEffect(id) {
     return `${line(KITS[lv])} → ${line(KITS[lv + 1])}`;
   }
   if (id === 'diesel') return b == null ? `Diesel at ${Math.round(a * 100)}%` : `Diesel ${Math.round(a * 100)}% → ${Math.round(b * 100)}%`;
+  if (id === 'dust') return b ? 'Sacks between the belts sell the sawdust' : 'The sacks are out';
+  if (id === 'dustPay') return `$${arrow} a sack`;
+  if (id === 'tip') return ['No tips yet', 'Every 3rd buyer leaves $1', 'Every 2nd buyer leaves $2', 'Every buyer leaves $3'][lv] || 'No tips yet';
   return arrow;
 }
 function rowShown(id) {
@@ -4872,6 +4924,8 @@ function rowShown(id) {
   if ((id === 'fireSpd' || id === 'fireSize' || id === 'fireHaul') && !S.lv.firewood) return false;
   if ((id === 'frameSpd' || id === 'frameBite' || id === 'framePay') && !S.lv.frame) return false;
   if ((id === 'kitSpd' || id === 'kitKind') && !S.lv.kit) return false;
+  if (id === 'dustPay' && !S.lv.dust) return false;
+  if (id === 'tip' && !S.lv.shop) return false;
   return true;
 }
 function spotsOf(st) {
@@ -4908,7 +4962,7 @@ function closeShop() {
   openStation = null; shopKey = '';
   $('shop').classList.add('hidden');
 }
-const BOOK_IN = { logs: 'Exported logs', boards: 'Exported boards', shop: 'Shop', furn: 'Furniture', fire: 'Firewood', frame: 'Frame yard', chips: 'Chips', rush: 'Rush orders', kits: 'Kits' };
+const BOOK_IN = { logs: 'Exported logs', boards: 'Exported boards', shop: 'Shop', furn: 'Furniture', fire: 'Firewood', frame: 'Frame yard', chips: 'Chips', rush: 'Rush orders', kits: 'Kits', dust: 'Sawdust', tips: 'Tips', jobs: 'Jobs' };
 const BOOK_OUT = { wages: 'Wages', fuel: 'Diesel', stumpage: 'Stumpage', upgrades: 'Upgrades' };
 const WAGE_NAME = { saw: 'Sawmill', forks: 'Forklifts', trucks: 'Trucks', planer: 'Planers', forest: 'Lumberjacks', shop: 'Shop', joinery: 'Joinery', fire: 'Firewood', kit: 'Kit shop', rush: 'Rush yard' };
 const money = n => (n < 0 ? '−' : '') + '$' + fmt(Math.abs(n));
@@ -4947,9 +5001,9 @@ function splitPool(pool, weights) {
   return out;
 }
 function saleCosts(b) {
-  const keys = ['logs', 'boards', 'shop', 'furn', 'fire', 'frame', 'chips', 'rush', 'kits'];
+  const keys = ['logs', 'boards', 'shop', 'furn', 'fire', 'frame', 'chips', 'rush', 'kits', 'dust', 'tips', 'jobs'];
   const w = b.wages || {};
-  const direct = { logs: 0, boards: w.planer || 0, shop: w.shop || 0, furn: w.joinery || 0, fire: w.fire || 0, frame: 0, chips: 0, rush: w.rush || 0, kits: w.kit || 0 };
+  const direct = { logs: 0, boards: w.planer || 0, shop: w.shop || 0, furn: w.joinery || 0, fire: w.fire || 0, frame: 0, chips: 0, rush: w.rush || 0, kits: w.kit || 0, dust: 0, tips: 0, jobs: 0 };
   const haul = (w.trucks || 0) + (b.out.fuel || 0);
   const haulWeights = [{ key: 'logs', w: b.in.logs || 0 }, { key: 'boards', w: b.in.boards || 0 }].filter(x => x.w > 0);
   if (haulWeights.length) {
@@ -4997,7 +5051,7 @@ function drawBooks() {
   const m = b.made, s = b.sold;
   for (const btn of document.querySelectorAll('#booksTabs button')) btn.classList.toggle('on', btn.dataset.book === booksTab);
   const qtyDetail = (key) => {
-    const spec = { logs: ['logs', 'pieces'], boards: ['boards', 'boards'], shop: ['shop', 'pieces'], furn: ['furn', 'pieces'], fire: ['fire', 'bundles'], frame: ['frame', 'boards'], chips: ['chips', 'pieces'], kits: ['kits', 'kits'] }[key];
+    const spec = { logs: ['logs', 'pieces'], boards: ['boards', 'boards'], shop: ['shop', 'pieces'], furn: ['furn', 'pieces'], fire: ['fire', 'bundles'], frame: ['frame', 'boards'], chips: ['chips', 'pieces'], kits: ['kits', 'kits'], dust: ['dust', 'sacks'], tips: ['tips', 'tips'], jobs: ['jobs', 'jobs'] }[key];
     if (!spec) {
       const bits = [['rushLogs', 'logs'], ['rushBoards', 'boards'], ['rushFurn', 'furniture'], ['rushFire', 'bundles']].filter(([k]) => s[k] > 0).map(([k, name]) => `${q(s[k])} ${name}`);
       return bits.join(' · ');
@@ -5026,11 +5080,12 @@ function drawBooks() {
       <div class="bk-h">Paid so far</div>
       ${paidSum ? bookMoneyList(b.wages, WAGE_NAME, 'out', k => b.wages[k] > 0 ? `${Math.round(b.wages[k] / paidSum * 100)}% of crew pay` : '') : '<p class="bk-note">Crew lines start from the next payday. Earlier pay stays in the Wages total on Money.</p>'}`;
   } else if (booksTab === 'pieces') {
-    const madeRows = [['Trees felled', m.logs], ['Pieces cut', m.pieces], ['Chips made', m.chips], ['Boards planed', m.boards], ['Furniture built', m.furn], ['Firewood split', m.fire], ['Kits built', m.kits]].filter(([, n]) => n > 0);
+    const madeRows = [['Trees felled', m.logs], ['Pieces cut', m.pieces], ['Chips made', m.chips], ['Boards planed', m.boards], ['Furniture built', m.furn], ['Firewood split', m.fire], ['Kits built', m.kits], ['Sawdust sacks', m.dust]].filter(([, n]) => n > 0);
     const soldRows = [
       ['Shop', s.shop, b.in.shop, 'shop'], ['Exported logs', s.logs, b.in.logs, 'logs'], ['Exported boards', s.boards, b.in.boards, 'boards'],
       ['Furniture', s.furn, b.in.furn, 'furn'], ['Firewood', s.fire, b.in.fire, 'fire'], ['Frame yard', s.frame, b.in.frame, 'frame'],
       ['Chips', s.chips, b.in.chips, 'chips'], ['Kits', s.kits, b.in.kits, 'kits'],
+      ['Sawdust', s.dust, b.in.dust, 'dust'], ['Tips', s.tips, b.in.tips, 'tips'], ['Jobs', s.jobs, b.in.jobs, 'jobs'],
       ['Rush logs', s.rushLogs, 0, ''], ['Rush boards', s.rushBoards, 0, ''], ['Rush furniture', s.rushFurn, 0, ''], ['Rush firewood', s.rushFire, 0, ''],
     ].filter(([, n, cash]) => n > 0 || cash > 0);
     const madeHtml = madeRows.length ? madeRows.map(([name, n]) => `<div class="bk-line"><span><b>${name}</b><b>${q(n)}</b></span></div>`).join('') : '<p class="bk-note">Nothing made yet.</p>';
@@ -5919,7 +5974,46 @@ function doCut(lane) {
   const n = UP.yield.vals[S.lv.yield];
   S.stockpile += n;
   bookMade('pieces', n);
+  fillSawdust();
   if (!instant) { cutLogPiece(lane); spawnCutPieces(n, lane.x); sfx.saw(); }
+}
+function fillSawdust() {
+  if (!S.lv.dust) return;
+  S.dustN = (S.dustN | 0) + 1;
+  if (S.dustN < DUST_EVERY) return;
+  S.dustN = 0;
+  const pay = UP.dustPay.vals[S.lv.dustPay | 0];
+  bookIn('dust', pay, 'dust', 1);
+  bookMade('dust', 1);
+  addMoney(pay, V(-35, 1.8, -17.5));
+}
+function shopTip(x, z) {
+  const every = UP.tip.vals[S.lv.tip | 0];
+  if (!every) return;
+  S.tipN = (S.tipN | 0) + 1;
+  if (S.tipN < every) return;
+  S.tipN = 0;
+  const pay = S.lv.tip | 0;
+  bookIn('tips', pay, 'tips', 1);
+  addMoney(pay, V(x, 2.4, z));
+}
+function nextJob() { return JOBS.find(j => !S.jobs[j.id]); }
+function tickJobs() {
+  for (const j of JOBS) {
+    if (S.jobs[j.id]) continue;
+    if (!j.met()) continue;
+    S.jobs[j.id] = 1;
+    bookIn('jobs', j.pay, 'jobs', 1);
+    addMoney(j.pay);
+    if (!instant) toast('Job done', `${j.name}  +$${j.pay}`);
+  }
+  const bar = $('jobBar');
+  if (!bar) return;
+  const n = nextJob();
+  bar.classList.toggle('hidden', !n);
+  if (!n) return;
+  $('jobName').textContent = n.name;
+  $('jobPay').textContent = '+$' + n.pay;
 }
 function assignBays() {
   const n = UP.truckN.vals[S.lv.truckN];
@@ -6028,6 +6122,7 @@ function update(dt) {
   for (const f of forks) f.update(dt);
   for (let n = 0; n < 2; n++) for (const f of forks) f.shoveOut();
   updateGate(dt);
+  tickJobs();
   saveT += dt; if (saveT > 5) { saveT = 0; save(); }
   if (!$('books').classList.contains('hidden')) {
     booksViewAcc += dt;
@@ -6038,6 +6133,17 @@ function update(dt) {
 // =====================================================================
 // VISUALS
 // =====================================================================
+function syncSawdust() {
+  const on = S.lv.dust > 0;
+  dustViz.g.visible = on;
+  if (!on) return;
+  const fill = (S.dustN | 0) / DUST_EVERY;
+  dustViz.sacks.forEach((s, i) => {
+    const k = clamp(fill * 3 - i, 0, 1);
+    s.visible = true;
+    s.scale.y = 0.42 + 0.58 * k;
+  });
+}
 function updateVisuals(dt, time) {
   // saw cycle: 0..0.15 blade rises, 0.15..0.55 log feeds forward, 0.55..1 blade cuts down
   const int = UP.saw.vals[S.lv.saw];
@@ -6065,6 +6171,7 @@ function updateVisuals(dt, time) {
     if (p > 0.55 && by - BLADE_R < BELT_Y + 2 * LOG_R && S.running && !S.paused) emitDust(lane, 2);
     updateDust(lane, dt);
   }
+  syncSawdust();
   updateCutterVisuals(dt, time);
   updatePlanerVisual(dt, time);
   syncBoardStack();
@@ -6128,6 +6235,7 @@ function startGame() {
   S.running = true; S.paused = false;
   helpHeld = false;
   sfx.ensure(); clock.getDelta();
+  tickJobs();
 }
 function closeHelp() {
   $('startScreen').classList.add('hidden');
@@ -6285,7 +6393,7 @@ if (camera.aspect < 0.9) { cam.dist = 64; cam.target.set(-17, 0, -3); }
 applyCamera();
 try { if (localStorage.getItem(HELP_KEY) === '1' && !SIM) startGame(); } catch (e) {}
 
-window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, grove: +S.grove.toFixed(1), boards: S.boards, frameTrip: +frameTrip.toFixed(2), boardLim: boardLimit(), slots: boardSlots(), pallets: boardPallets.map(p => p.g.visible), shopWood: pallets.slice(), ships: beltShip.length, custs: customers.filter(c => c.state !== 'pool').map(c => [c.state, c.stand, c.want, c.got, +c.x.toFixed(1), +c.z.toFixed(1)]), lv: { ...S.lv }, planers: { n: planerCount(), vis: planers.map(u => u.g.visible), ghost: planers.map(u => u.ghost.visible) }, order: rushes.map(s => ({ on: s.on, kind: s.kind, phase: s.phase, bay: s.bayI, have: s.have, need: s.need, left: +s.left.toFixed(1), x: +s.x.toFixed(1), z: +s.z.toFixed(1), yaw: +s.yaw.toFixed(2), loaded: s.loaded })), porters: porters.map(p => [p.state, +p.x.toFixed(1), +p.z.toFixed(1), +p.yaw.toFixed(2), p.n]), forksVan: forks.map(f => f.vanJob), pit: forks.map(f => [f.i, f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), f.dockX || 0, f.n, f.hold || 0]), jacks: cutters.filter(c => c.g.visible).map(c => [c.state, +c.g.position.x.toFixed(1), +c.g.position.z.toFixed(1), !!c.carrying]), hands: hands.map(h => [h.i, h.state, +h.x.toFixed(1), +h.z.toFixed(1), h.carry]), feeds: planers.map(u => [u.infeed, u.out, +u.t.toFixed(1)]), trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), +f.blockT.toFixed(1)]), cutters: cutters.filter(c => c.g.visible).map(c => [+c.g.position.x.toFixed(2), +c.g.position.z.toFixed(2)]), pieces: pieces.length, settled: pieces.filter(p => p.settled).length, west: pieces.filter(p => p.settled && p.p.x < (TUB.x0 + TUB.x1) / 2).length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)], shop: { on: S.lv.shop, haul: S.lv.haul, pallets: pallets.slice(0, palletCount()), buyers: customers.filter(c => c.state !== 'pool').length, carry: hauler.carry, furn: furnPile.length, fire: firePile, joiner: joiner.state, splitter: splitter.state, kit: fitter.state, kits: kitPile.length }, cars: shopCars.filter(c => c.phase !== 'idle').map(c => [c.phase, +c.x.toFixed(1), +c.z.toFixed(1), +c.s.toFixed(1), c.slot]), people: customers.filter(c => c.state !== 'pool').map(c => [c.state, +c.x.toFixed(1), +c.z.toFixed(1)]), road: { band: roadBand(), lv: S.lv.road, junc: [+JUNC_OUT.toFixed(1), +JUNC_RET.toFixed(1)], enter: +CAR_ENTER.toFixed(1), exit: +CAR_EXIT.toFixed(1), z: [+OUT_Z.toFixed(1), +RET_Z.toFixed(1)] }, jam: trucks.filter(t => t.state === 'route').map(t => { const j = shopJam(t.s); return [t.i, +t.s.toFixed(1), +t.v.toFixed(2), j ? (j.stop != null ? 'stop' : 'creep') : 'free']; }) });
+window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, grove: +S.grove.toFixed(1), boards: S.boards, frameTrip: +frameTrip.toFixed(2), boardLim: boardLimit(), slots: boardSlots(), pallets: boardPallets.map(p => p.g.visible), shopWood: pallets.slice(), ships: beltShip.length, custs: customers.filter(c => c.state !== 'pool').map(c => [c.state, c.stand, c.want, c.got, +c.x.toFixed(1), +c.z.toFixed(1)]), lv: { ...S.lv }, planers: { n: planerCount(), vis: planers.map(u => u.g.visible), ghost: planers.map(u => u.ghost.visible) }, order: rushes.map(s => ({ on: s.on, kind: s.kind, phase: s.phase, bay: s.bayI, have: s.have, need: s.need, left: +s.left.toFixed(1), x: +s.x.toFixed(1), z: +s.z.toFixed(1), yaw: +s.yaw.toFixed(2), loaded: s.loaded })), porters: porters.map(p => [p.state, +p.x.toFixed(1), +p.z.toFixed(1), +p.yaw.toFixed(2), p.n]), forksVan: forks.map(f => f.vanJob), pit: forks.map(f => [f.i, f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), f.dockX || 0, f.n, f.hold || 0]), jacks: cutters.filter(c => c.g.visible).map(c => [c.state, +c.g.position.x.toFixed(1), +c.g.position.z.toFixed(1), !!c.carrying]), hands: hands.map(h => [h.i, h.state, +h.x.toFixed(1), +h.z.toFixed(1), h.carry]), feeds: planers.map(u => [u.infeed, u.out, +u.t.toFixed(1)]), trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), +f.blockT.toFixed(1)]), cutters: cutters.filter(c => c.g.visible).map(c => [+c.g.position.x.toFixed(2), +c.g.position.z.toFixed(2)]), pieces: pieces.length, settled: pieces.filter(p => p.settled).length, west: pieces.filter(p => p.settled && p.p.x < (TUB.x0 + TUB.x1) / 2).length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)], shop: { on: S.lv.shop, haul: S.lv.haul, pallets: pallets.slice(0, palletCount()), buyers: customers.filter(c => c.state !== 'pool').length, carry: hauler.carry, furn: furnPile.length, fire: firePile, joiner: joiner.state, splitter: splitter.state, kit: fitter.state, kits: kitPile.length }, cars: shopCars.filter(c => c.phase !== 'idle').map(c => [c.phase, +c.x.toFixed(1), +c.z.toFixed(1), +c.s.toFixed(1), c.slot]), people: customers.filter(c => c.state !== 'pool').map(c => [c.state, +c.x.toFixed(1), +c.z.toFixed(1)]), road: { band: roadBand(), lv: S.lv.road, junc: [+JUNC_OUT.toFixed(1), +JUNC_RET.toFixed(1)], enter: +CAR_ENTER.toFixed(1), exit: +CAR_EXIT.toFixed(1), z: [+OUT_Z.toFixed(1), +RET_Z.toFixed(1)] }, jam: trucks.filter(t => t.state === 'route').map(t => { const j = shopJam(t.s); return [t.i, +t.s.toFixed(1), +t.v.toFixed(2), j ? (j.stop != null ? 'stop' : 'creep') : 'free']; }), jobs: { ...S.jobs }, dustN: S.dustN | 0, tipN: S.tipN | 0, booksIn: { dust: S.books.in.dust | 0, tips: S.books.in.tips | 0, jobs: S.books.in.jobs | 0 } });
 window.__cheat = (id, n = 1) => { for (let i = 0; i < n; i++) { const c = upCost(id); if (c === null) break; S.money += c; buy(id); } drawShop(); };
 window.__addMoney = v => { S.money += v; };
 window.__cam = (x, z, d) => { cam.tween = null; cam.target.set(x, 0, z); if (d) cam.dist = d; applyCamera(); };
@@ -6354,6 +6462,8 @@ if (SIM > 0) {
           if (id === 'beltSpd' && S.lv.haul < 4) w *= 8;
           if (id === 'beltSpd' && S.lv.haul >= 4) w *= 0.75;
           if (id === 'buyers') w *= 80;
+          if (id === 'dustPay' && !S.lv.dust) w *= 8;
+          if (id === 'tip' && !S.lv.shop) w *= 8;
           if (id === 'palletN' && S.lv.shop && palletRoom() < 6) w *= 0.55;
           if (id === 'joinery' && S.boards < 10) w *= 4;
           if (id === 'joinery' && S.boards > 20) w *= 0.45;
