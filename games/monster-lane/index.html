@@ -118,7 +118,7 @@
     #bossName { font-size: 13px; margin-bottom: 2px; }
     #bossBar { height: 16px; border-width: 2px; }
     #bossHp { font-size: 11px; line-height: 12px; }
-    #banner { top: 38%; }
+    #banner { top: 16%; }
     .float { font-size: 20px; }
     .float.big { font-size: 28px; }
   }
@@ -133,11 +133,12 @@
     #bossWrap { top: 8px; width: min(340px, 40vw); }
   }
   #banner {
-    position: absolute; top: 32%; left: 0; right: 0; text-align: center;
+    position: absolute; top: 9%; left: 0; right: 0; text-align: center;
     font-size: clamp(34px, 8vw, 64px); opacity: 0; transform: scale(.6); transition: all .25s;
   }
   #banner.show { opacity: 1; transform: scale(1); }
   #bannerSub { font-size: .42em; display: block; margin-top: 6px; color: #ffe066; }
+  #hurt { position: absolute; inset: 0; background: #e02020; opacity: 0; }
   .float {
     position: absolute; transform: translate(-50%, -50%); font-size: 26px; white-space: nowrap;
     animation: floatUp 1.2s ease-out forwards;
@@ -214,6 +215,7 @@
   </div>
 
   <div id="banner" class="stroke"><span id="bannerMain"></span><span id="bannerSub"></span></div>
+  <div id="hurt"></div>
 
   <div id="startScreen" class="overlay">
     <div class="card">
@@ -258,17 +260,13 @@
 <script type="module">
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 // =====================================================================
 // CONFIG
 // =====================================================================
 const PLAYER_Z = 8;            // where the gun stands
-const DEFENSE_Z = 10.5;        // monsters crossing this line damage the base
+const HOLD_Z = PLAYER_Z - 8;  // crowd piles up here — a clear gap in front of the gun
+const DEFENSE_Z = HOLD_Z;      // red line on the pier; bosses break through just past it
 // the pier runs from behind the player to PIER_END, where a gangplank climbs to the pirate ship's deck
 const WATER_Y = -0.6;
 const SHIP_SCALE = 1.75;
@@ -282,10 +280,15 @@ const ROAD_NEAR = 15, ROAD_LEN = ROAD_NEAR - PIER_END, ROAD_Z = (ROAD_NEAR + PIE
 const FENCE_IN = 7.5, FENCE_OUT = 13;
 const UP_X = -(FENCE_IN + FENCE_OUT) / 2;    // upgrade lane center (left)
 const WPN_X = (FENCE_IN + FENCE_OUT) / 2;    // weapon lane center (right)
-const MOB_HALF = FENCE_IN - 0.8;                       // monsters walk in x ∈ [-MOB_HALF, MOB_HALF]
+const MOB_HALF = FENCE_IN - 0.35;                      // monsters fill the lane edge to edge
 const PLAYER_LIMIT = FENCE_OUT - 0.8;
+// shoulder-to-shoulder grid, overlapped so the lane reads as one mass with no gaps
+const PACK_X = 0.34, PACK_Z = 0.24;
+const COL_N = Math.floor((MOB_HALF * 2) / PACK_X);
+const COL_X0 = -((COL_N - 1) * PACK_X) / 2;
+const CLEAVE_R = 0.72, CLEAVE_N = 3;                  // a shot into the pack clips the bodies touching it
 const MAX_BARRELS = 6, MAX_DMG_LVL = 15, MAX_RATE_LVL = 10;
-const MAX_MOBS = 1000, MAX_BULLETS = 2500, MAX_PARTS = 900;
+const MAX_MOBS = 1600, MAX_BULLETS = 2500, MAX_PARTS = 900;
 const BASE_HP = 100;
 
 const BOSS_HP = [4000, 15000, 45000, 80000, 120000, 165000, 215000, 270000, 330000];
@@ -495,21 +498,6 @@ function outlinedInstances(geo, material, count, width) {
   return { mesh, ol };
 }
 
-// fresnel rim light injected into a standard material (makes creatures pop off the road)
-function addRim(mat, color, power, strength) {
-  mat.onBeforeCompile = sh => {
-    sh.uniforms.rimColor = { value: new THREE.Color(color) };
-    sh.uniforms.rimStrength = { value: strength };
-    sh.fragmentShader = 'uniform vec3 rimColor;\nuniform float rimStrength;\n' +
-      sh.fragmentShader.replace('#include <opaque_fragment>', `
-        float rimF = 1.0 - clamp(dot(normalize(vViewPosition), normal), 0.0, 1.0);
-        outgoingLight += rimColor * pow(rimF, ${power.toFixed(2)}) * rimStrength;
-        #include <opaque_fragment>`);
-  };
-  mat.customProgramCacheKey = () => `rim_${power}_${strength}`;
-  return mat;
-}
-
 function colored(geo, color) {
   const c = new THREE.Color(color);
   const n = geo.attributes.position.count;
@@ -538,23 +526,21 @@ scene.fog = new THREE.Fog(HORIZON, 120, 600);
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 700);
 const camBase = new THREE.Vector3();
 const camLook = new THREE.Vector3(0, 0, PLAYER_Z - 22);
-let composer = null;
 let debugCloseup = false;   // test-only camera (?closeup)
 let camPanLimit = 0, camPan = 0;
 
 function resize() {
   const w = innerWidth, h = innerHeight, aspect = w / h;
   renderer.setSize(w, h);
-  if (composer) composer.setSize(w, h);
   camera.aspect = aspect;
   camera.fov = 66;
   // camera sits on a fixed direction behind/above the gun, tilted up enough to show the sea and
   // ships on the horizon. Wide screens fit the whole road; narrow (portrait) screens show a
   // ~17 m wide slice and pan sideways with the player instead of backing off (keeps things big)
   const portrait = aspect < 0.9;
-  const off = portrait ? new THREE.Vector3(0, 21, 13) : new THREE.Vector3(0, 20, 15);
+  const off = portrait ? new THREE.Vector3(0, 16, 11) : new THREE.Vector3(0, 15, 12);
   const halfH = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
-  const needHalf = portrait ? 8.5 : FENCE_OUT + 1;
+  const needHalf = portrait ? 8 : FENCE_OUT + 0.4;
   const k = Math.max(1, needHalf / (off.length() * halfH * aspect));
   camPanLimit = Math.max(0, FENCE_OUT + 1 - off.length() * k * halfH * aspect);
   camBase.set(0, 0, PLAYER_Z).addScaledVector(off, k);
@@ -1061,7 +1047,7 @@ function updateEnv(dt) {
 function buildPirateGeo(variant) {
   const b = geoBuilder();
   const skin = 0xf0b98a, dark = 0x2b1d14;
-  const [stripeA, stripeB, pants] = variant === 0 ? [0xf4f4f4, 0x1f4e9c, 0x4a3526] : [0xf4f4f4, 0xc1121f, 0x2d2d3a];
+  const [stripeA, stripeB, pants] = [0xd62828, 0x9b1b2e, 0x2d2d3a];
   for (const s of [-1, 1]) {
     b.limb(s, 0.58);
     b.add(new THREE.CylinderGeometry(0.1, 0.09, 0.42, 8), pants, s * 0.12, 0.36, 0);
@@ -1392,7 +1378,7 @@ function rebuildGun() {
 
 // ---------------- shared instanced meshes ----------------
 // three pirate kinds share one toon material; each has an outline instanced mesh
-const mobMat = addWalk(addRim(toon({ vertexColors: true }), 0xfff2d0, 3.0, 0.25));
+const mobMat = addWalk(toon({ vertexColors: true }));
 const mobOutline = walkOutlineMaterial(0.03);
 const MOB_KINDS = [buildPirateGeo(0), buildPirateGeo(1), buildBruteGeo()].map(geo => {
   const walk = new THREE.InstancedBufferAttribute(new Float32Array(MAX_MOBS), 1);
@@ -1439,66 +1425,16 @@ scene.add(blobMesh);
 // shared clock for shader animation
 const uTime = uTimeShared;
 
-// glassy energy panel for upgrade gates: label texture + fresnel + moving shine band + glowing rim
-function gateMaterial(tex, tint) {
-  return new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, side: THREE.DoubleSide,
-    uniforms: { map: { value: tex }, time: uTime, tint: { value: new THREE.Color(tint) }, flash: { value: 0 }, seed: { value: Math.random() * 10 } },
-    vertexShader: /* glsl */`
-      varying vec2 vUv; varying vec3 vN; varying vec3 vV;
-      void main() {
-        vUv = uv;
-        vec4 mv = modelViewMatrix * vec4(position, 1.0);
-        vN = normalize(normalMatrix * normal);
-        vV = -mv.xyz;
-        gl_Position = projectionMatrix * mv;
-      }`,
-    fragmentShader: /* glsl */`
-      uniform sampler2D map; uniform float time, flash, seed; uniform vec3 tint;
-      varying vec2 vUv; varying vec3 vN; varying vec3 vV;
-      void main() {
-        vec4 t = texture2D(map, vUv);
-        // clamp: pow() of a (rounding-error) negative base is NaN, and bloom smears NaN into black blocks
-        float fres = pow(max(1.0 - abs(dot(normalize(vN), normalize(vV))), 0.0), 2.0);
-        float band = fract(vUv.x * 0.7 + vUv.y * 0.5 - time * 0.35 + seed);
-        float shine = smoothstep(0.07, 0.0, abs(band - 0.5));
-        float ex = min(vUv.x, 1.0 - vUv.x), ey = min(vUv.y, 1.0 - vUv.y);
-        float edge = max(smoothstep(0.03, 0.0, ex), smoothstep(0.04, 0.0, ey));
-        vec3 col = t.rgb * 1.5 + (shine * 0.9 + fres * 0.4) * t.a + tint * edge * 2.5 + flash;
-        float a = max(t.a * 0.9, edge) + shine * t.a * 0.25;
-        gl_FragColor = vec4(col, clamp(a, 0.0, 1.0));
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`,
-  });
-}
-
-// animated energy column above weapon pedestals
-function beamMaterial(color) {
-  return new THREE.ShaderMaterial({
-    transparent: true, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending,
-    uniforms: { time: uTime, color: { value: new THREE.Color(color) } },
-    vertexShader: /* glsl */`
-      varying vec2 vUv;
-      void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-    fragmentShader: /* glsl */`
-      uniform float time; uniform vec3 color; varying vec2 vUv;
-      void main() {
-        float fade = pow(1.0 - vUv.y, 1.6);
-        float stripes = 0.55 + 0.45 * sin(vUv.y * 28.0 - time * 6.0);
-        float swirl = 0.6 + 0.4 * sin(vUv.x * 6.2832 * 3.0 + vUv.y * 8.0 - time * 2.5);
-        gl_FragColor = vec4(color * fade * stripes * swirl * 1.4, 1.0);
-        #include <tonemapping_fragment>
-        #include <colorspace_fragment>
-      }`,
-  });
+// flat label on the upgrade gate — no fresnel, shine band or glowing rim (those shaders lagged)
+function gateMaterial(tex) {
+  return new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide });
 }
 
 // explosion shockwave rings (pooled)
 const ringGeo = new THREE.RingGeometry(0.75, 1, 48).rotateX(-Math.PI / 2);
 const rings = [];
 for (let i = 0; i < 12; i++) {
-  const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false }));
+  const m = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false }));
   m.visible = false;
   scene.add(m);
   rings.push({ mesh: m, life: 0, max: 1, radius: 1 });
@@ -1507,7 +1443,7 @@ function shockwave(x, z, radius, color, life = 0.35) {
   const r = rings.find(r => r.life <= 0) || rings.reduce((a, b) => (a.life < b.life ? a : b));
   r.life = r.max = life; r.radius = radius;
   r.mesh.position.set(x, 0.12, z);
-  r.mesh.material.color.setHex(color).multiplyScalar(2.5);
+  r.mesh.material.color.setHex(color);
   r.mesh.visible = true;
 }
 function updateRings(dt) {
@@ -1521,17 +1457,7 @@ function updateRings(dt) {
   }
 }
 
-// two fixed point lights (constant light count = no shader recompiles)
-const boomLight = new THREE.PointLight(0xff8a3d, 0, 18, 2);
-scene.add(boomLight);
-function flashLight(x, z, intensity) {
-  if (intensity < boomLight.intensity) return;
-  boomLight.position.set(x, 2.5, z);
-  boomLight.intensity = intensity;
-}
-const muzzleLight = new THREE.PointLight(0xffc870, 0, 9, 2);
-muzzleLight.position.set(0, 1.6, -2.3);
-player.add(muzzleLight);
+function flashLight() {}
 
 const bossGeos = BOSS_TYPES.map(t => buildCaptainGeo(t));
 
@@ -1545,7 +1471,6 @@ const pedBandGeo = new THREE.CylinderGeometry(1.26, 1.26, 0.28, 18, 1, false, -M
 pedBandGeo.rotateX(-Math.PI / 2); pedBandGeo.rotateY(Math.PI / 2); pedBandGeo.translate(0, 1.6, 0);
 const pedStrapGeo = new THREE.BoxGeometry(0.28, 1.64, 2.5); pedStrapGeo.translate(0, 0.8, 0);
 const pedLabelGeo = new THREE.PlaneGeometry(3.3, 1.5);
-const pedBeamGeo = new THREE.CylinderGeometry(1.3, 1.3, 4.5, 20, 1, true);
 
 // =====================================================================
 // GAME STATE
@@ -1556,9 +1481,9 @@ const freshState = () => ({
   running: false, paused: false, over: false, time: 0,
   wave: 1, waveTime: 0, bossSpawned: false, betweenWaves: 0,
   baseHp: BASE_HP, score: 0, kills: 0,
-  weaponTier: 0, barrels: 0, dmgLvl: 0, rateLvl: 0, upgradesTaken: 0,
+  weaponTier: 0, skippedWeapons: new Set(), barrels: 0, dmgLvl: 0, rateLvl: 0, upgradesTaken: 0,
   playerX: 0, targetX: 0, fireTimer: 0,
-  gateTimer: 1, pedTimer: 5, clusterTimer: 1.5, wallTimer: 9,
+  gateTimer: 1, pedTimer: 5, rowTimer: 0.6, pressAcc: 0,
   shake: 0, hurt: 0, muzzle: 0,
 });
 let state = freshState();
@@ -1676,14 +1601,6 @@ function updateHud() {
   setT('score', String(state.score));
   setT('baseTxt', String(Math.max(0, Math.ceil(state.baseHp))));
   setW('basefill', state.baseHp / BASE_HP);
-  const b = bosses[0];
-  const show = b ? 'block' : 'none';
-  if (hudCache.bossShow !== show) { hudCache.bossShow = show; $('bossWrap').style.display = show; }
-  if (b) {
-    setT('bossName', b.name);
-    setW('bossFill', b.hp / b.maxHp);
-    setT('bossHp', `${Math.max(0, Math.ceil(b.hp))} / ${b.maxHp}`);
-  }
 }
 
 // =====================================================================
@@ -1739,12 +1656,16 @@ function drawBoss(b) {
   const { ctx, tex, w: W, h: H } = b.lbl;
   ctx.clearRect(0, 0, W, H);
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-  ctx.font = `58px ${FONT}`;
-  ctx.lineWidth = 10; ctx.strokeStyle = '#1b1b2f';
-  const t = String(Math.max(0, Math.ceil(b.hp)));
-  ctx.strokeText(t, W / 2, 34);
-  ctx.fillStyle = '#fff'; ctx.fillText(t, W / 2, 34);
-  const bw = 220, bx = (W - bw) / 2, by = 70, bh = 18;
+  ctx.font = `28px ${FONT}`;
+  ctx.lineWidth = 6; ctx.strokeStyle = '#1b1b2f';
+  ctx.strokeText(b.name, W / 2, 28);
+  ctx.fillStyle = '#ffe066'; ctx.fillText(b.name, W / 2, 28);
+  ctx.font = `40px ${FONT}`;
+  ctx.lineWidth = 8;
+  const t = `${Math.max(0, Math.ceil(b.hp))} / ${b.maxHp}`;
+  ctx.strokeText(t, W / 2, 72);
+  ctx.fillStyle = '#fff'; ctx.fillText(t, W / 2, 72);
+  const bw = 280, bx = (W - bw) / 2, by = 96, bh = 16;
   ctx.fillStyle = '#1b1b2f'; ctx.beginPath(); ctx.roundRect(bx - 3, by - 3, bw + 6, bh + 6, 8); ctx.fill();
   ctx.fillStyle = '#e63946';
   const fw = bw * clamp(b.hp / b.maxHp, 0, 1);
@@ -1755,43 +1676,44 @@ function drawBoss(b) {
 // =====================================================================
 // SPAWNING
 // =====================================================================
-function spawnMonster(x, z, brute) {
+// crowd creeps; a pistol that chews the front rank can hold, extra barrels push it back
+function marchSpeed(brute) {
+  const base = 1.8 + Math.min(2.2, (state.wave - 1) * 0.18);
+  return (brute ? 0.95 : 1) * base;
+}
+
+function spawnMonster(x, z, brute, col) {
   if (monsters.length >= MAX_MOBS) return;
   const w = state.wave;
   const baseHp = Math.round(10 * Math.pow(1.65, w - 1)) + (w - 1) * 4;
-  const s = brute ? rand(2.2, 2.6) : rand(1.4, 1.6);
-  const hp = brute ? baseHp * 12 : baseHp;
+  const s = brute ? rand(2.05, 2.35) : rand(0.96, 1.08);
+  const hp = brute ? baseHp * 12 : Math.max(10, Math.round(baseHp * 0.85));
+  if (col == null) col = clamp(Math.round((x - COL_X0) / PACK_X), 0, COL_N - 1);
   monsters.push({
-    kind: 'mob', x, z, hp, maxHp: hp, s,
-    hw: 0.5 * s, hd: 0.45 * s,
-    speed: (brute ? 0.7 : 1) * Math.min(6.5, rand(3.0, 3.9) + w * 0.15),
+    kind: 'mob', x, z, hp, maxHp: hp, s, col,
+    hw: (brute ? 0.5 : 0.48) * s, hd: (brute ? 0.46 : 0.42) * s,
+    speed: marchSpeed(brute),
     phase: rand(0, 6.28), walk: rand(0, 6.28), flash: 0, dead: false, brute,
-    dmg: brute ? 10 : 3, score: brute ? 60 : 10,
-    variant: brute ? 2 : (Math.random() < 0.5 ? 0 : 1),
+    dmg: brute ? 8 : 1, score: brute ? 60 : 6,
+    variant: brute ? 2 : 0,
   });
 }
 
-function spawnCluster(scale = 1) {
-  const w = state.wave;
-  const size = Math.max(5, Math.round(Math.min(60, 3 + w * 4 + w * w * 2) * scale * rand(0.8, 1.2)));   // 9, 19, 33, 51, 60…
-  const cx = rand(-MOB_HALF + 1.5, MOB_HALF - 1.5);
-  for (let i = 0; i < size; i++) {
-    spawnMonster(clamp(cx + rand(-3.2, 3.2), -MOB_HALF, MOB_HALF), SPAWN_Z - rand(0, 7), false);
+// one solid rank across the whole lane; bodies overlap so no wood shows between them
+function spawnRow(z, brute) {
+  const bruteCol = brute ? Math.floor(Math.random() * COL_N) : -1;
+  for (let c = 0; c < COL_N; c++) {
+    const x = COL_X0 + c * PACK_X;
+    if (Math.abs(x) > MOB_HALF) continue;
+    spawnMonster(x, z, c === bruteCol, c);
   }
-  const brutes = Math.random() < w * 0.12 ? 1 + Math.floor(w / 3) : 0;
-  for (let i = 0; i < brutes; i++) spawnMonster(clamp(cx + rand(-2, 2), -MOB_HALF, MOB_HALF), SPAWN_Z - 7 - i * 1.5, true);
 }
 
-// a wall of monsters across the whole lane: forces the player to sweep instead of camping
-function spawnWall() {
-  const w = state.wave;
-  const rows = Math.min(5, 1 + w);
-  const cols = Math.round(MOB_HALF * 2 / 0.85);
-  for (let r = 0; r < rows; r++) {
-    for (let c = 0; c < cols; c++) {
-      spawnMonster(-MOB_HALF + (c + 0.5) * (MOB_HALF * 2 / cols) + rand(-0.2, 0.2), SPAWN_Z - r * 1.3 - rand(0, 0.4), false);
-    }
-  }
+// solid block already standing on the pier, front rank short of the hold line
+function fillCrowd() {
+  const rows = Math.ceil(16 / PACK_Z);
+  const front = HOLD_Z - 6;
+  for (let r = 0; r < rows; r++) spawnRow(front - r * PACK_Z, r % 6 === 5);
 }
 
 function spawnGate() {
@@ -1815,7 +1737,7 @@ function spawnGate() {
   top.position.y = 3.6; top.castShadow = true; group.add(top);
   addOutline(group, 0.04);
   const lbl = canvasTex(256, 192);
-  const panel = new THREE.Mesh(gatePanelGeo, gateMaterial(lbl.tex, def.color));
+  const panel = new THREE.Mesh(gatePanelGeo, gateMaterial(lbl.tex));
   panel.position.y = 1.95;
   group.add(panel);
   group.position.set(UP_X, 0, ITEM_Z);
@@ -1828,8 +1750,17 @@ function spawnGate() {
   gates.push(g);
 }
 
+// the next chest the player has not already let roll past
+function nextOfferTier() {
+  for (let t = state.weaponTier + 1; t < WEAPONS.length; t++) {
+    if (!state.skippedWeapons.has(t)) return t;
+  }
+  return null;
+}
+
 function spawnPedestal() {
-  const tier = Math.min(WEAPONS.length - 1, state.weaponTier + 1);
+  const tier = nextOfferTier();
+  if (tier == null) return;
   const w = WEAPONS[tier];
   const group = new THREE.Group();
   const base = new THREE.Mesh(pedBaseGeo, toonMat(0x8b5a2b)); base.castShadow = base.receiveShadow = true;
@@ -1850,9 +1781,7 @@ function spawnPedestal() {
   model.scale.setScalar(1.5);
   model.position.y = 3.6;
   addOutline(model, 0.03);
-  const beam = new THREE.Mesh(pedBeamGeo, beamMaterial(w.color));
-  beam.position.y = 4.1;
-  group.add(base, top, label, model, beam);
+  group.add(base, top, label, model);
   group.position.set(WPN_X, 0, ITEM_Z);
   group.scale.setScalar(0.01);
   scene.add(group);
@@ -1861,7 +1790,7 @@ function spawnPedestal() {
   const byWave = w.capture * (1 + 0.5 * (state.wave - 1));
   const hp = Math.round(Math.min(byWave, Math.max(w.capture * 0.4, curDps() * rand(2.2, 2.8))) / 10) * 10;
   const p = { kind: 'ped', tier, w, x: WPN_X, z: ITEM_Z, hw: 2.1, hd: 1.5, hp, maxHp: hp, age: 0,
-              group, lbl, model, beam, dirty: false, flash: 0, dead: false, gone: false };
+              group, lbl, model, dirty: false, flash: 0, dead: false, gone: false };
   drawPed(p);
   pedestals.push(p);
 }
@@ -1873,7 +1802,7 @@ function spawnBoss() {
   const s = Math.min(4 + w * 0.4, 7);
   const pal = (w - 1) % BOSS_TYPES.length;
   const walkU = { value: 0 };
-  const mat = addWalk(addRim(toon({ vertexColors: true, emissive: 0xffffff, emissiveIntensity: 0 }), 0xfff0c0, 2.5, 0.35), walkU);
+  const mat = addWalk(toon({ vertexColors: true }), walkU);
   const body = new THREE.Mesh(bossGeos[pal], mat);
   body.castShadow = true;
   body.add(new THREE.Mesh(bossGeos[pal], walkOutlineMaterial(0.02, walkU)));
@@ -1881,10 +1810,10 @@ function spawnBoss() {
   inner.add(body);
   inner.scale.setScalar(s);
 
-  const lbl = canvasTex(256, 96);
+  const lbl = canvasTex(512, 128);
   const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: lbl.tex, transparent: true, color: new THREE.Color().setScalar(1.5) }));
-  sprite.scale.set(7, 2.6, 1);
-  sprite.position.y = s * 1.6 + 1.6;
+  sprite.scale.set(8, 2, 1);
+  sprite.position.y = s * 1.72 + 1.2;
 
   const group = new THREE.Group();
   group.add(inner, sprite);
@@ -1892,7 +1821,7 @@ function spawnBoss() {
   scene.add(group);
 
   const b = { kind: 'boss', name: BOSS_TYPES[pal].name, x: 0, z: SPAWN_Z, hp, maxHp: hp, s,
-              speed: Math.min(1.6, 0.9 + w * 0.06), hw: 0.55 * s, hd: 0.5 * s,
+              speed: Math.min(3.2, 1.6 + w * 0.14), hw: 0.55 * s, hd: 0.5 * s,
               group, inner, mat, lbl, sprite, walkU, flash: 0, dirty: false, lastDraw: 0,
               dead: false, gone: false, phase: 0, summon: 2, enraged: false };
   drawBoss(b);
@@ -1971,6 +1900,7 @@ function fire() {
       x: state.playerX + ox, z: PLAYER_Z - 2.2,
       vx: Math.sin(ang) * sp, vz: -Math.cos(ang) * sp,
       dmg, pierce: w.pierce, splash: w.splash, size: w.size, len: w.len, color: col, hits: null,
+      cleave: w.splash ? 0 : (w.pellets > 1 ? 3 : (w.pierce ? 2 : CLEAVE_N)),
     });
   }
   state.muzzle = 0.05;
@@ -2082,6 +2012,21 @@ function binMonsters() {
     if (i >= 0 && i < BIN_N) bins[i].push(m);
   }
 }
+function cleaveAt(x, z, dmg, primary, nMax) {
+  let n = 0;
+  const r2 = CLEAVE_R * CLEAVE_R;
+  const i0 = Math.max(0, Math.floor(z - CLEAVE_R - BIN_Z0));
+  const i1 = Math.min(BIN_N - 1, Math.floor(z + CLEAVE_R - BIN_Z0));
+  for (let k = i0; k <= i1; k++) for (const m of bins[k]) {
+    if (m.dead || m.brute || m === primary) continue;
+    const dx = m.x - x, dz = m.z - z;
+    if (dx * dx + dz * dz <= r2) {
+      damage(m, dmg);
+      if (++n >= nMax) return;
+    }
+  }
+}
+
 function updateBullets(dt) {
   binMonsters();
   for (let i = bullets.length - 1; i >= 0; i--) {
@@ -2110,6 +2055,7 @@ function updateBullets(dt) {
       }
       if (!best) break;
       damage(best, b.dmg);
+      if (b.cleave && best.kind === 'mob' && !best.brute) cleaveAt(best.x, best.z, b.dmg, best, b.cleave);
       if (best.kind === 'mob') { if (Math.random() < 0.35) burst(b.x, 1, best.z + best.hd, 0xff6b6b, 1, 3, 0.6); }
       else { burst(b.x, 1.5, best.z + best.hd, 0xffffff, 1, 4, 0.5); sfx.hit(); }
       if (b.splash) explode(b.x, best.z, b.splash, b.dmg * 0.5, best);
@@ -2156,16 +2102,51 @@ function hurtBase(amount, x, z) {
   sfx.hurt();
 }
 
+// crowd pressed against the hold line: quieter than a single mob walking into the gun
+function chipBase(amount, x, z) {
+  state.baseHp -= amount;
+  state.hurt = Math.min(1, state.hurt + 0.08 + amount * 0.01);
+  state.shake = Math.max(state.shake, 0.06);
+  floatText(`-${amount}`, x, 1.3, z, 'bad');
+  sfx.hurt();
+}
+
 function updateMonsters(dt) {
+  const cols = Array.from({ length: COL_N }, () => []);
+  for (const m of monsters) {
+    if (m.dead) continue;
+    m._pz = m.z;
+    m.z += m.speed * dt;
+    m.flash -= dt;
+    const c = m.col;
+    if (c >= 0 && c < COL_N) cols[c].push(m);
+  }
+  // keep each file packed: nobody walks through the pirate in front, nobody past the hold line
+  let press = 0;
+  for (const col of cols) {
+    if (!col.length) continue;
+    col.sort((a, b) => b.z - a.z);
+    let limit = HOLD_Z;
+    for (const m of col) {
+      if (m.z > limit) m.z = limit;
+      limit = m.z - PACK_Z * (m.brute ? 1.05 : 0.9);
+    }
+    const front = col[0];
+    if (front.z >= HOLD_Z - 0.05) press += front.brute ? 0.7 : 0.1;
+  }
+  state.pressAcc += press * dt;
+  if (state.pressAcc >= 2) {
+    const d = Math.min(8, Math.floor(state.pressAcc));
+    state.pressAcc -= d;
+    chipBase(d, 0, HOLD_Z);
+  }
+
   let n = 0;
   kindCounts.fill(0);
   for (const m of monsters) {
     if (m.dead) continue;
-    m.z += m.speed * dt;
-    m.flash -= dt;
-    if (m.z > DEFENSE_Z) { m.dead = true; hurtBase(m.dmg, m.x, m.z); continue; }
-    // stride-matched walk: phase advances with distance so feet don't slide
-    m.walk += m.speed * dt * (m.brute ? 2.0 : 2.6) / (m.s / 1.5);
+    const moved = Math.max(0, m.z - (m._pz ?? m.z));
+    m.walk += (moved > 0.0008 ? moved : m.speed * dt * 0.45) * (m.brute ? 2.0 : 2.6) / (m.s / 1.5);
     const gy = groundY(m.z);
     dummy.position.set(m.x, gy + 0.04, m.z);
     dummy.rotation.set(0, 0, 0);
@@ -2202,15 +2183,11 @@ function updateBosses(dt) {
     b.inner.position.y = Math.abs(Math.cos(b.phase)) * 0.25;
     b.inner.rotation.z = Math.sin(b.phase) * 0.05;
     b.inner.rotation.x = 0.06;
-    b.mat.emissiveIntensity = b.flash > 0 ? 0.55 : b.enraged ? 0.12 + 0.1 * Math.sin(state.time * 10) : 0;
-    if (b.enraged) b.mat.emissive.setRGB(1, 0.2, 0.1);
     // the captain keeps calling his crew off the ship
     b.summon -= dt;
     if (b.summon <= 0) {
-      const w = state.wave, n = 4 + w * 2;
-      for (let i = 0; i < n; i++) spawnMonster(clamp(b.x + rand(-4, 4), -MOB_HALF, MOB_HALF), SPAWN_Z - rand(0, 4), false);
-      if (w >= 2) spawnMonster(clamp(b.x + rand(-3, 3), -MOB_HALF, MOB_HALF), SPAWN_Z - 5, true);
-      b.summon = Math.max(1.8, (b.enraged ? 2.4 : 3.4) - w * 0.15);
+      spawnRow(SPAWN_Z, state.wave >= 2);
+      b.summon = Math.max(1.8, (b.enraged ? 2.4 : 3.4) - state.wave * 0.15);
     }
     if (!b.enraged && b.hp < b.maxHp * 0.5) {
       b.enraged = true;
@@ -2220,7 +2197,7 @@ function updateBosses(dt) {
       sfx.boss();
     }
     if (b.dirty && state.time - b.lastDraw > 0.05) { drawBoss(b); b.dirty = false; b.lastDraw = state.time; }
-    if (b.z > DEFENSE_Z - b.hd) {
+    if (b.z > HOLD_Z + 2.6) {
       b.dead = true;
       hurtBase(60, b.x, b.z);
       burst(b.x, b.s, b.z, 0x1b1b2f, 30, 10, 1.6);
@@ -2239,7 +2216,6 @@ function updateGates(dt) {
     if (g.age < 0.5) g.group.scale.setScalar(Math.max(0.01, easeOutBack(Math.min(1, g.age / 0.45))));
     const pulse = g.flash > 0 ? 1.06 : 1;
     g.panel.scale.set(pulse, pulse, 1);
-    g.panel.material.uniforms.flash.value = g.flash > 0 ? 0.35 : 0;
     if (g.dirty && state.time - (g.lastDraw || 0) > 0.08) { drawGate(g); g.dirty = false; g.lastDraw = state.time; }
     if (g.z > PLAYER_Z + 6) g.gone = true;
   }
@@ -2257,7 +2233,11 @@ function updatePedestals(dt) {
     p.model.position.y = 3.6 + Math.sin(state.time * 3) * 0.2;
     p.model.scale.setScalar(p.flash > 0 ? 1.65 : 1.5);
     if (p.dirty && state.time - (p.lastDraw || 0) > 0.08) { drawPed(p); p.dirty = false; p.lastDraw = state.time; }
-    if (p.z > PLAYER_Z + 6) p.gone = true;
+    if (p.z > PLAYER_Z + 6) {
+      // left the lane uncaptured: don't offer this same gun again
+      if (!p.dead) state.skippedWeapons.add(p.tier);
+      p.gone = true;
+    }
   }
 }
 
@@ -2274,8 +2254,8 @@ function sweepList(arr, withObj) {
 function startWave() {
   state.waveTime = 0;
   state.bossSpawned = false;
-  state.clusterTimer = 1;
-  state.wallTimer = state.wave === 1 ? 16 : 6;
+  state.rowTimer = 0.35;
+  if (monsters.length < 160) fillCrowd();
   banner(`TALAS ${state.wave}`, `Boss na kraju: ${bossHpFor(state.wave)} HP`);
 }
 
@@ -2288,19 +2268,14 @@ function updateWave(dt) {
     return;
   }
   state.waveTime += dt;
-  state.clusterTimer -= dt;
+  state.rowTimer -= dt;
+  if (state.rowTimer <= 0) {
+    spawnRow(SPAWN_Z, !state.bossSpawned && Math.random() < 0.12 + state.wave * 0.03);
+    state.rowTimer = PACK_Z / marchSpeed(false) * (state.bossSpawned ? 1.8 : 0.92);
+  }
   if (!state.bossSpawned) {
-    if (state.clusterTimer <= 0) {
-      const ramp = 0.5 + 0.5 * Math.min(1, state.waveTime / 25);   // each wave starts softer
-      spawnCluster(ramp);
-      state.clusterTimer = Math.max(0.3, 1.7 - state.wave * 0.2) * rand(0.8, 1.2);
-    }
-    state.wallTimer -= dt;
-    if (state.wallTimer <= 0) { spawnWall(); state.wallTimer = Math.max(3.5, 10 - state.wave) * rand(0.9, 1.1); }
     if (state.waveTime >= waveDuration(state.wave)) spawnBoss();
   } else {
-    // lighter escort while the boss walks in
-    if (state.clusterTimer <= 0) { spawnCluster(0.7); state.clusterTimer = rand(1.6, 2.4); }
     if (bosses.length === 0) {
       state.bossSpawned = false;
       state.betweenWaves = 4;
@@ -2315,7 +2290,7 @@ function updateSpawners(dt) {
   if (state.gateTimer <= 0) { spawnGate(); state.gateTimer = rand(2.8, 3.6); }
   state.pedTimer -= dt;
   if (state.pedTimer <= 0 && pedestals.length === 0) {
-    if (state.weaponTier < WEAPONS.length - 1) spawnPedestal();
+    if (nextOfferTier() != null) spawnPedestal();
     state.pedTimer = 26;
   }
 }
@@ -2347,10 +2322,7 @@ function updatePlayer(dt) {
   while (state.fireTimer <= 0) { state.fireTimer += interval; fire(); }
 
   state.muzzle -= dt;
-  muzzle.visible = state.muzzle > 0;
-  muzzleLight.intensity = muzzle.visible ? 30 : 0;
-  muzzleLight.color.setHex(curWeapon().color);
-  if (muzzle.visible) muzzle.material.rotation = Math.random() * 6;
+  muzzle.visible = false;
   gunMount.position.z = GUN_POS.z + Math.max(0, state.muzzle) * 1.6;   // small recoil
   aimArms();
 }
@@ -2358,8 +2330,6 @@ function updatePlayer(dt) {
 function updateFx(dt) {
   uTime.value += dt;
   updateRings(dt);
-  boomLight.intensity *= Math.exp(-dt * 10);
-  defLine.material.color.setRGB(1.6 + Math.sin(uTime.value * 4) * 0.6 + state.hurt * 4, 0.12, 0.1);
 }
 
 function update(dt) {
@@ -2497,75 +2467,22 @@ for (const ev of ['pointerup', 'pointercancel']) renderer.domElement.addEventLis
 // =====================================================================
 // LOOP
 // =====================================================================
-const GradeShader = {
-  uniforms: { tDiffuse: { value: null }, hurt: { value: 0 } },
-  vertexShader: /* glsl */`
-    varying vec2 vUv;
-    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-  fragmentShader: /* glsl */`
-    uniform sampler2D tDiffuse; uniform float hurt; varying vec2 vUv;
-    void main() {
-      vec3 col = texture2D(tDiffuse, vUv).rgb;
-      float l = dot(col, vec3(0.2126, 0.7152, 0.0722));
-      col = mix(vec3(l), col, 1.2);                                // vivid anime saturation
-      col = mix(col, col * col * (3.0 - 2.0 * col), 0.18);         // soft S-curve contrast
-      float vig = smoothstep(1.0, 0.4, length((vUv - 0.5) * vec2(1.1, 1.0)));
-      col *= mix(0.82, 1.0, vig);
-      col = mix(col, vec3(0.9, 0.05, 0.05), hurt * (1.0 - vig) * 0.9);
-      gl_FragColor = vec4(clamp(col, 0.0, 1.0), 1.0);
-    }`,
-};
-
-// safety net before bloom: drop NaN/Inf and clamp extreme HDR values, otherwise one bad pixel
-// gets blurred through bloom's low-res mips into a huge black rectangle
-const SanitizeShader = {
-  uniforms: { tDiffuse: { value: null } },
-  vertexShader: /* glsl */`
-    varying vec2 vUv;
-    void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
-  fragmentShader: /* glsl */`
-    uniform sampler2D tDiffuse; varying vec2 vUv;
-    void main() {
-      vec4 c = texture2D(tDiffuse, vUv);
-      bool bad = any(isnan(c)) || any(isinf(c));
-      gl_FragColor = bad ? vec4(0.0, 0.0, 0.0, 1.0) : min(c, vec4(32.0));
-    }`,
-};
-const sanitizePass = new ShaderPass(SanitizeShader);
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.6, 0.5, 1.7);
-const gradePass = new ShaderPass(GradeShader);
-{
-  const size = renderer.getDrawingBufferSize(new THREE.Vector2());
-  composer = new EffectComposer(renderer, new THREE.WebGLRenderTarget(size.x, size.y, { type: THREE.HalfFloatType, samples: 4 }));
-  composer.addPass(new RenderPass(scene, camera));
-  composer.addPass(sanitizePass);
-  composer.addPass(bloomPass);
-  composer.addPass(new OutputPass());
-  composer.addPass(gradePass);
-  composer.setSize(innerWidth, innerHeight);
-}
-
-// quality presets; the game steps down automatically if the frame rate drops
+// quality presets; the game steps down automatically if the frame rate drops.
+// bloom and the shine shaders are gone — they were the frame-time cost.
 const QUALITY = [
-  { label: 'LQ', pr: 1,    bloom: false, shadow: 1024, samples: 0, mobOutline: false },
-  { label: 'MQ', pr: 1.25, bloom: true,  shadow: 1024, samples: 0, mobOutline: false },
-  { label: 'HQ', pr: 2,    bloom: true,  shadow: 2048, samples: 4, mobOutline: true },
+  { label: 'LQ', pr: 1,    shadow: 1024, mobOutline: false },
+  { label: 'MQ', pr: 1.25, shadow: 1024, mobOutline: false },
+  { label: 'HQ', pr: 1.5,  shadow: 2048, mobOutline: true },
 ];
 let qLevel = 2, autoQuality = true;
 function applyQuality(level) {
   qLevel = level;
   const q = QUALITY[level];
-  const pr = Math.min(devicePixelRatio, q.pr);
-  renderer.setPixelRatio(pr);
-  composer.setPixelRatio(pr);
-  bloomPass.enabled = sanitizePass.enabled = q.bloom;
+  renderer.setPixelRatio(Math.min(devicePixelRatio, q.pr));
   for (const k of MOB_KINDS) k.ol.visible = q.mobOutline;
   if (sun.shadow.mapSize.x !== q.shadow) {
     sun.shadow.mapSize.set(q.shadow, q.shadow);
     if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
-  }
-  for (const rt of [composer.renderTarget1, composer.renderTarget2]) {
-    if (rt.samples !== q.samples) { rt.samples = q.samples; rt.dispose(); }
   }
   resize();
   $('menuQuality').textContent = `Grafika: ${q.label}`;
@@ -2603,13 +2520,13 @@ function loop() {
     updateParts(dt);
     updateFx(dt);
   }
-  gradePass.uniforms.hurt.value = clamp(state.hurt, 0, 0.8);
+  $('hurt').style.opacity = String(clamp(state.hurt, 0, 0.45) * 0.55);
   const sh = state.shake;
   // sideways pan (portrait): keep the player and the lane he is in on screen
   camPan += (clamp(state.playerX * 0.75, -camPanLimit, camPanLimit) - camPan) * Math.min(1, dt * 6);
   camera.position.set(camBase.x + camPan + rand(-sh, sh), camBase.y + rand(-sh, sh) * 0.5, camBase.z);
   state.shake = Math.max(0, sh - 1.6 * dt);
-  composer.render();
+  renderer.render(scene, camera);
 }
 loop();
 // debug: ?auto starts immediately, &sim=N fast-forwards N seconds (used for testing)
