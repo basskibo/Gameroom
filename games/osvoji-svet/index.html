@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Osvoji Svet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Unbounded:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #eef4ff;
+    --dim: #b7c6de;
+    --panel: rgba(7, 16, 32, 0.88);
+    --line: rgba(255, 255, 255, 0.14);
+    --blue: #3c7dff;
+    --green: #3ddc97;
+    --warn: #ffc14a;
+    --danger: #ff6b7a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #0c335c; color: var(--ink);
+    font-family: Manrope, sans-serif; user-select: none; -webkit-user-select: none; }
+  button, input { font-family: inherit; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  #ui { position: fixed; inset: 0; pointer-events: none; }
+  #ui button, #ui input, #ui a, #ui label { pointer-events: auto; }
+  .hidden { display: none !important; }
+
+  #hud {
+    position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 8px 12px 8px 16px; backdrop-filter: blur(10px);
+    max-width: calc(100% - 24px);
+  }
+  #hud-name { font-family: Unbounded, sans-serif; font-size: 14px; letter-spacing: 0.04em; }
+  #hud-stats { display: flex; gap: 10px; color: var(--dim); font-weight: 700; font-size: 13px; }
+  #hud-stats span { white-space: nowrap; }
+  #hud-stats b { color: var(--ink); font-weight: 800; }
+  #hud-stats i { font-style: normal; }
+  #hud-actions { display: flex; gap: 6px; }
+  #hud-actions button, #tools button, .text-btn {
+    background: rgba(255,255,255,0.08); color: var(--ink); border: 1px solid var(--line);
+    border-radius: 10px; padding: 6px 10px; font-weight: 800; cursor: pointer;
+  }
+  #hud-actions button:hover, #tools button:hover { background: rgba(255,255,255,0.16); }
+
+  #board {
+    position: absolute; top: 70px; left: 12px; width: 240px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
+    padding: 8px; backdrop-filter: blur(10px); max-height: min(46vh, 420px); overflow: auto;
+  }
+  #board h3 { margin: 4px 6px 8px; font-size: 11px; letter-spacing: 0.14em; color: var(--dim); font-weight: 800; }
+  .lb {
+    width: 100%; display: grid; grid-template-columns: 12px 1fr auto; grid-template-rows: auto auto;
+    column-gap: 8px; align-items: center; text-align: left;
+    background: transparent; color: var(--ink); border: 0; border-radius: 10px;
+    padding: 6px; cursor: pointer;
+  }
+  .lb:hover, .lb.me { background: rgba(60, 125, 255, 0.16); }
+  .lb i { width: 10px; height: 10px; border-radius: 3px; grid-row: 1 / span 2; }
+  .lb b { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lb span { grid-column: 2; color: var(--dim); font-size: 11px; font-weight: 700; }
+  .lb em { grid-column: 3; grid-row: 1 / span 2; font-style: normal; font-weight: 800; font-size: 12px; }
+
+  #dock {
+    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
+    width: min(520px, calc(100% - 24px));
+    background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
+    padding: 12px 14px 10px; backdrop-filter: blur(12px);
+  }
+  .dock-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+  .side b { display: block; font-size: 14px; }
+  .side span { color: var(--dim); font-size: 12px; font-weight: 700; }
+  .side.right { text-align: right; }
+  #cancelAtk {
+    width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line);
+    background: rgba(255,255,255,0.06); color: var(--ink); cursor: pointer; font-size: 16px;
+  }
+  .meter { margin: 10px 0 8px; height: 10px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden; position: relative; }
+  .meter i, .meter em { position: absolute; left: 0; top: 0; bottom: 0; }
+  .meter i { background: linear-gradient(90deg, #2f6bff, #3ddc97); }
+  .meter em { background: rgba(255, 193, 74, 0.85); }
+  .slider-row { display: flex; gap: 10px; align-items: center; }
+  #pct { flex: 1; accent-color: var(--green); }
+  #go {
+    background: var(--green); color: #062016; border: 0; border-radius: 12px;
+    padding: 10px 16px; font-family: Unbounded, sans-serif; font-size: 13px; cursor: pointer;
+  }
+  #go:disabled { opacity: 0.45; cursor: default; }
+  #hint { margin: 8px 0 0; font-size: 12px; color: var(--dim); min-height: 16px; }
+  #hint.warn { color: var(--warn); }
+  #kind {
+    display: inline-block; margin-top: 4px; font-size: 10px; letter-spacing: 0.12em;
+    font-weight: 800; color: var(--warn);
+  }
+
+  #toasts {
+    position: absolute; right: 14px; bottom: 16px; display: flex; flex-direction: column; gap: 8px;
+    width: min(300px, calc(100% - 28px)); z-index: 4;
+  }
+  .toast {
+    background: rgba(7, 16, 32, 0.92); border: 1px solid var(--line); border-radius: 12px;
+    padding: 10px 12px; font-size: 13px; font-weight: 700;
+    animation: pop .25s ease;
+  }
+  @keyframes pop { from { transform: translateY(8px); opacity: 0; } }
+
+  #tools { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
+  #tools button { width: 40px; height: 40px; font-size: 18px; }
+
+  #gear {
+    position: absolute; top: 12px; right: 12px; z-index: 6; pointer-events: auto;
+    width: 42px; height: 42px; border-radius: 12px; border: 1px solid var(--line);
+    background: var(--panel); color: var(--ink); font-size: 18px; cursor: pointer;
+  }
+  #settings { position: absolute; inset: 0; z-index: 8; background: rgba(0,0,0,0.45); display: grid; place-items: center; pointer-events: auto; }
+  #settings-card, .card {
+    width: min(380px, calc(100% - 28px)); background: #101a2e; border: 1px solid var(--line);
+    border-radius: 18px; padding: 16px;
+  }
+  #settings-head, .card-head { display: flex; justify-content: space-between; align-items: center; }
+  h2 { font-family: Unbounded, sans-serif; font-size: 18px; margin: 0; }
+  #settings-close, #end-x {
+    width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line);
+    background: transparent; color: var(--ink); cursor: pointer;
+  }
+  .mute-row { display: flex; gap: 8px; align-items: center; margin: 16px 0; font-weight: 700; }
+  #gameroom-back {
+    display: block; text-align: center; text-decoration: none; color: #062016;
+    background: var(--green); border-radius: 12px; padding: 10px; font-weight: 800;
+  }
+
+  #start, #pause, #end {
+    position: absolute; z-index: 5; pointer-events: none;
+  }
+  #start {
+    top: 16px; left: 16px; width: min(380px, calc(100% - 32px)); max-height: calc(100% - 32px);
+    overflow: auto; pointer-events: auto;
+  }
+  #start .card h2 { font-size: 26px; }
+  .eyebrow { letter-spacing: 0.16em; font-size: 11px; font-weight: 800; color: var(--green); margin: 0 0 6px; }
+  #start p { color: var(--dim); font-size: 14px; line-height: 1.45; }
+  #picked-name { color: var(--ink); font-weight: 800; }
+  #search {
+    width: 100%; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,0.06);
+    color: var(--ink); padding: 10px 12px; font-weight: 700;
+  }
+  #list { margin-top: 8px; max-height: 220px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
+  #list button {
+    text-align: left; background: transparent; color: var(--ink); border: 0; border-radius: 8px;
+    padding: 7px 8px; cursor: pointer; font-weight: 700;
+  }
+  #list button.on, #list button:hover { background: rgba(60, 125, 255, 0.2); }
+  .start-actions { display: flex; gap: 8px; margin-top: 12px; }
+  #play, #again, #resume {
+    flex: 1; background: var(--green); color: #062016; border: 0; border-radius: 12px;
+    padding: 12px; font-family: Unbounded, sans-serif; font-size: 14px; cursor: pointer;
+  }
+  #play:disabled { opacity: 0.4; cursor: default; }
+  #random { flex: 0 0 auto; }
+  #best { font-size: 12px; }
+
+  #pause, #end { inset: 0; display: grid; place-items: center; background: rgba(4, 10, 20, 0.45); pointer-events: auto; }
+  #pause .card, #end .card { text-align: center; }
+  #end p { color: var(--dim); }
+
+  @media (max-width: 720px) {
+    #hud { top: 8px; left: 8px; right: 58px; transform: none; width: auto; gap: 8px; padding: 6px 8px; }
+    #hud-name { font-size: 12px; max-width: 28vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #hud-stats { font-size: 11px; gap: 6px; }
+    #hud-stats i { display: none; }
+    #board { top: 54px; left: 8px; width: min(200px, 58vw); max-height: 24vh; padding: 6px; }
+    #dock { bottom: 8px; }
+    #toasts { right: 8px; left: 8px; bottom: auto; top: 54px; width: auto; }
+    #start { top: auto; bottom: 8px; left: 8px; width: calc(100% - 16px); max-height: 46vh; }
+    #tools { top: auto; bottom: 150px; right: 8px; transform: none; }
+    #gear { top: 8px; right: 8px; }
+  }
+  @media (max-height: 520px) {
+    #hint { display: none; }
+    #dock { padding: 8px 10px 6px; }
+    #board { max-height: 40vh; }
+    #meter { margin: 6px 0; }
+  }
+</style>
+</head>
+<body>
+<canvas id="map"></canvas>
+<div id="ui">
+  <div id="hud" class="hidden">
+    <div id="hud-name">Država</div>
+    <div id="hud-stats">
+      <span><b id="st-troops">0</b> <i>vojnika</i></span>
+      <span><b id="st-lands">0</b> <i>država</i></span>
+      <span><b id="st-pct">0%</b> <i>sveta</i></span>
+    </div>
+    <div id="hud-actions">
+      <button type="button" id="speed">1×</button>
+      <button type="button" id="pauseBtn" aria-label="Pauza">❚❚</button>
+    </div>
+  </div>
+
+  <div id="board" class="hidden">
+    <h3>VOJSKE</h3>
+    <div id="board-rows"></div>
+  </div>
+
+  <div id="dock" class="hidden">
+    <div class="dock-top">
+      <div class="side" id="srcSide"></div>
+      <button type="button" id="cancelAtk" aria-label="Otkaži">✕</button>
+      <div class="side right" id="dstSide"></div>
+    </div>
+    <div class="meter" aria-hidden="true"><i id="meterHave"></i><em id="meterSend"></em></div>
+    <div class="slider-row" id="sliderRow">
+      <input id="pct" type="range" min="10" max="90" value="50">
+      <button type="button" id="go">NAPADNI</button>
+    </div>
+    <div id="kind"></div>
+    <p id="hint"></p>
+  </div>
+
+  <div id="toasts"></div>
+
+  <div id="tools">
+    <button type="button" id="zin" aria-label="Uvećaj">+</button>
+    <button type="button" id="zout" aria-label="Umanji">−</button>
+    <button type="button" id="fit" aria-label="Namesti mapu">⌖</button>
+  </div>
+
+  <button type="button" id="gear" aria-label="Podešavanja">⚙</button>
+  <div id="settings" class="hidden">
+    <div id="settings-card">
+      <div id="settings-head">
+        <h2>Podešavanja</h2>
+        <button type="button" id="settings-close" aria-label="Zatvori">✕</button>
+      </div>
+      <label class="mute-row"><input type="checkbox" id="mute"> Isključi zvuk</label>
+      <!-- gameroom:back — link nazad na landing (ne brisati) -->
+      <a href="../../" id="gameroom-back">⌂ Nazad u Gameroom</a>
+    </div>
+  </div>
+
+  <div id="start">
+    <div class="card">
+      <p class="eyebrow">STRATEGIJA</p>
+      <h2>Osvoji Svet</h2>
+      <p>Izaberi državu. Vojska raste sama. Osvajaj susede i obale — ako pošalješ premalo vojnika, napad propada i ostavlja te slabijim.</p>
+      <p id="picked-name">Izaberi državu na mapi ili sa liste.</p>
+      <input id="search" type="search" placeholder="Traži državu" autocomplete="off" aria-label="Traži državu">
+      <div id="list"></div>
+      <div class="start-actions">
+        <button type="button" id="random" class="text-btn">Nasumično</button>
+        <button type="button" id="play" disabled>IGRAJ</button>
+      </div>
+      <p id="best"></p>
+    </div>
+  </div>
+
+  <div id="pause" class="hidden">
+    <div class="card">
+      <h2>Pauza</h2>
+      <p>Vojska čeka. P ili Esc nastavljaju.</p>
+      <button type="button" id="resume">NASTAVI</button>
+    </div>
+  </div>
+
+  <div id="end" class="hidden">
+    <div class="card">
+      <h2 id="end-title"></h2>
+      <p id="end-text"></p>
+      <button type="button" id="again">IGRAJ PONOVO</button>
+    </div>
+  </div>
+</div>
+<script>
+const params = new URLSearchParams(location.search);
+const AUTO = params.has('auto');
+const SIM = Math.max(0, Number(params.get('sim')) || 0);
+const BOT = params.has('bot') || SIM > 0;
+
+const canvas = document.getElementById('map');
+const ctx = canvas.getContext('2d');
+const hud = document.getElementById('hud');
+const board = document.getElementById('board');
+const boardRows = document.getElementById('board-rows');
+const dock = document.getElementById('dock');
+const startEl = document.getElementById('start');
+const pauseEl = document.getElementById('pause');
+const endEl = document.getElementById('end');
+const settingsEl = document.getElementById('settings');
+const listEl = document.getElementById('list');
+const searchEl = document.getElementById('search');
+const playBtn = document.getElementById('play');
+const pickedName = document.getElementById('picked-name');
+const pctInput = document.getElementById('pct');
+const hintEl = document.getElementById('hint');
+const toastsEl = document.getElementById('toasts');
+
+let MAP_W = 3600, MAP_H = 1800;
+let countries = [];
+let byId = new Map();
+let terr = {};
+let attacks = [];
+let player = null;
+let picked = null;
+let srcId = null;
+let dstId = null;
+let hover = null;
+let playing = false;
+let paused = false;
+let over = null;
+let speed = 1;
+let worldT = 0;
+let viewW = 1, viewH = 1;
+let camUser = false;
+const cam = { x: 0, y: 0, z: 1 };
+let audioCtx = null;
+let muted = false;
+let bestPct = 0;
+let aiAcc = 0;
+let aiCursor = 0;
+const aiNext = new Map();
+let uiAcc = 0;
+let botAcc = 0;
+let peakTerr = 1;
+let playerAttacks = 0;
+const pointers = new Map();
+let drag = null;
+let pinch = null;
+
+try { muted = localStorage.getItem('osvoji-svet:mute') === '1'; } catch (e) {}
+try { bestPct = Number(localStorage.getItem('osvoji-svet:best')) || 0; } catch (e) {}
+document.getElementById('mute').checked = muted;
+document.getElementById('best').textContent = bestPct > 0.05 ? `Najbolje: ${bestPct.toFixed(1)}% sveta` : '';
+
+function fmt(n) {
+  n = Math.max(0, Math.round(n));
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 10000) return (n / 1000).toFixed(1) + 'K';
+  if (n >= 1000) return (n / 1000).toFixed(2) + 'K';
+  return String(n);
+}
+function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function norm(s) { return s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase(); }
+function minZoom() { return Math.min(viewW / MAP_W, viewH / MAP_H) * 0.92; }
+
+function growthCap(area) {
+  return Math.round(1400 + Math.pow(Math.max(area, 0.2), 0.55) * 7800);
+}
+
+function repairRings(rings) {
+  const W = MAP_W - 1;
+  const out = [];
+  for (const ring of rings) {
+    if (ring.length < 3) continue;
+    const jumps = [];
+    for (let i = 0; i < ring.length - 1; i++) {
+      if (Math.abs(ring[i + 1][0] - ring[i][0]) > W * 0.5) jumps.push(i);
+    }
+    if (!jumps.length) { out.push(ring); continue; }
+    const chains = [];
+    let s = 0;
+    for (const j of jumps) {
+      chains.push(ring.slice(s, j + 1));
+      s = j + 1;
+    }
+    if (s < ring.length) chains.push(ring.slice(s));
+    if (chains.length >= 2) {
+      const first = chains[0];
+      const last = chains[chains.length - 1];
+      if (Math.abs(first[0][0] - last[last.length - 1][0]) < W * 0.5) {
+        chains[0] = last.concat(first);
+        chains.pop();
+      }
+    }
+    for (const ch of chains) {
+      if (ch.length < 2) continue;
+      const edge = (x) => (x > W * 0.5 ? W : 0);
+      const a = ch[0], b = ch[ch.length - 1];
+      out.push([[edge(a[0]), a[1]], ...ch, [edge(b[0]), b[1]]]);
+    }
+  }
+  return out;
+}
+
+function makePath(rings) {
+  const p = new Path2D();
+  for (const ring of rings) {
+    p.moveTo(ring[0][0], ring[0][1]);
+    for (let i = 1; i < ring.length; i++) p.lineTo(ring[i][0], ring[i][1]);
+    p.closePath();
+  }
+  return p;
+}
+
+function inside(ring, x, y) {
+  let n = false;
+  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) n = !n;
+  }
+  return n;
+}
+function pickAt(x, y) {
+  let best = null;
+  for (const c of countries) {
+    const b = c.box;
+    if (x < b[0] || y < b[1] || x > b[2] || y > b[3]) continue;
+    let inn = false;
+    for (const r of c.hit) if (inside(r, x, y)) inn = !inn;
+    if (!inn) continue;
+    if (!best || c.area < best.area) best = c;
+  }
+  return best;
+}
+
+const colorCache = new Map();
+function colorOf(owner) {
+  if (player && owner === player) return '#3c7dff';
+  let c = colorCache.get(owner);
+  if (c) return c;
+  let h = Math.abs((owner * 137.508) % 360);
+  const d = Math.min(Math.abs(h - 217), 360 - Math.abs(h - 217));
+  if (d < 26) h = (h + 42) % 360;
+  c = `hsl(${h | 0} 48% ${46 + (owner % 6)}%)`;
+  colorCache.set(owner, c);
+  return c;
+}
+
+function bootTroops() {
+  terr = {};
+  attacks = [];
+  aiNext.clear();
+  for (const c of countries) {
+    const jitter = 0.34 + ((c.id * 13) % 9) / 100;
+    terr[c.id] = { owner: c.id, troops: c.cap * jitter };
+  }
+  worldT = 0;
+  over = null;
+  srcId = dstId = null;
+  aiAcc = aiCursor = botAcc = 0;
+  peakTerr = 1;
+  playerAttacks = 0;
+}
+
+function linkKind(a, b) {
+  const A = byId.get(a);
+  if (!A) return null;
+  if (A.neighbors.includes(b)) return 'land';
+  if (A.naval.includes(b)) return 'sea';
+  return null;
+}
+
+function toast(text) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = text;
+  toastsEl.appendChild(el);
+  while (toastsEl.children.length > 3) toastsEl.firstChild.remove();
+  setTimeout(() => el.remove(), 3400);
+}
+
+function unlock() {
+  if (SIM) return;
+  if (!audioCtx) audioCtx = new AudioContext();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+function beep(freq, dur, vol) {
+  if (muted || !audioCtx || SIM) return;
+  const o = audioCtx.createOscillator();
+  const g = audioCtx.createGain();
+  o.type = 'triangle';
+  o.frequency.value = freq;
+  g.gain.value = vol;
+  o.connect(g);
+  g.connect(audioCtx.destination);
+  o.start();
+  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+  o.stop(audioCtx.currentTime + dur);
+}
+
+function screenToMap(sx, sy) { return [(sx - cam.x) / cam.z, (sy - cam.y) / cam.z]; }
+function mapToScreen(mx, my) { return [mx * cam.z + cam.x, my * cam.z + cam.y]; }
+
+function clampCam() {
+  const m = 60;
+  if (cam.x > viewW - m) cam.x = viewW - m;
+  if (cam.y > viewH - m) cam.y = viewH - m;
+  if (cam.x + MAP_W * cam.z < m) cam.x = m - MAP_W * cam.z;
+  if (cam.y + MAP_H * cam.z < m) cam.y = m - MAP_H * cam.z;
+}
+function frameBox(minx, miny, maxx, maxy, pad) {
+  const bw = Math.max(80, (maxx - minx) * pad);
+  const bh = Math.max(80, (maxy - miny) * pad);
+  const cx = (minx + maxx) / 2, cy = (miny + maxy) / 2;
+  const z = Math.min(viewW / bw, viewH / bh);
+  cam.z = clamp(z, minZoom(), 12);
+  cam.x = viewW / 2 - cx * cam.z;
+  cam.y = viewH / 2 - cy * cam.z;
+  clampCam();
+}
+function fitWorld() { frameBox(0, 0, MAP_W, MAP_H, 1.04); }
+function frameCountry(id) {
+  const c = byId.get(id);
+  if (!c) return fitWorld();
+  let minx = c.box[0], miny = c.box[1], maxx = c.box[2], maxy = c.box[3];
+  const extra = c.neighbors.slice(0, 8);
+  for (const n of extra) {
+    const o = byId.get(n);
+    if (!o || o.box[2] - o.box[0] > MAP_W * 0.6) continue;
+    minx = Math.min(minx, o.box[0]);
+    miny = Math.min(miny, o.box[1]);
+    maxx = Math.max(maxx, o.box[2]);
+    maxy = Math.max(maxy, o.box[3]);
+  }
+  if (maxx - minx > MAP_W * 0.6) return fitWorld();
+  frameBox(minx, miny, maxx, maxy, 1.65);
+}
+function focusOwner(owner) {
+  let best = null;
+  for (const c of countries) {
+    if (terr[c.id].owner !== owner) continue;
+    if (c.box[2] - c.box[0] > MAP_W * 0.6) continue;
+    if (!best || c.area > best.area) best = c;
+  }
+  if (best) frameCountry(best.id);
+  else fitWorld();
+}
+function zoomAt(sx, sy, factor) {
+  const [wx, wy] = screenToMap(sx, sy);
+  cam.z = clamp(cam.z * factor, minZoom(), 12);
+  cam.x = sx - wx * cam.z;
+  cam.y = sy - wy * cam.z;
+  clampCam();
+}
+
+function resize() {
+  const prevW = viewW;
+  viewW = canvas.clientWidth || window.innerWidth;
+  viewH = canvas.clientHeight || window.innerHeight;
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  canvas.width = Math.max(1, Math.round(viewW * dpr));
+  canvas.height = Math.max(1, Math.round(viewH * dpr));
+  if (!camUser) fitWorld();
+  else if (playing && player && Math.abs(viewW - prevW) > 80) focusOwner(player);
+}
+
+function choose(id) {
+  picked = id;
+  const c = byId.get(id);
+  pickedName.textContent = c ? c.name : 'Izaberi državu';
+  playBtn.disabled = !c;
+  buildList();
+  if (c) frameCountry(id);
+}
+
+function buildList() {
+  const q = norm(searchEl.value.trim());
+  const rows = countries.filter((c) => !q || norm(c.name).includes(q));
+  listEl.innerHTML = rows.map((c) =>
+    `<button type="button" data-id="${c.id}" class="${c.id === picked ? 'on' : ''}">${c.name}</button>`
+  ).join('');
+}
+
+function launch(from, to, frac) {
+  const kind = linkKind(from, to);
+  if (!kind || over) return false;
+  const src = terr[from], dst = terr[to];
+  if (!src || !dst || src.owner === dst.owner) return false;
+  const send = Math.floor(src.troops * frac);
+  if (send < 8) return false;
+  src.troops -= send;
+  const A = byId.get(from), B = byId.get(to);
+  attacks.push({
+    from, to, send, naval: kind === 'sea', owner: src.owner,
+    x0: A.label[0], y0: A.label[1], x1: B.label[0], y1: B.label[1],
+    t: 0, dur: kind === 'sea' ? 2.35 : 1.15,
+  });
+  if (src.owner === player) playerAttacks++;
+  if ((src.owner === player || dst.owner === player) && !SIM) {
+    const verb = kind === 'sea' ? 'Pomorski desant' : 'Napad';
+    toast(`${verb}: ${A.name} → ${B.name} (${fmt(send)})`);
+    beep(kind === 'sea' ? 300 : 520, 0.07, 0.04);
+  }
+  return true;
+}
+
+function suggestPct(from, to, naval) {
+  const have = Math.max(1, terr[from].troops);
+  const dst = byId.get(to);
+  const mult = naval ? 0.74 : 1;
+  const keep = naval ? 0.55 : 0.82;
+  const defeat = terr[to].troops * 1.1 / mult;
+  const hold = (terr[to].troops + dst.cap * 0.2 / keep) / mult;
+  const maxSend = have * 0.9;
+  let send = Math.min(maxSend, hold);
+  if (send < defeat) send = Math.min(maxSend, Math.max(defeat, send));
+  if (defeat > maxSend) send = maxSend;
+  return clamp(Math.round((send / have) * 100), 10, 90);
+}
+
+function bestSource(target) {
+  let best = null, bestT = -1;
+  for (const c of countries) {
+    if (terr[c.id].owner !== player) continue;
+    if (!linkKind(c.id, target)) continue;
+    if (terr[c.id].troops > bestT) { best = c.id; bestT = terr[c.id].troops; }
+  }
+  return best;
+}
+
+function onMapClick(mx, my) {
+  const c = pickAt(mx, my);
+  if (!c) return;
+  if (!playing) { choose(c.id); return; }
+  if (over) return;
+  if (terr[c.id].owner === player) {
+    srcId = c.id;
+    dstId = null;
+  } else if (srcId && linkKind(srcId, c.id)) {
+    dstId = c.id;
+    pctInput.value = String(suggestPct(srcId, c.id, linkKind(srcId, c.id) === 'sea'));
+  } else {
+    const src = bestSource(c.id);
+    if (!src) { toast('Nemaš granicu ni luku do te države'); return; }
+    srcId = src;
+    dstId = c.id;
+    pctInput.value = String(suggestPct(src, c.id, linkKind(src, c.id) === 'sea'));
+  }
+  refreshDock();
+}
+
+function resolve(a) {
+  const dst = terr[a.to];
+  const land = byId.get(a.to);
+  if (!dst || !land) return;
+  if (dst.owner === a.owner) {
+    dst.troops = Math.min(land.cap, dst.troops + a.send);
+    return;
+  }
+  const power = a.send * (a.naval ? 0.74 : 1);
+  const attackerIsPlayer = a.owner === player;
+  const defenderIsPlayer = dst.owner === player;
+  if (power > dst.troops) {
+    const left = (power - dst.troops) * (a.naval ? 0.55 : 0.82);
+    dst.owner = a.owner;
+    dst.troops = Math.max(1, Math.min(land.cap, left));
+    if (a.owner === player) {
+      let n = 0;
+      for (const c of countries) if (terr[c.id].owner === player) n++;
+      if (n > peakTerr) peakTerr = n;
+    }
+    if (!SIM && (attackerIsPlayer || defenderIsPlayer)) {
+      toast(attackerIsPlayer ? `Osvojeno: ${land.name}` : `Izgubljeno: ${land.name}`);
+      beep(attackerIsPlayer ? 680 : 170, 0.1, 0.045);
+    }
+  } else {
+    dst.troops = Math.max(0, dst.troops - power * 0.96);
+    if (!SIM && attackerIsPlayer) {
+      toast(`Napad odbijen: ${land.name}`);
+      beep(150, 0.1, 0.04);
+    }
+  }
+  if (srcId && terr[srcId] && terr[srcId].owner !== player) srcId = null;
+  if (dstId && terr[dstId] && terr[dstId].owner === player) dstId = null;
+  checkEnd();
+}
+
+function snapshot() {
+  let world = 0, mineA = 0, mineT = 0, mineN = 0;
+  const owners = new Set();
+  for (const c of countries) {
+    world += c.area;
+    const t = terr[c.id];
+    owners.add(t.owner);
+    if (t.owner === player) { mineA += c.area; mineT += t.troops; mineN++; }
+  }
+  return {
+    pct: world ? (mineA / world) * 100 : 0,
+    terr: mineN,
+    troops: mineT,
+    fac: owners.size,
+    over: over || 'running',
+    worldT,
+    peakTerr,
+    playerAttacks,
+  };
+}
+
+function checkEnd() {
+  const info = snapshot();
+  if (info.pct > bestPct) {
+    bestPct = info.pct;
+    try { localStorage.setItem('osvoji-svet:best', bestPct.toFixed(2)); } catch (e) {}
+  }
+  if (!playing || over) return info;
+  if (info.terr === 0) finish('lose', info);
+  else if (info.fac === 1) finish('win', info);
+  return info;
+}
+
+function finish(kind, info) {
+  over = kind;
+  paused = false;
+  pauseEl.classList.add('hidden');
+  endEl.classList.remove('hidden');
+  document.getElementById('end-title').textContent = kind === 'win' ? 'Svet je tvoj' : 'Država je pala';
+  document.getElementById('end-text').textContent = kind === 'win'
+    ? `Držiš sve države. Vojska: ${fmt(info.troops)}.`
+    : `Osvojio si ${info.pct.toFixed(1)}% sveta pre nego što su te pregazili.`;
+  if (!SIM) beep(kind === 'win' ? 740 : 110, 0.2, 0.05);
+}
+
+function aiConsider(fid) {
+  if (fid === player) return;
+  const lands = [];
+  for (const c of countries) if (terr[c.id].owner === fid) lands.push(c);
+  if (!lands.length) return;
+  lands.sort((a, b) => terr[b.id].troops / b.cap - terr[a.id].troops / a.cap);
+  const src = lands[0];
+  const troops = terr[src.id].troops;
+  if (troops < src.cap * 0.58) return;
+  let best = null;
+  const ids = src.neighbors.concat(src.naval);
+  const seen = new Set();
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const dst = terr[id];
+    if (!dst || dst.owner === fid) continue;
+    if (dst.owner === player && worldT < 36) continue;
+    if (attacks.some((a) => a.to === id)) continue;
+    const naval = !src.neighbors.includes(id);
+    const mult = naval ? 0.74 : 1;
+    const keep = naval ? 0.55 : 0.82;
+    const defeat = dst.troops * 1.08 / mult;
+    const hold = (dst.troops + byId.get(id).cap * 0.2 / keep) / mult;
+    const spare = troops - src.cap * 0.28;
+    if (spare < defeat) continue;
+    const score = (troops / Math.max(1, dst.troops)) * (naval ? 0.78 : 1);
+    if (!best || score > best.score) best = { id, defeat, hold, spare, score };
+  }
+  if (!best) return;
+  const send = Math.min(troops * 0.68, Math.max(best.defeat, Math.min(best.hold, best.spare)));
+  launch(src.id, best.id, send / troops);
+}
+
+function aiTick() {
+  if (!countries.length) return;
+  for (let k = 0; k < 2; k++) {
+    const c = countries[aiCursor % countries.length];
+    aiCursor++;
+    const fid = terr[c.id].owner;
+    if (fid === player) continue;
+    if ((aiNext.get(fid) || 0) > worldT) continue;
+    aiNext.set(fid, worldT + 7 + (fid % 5) * 0.6);
+    aiConsider(fid);
+  }
+}
+
+function botAct() {
+  if (!player || over) return;
+  let best = null;
+  for (const src of countries) {
+    if (terr[src.id].owner !== player) continue;
+    if (terr[src.id].troops < src.cap * 0.36) continue;
+    const ids = src.neighbors.concat(src.naval);
+    for (const id of ids) {
+      if (terr[id].owner === player) continue;
+      const naval = !src.neighbors.includes(id);
+      const ratio = terr[src.id].troops / Math.max(1, terr[id].troops);
+      const score = ratio * (naval ? 0.85 : 1);
+      if (!best || score > best.score) best = { src: src.id, dst: id, score, naval };
+    }
+  }
+  if (best && best.score > 1.2) {
+    const frac = clamp(suggestPct(best.src, best.dst, best.naval) / 100, 0.15, 0.82);
+    launch(best.src, best.dst, frac);
+  }
+}
+
+function update(dt) {
+  if (!playing || paused || over) return;
+  dt = Math.min(0.05, dt) * speed;
+  if (dt <= 0) return;
+  worldT += dt;
+  for (const c of countries) {
+    const t = terr[c.id];
+    if (t.troops < c.cap) t.troops = Math.min(c.cap, t.troops + c.regen * dt);
+  }
+  for (let i = attacks.length - 1; i >= 0; i--) {
+    attacks[i].t += dt;
+    if (attacks[i].t >= attacks[i].dur) {
+      const a = attacks[i];
+      attacks.splice(i, 1);
+      resolve(a);
+      if (over) return;
+    }
+  }
+  aiAcc += dt;
+  while (aiAcc >= 0.25) {
+    aiAcc -= 0.25;
+    aiTick();
+  }
+  if (BOT) {
+    botAcc += dt;
+    if (botAcc >= 4) { botAcc = 0; botAct(); }
+  }
+}
+
+function totals() {
+  let world = 0, mineA = 0, mineT = 0, mineN = 0;
+  const map = new Map();
+  for (const c of countries) {
+    world += c.area;
+    const t = terr[c.id];
+    let f = map.get(t.owner);
+    if (!f) f = map.set(t.owner, { id: t.owner, name: byId.get(t.owner).name, troops: 0, area: 0, n: 0 }).get(t.owner);
+    f.troops += t.troops;
+    f.area += c.area;
+    f.n++;
+    if (player && t.owner === player) { mineA += c.area; mineT += t.troops; mineN++; }
+  }
+  const list = [...map.values()].sort((a, b) => b.area - a.area);
+  return { world, mineA, mineT, mineN, list, pct: world ? (mineA / world) * 100 : 0 };
+}
+
+function renderBoard(info) {
+  const rows = info.list.slice(0, 6);
+  if (player && !rows.some((r) => r.id === player)) {
+    const me = info.list.find((r) => r.id === player);
+    if (me) rows.push(me);
+  }
+  boardRows.innerHTML = rows.map((r) => {
+    const rank = info.list.indexOf(r) + 1;
+    const pct = info.world ? (r.area / info.world) * 100 : 0;
+    return `<button type="button" class="lb ${r.id === player ? 'me' : ''}" data-id="${r.id}">
+      <i style="background:${colorOf(r.id)}"></i>
+      <b>${rank}. ${r.name}</b>
+      <span>${(pct >= 10 ? pct.toFixed(0) : pct.toFixed(1))}%</span>
+      <em>${fmt(r.troops)}</em>
+    </button>`;
+  }).join('');
+}
+
+function refreshHud() {
+  if (!playing || !player) return;
+  const info = totals();
+  document.getElementById('st-troops').textContent = fmt(info.mineT);
+  document.getElementById('st-lands').textContent = String(info.mineN);
+  const p = info.pct;
+  document.getElementById('st-pct').textContent = (p >= 10 ? p.toFixed(0) : p >= 1 ? p.toFixed(1) : p.toFixed(2)) + '%';
+  document.getElementById('hud-name').textContent = byId.get(player).name;
+  uiAcc += 1;
+  if (uiAcc >= 8) { uiAcc = 0; renderBoard(info); }
+}
+
+function refreshDock() {
+  if (!playing || over || !srcId || !terr[srcId] || terr[srcId].owner !== player) {
+    dock.classList.add('hidden');
+    return;
+  }
+  dock.classList.remove('hidden');
+  const src = byId.get(srcId);
+  const have = terr[srcId].troops;
+  document.getElementById('srcSide').innerHTML = `<b>${src.name}</b><span>${fmt(have)} / ${fmt(src.cap)} · +${fmt(src.regen)}/s</span>`;
+  const havePct = clamp(have / src.cap, 0, 1);
+  document.getElementById('meterHave').style.width = (havePct * 100) + '%';
+  const sliderRow = document.getElementById('sliderRow');
+  const kindEl = document.getElementById('kind');
+  if (!dstId || !terr[dstId] || terr[dstId].owner === player || !linkKind(srcId, dstId)) {
+    dstId = null;
+    document.getElementById('dstSide').innerHTML = `<b>Izaberi cilj</b><span>sused ili obala</span>`;
+    sliderRow.classList.add('hidden');
+    kindEl.textContent = '';
+    document.getElementById('meterSend').style.width = '0';
+    hintEl.className = '';
+    hintEl.textContent = 'Klikni susednu državu ili obalu do koje imaš luku.';
+    return;
+  }
+  sliderRow.classList.remove('hidden');
+  const dst = byId.get(dstId);
+  const naval = linkKind(srcId, dstId) === 'sea';
+  const frac = Number(pctInput.value) / 100;
+  const send = Math.floor(have * frac);
+  const power = send * (naval ? 0.74 : 1);
+  const garrison = Math.max(0, power - terr[dstId].troops) * (naval ? 0.55 : 0.82);
+  document.getElementById('dstSide').innerHTML = `<b>${dst.name}</b><span>${fmt(terr[dstId].troops)} vojnika</span>`;
+  kindEl.textContent = naval ? 'POMORSKI DESANT' : 'KOPNO';
+  document.getElementById('meterSend').style.width = clamp(havePct * frac, 0, 1) * 100 + '%';
+  const go = document.getElementById('go');
+  go.disabled = send < 8;
+  go.textContent = 'NAPADNI ' + fmt(send);
+  if (power < terr[dstId].troops) {
+    hintEl.className = 'warn';
+    hintEl.textContent = 'Premalo vojnika. Sačekaj da narastu — ovakav napad te samo slabi.';
+  } else if (frac >= 0.72) {
+    hintEl.className = 'warn';
+    hintEl.textContent = 'Šalješ skoro sve. Dok se kući ne vrate novi, sused može da uđe.';
+  } else if (garrison < dst.cap * 0.16) {
+    hintEl.className = 'warn';
+    hintEl.textContent = 'Osvojićeš je, ali u njoj ostaje malo vojske — lako je vrate.';
+  } else if (naval) {
+    hintEl.className = '';
+    hintEl.textContent = 'More jede deo vojske i put traje duže. Na cilju ostaje manje nego što pošalješ.';
+  } else {
+    hintEl.className = '';
+    hintEl.textContent = 'Dovoljno za osvajanje. Ostatak ostaje da brani kuću.';
+  }
+}
+
+function drawLabels() {
+  const items = [];
+  for (const c of countries) {
+    const sx = c.label[0] * cam.z + cam.x;
+    const sy = c.label[1] * cam.z + cam.y;
+    if (sx < -30 || sy < -20 || sx > viewW + 30 || sy > viewH + 20) continue;
+    const bw = (c.box[2] - c.box[0]) * cam.z;
+    const important = c.id === srcId || c.id === dstId || c.id === picked || c.id === hover;
+    if (bw < 52 && !important) continue;
+    if (c.box[2] - c.box[0] > MAP_W * 0.75 && cam.z < minZoom() * 1.4 && c.id !== player) continue;
+    items.push({ c, sx, sy, bw, important });
+  }
+  items.sort((a, b) => (b.important - a.important) || (b.c.area - a.c.area));
+  const placed = [];
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const it of items) {
+    const size = clamp(it.bw * 0.14, 12, 22);
+    ctx.font = `800 ${size}px Manrope, sans-serif`;
+    let name = it.c.name;
+    const maxW = Math.min(148, Math.max(64, it.bw * 0.9));
+    if (ctx.measureText(name).width > maxW) {
+      while (name.length > 3 && ctx.measureText(name + '…').width > maxW) name = name.slice(0, -1);
+      name += '…';
+    }
+    const tw = ctx.measureText(name).width;
+    const rect = { x: it.sx - tw / 2 - 3, y: it.sy - size, w: tw + 6, h: size * 2.2 };
+    if (!it.important && placed.some((r) => r.x < rect.x + rect.w && r.x + r.w > rect.x && r.y < rect.y + rect.h && r.y + r.h > rect.y)) continue;
+    placed.push(rect);
+    ctx.lineWidth = 3.5;
+    ctx.strokeStyle = 'rgba(6, 12, 24, 0.72)';
+    ctx.fillStyle = '#f4f8ff';
+    ctx.strokeText(name, it.sx, it.sy - 7);
+    ctx.fillText(name, it.sx, it.sy - 7);
+    ctx.font = `800 ${Math.max(11, size - 2)}px Manrope, sans-serif`;
+    ctx.fillStyle = '#d5e8ff';
+    const label = fmt(terr[it.c.id].troops);
+    ctx.strokeText(label, it.sx, it.sy + size * 0.48);
+    ctx.fillText(label, it.sx, it.sy + size * 0.48);
+  }
+}
+
+function draw() {
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const sea = ctx.createLinearGradient(0, 0, 0, viewH);
+  sea.addColorStop(0, '#1d6aab');
+  sea.addColorStop(1, '#0d3c68');
+  ctx.fillStyle = sea;
+  ctx.fillRect(0, 0, viewW, viewH);
+  if (!countries.length) return;
+
+  ctx.save();
+  ctx.translate(cam.x, cam.y);
+  ctx.scale(cam.z, cam.z);
+  for (const c of countries) {
+    const x0 = c.box[0] * cam.z + cam.x, y0 = c.box[1] * cam.z + cam.y;
+    const x1 = c.box[2] * cam.z + cam.x, y1 = c.box[3] * cam.z + cam.y;
+    if (x1 < 0 || y1 < 0 || x0 > viewW || y0 > viewH) continue;
+    ctx.fillStyle = colorOf(terr[c.id].owner);
+    ctx.fill(c.path, 'evenodd');
+  }
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(7, 16, 32, 0.55)';
+  ctx.lineWidth = 1.15 / cam.z;
+  for (const c of countries) ctx.stroke(c.path);
+
+  const outline = (id, color, w) => {
+    const c = byId.get(id);
+    if (!c) return;
+    ctx.strokeStyle = color;
+    ctx.lineWidth = w / cam.z;
+    ctx.stroke(c.path);
+  };
+  if (!playing && picked) outline(picked, '#ffffff', 2.6);
+  if (hover && hover !== srcId) outline(hover, 'rgba(255,255,255,0.85)', 1.8);
+  if (srcId) outline(srcId, '#ffffff', 2.8);
+  if (dstId) outline(dstId, '#ffd166', 2.8);
+
+  ctx.setLineDash([]);
+  for (const a of attacks) {
+    const k = clamp(a.t / a.dur, 0, 1);
+    ctx.beginPath();
+    ctx.moveTo(a.x0, a.y0);
+    ctx.lineTo(a.x1, a.y1);
+    ctx.strokeStyle = a.naval ? 'rgba(150, 214, 255, 0.95)' : 'rgba(255, 186, 70, 0.95)';
+    ctx.lineWidth = (a.naval ? 1.5 : 2.1) / cam.z;
+    ctx.setLineDash(a.naval ? [7 / cam.z, 6 / cam.z] : []);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    const x = a.x0 + (a.x1 - a.x0) * k;
+    const y = a.y0 + (a.y1 - a.y0) * k;
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(x, y, 3.4 / cam.z, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  drawLabels();
+}
+
+function begin(id) {
+  unlock();
+  player = id;
+  picked = id;
+  colorCache.clear();
+  playing = true;
+  paused = false;
+  over = null;
+  speed = 1;
+  document.getElementById('speed').textContent = '1×';
+  srcId = id;
+  dstId = null;
+  startEl.classList.add('hidden');
+  endEl.classList.add('hidden');
+  pauseEl.classList.add('hidden');
+  hud.classList.remove('hidden');
+  board.classList.remove('hidden');
+  camUser = true;
+  resize();
+  frameCountry(id);
+  camUser = true;
+  toast('Pusti vojsku da naraste, pa napadni slabijeg suseda.');
+  refreshHud();
+  refreshDock();
+  if (SIM > 0) runSim();
+}
+
+function runSim() {
+  const steps = Math.round(SIM / 0.05);
+  const prev = speed;
+  speed = 1;
+  paused = false;
+  for (let i = 0; i < steps; i++) {
+    update(0.05);
+    if (over) break;
+  }
+  speed = prev;
+  const info = snapshot();
+  window.simLog = info;
+  document.title = `pct=${info.pct.toFixed(2)} terr=${info.terr} peak=${info.peakTerr} atk=${info.playerAttacks} fac=${info.fac} troops=${Math.round(info.troops)} ${info.over}`;
+}
+
+function togglePause(force) {
+  if (!playing || over) return;
+  paused = force === undefined ? !paused : force;
+  pauseEl.classList.toggle('hidden', !paused);
+}
+
+function openSettings() {
+  settingsEl.classList.remove('hidden');
+  if (playing && !over) togglePause(true);
+}
+function closeSettings() { settingsEl.classList.add('hidden'); }
+
+document.getElementById('gear').onclick = openSettings;
+document.getElementById('settings-close').onclick = closeSettings;
+document.getElementById('mute').onchange = (e) => {
+  muted = e.target.checked;
+  try { localStorage.setItem('osvoji-svet:mute', muted ? '1' : '0'); } catch (err) {}
+};
+document.getElementById('play').onclick = () => { if (picked) begin(picked); };
+document.getElementById('random').onclick = () => {
+  choose(countries[(Math.random() * countries.length) | 0].id);
+};
+document.getElementById('resume').onclick = () => togglePause(false);
+document.getElementById('pauseBtn').onclick = () => togglePause();
+document.getElementById('speed').onclick = () => {
+  speed = speed === 1 ? 2 : speed === 2 ? 3 : 1;
+  document.getElementById('speed').textContent = speed + '×';
+};
+document.getElementById('again').onclick = () => {
+  bootTroops();
+  playing = false;
+  player = null;
+  colorCache.clear();
+  endEl.classList.add('hidden');
+  hud.classList.add('hidden');
+  board.classList.add('hidden');
+  dock.classList.add('hidden');
+  startEl.classList.remove('hidden');
+  camUser = false;
+  fitWorld();
+  if (picked) choose(picked);
+};
+document.getElementById('cancelAtk').onclick = () => { dstId = null; refreshDock(); };
+document.getElementById('go').onclick = () => {
+  if (!srcId || !dstId) return;
+  if (launch(srcId, dstId, Number(pctInput.value) / 100)) {
+    dstId = null;
+    refreshDock();
+  }
+};
+pctInput.addEventListener('input', refreshDock);
+searchEl.addEventListener('input', buildList);
+listEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-id]');
+  if (!btn) return;
+  choose(Number(btn.dataset.id));
+});
+boardRows.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-id]');
+  if (!btn) return;
+  focusOwner(Number(btn.dataset.id));
+});
+document.getElementById('zin').onclick = () => { camUser = true; zoomAt(viewW / 2, viewH / 2, 1.25); };
+document.getElementById('zout').onclick = () => { camUser = true; zoomAt(viewW / 2, viewH / 2, 0.8); };
+document.getElementById('fit').onclick = () => {
+  camUser = true;
+  if (playing && player) focusOwner(player);
+  else if (picked) frameCountry(picked);
+  else fitWorld();
+};
+
+addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (!settingsEl.classList.contains('hidden')) { closeSettings(); return; }
+    if (playing && !over) togglePause();
+  } else if ((e.key === 'p' || e.key === 'P') && playing && !over && e.target.tagName !== 'INPUT') {
+    togglePause();
+  } else if (e.key === 'Enter' && playing && dstId) {
+    document.getElementById('go').click();
+  } else if (e.key === '+' || e.key === '=') zoomAt(viewW / 2, viewH / 2, 1.2);
+  else if (e.key === '-' || e.key === '_') zoomAt(viewW / 2, viewH / 2, 1 / 1.2);
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && playing && !over && !AUTO) togglePause(true);
+});
+
+canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+canvas.addEventListener('pointerdown', (e) => {
+  canvas.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size === 1) {
+    drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false };
+    pinch = null;
+  } else if (pointers.size >= 2) {
+    drag = null;
+    pinch = pinchInfo();
+  }
+});
+function pinchInfo() {
+  const p = [...pointers.values()];
+  return {
+    dist: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1,
+    midX: (p[0].x + p[1].x) / 2,
+    midY: (p[0].y + p[1].y) / 2,
+  };
+}
+canvas.addEventListener('pointermove', (e) => {
+  if (!pointers.has(e.pointerId)) {
+    const rect = canvas.getBoundingClientRect();
+    const [mx, my] = screenToMap(e.clientX - rect.left, e.clientY - rect.top);
+    const hit = pickAt(mx, my);
+    hover = hit ? hit.id : null;
+    return;
+  }
+  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pointers.size >= 2 && pinch) {
+    const next = pinchInfo();
+    const rect = canvas.getBoundingClientRect();
+    const sx = pinch.midX - rect.left;
+    const sy = pinch.midY - rect.top;
+    const [wx, wy] = screenToMap(sx, sy);
+    cam.z = clamp(cam.z * (next.dist / pinch.dist), minZoom(), 12);
+    cam.x = (next.midX - rect.left) - wx * cam.z;
+    cam.y = (next.midY - rect.top) - wy * cam.z;
+    pinch = next;
+    camUser = true;
+    clampCam();
+    return;
+  }
+  if (drag) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (dx * dx + dy * dy > 25) drag.moved = true;
+    cam.x = drag.cx + dx;
+    cam.y = drag.cy + dy;
+    camUser = true;
+    clampCam();
+  }
+});
+canvas.addEventListener('pointerup', (e) => {
+  const moved = drag && drag.moved;
+  pointers.delete(e.pointerId);
+  if (pointers.size < 2) pinch = null;
+  if (pointers.size === 0) {
+    if (drag && !moved) {
+      const rect = canvas.getBoundingClientRect();
+      const [mx, my] = screenToMap(e.clientX - rect.left, e.clientY - rect.top);
+      onMapClick(mx, my);
+    }
+    drag = null;
+  } else if (pointers.size === 1) {
+    const p = [...pointers.values()][0];
+    drag = { x: p.x, y: p.y, cx: cam.x, cy: cam.y, moved: true };
+  }
+});
+canvas.addEventListener('pointercancel', (e) => {
+  pointers.delete(e.pointerId);
+  drag = null;
+  pinch = null;
+});
+canvas.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const rect = canvas.getBoundingClientRect();
+  camUser = true;
+  zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY > 0 ? 0.9 : 1.12);
+}, { passive: false });
+addEventListener('resize', resize);
+
+let last = 0;
+function loop(now) {
+  const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
+  last = now;
+  if (playing) update(dt);
+  draw();
+  if (playing) refreshHud();
+  if (playing && (srcId || dstId)) refreshDock();
+  requestAnimationFrame(loop);
+}
+
+function initData(data) {
+  MAP_W = data.w;
+  MAP_H = data.h;
+  countries = data.countries.slice().sort((a, b) => a.name.localeCompare(b.name, 'sr'));
+  byId = new Map(countries.map((c) => [c.id, c]));
+  for (const key of ['neighbors', 'naval']) {
+    for (const c of countries) {
+      for (const n of c[key]) {
+        const o = byId.get(n);
+        if (o && !o[key].includes(c.id)) o[key].push(c.id);
+      }
+    }
+  }
+  for (const c of countries) {
+    c.neighbors = [...new Set(c.neighbors)];
+    c.naval = [...new Set(c.naval.filter((id) => !c.neighbors.includes(id)))];
+    c.cap = growthCap(c.area);
+    c.regen = c.cap * 0.0042;
+    c.hit = repairRings(c.rings);
+    c.path = makePath(c.hit);
+  }
+  bootTroops();
+  buildList();
+  resize();
+}
+
+fetch('./countries.json').then((r) => r.json()).then((data) => {
+  initData(data);
+  requestAnimationFrame(loop);
+  if (AUTO) {
+    const srb = countries.find((c) => c.name === 'Srbija') || countries[0];
+    begin(srb.id);
+  }
+}).catch(() => {
+  pickedName.textContent = 'Mapa se nije učitala. Otvori igru preko lokalnog servera.';
+});
+</script>
+</body>
+</html>
