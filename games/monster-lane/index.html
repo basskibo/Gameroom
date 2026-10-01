@@ -265,8 +265,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 // CONFIG
 // =====================================================================
 const PLAYER_Z = 8;            // where the gun stands
-const HOLD_Z = PLAYER_Z - 8;  // crowd piles up here — a clear gap in front of the gun
-const DEFENSE_Z = HOLD_Z;      // red line on the pier; bosses break through just past it
+const DEFENSE_Z = PLAYER_Z - 2.4; // mobs walk the whole pier and only drop off just in front of the gun
 // the pier runs from behind the player to PIER_END, where a gangplank climbs to the pirate ship's deck
 const WATER_Y = -0.6;
 const SHIP_SCALE = 1.75;
@@ -282,8 +281,8 @@ const UP_X = -(FENCE_IN + FENCE_OUT) / 2;    // upgrade lane center (left)
 const WPN_X = (FENCE_IN + FENCE_OUT) / 2;    // weapon lane center (right)
 const MOB_HALF = FENCE_IN - 0.35;                      // monsters fill the lane edge to edge
 const PLAYER_LIMIT = FENCE_OUT - 0.8;
-// shoulder-to-shoulder grid, overlapped so the lane reads as one mass with no gaps
-const PACK_X = 0.34, PACK_Z = 0.24;
+// dense, but not a perfect grid — a little jitter so it reads as a crowd, not stripes
+const PACK_X = 0.5, PACK_Z = 0.44;
 const COL_N = Math.floor((MOB_HALF * 2) / PACK_X);
 const COL_X0 = -((COL_N - 1) * PACK_X) / 2;
 const CLEAVE_R = 0.72, CLEAVE_N = 3;                  // a shot into the pack clips the bodies touching it
@@ -1677,9 +1676,8 @@ function drawBoss(b) {
 // SPAWNING
 // =====================================================================
 // crowd creeps; a pistol that chews the front rank can hold, extra barrels push it back
-function marchSpeed(brute) {
-  const base = 1.8 + Math.min(2.2, (state.wave - 1) * 0.18);
-  return (brute ? 0.95 : 1) * base;
+function marchSpeed() {
+  return 2.05 + Math.min(1.5, (state.wave - 1) * 0.14);
 }
 
 function spawnMonster(x, z, brute, col) {
@@ -1692,28 +1690,28 @@ function spawnMonster(x, z, brute, col) {
   monsters.push({
     kind: 'mob', x, z, hp, maxHp: hp, s, col,
     hw: (brute ? 0.5 : 0.48) * s, hd: (brute ? 0.46 : 0.42) * s,
-    speed: marchSpeed(brute),
+    speed: marchSpeed(),
     phase: rand(0, 6.28), walk: rand(0, 6.28), flash: 0, dead: false, brute,
     dmg: brute ? 8 : 1, score: brute ? 60 : 6,
     variant: brute ? 2 : 0,
   });
 }
 
-// one solid rank across the whole lane; bodies overlap so no wood shows between them
+// one rank across the lane, shaken a little so the files don't turn into stripes
 function spawnRow(z, brute) {
-  const bruteCol = brute ? Math.floor(Math.random() * COL_N) : -1;
+  const bruteCol = brute ? 4 + Math.floor(Math.random() * Math.max(1, COL_N - 8)) : -1;
   for (let c = 0; c < COL_N; c++) {
-    const x = COL_X0 + c * PACK_X;
+    const x = COL_X0 + c * PACK_X + rand(-0.1, 0.1);
     if (Math.abs(x) > MOB_HALF) continue;
-    spawnMonster(x, z, c === bruteCol, c);
+    spawnMonster(x, z + rand(-0.1, 0.1), c === bruteCol, c);
   }
 }
 
-// solid block already standing on the pier, front rank short of the hold line
+// the opening mass stands on the ramp and the far pier, then walks down
 function fillCrowd() {
-  const rows = Math.ceil(16 / PACK_Z);
-  const front = HOLD_Z - 6;
-  for (let r = 0; r < rows; r++) spawnRow(front - r * PACK_Z, r % 6 === 5);
+  const front = -27;
+  const rows = Math.min(42, Math.floor((MAX_MOBS - 80) / COL_N));
+  for (let r = 0; r < rows; r++) spawnRow(front - r * PACK_Z, r % 8 === 7);
 }
 
 function spawnGate() {
@@ -2102,43 +2100,22 @@ function hurtBase(amount, x, z) {
   sfx.hurt();
 }
 
-// crowd pressed against the hold line: quieter than a single mob walking into the gun
-function chipBase(amount, x, z) {
-  state.baseHp -= amount;
-  state.hurt = Math.min(1, state.hurt + 0.08 + amount * 0.01);
-  state.shake = Math.max(state.shake, 0.06);
-  floatText(`-${amount}`, x, 1.3, z, 'bad');
-  sfx.hurt();
-}
-
 function updateMonsters(dt) {
-  const cols = Array.from({ length: COL_N }, () => []);
   for (const m of monsters) {
     if (m.dead) continue;
     m._pz = m.z;
     m.z += m.speed * dt;
     m.flash -= dt;
-    const c = m.col;
-    if (c >= 0 && c < COL_N) cols[c].push(m);
-  }
-  // keep each file packed: nobody walks through the pirate in front, nobody past the hold line
-  let press = 0;
-  for (const col of cols) {
-    if (!col.length) continue;
-    col.sort((a, b) => b.z - a.z);
-    let limit = HOLD_Z;
-    for (const m of col) {
-      if (m.z > limit) m.z = limit;
-      limit = m.z - PACK_Z * (m.brute ? 1.05 : 0.9);
+    if (m.z > DEFENSE_Z) {
+      m.dead = true;
+      state.pressAcc += m.brute ? 1 : 0.018;
+      if (state.pressAcc >= 2) {
+        const d = Math.min(6, Math.floor(state.pressAcc));
+        state.pressAcc -= d;
+        hurtBase(d, m.x, DEFENSE_Z);
+      }
+      continue;
     }
-    const front = col[0];
-    if (front.z >= HOLD_Z - 0.05) press += front.brute ? 0.7 : 0.1;
-  }
-  state.pressAcc += press * dt;
-  if (state.pressAcc >= 2) {
-    const d = Math.min(8, Math.floor(state.pressAcc));
-    state.pressAcc -= d;
-    chipBase(d, 0, HOLD_Z);
   }
 
   let n = 0;
@@ -2197,7 +2174,7 @@ function updateBosses(dt) {
       sfx.boss();
     }
     if (b.dirty && state.time - b.lastDraw > 0.05) { drawBoss(b); b.dirty = false; b.lastDraw = state.time; }
-    if (b.z > HOLD_Z + 2.6) {
+    if (b.z > DEFENSE_Z) {
       b.dead = true;
       hurtBase(60, b.x, b.z);
       burst(b.x, b.s, b.z, 0x1b1b2f, 30, 10, 1.6);
@@ -2271,7 +2248,7 @@ function updateWave(dt) {
   state.rowTimer -= dt;
   if (state.rowTimer <= 0) {
     spawnRow(SPAWN_Z, !state.bossSpawned && Math.random() < 0.12 + state.wave * 0.03);
-    state.rowTimer = PACK_Z / marchSpeed(false) * (state.bossSpawned ? 1.8 : 0.92);
+    state.rowTimer = PACK_Z / marchSpeed() * (state.bossSpawned ? 1.8 : 0.92);
   }
   if (!state.bossSpawned) {
     if (state.waveTime >= waveDuration(state.wave)) spawnBoss();
