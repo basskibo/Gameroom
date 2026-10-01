@@ -2,7 +2,7 @@
 <html lang="sr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Osvoji Svet</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,7 +11,7 @@
   :root {
     --ink: #eef4ff;
     --dim: #b7c6de;
-    --panel: rgba(7, 16, 32, 0.88);
+    --panel: rgba(13, 22, 38, 0.9);
     --line: rgba(255, 255, 255, 0.14);
     --blue: #3c7dff;
     --green: #3ddc97;
@@ -19,26 +19,31 @@
     --danger: #ff6b7a;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: #0c335c; color: var(--ink);
+  html, body { margin: 0; height: 100%; overflow: hidden; background: #163a6e; color: var(--ink);
     font-family: Manrope, sans-serif; user-select: none; -webkit-user-select: none; }
   button, input { font-family: inherit; }
-  canvas { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+  canvas { position: fixed; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: crosshair; }
   #ui { position: fixed; inset: 0; pointer-events: none; }
   #ui button, #ui input, #ui a, #ui label { pointer-events: auto; }
   .hidden { display: none !important; }
+  .flag { width: 20px; height: 15px; border-radius: 2px; object-fit: cover; flex: 0 0 auto;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.35); background: rgba(255,255,255,0.12); }
+
+  #loading {
+    position: absolute; inset: 0; display: grid; place-items: center; z-index: 9;
+    font-family: Unbounded, sans-serif; font-size: 16px; letter-spacing: 0.06em; color: var(--dim);
+    background: radial-gradient(circle at 50% 45%, #1d4f8a, #0f2c55);
+  }
 
   #hud {
     position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
-    display: flex; align-items: center; gap: 14px;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
-    padding: 8px 12px 8px 16px; backdrop-filter: blur(10px);
-    max-width: calc(100% - 24px);
+    display: flex; align-items: center; gap: 12px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 7px 10px 7px 12px; backdrop-filter: blur(10px); max-width: calc(100% - 24px);
   }
-  #hud-name { font-family: Unbounded, sans-serif; font-size: 14px; letter-spacing: 0.04em; }
-  #hud-stats { display: flex; gap: 10px; color: var(--dim); font-weight: 700; font-size: 13px; }
-  #hud-stats span { white-space: nowrap; }
-  #hud-stats b { color: var(--ink); font-weight: 800; }
-  #hud-stats i { font-style: normal; }
+  #hud-me { display: flex; align-items: center; gap: 8px; min-width: 0; }
+  #hud-name { font-family: Unbounded, sans-serif; font-size: 13px; letter-spacing: 0.03em; white-space: nowrap; }
+  #hud-time { color: var(--dim); font-weight: 800; font-size: 13px; font-variant-numeric: tabular-nums; }
   #hud-actions { display: flex; gap: 6px; }
   #hud-actions button, #tools button, .text-btn {
     background: rgba(255,255,255,0.08); color: var(--ink); border: 1px solid var(--line);
@@ -47,68 +52,94 @@
   #hud-actions button:hover, #tools button:hover { background: rgba(255,255,255,0.16); }
 
   #board {
-    position: absolute; top: 70px; left: 12px; width: 240px;
-    background: var(--panel); border: 1px solid var(--line); border-radius: 16px;
-    padding: 8px; backdrop-filter: blur(10px); max-height: min(46vh, 420px); overflow: auto;
+    position: absolute; top: 12px; left: 12px; width: 268px;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 6px; backdrop-filter: blur(10px); max-height: min(50vh, 440px); overflow: auto;
   }
-  #board h3 { margin: 4px 6px 8px; font-size: 11px; letter-spacing: 0.14em; color: var(--dim); font-weight: 800; }
+  #board h3 { display: grid; grid-template-columns: 22px 1fr 50px 50px; gap: 6px; margin: 4px 6px 4px;
+    font-size: 10px; letter-spacing: 0.12em; color: var(--dim); font-weight: 800; }
+  #board h3 span:nth-child(n+3) { text-align: right; }
   .lb {
-    width: 100%; display: grid; grid-template-columns: 12px 1fr auto; grid-template-rows: auto auto;
-    column-gap: 8px; align-items: center; text-align: left;
-    background: transparent; color: var(--ink); border: 0; border-radius: 10px;
-    padding: 6px; cursor: pointer;
+    width: 100%; display: grid; grid-template-columns: 22px 1fr 50px 50px; gap: 6px; align-items: center;
+    text-align: left; background: transparent; color: var(--ink); border: 0; border-top: 1px solid rgba(255,255,255,0.06);
+    padding: 6px; cursor: pointer; font-size: 12px; font-weight: 700;
   }
-  .lb:hover, .lb.me { background: rgba(60, 125, 255, 0.16); }
-  .lb i { width: 10px; height: 10px; border-radius: 3px; grid-row: 1 / span 2; }
-  .lb b { font-size: 13px; font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .lb span { grid-column: 2; color: var(--dim); font-size: 11px; font-weight: 700; }
-  .lb em { grid-column: 3; grid-row: 1 / span 2; font-style: normal; font-weight: 800; font-size: 12px; }
+  .lb:hover { background: rgba(255,255,255,0.06); }
+  .lb.me { background: rgba(60, 125, 255, 0.2); }
+  .lb .who { display: flex; align-items: center; gap: 6px; min-width: 0; }
+  .lb .who b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 800; }
+  .lb .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .lb .rk { color: var(--dim); }
 
   #dock {
-    position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%);
-    width: min(520px, calc(100% - 24px));
-    background: var(--panel); border: 1px solid var(--line); border-radius: 18px;
-    padding: 12px 14px 10px; backdrop-filter: blur(12px);
+    position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%);
+    width: min(560px, calc(100% - 24px));
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 10px; backdrop-filter: blur(12px); display: grid; gap: 8px;
   }
-  .dock-top { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
-  .side b { display: block; font-size: 14px; }
-  .side span { color: var(--dim); font-size: 12px; font-weight: 700; }
-  .side.right { text-align: right; }
-  #cancelAtk {
-    width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line);
-    background: rgba(255,255,255,0.06); color: var(--ink); cursor: pointer; font-size: 16px;
+  .row1 { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
+  .chip {
+    border: 1px solid var(--line); border-radius: 9px; padding: 5px 8px; font-weight: 800; font-size: 13px;
+    white-space: nowrap; font-variant-numeric: tabular-nums;
   }
-  .meter { margin: 10px 0 8px; height: 10px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden; position: relative; }
-  .meter i, .meter em { position: absolute; left: 0; top: 0; bottom: 0; }
-  .meter i { background: linear-gradient(90deg, #2f6bff, #3ddc97); }
-  .meter em { background: rgba(255, 193, 74, 0.85); }
-  .slider-row { display: flex; gap: 10px; align-items: center; }
-  #pct { flex: 1; accent-color: var(--green); }
+  .chip.good { color: var(--green); border-color: rgba(61, 220, 151, 0.4); }
+  .chip.gold { color: var(--warn); border-color: rgba(255, 193, 74, 0.45); }
+  #tbar {
+    position: relative; height: 32px; border-radius: 9px; overflow: hidden;
+    border: 2px solid #f2c94c; background: rgba(0,0,0,0.35);
+  }
+  #tfill { position: absolute; left: 0; top: 0; bottom: 0; background: linear-gradient(90deg, #1f6fe0, #2f8cff); }
+  #ttext { position: absolute; inset: 0; display: grid; place-items: center; font-weight: 800; font-size: 15px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6); font-variant-numeric: tabular-nums; }
+  .row2 { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; }
+  #pct { width: 100%; accent-color: #4aa3ff; }
+  #tgt { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center;
+    border-top: 1px solid var(--line); padding-top: 8px; }
+  #tgt > div { min-width: 0; }
+  #tgt .flag { width: 32px; height: 24px; }
+  #tgt-name { font-weight: 800; font-size: 14px; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #tgt-info { color: var(--dim); font-size: 12px; font-weight: 700; }
   #go {
-    background: var(--green); color: #062016; border: 0; border-radius: 12px;
-    padding: 10px 16px; font-family: Unbounded, sans-serif; font-size: 13px; cursor: pointer;
+    background: var(--green); color: #062016; border: 0; border-radius: 10px;
+    padding: 10px 14px; font-family: Unbounded, sans-serif; font-size: 12px; cursor: pointer; white-space: nowrap;
   }
-  #go:disabled { opacity: 0.45; cursor: default; }
-  #hint { margin: 8px 0 0; font-size: 12px; color: var(--dim); min-height: 16px; }
+  #go:disabled { opacity: 0.4; cursor: default; }
+  #hint { margin: 0; font-size: 12px; color: var(--dim); min-height: 16px; }
   #hint.warn { color: var(--warn); }
-  #kind {
-    display: inline-block; margin-top: 4px; font-size: 10px; letter-spacing: 0.12em;
-    font-weight: 800; color: var(--warn);
+
+  #atks {
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: 192px;
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; width: min(560px, calc(100% - 24px));
   }
+  .atk {
+    display: flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 9px; padding: 4px 6px 4px 8px; font-size: 12px; font-weight: 800; color: #8fc2ff;
+    font-variant-numeric: tabular-nums;
+  }
+  .atk.in { color: var(--danger); border-color: rgba(255, 107, 122, 0.4); }
+  .atk button { background: transparent; border: 0; color: var(--danger); font-size: 13px; cursor: pointer; padding: 0 2px; }
+
+  #tip {
+    position: absolute; z-index: 3; display: flex; align-items: center; gap: 8px; pointer-events: none;
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 6px 9px;
+    font-size: 12px; font-weight: 800; white-space: nowrap;
+  }
+  #tip span { color: var(--dim); }
 
   #toasts {
-    position: absolute; right: 14px; bottom: 16px; display: flex; flex-direction: column; gap: 8px;
+    position: absolute; right: 14px; bottom: 14px; display: flex; flex-direction: column; gap: 6px;
     width: min(300px, calc(100% - 28px)); z-index: 4;
   }
   .toast {
-    background: rgba(7, 16, 32, 0.92); border: 1px solid var(--line); border-radius: 12px;
-    padding: 10px 12px; font-size: 13px; font-weight: 700;
-    animation: pop .25s ease;
+    background: rgba(13, 22, 38, 0.94); border: 1px solid var(--line); border-left: 3px solid var(--blue);
+    border-radius: 8px; padding: 8px 10px; font-size: 13px; font-weight: 700; animation: pop .25s ease;
   }
+  .toast.good { border-left-color: var(--green); color: #9ff0c8; }
+  .toast.bad { border-left-color: var(--danger); color: #ffb3bc; }
   @keyframes pop { from { transform: translateY(8px); opacity: 0; } }
 
   #tools { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; }
-  #tools button { width: 40px; height: 40px; font-size: 18px; }
+  #tools button { width: 40px; height: 40px; font-size: 18px; background: var(--panel); }
 
   #gear {
     position: absolute; top: 12px; right: 12px; z-index: 6; pointer-events: auto;
@@ -120,9 +151,9 @@
     width: min(380px, calc(100% - 28px)); background: #101a2e; border: 1px solid var(--line);
     border-radius: 18px; padding: 16px;
   }
-  #settings-head, .card-head { display: flex; justify-content: space-between; align-items: center; }
+  #settings-head { display: flex; justify-content: space-between; align-items: center; }
   h2 { font-family: Unbounded, sans-serif; font-size: 18px; margin: 0; }
-  #settings-close, #end-x {
+  #settings-close {
     width: 34px; height: 34px; border-radius: 10px; border: 1px solid var(--line);
     background: transparent; color: var(--ink); cursor: pointer;
   }
@@ -132,9 +163,7 @@
     background: var(--green); border-radius: 12px; padding: 10px; font-weight: 800;
   }
 
-  #start, #pause, #end {
-    position: absolute; z-index: 5; pointer-events: none;
-  }
+  #start, #pause, #end { position: absolute; z-index: 5; }
   #start {
     top: 16px; left: 16px; width: min(380px, calc(100% - 32px)); max-height: calc(100% - 32px);
     overflow: auto; pointer-events: auto;
@@ -142,15 +171,16 @@
   #start .card h2 { font-size: 26px; }
   .eyebrow { letter-spacing: 0.16em; font-size: 11px; font-weight: 800; color: var(--green); margin: 0 0 6px; }
   #start p { color: var(--dim); font-size: 14px; line-height: 1.45; }
-  #picked-name { color: var(--ink); font-weight: 800; }
+  #picked { display: flex; align-items: center; gap: 10px; color: var(--ink); font-weight: 800; margin: 12px 0; }
+  #picked .flag { width: 32px; height: 24px; }
   #search {
     width: 100%; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,0.06);
     color: var(--ink); padding: 10px 12px; font-weight: 700;
   }
   #list { margin-top: 8px; max-height: 220px; overflow: auto; display: flex; flex-direction: column; gap: 2px; }
   #list button {
-    text-align: left; background: transparent; color: var(--ink); border: 0; border-radius: 8px;
-    padding: 7px 8px; cursor: pointer; font-weight: 700;
+    display: flex; align-items: center; gap: 8px; text-align: left; background: transparent; color: var(--ink);
+    border: 0; border-radius: 8px; padding: 6px 8px; cursor: pointer; font-weight: 700;
   }
   #list button.on, #list button:hover { background: rgba(60, 125, 255, 0.2); }
   .start-actions { display: flex; gap: 8px; margin-top: 12px; }
@@ -159,43 +189,83 @@
     padding: 12px; font-family: Unbounded, sans-serif; font-size: 14px; cursor: pointer;
   }
   #play:disabled { opacity: 0.4; cursor: default; }
-  #random { flex: 0 0 auto; }
   #best { font-size: 12px; }
 
   #pause, #end { inset: 0; display: grid; place-items: center; background: rgba(4, 10, 20, 0.45); pointer-events: auto; }
   #pause .card, #end .card { text-align: center; }
-  #end p { color: var(--dim); }
+  #end p, #pause p { color: var(--dim); }
 
-  @media (max-width: 720px) {
-    #hud { top: 8px; left: 8px; right: 58px; transform: none; width: auto; gap: 8px; padding: 6px 8px; }
-    #hud-name { font-size: 12px; max-width: 28vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    #hud-stats { font-size: 11px; gap: 6px; }
-    #hud-stats i { display: none; }
-    #board { top: 54px; left: 8px; width: min(200px, 58vw); max-height: 24vh; padding: 6px; }
-    #dock { bottom: 8px; }
-    #toasts { right: 8px; left: 8px; bottom: auto; top: 54px; width: auto; }
-    #start { top: auto; bottom: 8px; left: 8px; width: calc(100% - 16px); max-height: 46vh; }
-    #tools { top: auto; bottom: 150px; right: 8px; transform: none; }
+  #board-toggle { display: none; }
+  @media (pointer: coarse) {
+    #zin, #zout { display: none; }
+    #pct { height: 28px; }
+  }
+  @media (max-width: 720px), (max-height: 520px) {
+    #board-toggle {
+      display: flex; align-items: center; gap: 6px; width: 100%; background: transparent; border: 0;
+      color: var(--ink); font-weight: 800; font-size: 12px; padding: 4px 6px; cursor: pointer;
+    }
+    #board-toggle i { font-style: normal; margin-left: auto; color: var(--dim); transition: transform .2s; }
+    #board.open #board-toggle i { transform: rotate(180deg); }
+    #board:not(.open) #board-rows { display: none; }
+    #hud { top: 8px; left: 8px; right: 58px; transform: none; width: auto; gap: 8px; padding: 6px 8px; justify-content: space-between; }
+    #hud-name { font-size: 11px; max-width: 30vw; overflow: hidden; text-overflow: ellipsis; }
+    #board { top: 56px; left: 8px; width: min(220px, 60vw); max-height: 40vh; padding: 4px; }
+    #board h3 { display: none; }
+    .lb { grid-template-columns: 18px 1fr 42px; padding: 4px; font-size: 11px; }
+    .lb .num.tr { display: none; }
+    #dock { bottom: calc(8px + env(safe-area-inset-bottom)); padding: 8px; gap: 6px; width: calc(100% - 16px); }
+    #tbar { height: 28px; }
+    #ttext { font-size: 13px; }
+    .chip { font-size: 12px; padding: 4px 6px; }
+    #hint { display: none; }
+    #tgt { padding-top: 6px; gap: 8px; }
+    #tgt .flag { width: 26px; height: 20px; }
+    #tgt-name { font-size: 13px; }
+    #tgt-info { font-size: 11px; }
+    #go { padding: 12px 14px; font-size: 12px; }
+    #atks { bottom: calc(150px + env(safe-area-inset-bottom)); width: calc(100% - 16px); }
+    .atk { font-size: 11px; padding: 3px 5px 3px 6px; }
+    #toasts { right: 8px; left: auto; bottom: auto; top: 56px; width: min(56vw, 240px); }
+    .toast { font-size: 12px; padding: 6px 8px; }
+    #start { top: auto; bottom: calc(8px + env(safe-area-inset-bottom)); left: 8px; width: calc(100% - 16px); max-height: 48vh; }
+    #start .card { padding: 12px; }
+    #start .card h2 { font-size: 20px; }
+    #start .eyebrow { display: none; }
+    #start p { font-size: 12px; margin: 6px 0; }
+    #picked { margin: 8px 0; }
+    #list { max-height: 18vh; }
+    .start-actions { position: sticky; bottom: 0; }
+    #tools { top: auto; bottom: calc(196px + env(safe-area-inset-bottom)); right: 8px; transform: none; }
     #gear { top: 8px; right: 8px; }
+    #tip { display: none; }
   }
   @media (max-height: 520px) {
     #hint { display: none; }
-    #dock { padding: 8px 10px 6px; }
     #board { max-height: 40vh; }
-    #meter { margin: 6px 0; }
+    #atks { bottom: 166px; }
+  }
+  @media (max-height: 520px) {
+    #dock { width: min(520px, calc(100% - 16px)); gap: 4px; }
+    #tbar { height: 24px; }
+    #pct { height: 20px; }
+    #tgt { padding-top: 4px; }
+    #go { padding: 8px 12px; }
+    #atks { bottom: calc(132px + env(safe-area-inset-bottom)); }
+    #tools { bottom: 140px; }
+    #start { top: 8px; bottom: 8px; left: 8px; width: min(360px, 50vw); max-height: none; }
+    #list { max-height: 30vh; }
   }
 </style>
 </head>
 <body>
 <canvas id="map"></canvas>
 <div id="ui">
+  <div id="loading">Crtam mapu sveta…</div>
+
   <div id="hud" class="hidden">
-    <div id="hud-name">Država</div>
-    <div id="hud-stats">
-      <span><b id="st-troops">0</b> <i>vojnika</i></span>
-      <span><b id="st-lands">0</b> <i>država</i></span>
-      <span><b id="st-pct">0%</b> <i>sveta</i></span>
-    </div>
+    <div id="hud-me"><img class="flag" id="hud-flag" alt=""><span id="hud-name">Država</span></div>
+    <span id="hud-time">0:00</span>
     <div id="hud-actions">
       <button type="button" id="speed">1×</button>
       <button type="button" id="pauseBtn" aria-label="Pauza">❚❚</button>
@@ -203,25 +273,32 @@
   </div>
 
   <div id="board" class="hidden">
-    <h3>VOJSKE</h3>
+    <button type="button" id="board-toggle" aria-label="Rang lista">🏆 <span id="board-me">Rang</span> <i>▾</i></button>
+    <h3><span>#</span><span>NACIJA</span><span>ZEMLJA</span><span>VOJSKA</span></h3>
     <div id="board-rows"></div>
   </div>
 
+  <div id="atks"></div>
+
   <div id="dock" class="hidden">
-    <div class="dock-top">
-      <div class="side" id="srcSide"></div>
-      <button type="button" id="cancelAtk" aria-label="Otkaži">✕</button>
-      <div class="side right" id="dstSide"></div>
+    <div class="row1">
+      <span class="chip good" id="rate">+0/s</span>
+      <div id="tbar"><i id="tfill"></i><b id="ttext">0 / 0</b></div>
+      <span class="chip gold" id="landPct">0%</span>
     </div>
-    <div class="meter" aria-hidden="true"><i id="meterHave"></i><em id="meterSend"></em></div>
-    <div class="slider-row" id="sliderRow">
-      <input id="pct" type="range" min="10" max="90" value="50">
-      <button type="button" id="go">NAPADNI</button>
+    <div class="row2">
+      <span class="chip" id="sendLbl">⚔ 20%</span>
+      <input id="pct" type="range" min="5" max="100" step="5" value="20" aria-label="Deo vojske za napad">
     </div>
-    <div id="kind"></div>
+    <div id="tgt">
+      <img class="flag" id="tgt-flag" alt="">
+      <div><b id="tgt-name">Izaberi metu</b><span id="tgt-info">klikni tuđu teritoriju na mapi</span></div>
+      <button type="button" id="go" disabled>NAPADNI</button>
+    </div>
     <p id="hint"></p>
   </div>
 
+  <div id="tip" class="hidden"></div>
   <div id="toasts"></div>
 
   <div id="tools">
@@ -243,12 +320,12 @@
     </div>
   </div>
 
-  <div id="start">
+  <div id="start" class="hidden">
     <div class="card">
       <p class="eyebrow">STRATEGIJA</p>
       <h2>Osvoji Svet</h2>
-      <p>Izaberi državu. Vojska raste sama. Osvajaj susede i obale — ako pošalješ premalo vojnika, napad propada i ostavlja te slabijim.</p>
-      <p id="picked-name">Izaberi državu na mapi ili sa liste.</p>
+      <p>Izaberi državu. Vojska raste sama. Napadaj susede i front se pomera malo po malo — planine i šume se teže osvajaju, a preko mora ideš brodovima.</p>
+      <div id="picked"><img class="flag hidden" id="picked-flag" alt=""><span id="picked-name">Izaberi državu na mapi ili sa liste.</span></div>
       <input id="search" type="search" placeholder="Traži državu" autocomplete="off" aria-label="Traži državu">
       <div id="list"></div>
       <div class="start-actions">
@@ -275,67 +352,228 @@
     </div>
   </div>
 </div>
+<script src="./countries.js"></script>
 <script>
 const params = new URLSearchParams(location.search);
 const AUTO = params.has('auto');
 const SIM = Math.max(0, Number(params.get('sim')) || 0);
 const BOT = params.has('bot') || SIM > 0;
 
-const canvas = document.getElementById('map');
-const ctx = canvas.getContext('2d');
-const hud = document.getElementById('hud');
-const board = document.getElementById('board');
-const boardRows = document.getElementById('board-rows');
-const dock = document.getElementById('dock');
-const startEl = document.getElementById('start');
-const pauseEl = document.getElementById('pause');
-const endEl = document.getElementById('end');
-const settingsEl = document.getElementById('settings');
-const listEl = document.getElementById('list');
-const searchEl = document.getElementById('search');
-const playBtn = document.getElementById('play');
-const pickedName = document.getElementById('picked-name');
-const pctInput = document.getElementById('pct');
-const hintEl = document.getElementById('hint');
-const toastsEl = document.getElementById('toasts');
+// ---------- statični podaci ----------
 
-let MAP_W = 3600, MAP_H = 1800;
-let countries = [];
-let byId = new Map();
-let terr = {};
+// ISO numerički kod → ISO alpha-2 (za zastave)
+const ISO2 = {
+  4:'af',8:'al',12:'dz',24:'ao',31:'az',32:'ar',36:'au',40:'at',44:'bs',50:'bd',51:'am',56:'be',64:'bt',68:'bo',70:'ba',
+  72:'bw',76:'br',84:'bz',90:'sb',96:'bn',100:'bg',104:'mm',108:'bi',112:'by',116:'kh',120:'cm',124:'ca',140:'cf',144:'lk',
+  148:'td',152:'cl',156:'cn',158:'tw',170:'co',178:'cg',180:'cd',188:'cr',191:'hr',192:'cu',196:'cy',203:'cz',204:'bj',
+  208:'dk',214:'do',218:'ec',222:'sv',226:'gq',231:'et',232:'er',233:'ee',238:'fk',242:'fj',246:'fi',250:'fr',262:'dj',
+  266:'ga',268:'ge',270:'gm',275:'ps',276:'de',288:'gh',300:'gr',304:'gl',320:'gt',324:'gn',328:'gy',332:'ht',340:'hn',
+  348:'hu',352:'is',356:'in',360:'id',364:'ir',368:'iq',372:'ie',376:'il',380:'it',384:'ci',388:'jm',392:'jp',398:'kz',
+  400:'jo',404:'ke',408:'kp',410:'kr',414:'kw',417:'kg',418:'la',422:'lb',426:'ls',428:'lv',430:'lr',434:'ly',440:'lt',
+  442:'lu',450:'mg',454:'mw',458:'my',466:'ml',478:'mr',484:'mx',496:'mn',498:'md',499:'me',504:'ma',508:'mz',512:'om',
+  516:'na',524:'np',528:'nl',540:'nc',548:'vu',554:'nz',558:'ni',562:'ne',566:'ng',578:'no',586:'pk',591:'pa',598:'pg',
+  600:'py',604:'pe',608:'ph',616:'pl',620:'pt',624:'gw',626:'tl',630:'pr',634:'qa',642:'ro',643:'ru',646:'rw',682:'sa',
+  686:'sn',688:'rs',694:'sl',703:'sk',704:'vn',705:'si',706:'so',710:'za',716:'zw',724:'es',728:'ss',729:'sd',732:'eh',
+  740:'sr',748:'sz',752:'se',756:'ch',760:'sy',762:'tj',764:'th',768:'tg',780:'tt',784:'ae',788:'tn',792:'tr',795:'tm',
+  800:'ug',804:'ua',807:'mk',818:'eg',826:'gb',834:'tz',840:'us',854:'bf',858:'uy',860:'uz',862:'ve',887:'ye',894:'zm',
+  9003:'xk',
+};
+
+// planinski venci: [visina, širina u stepenima, lon, lat, lon, lat, ...]
+const RANGES = [
+  [1.0, 2.6, 73,35, 77,33, 81,30, 85,28, 89,27.8, 93,28, 96,28.5],
+  [0.75, 4.5, 79,34, 85,33, 91,32, 97,33],
+  [0.8, 1.6, 77,36.5, 84,36, 91,35.8, 99,35.5],
+  [0.9, 2.2, 66,35, 70,36, 74,36.5, 77,35.5],
+  [0.9, 2.0, 71.5,38.5, 74.5,38.5],
+  [0.7, 2.0, 62,34.5, 66,34.5, 70,35.5],
+  [0.75, 2.0, 69,42, 75,41.5, 80,42, 86,43, 92,43],
+  [0.65, 2.0, 85,50, 89,49, 93,48, 98,46],
+  [0.5, 1.5, 90,52, 96,52, 102,51.5],
+  [0.6, 2.0, 45,36, 48,33, 51,30.5, 55,28],
+  [0.55, 1.0, 49,37, 53,36.3, 57,37],
+  [0.35, 4.0, 55,32, 60,32],
+  [0.75, 1.2, 39,44, 42,43, 45,42.5, 49,41.5],
+  [0.5, 1.5, 30,37, 33,37, 36,37.5, 40,38.5, 43,39],
+  [0.85, 1.3, 6,44, 7,45.8, 8.5,46.3, 10,46.6, 12,47, 14,47.2, 16,47.5],
+  [0.6, 0.8, -1.8,43, 0.5,42.7, 2.8,42.5],
+  [0.35, 1.2, -6,43, -4,43.1, -2,43],
+  [0.5, 1.2, 18,49.2, 21,49.3, 24,48.3, 25.5,47, 26,45.6, 23.5,45.4, 22,44.8],
+  [0.5, 1.3, 14.5,45.7, 16.5,44.2, 18.5,43, 20,42.3, 20.5,41, 21,39.8, 21.5,38.5],
+  [0.42, 0.9, 22.5,43.3, 25,42.8, 27,42.7],
+  [0.4, 0.9, 23.5,41.8, 24.5,41.5],
+  [0.4, 0.9, 8.5,44.3, 11,43.8, 13.5,42.3, 15.5,40.5, 16.2,39],
+  [0.55, 2.0, 6,59, 8,61.5, 12,63.5, 15,66, 18,68.5, 21,69.5],
+  [0.3, 1.0, -5.5,57, -4,57.5],
+  [0.35, 1.2, 59,51, 59.5,55, 59.5,60, 60,64, 63,67.5],
+  [0.55, 1.5, -9,30.5, -6,32, -3,33, 1,34.5, 5,35.5, 9,35.8],
+  [0.35, 2.0, 5,23, 7,24],
+  [0.35, 2.0, 17,21, 19,20.5],
+  [0.6, 3.0, 37,7, 38,9.5, 38.5,12, 39,14],
+  [0.45, 2.0, 30,-1, 33,-4, 35,-2, 37,-3, 34,-8, 34,-12],
+  [0.45, 1.0, 29,-31, 29.5,-29, 30.5,-27],
+  [0.4, 1.2, 49,-13, 47.5,-18, 46.5,-22, 46,-25],
+  [0.45, 1.5, 36,28, 39,24, 41.5,19, 43.5,15, 44.5,13.5],
+  [0.75, 3.0, -150,62, -140,60, -130,57, -122,52, -116,48, -112,44, -108,40, -106,36, -106,33],
+  [0.55, 1.2, -122,47, -121.5,43, -120,39, -118,36],
+  [0.7, 1.5, -155,62, -150,63, -145,62.5],
+  [0.5, 2.0, -108,29, -105,25, -103,21, -100,19, -97,17, -93,16],
+  [0.4, 1.5, -100,26, -99,22, -97,19],
+  [0.4, 1.5, -90,15, -86,13.5, -84,10, -80,8.5],
+  [0.35, 2.0, -85,34, -82,36, -79,38.5, -76,41, -73,43, -70,45, -68,47],
+  [1.0, 2.6, -75,10, -73,7, -76,3, -78,-1, -79,-5, -76,-10, -73,-14, -69,-17, -68,-21, -68,-26, -70,-31, -70,-36, -71,-40, -72,-46, -73,-50, -72,-54],
+  [0.8, 3.5, -68,-17, -67,-22],
+  [0.35, 3.0, -47,-14, -44,-18, -43,-21, -47,-23],
+  [0.35, 2.0, -64,5, -61,5, -58,3],
+  [0.4, 1.5, 145,-16, 146,-20, 148,-24, 151,-28, 150,-32, 148,-36, 146,-37.5],
+  [0.7, 0.8, 167,-46, 169.5,-44, 172,-42.5],
+  [0.35, 0.8, 175,-39.5, 176.5,-38],
+  [0.5, 1.0, 131,32, 134,34.5, 138,36, 140,38.5, 140.5,41, 143,43.5],
+  [0.45, 3.0, 135,68, 130,63, 140,62, 150,63, 160,64, 170,66],
+  [0.5, 1.0, 156,51, 159,55, 162,58],
+  [0.55, 2.0, 99,30, 99,25, 98,20, 99,15],
+  [0.35, 1.0, 106,19, 107,16, 108,13],
+  [0.35, 2.0, 104,32, 108,32, 111,31],
+  [0.3, 2.0, 112,27, 116,26, 119,27],
+  [0.35, 0.9, 73.5,19, 74.5,15, 76,11, 77,8.5],
+  [0.45, 1.0, 95.5,5, 98,2, 101,-1, 103,-4],
+  [0.65, 1.5, 135,-3.5, 139,-4.5, 143,-5.5, 146,-7],
+  [0.4, 1.3, 113,1, 115,3, 116.5,5.5],
+  [0.35, 1.0, 120.5,23, 121,24.5],
+  [0.3, 1.0, 121,16, 121,18],
+  [0.3, 1.2, -20,64.5, -18,65],
+  [0.4, 2.0, -45,64, -40,70, -35,75],
+];
+
+// reke: [lon, lat, ...]
+const RIVERS = [
+  [33,0.5, 32.5,4, 31.5,9, 32.5,15.6, 33.5,18, 31.5,21, 32.9,24, 32.5,27, 31.2,30, 31,31.5],
+  [25,-11, 26,-5, 25,0.5, 22,2, 18,0, 16,-3, 13,-5.9],
+  [-10,10, -5,14, -2,16.5, 0.5,15, 3,12, 5,10, 6,6, 6,4.3],
+  [22,-13, 24,-17.5, 26,-17.9, 29,-16.5, 33,-16, 36,-18.5],
+  [29,-29.5, 25,-29.5, 21,-28.5, 17,-28.5, 16.5,-28.6],
+  [-73,-4.5, -70,-4, -65,-3.5, -60,-3.2, -55,-2.3, -51,-1, -50,0],
+  [-48,-20, -52,-23, -55,-26, -58,-28, -59,-31, -58.5,-34],
+  [-66,3, -67.5,6, -64,8, -61,8.5],
+  [-95,47, -93,44, -91,41, -90,38, -89.5,35, -91,32, -91.5,30.5, -89.5,29],
+  [-111,47, -104,48, -100,46.5, -96.5,42, -94.5,39, -90.2,38.8],
+  [-80,40.5, -84.5,39, -87.5,37.8, -89.1,37],
+  [-79,43.5, -75,45, -71,46.8, -68,48.5],
+  [-135,62, -142,65, -150,65.5, -158,63, -164,62.5],
+  [-117,61, -123,64, -130,67.5, -135,69],
+  [-106.5,37, -106.7,32, -104,29.5, -101,29.5, -97.5,26],
+  [-107,40, -110,38, -112,36, -114.5,34.5, -114.8,32],
+  [8.5,48, 12,48.8, 16,48.2, 19,47.8, 19,46, 20.5,45, 22,44.5, 25,43.7, 28,44, 29.5,45.2],
+  [14.3,46.3, 16,45.5, 18,45.1, 19.5,44.8, 20.45,44.82],
+  [24,48, 22,48.4, 21,47.5, 20,46.3, 20.2,45.2],
+  [21.9,42.6, 21.6,43.3, 21.3,43.9, 21.05,44.65],
+  [9.5,47.6, 7.6,47.6, 8.3,49.5, 7,50.8, 6,51.8, 4.2,52],
+  [15.5,50.5, 14,50.8, 12,52, 10.5,53.3, 9,53.9],
+  [19,49.6, 21.5,51, 21,52.2, 19,53, 18.8,54.3],
+  [4,45.5, 3,47, 1.5,47.5, -0.5,47.4, -2.2,47.3],
+  [7.5,45, 10,45, 12.4,44.95],
+  [33,57, 38,57.5, 44,56.3, 49,55.8, 48.5,53, 46,51, 44.5,48.5, 47,46.5, 48,45.8],
+  [33,55, 30.5,52, 30.5,50.5, 33,49, 35,47.8, 33.5,46.6, 32,46.5],
+  [38,53.5, 40,51, 42,49, 40.5,47.5, 39.3,47.1],
+  [85,52, 83,55, 78,58.5, 74,61, 69,62, 66,65, 66.5,67],
+  [85,47.5, 76,53, 73,56.5, 69,59, 69,61],
+  [93,51, 92,56, 89,60, 87,64, 86.5,68, 84,71.5],
+  [106,54, 109,58, 117,60, 123,61.5, 127,63, 127,68, 126,72.5],
+  [120,53, 127,50, 131,48, 135,48.3, 137,51, 141,53],
+  [91,34, 97,33, 99,29, 101,27, 104,29, 108,30.5, 112,30, 117,30.7, 121.5,31.5],
+  [96,35, 101,36, 104,36, 107,40.5, 111,40.3, 110.5,35.5, 114,35, 118.5,37.5],
+  [94,33, 99,28, 100,22, 102,18, 104.5,15, 105.8,11, 106.5,9.8],
+  [79,30, 81,27, 84,25.6, 87.5,25, 89,24, 90.5,22.5],
+  [82,30, 90,29.3, 94.5,29.2, 95.5,27.8, 92,26.3, 90,25, 89.8,24],
+  [79,33, 75,35, 72.5,34, 71.5,32, 70.5,29, 68.5,26, 67.5,24],
+  [39,39, 38.5,37, 40,35, 42,34.4, 44,33, 46,31.5, 47.5,30.5],
+  [41,37.5, 43,36.2, 44.3,33.3, 46,31.8],
+  [148,-36, 144,-35.5, 141,-34, 139.5,-34, 139.3,-35.5],
+];
+
+// jezera koja Natural Earth granice ne iseca
+const LAKES = [
+  [-92,46.7, -89.5,48, -86.5,48.7, -84.8,47, -84.6,46.5, -87,46.5, -90,46.6],
+  [-87.8,41.7, -87.2,41.6, -86.3,42.3, -86.2,44, -85,45.8, -86,45.9, -87.5,44.8, -87.8,43],
+  [-84.5,45.9, -83.5,45.8, -81.7,45.5, -80,45.3, -80.7,44.6, -81.7,43.3, -82.4,43, -83.2,44.2, -83.5,45.3],
+  [-83.4,41.7, -81.5,41.6, -79,42.8, -79.8,42.9, -82.5,42.1],
+  [-79.8,43.3, -78,43.3, -76.2,43.5, -76.4,44.1, -79.2,43.9],
+  [-117,61.3, -114,61, -110.8,62.4, -113,62.6, -116,61.8],
+  [-125,65, -122,65.6, -119,66.6, -121,66.9, -124,66.3],
+  [-99.5,51, -97,50.5, -96.5,51.8, -98,53.8, -99,53.2],
+  [31.8,-1, 32.5,0.3, 33.5,0.3, 34.1,-0.4, 33.5,-2.5, 32.5,-2.6, 31.6,-1.8],
+  [29.1,-3.4, 29.5,-3.4, 30.6,-6.5, 31.2,-8.6, 30.8,-8.7, 29.6,-6.8, 29.1,-4.5],
+  [34.3,-9.5, 34.6,-9.6, 35.3,-12.5, 35.3,-14.3, 34.8,-14.2, 34.3,-11.5],
+  [103.8,51.6, 104.6,51.5, 106.5,52.7, 109.3,55.4, 109.8,55.7, 108.4,54.4, 106.5,53.2, 104.8,52],
+  [29.9,60, 31,60.2, 32.8,60.6, 32.5,61.2, 30.5,61.3, 30,60.6],
+  [73.5,46.5, 75,46.4, 77.5,46.4, 79.2,46.5, 79.2,46.8, 77,46.9, 74.5,46.9, 73.6,46.9],
+  [-70,-15.3, -69.4,-15.3, -68.6,-16.2, -69.2,-16.4, -69.9,-15.8],
+];
+
+// suvi (pozitivno) i vlažni (negativno) predeli: [lon, lat, rx, ry, jačina]
+const DRY = [
+  [10,24,26,8,0.95], [-8,22,10,7,0.85], [28,23,8,6,0.95], [47,23,11,7,0.9], [57,31,8,4,0.6],
+  [61,41,9,4,0.6], [83,39,7,2.6,0.9], [103,42,12,4,0.75], [71,27,4,3,0.6], [20,-24,8,5,0.55],
+  [15,-23,2,6,0.8], [133,-25,17,8,0.8], [-114,34,7,5,0.6], [-105,29,5,4,0.5], [-70,-23,1.6,6,0.95],
+  [-68,-45,4,6,0.45], [46,7,6,4,0.55], [88,33,9,3,0.5],
+  [-62,-5,13,8,-0.35], [20,0,9,6,-0.35], [110,5,15,10,-0.25], [5,50,12,8,-0.2], [-82,37,10,8,-0.2],
+  [100,25,10,8,-0.15], [-50,-20,8,8,-0.15],
+];
+
+// ---------- DOM ----------
+const $ = (id) => document.getElementById(id);
+const canvas = $('map');
+const ctx = canvas.getContext('2d');
+const hud = $('hud'), board = $('board'), boardRows = $('board-rows'), dock = $('dock');
+const startEl = $('start'), pauseEl = $('pause'), endEl = $('end'), settingsEl = $('settings');
+const listEl = $('list'), searchEl = $('search'), playBtn = $('play');
+const pctInput = $('pct'), hintEl = $('hint'), toastsEl = $('toasts'), atksEl = $('atks'), tipEl = $('tip');
+
+// ---------- svet (1 piksel mape = 1 polje) ----------
+let W = 3600, H = 1800, N = W * H;
+let owner, land, terr, regOwner, coastal, ownerStart;
+let coastList = new Int32Array(0);
+let landTotal = 1;
+let nations = [null];
+let byCountry = new Map();
+let tcan, ocan, octx, ovImg, ov32;
+const CH = 64;
+let CWN = 0, CHN = 0, chunkDirty;
+const fillCol = new Uint32Array(256), edgeCol = new Uint32Array(256);
+let hl = 0;
+let allDirty = false;
+let ovVersion = 0;
+const TMULT = [0, 1, 1.3, 1.6, 2.4, 1.15];
+const TNAME = ['more', 'ravnica', 'šuma', 'brda', 'planine', 'pustinja'];
+// grube ćelije za plovidbu
+const CF = 3;
+let CWc = 0, CHc = 0, cwater, bfsPrev, bfsSeen, bfsDist, bfsQ;
+let bfsStamp = 1;
+
+// ---------- igra ----------
 let attacks = [];
-let player = null;
-let picked = null;
-let srcId = null;
-let dstId = null;
-let hover = null;
-let playing = false;
-let paused = false;
-let over = null;
-let speed = 1;
-let worldT = 0;
-let viewW = 1, viewH = 1;
-let camUser = false;
+let boats = [];
+let player = 0;
+let picked = 0;
+let target = null;
+let hover = 0;
+let playing = false, paused = false, over = null;
+let speed = 1, worldT = 0;
+let atkAcc = 0, aiAcc = 0, endAcc = 0, botAcc = 0;
+let peakPct = 0, playerAttacks = 0;
+let viewW = 1, viewH = 1, camUser = false;
 const cam = { x: 0, y: 0, z: 1 };
-let audioCtx = null;
-let muted = false;
-let bestPct = 0;
-let aiAcc = 0;
-let aiCursor = 0;
-const aiNext = new Map();
-let uiAcc = 0;
-let botAcc = 0;
-let peakTerr = 1;
-let playerAttacks = 0;
+let audioCtx = null, muted = false, bestPct = 0;
 const pointers = new Map();
-let drag = null;
-let pinch = null;
+let drag = null, pinch = null;
+let anchorClock = 0, uiClock = 0, boardClock = 0;
 
 try { muted = localStorage.getItem('osvoji-svet:mute') === '1'; } catch (e) {}
 try { bestPct = Number(localStorage.getItem('osvoji-svet:best')) || 0; } catch (e) {}
-document.getElementById('mute').checked = muted;
-document.getElementById('best').textContent = bestPct > 0.05 ? `Najbolje: ${bestPct.toFixed(1)}% sveta` : '';
+$('mute').checked = muted;
+$('best').textContent = bestPct > 0.05 ? `Najbolje: ${bestPct.toFixed(1)}% sveta` : '';
 
+// ---------- pomoćne ----------
 function fmt(n) {
   n = Math.max(0, Math.round(n));
   if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
@@ -344,41 +582,108 @@ function fmt(n) {
   return String(n);
 }
 function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+function lerp(a, b, t) { return a + (b - a) * t; }
 function norm(s) { return s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase(); }
-function minZoom() { return Math.min(viewW / MAP_W, viewH / MAP_H) * 0.92; }
+function esc(s) { return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function minZoom() { return Math.min(viewW / W, viewH / H) * 0.92; }
+function lonX(lon) { return (lon + 180) * W / 360; }
+function latY(lat) { return (90 - lat) * H / 180; }
+function flagUrl(code, w) { return code ? `https://flagcdn.com/w${w}/${code}.png` : ''; }
+function flagTag(n) {
+  return n && n.code ? `<img class="flag" src="${flagUrl(n.code, 40)}" alt="" loading="lazy">`
+    : `<span class="flag" style="background:${n ? n.css : '#888'}"></span>`;
+}
+const flagImgs = new Map();
+function flagImg(code) {
+  if (!code) return null;
+  let img = flagImgs.get(code);
+  if (!img) {
+    img = new Image();
+    img.src = flagUrl(code, 80);
+    flagImgs.set(code, img);
+  }
+  return img.complete && img.naturalWidth ? img : null;
+}
 
-function growthCap(area) {
-  return Math.round(1400 + Math.pow(Math.max(area, 0.2), 0.55) * 7800);
+function hash2(ix, iy, s) {
+  let h = Math.imul(ix, 374761393) ^ Math.imul(iy, 668265263) ^ Math.imul(s, 2246822519);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+function vnoise(x, y, s) {
+  const ix = Math.floor(x), iy = Math.floor(y);
+  const fx = x - ix, fy = y - iy;
+  const ux = fx * fx * (3 - 2 * fx), uy = fy * fy * (3 - 2 * fy);
+  const a = hash2(ix, iy, s), b = hash2(ix + 1, iy, s), c = hash2(ix, iy + 1, s), d = hash2(ix + 1, iy + 1, s);
+  return a + (b - a) * ux + (c - a) * uy + (a - b - c + d) * ux * uy;
+}
+function fbm(x, y, s, oct) {
+  let v = 0, amp = 0.5, f = 1, t = 0;
+  for (let i = 0; i < oct; i++) { v += amp * vnoise(x * f, y * f, s + i * 17); t += amp; amp *= 0.5; f *= 2.03; }
+  return v / t;
+}
+function hsl(h, s, l) {
+  s /= 100; l /= 100;
+  const k = (n) => (n + h / 30) % 12;
+  const a = s * Math.min(l, 1 - l);
+  const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+  return [Math.round(f(0) * 255), Math.round(f(8) * 255), Math.round(f(4) * 255)];
+}
+function pack(r, g, b, a) { return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0; }
+
+// ---------- rasterizacija ----------
+function fillPoly(rings, fn) {
+  const edges = [];
+  let y0 = Infinity, y1 = -Infinity;
+  for (const ring of rings) {
+    for (let i = 0; i < ring.length; i++) {
+      const a = ring[i], b = ring[(i + 1) % ring.length];
+      if (a[1] === b[1]) continue;
+      edges.push(a[0], a[1], b[0], b[1]);
+      y0 = Math.min(y0, a[1], b[1]);
+      y1 = Math.max(y1, a[1], b[1]);
+    }
+  }
+  const xs = [];
+  for (let y = Math.max(0, Math.floor(y0)); y <= Math.min(H - 1, Math.ceil(y1)); y++) {
+    const yc = y + 0.5;
+    xs.length = 0;
+    for (let e = 0; e < edges.length; e += 4) {
+      const ay = edges[e + 1], by = edges[e + 3];
+      if ((ay <= yc && by > yc) || (by <= yc && ay > yc)) {
+        const ax = edges[e], bx = edges[e + 2];
+        xs.push(ax + (yc - ay) * (bx - ax) / (by - ay));
+      }
+    }
+    xs.sort((a, b) => a - b);
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      const xa = Math.max(0, Math.ceil(xs[k] - 0.5)), xb = Math.min(W - 1, Math.floor(xs[k + 1] - 0.5));
+      for (let x = xa; x <= xb; x++) fn(y * W + x);
+    }
+  }
 }
 
 function repairRings(rings) {
-  const W = MAP_W - 1;
+  const WW = W - 1;
   const out = [];
   for (const ring of rings) {
     if (ring.length < 3) continue;
     const jumps = [];
     for (let i = 0; i < ring.length - 1; i++) {
-      if (Math.abs(ring[i + 1][0] - ring[i][0]) > W * 0.5) jumps.push(i);
+      if (Math.abs(ring[i + 1][0] - ring[i][0]) > WW * 0.5) jumps.push(i);
     }
     if (!jumps.length) { out.push(ring); continue; }
     const chains = [];
     let s = 0;
-    for (const j of jumps) {
-      chains.push(ring.slice(s, j + 1));
-      s = j + 1;
-    }
+    for (const j of jumps) { chains.push(ring.slice(s, j + 1)); s = j + 1; }
     if (s < ring.length) chains.push(ring.slice(s));
     if (chains.length >= 2) {
-      const first = chains[0];
-      const last = chains[chains.length - 1];
-      if (Math.abs(first[0][0] - last[last.length - 1][0]) < W * 0.5) {
-        chains[0] = last.concat(first);
-        chains.pop();
-      }
+      const first = chains[0], last = chains[chains.length - 1];
+      if (Math.abs(first[0][0] - last[last.length - 1][0]) < WW * 0.5) { chains[0] = last.concat(first); chains.pop(); }
     }
     for (const ch of chains) {
       if (ch.length < 2) continue;
-      const edge = (x) => (x > W * 0.5 ? W : 0);
+      const edge = (x) => (x > WW * 0.5 ? WW : 0);
       const a = ch[0], b = ch[ch.length - 1];
       out.push([[edge(a[0]), a[1]], ...ch, [edge(b[0]), b[1]]]);
     }
@@ -386,92 +691,1182 @@ function repairRings(rings) {
   return out;
 }
 
-function makePath(rings) {
-  const p = new Path2D();
-  for (const ring of rings) {
-    p.moveTo(ring[0][0], ring[0][1]);
-    for (let i = 1; i < ring.length; i++) p.lineTo(ring[i][0], ring[i][1]);
-    p.closePath();
+// udaljenost (×3) od najbližeg polja-izvora
+function chamfer(seed) {
+  const INF = 65000;
+  const d = new Uint16Array(N);
+  for (let t = 0; t < N; t++) d[t] = seed[t] ? 0 : INF;
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const t = y * W + x;
+      let v = d[t];
+      if (!v) continue;
+      if (x > 0 && d[t - 1] + 3 < v) v = d[t - 1] + 3;
+      if (y > 0) {
+        if (d[t - W] + 3 < v) v = d[t - W] + 3;
+        if (x > 0 && d[t - W - 1] + 4 < v) v = d[t - W - 1] + 4;
+        if (x < W - 1 && d[t - W + 1] + 4 < v) v = d[t - W + 1] + 4;
+      }
+      d[t] = v;
+    }
   }
-  return p;
+  for (let y = H - 1; y >= 0; y--) {
+    for (let x = W - 1; x >= 0; x--) {
+      const t = y * W + x;
+      let v = d[t];
+      if (!v) continue;
+      if (x < W - 1 && d[t + 1] + 3 < v) v = d[t + 1] + 3;
+      if (y < H - 1) {
+        if (d[t + W] + 3 < v) v = d[t + W] + 3;
+        if (x < W - 1 && d[t + W + 1] + 4 < v) v = d[t + W + 1] + 4;
+        if (x > 0 && d[t + W - 1] + 4 < v) v = d[t + W - 1] + 4;
+      }
+      d[t] = v;
+    }
+  }
+  return d;
 }
 
-function inside(ring, x, y) {
-  let n = false;
-  for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
-    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
-    if ((yi > y) !== (yj > y) && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) n = !n;
+// ---------- izgradnja sveta ----------
+function buildWorld(data) {
+  W = data.w; H = data.h; N = W * H;
+  const list = data.countries.slice().sort((a, b) => a.name.localeCompare(b.name, 'sr'));
+  nations = [null];
+  byCountry = new Map();
+  list.forEach((c, k) => {
+    const n = {
+      i: k + 1, id: c.id, name: c.name, code: ISO2[c.id] || '', home: c,
+      rings: repairRings(c.rings), troops: 0, max: 1, tiles: 0, sx: 0, sy: 0,
+      border: new Set(), coast: [], naval: [], ax: c.label[0], ay: c.label[1], lx: c.label[0], ly: c.label[1],
+      nextAI: 0, css: '#888', edgeCss: '#444',
+    };
+    nations.push(n);
+    byCountry.set(c.id, n);
+  });
+  for (const n of nations) {
+    if (!n) continue;
+    const ids = new Set(n.home.naval);
+    for (const o of list) if (o.naval.includes(n.id)) ids.add(o.id);
+    n.naval = [...ids].map((id) => byCountry.get(id)).filter(Boolean).map((o) => o.i);
   }
-  return n;
-}
-function pickAt(x, y) {
-  let best = null;
-  for (const c of countries) {
-    const b = c.box;
-    if (x < b[0] || y < b[1] || x > b[2] || y > b[3]) continue;
-    let inn = false;
-    for (const r of c.hit) if (inside(r, x, y)) inn = !inn;
-    if (!inn) continue;
-    if (!best || c.area < best.area) best = c;
+
+  // 1) države u mrežu, veće prvo da manje leže preko njih
+  const raw = new Uint8Array(N);
+  const bigFirst = nations.slice(1).sort((a, b) => b.home.area - a.home.area);
+  for (const n of bigFirst) fillPoly(n.rings, (t) => { raw[t] = n.i; });
+
+  // 2) razbij prave linije obale i granica šumom
+  owner = new Uint8Array(N);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const t = y * W + x;
+      const v = raw[t];
+      const l = raw[y * W + (x >= 4 ? x - 4 : x + W - 4)], r = raw[y * W + (x < W - 4 ? x + 4 : x - W + 4)];
+      const u = raw[Math.max(0, y - 4) * W + x], d = raw[Math.min(H - 1, y + 4) * W + x];
+      if (v === l && v === r && v === u && v === d) { owner[t] = v; continue; }
+      const wx = (vnoise(x * 0.07, y * 0.07, 11) - 0.5) * 6 + (vnoise(x * 0.25, y * 0.25, 12) - 0.5) * 2.4;
+      const wy = (vnoise(x * 0.07, y * 0.07, 13) - 0.5) * 6 + (vnoise(x * 0.25, y * 0.25, 14) - 0.5) * 2.4;
+      let sx = x + Math.round(wx);
+      if (sx < 0) sx += W; else if (sx >= W) sx -= W;
+      const sy = clamp(y + Math.round(wy), 0, H - 1);
+      owner[t] = raw[sy * W + sx];
+    }
   }
-  return best;
+  for (const lk of LAKES) {
+    const ring = [];
+    for (let i = 0; i < lk.length; i += 2) ring.push([lonX(lk[i]), latY(lk[i + 1])]);
+    fillPoly([ring], (t) => { owner[t] = 0; });
+  }
+  const counts = new Uint32Array(256);
+  for (let t = 0; t < N; t++) counts[owner[t]]++;
+  for (const n of nations) {
+    if (!n || counts[n.i]) continue;
+    owner[Math.round(n.home.label[1]) * W + Math.round(n.home.label[0])] = n.i;
+  }
+  land = new Uint8Array(N);
+  for (let t = 0; t < N; t++) land[t] = owner[t] ? 1 : 0;
+
+  // 3) udaljenost od obale (kopno → more, more → kopno)
+  const water = new Uint8Array(N);
+  for (let t = 0; t < N; t++) water[t] = land[t] ? 0 : 1;
+  const coastD = chamfer(water);
+  const dL = chamfer(land);
+  for (let t = 0; t < N; t++) if (!land[t]) coastD[t] = dL[t];
+
+  // 4) planine
+  const mtn = new Uint8Array(N);
+  for (const r of RANGES) {
+    const h = r[0], wpx = r[1] * W / 360;
+    for (let i = 2; i + 3 < r.length; i += 2) {
+      const ax = lonX(r[i]), ay = latY(r[i + 1]), bx = lonX(r[i + 2]), by = latY(r[i + 3]);
+      const pad = wpx * 1.4;
+      const x0 = Math.max(0, Math.floor(Math.min(ax, bx) - pad)), x1 = Math.min(W - 1, Math.ceil(Math.max(ax, bx) + pad));
+      const y0 = Math.max(0, Math.floor(Math.min(ay, by) - pad)), y1 = Math.min(H - 1, Math.ceil(Math.max(ay, by) + pad));
+      const dx = bx - ax, dy = by - ay, ll = dx * dx + dy * dy || 1;
+      for (let y = y0; y <= y1; y++) {
+        for (let x = x0; x <= x1; x++) {
+          const t = y * W + x;
+          if (!land[t]) continue;
+          const k = clamp(((x - ax) * dx + (y - ay) * dy) / ll, 0, 1);
+          const ex = ax + dx * k - x, ey = ay + dy * k - y;
+          const wn = wpx * (0.7 + 0.6 * vnoise(x * 0.045, y * 0.045, 21));
+          const f = 1 - Math.sqrt(ex * ex + ey * ey) / wn;
+          if (f <= 0) continue;
+          const v = Math.round(h * f * f * (3 - 2 * f) * 255);
+          if (v > mtn[t]) mtn[t] = v;
+        }
+      }
+    }
+  }
+
+  // 5) visina
+  const elev = new Float32Array(N);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const t = y * W + x;
+      if (!land[t]) continue;
+      const cd = coastD[t] / 3;
+      let e = 0.05 + 0.13 * fbm(x / 150, y / 150, 31, 3) + 0.05 * vnoise(x / 28, y / 28, 35) + Math.min(1, cd / 90) * 0.05;
+      const m = mtn[t] / 255;
+      if (m > 0) {
+        const rd = 1 - Math.abs(2 * fbm(x / 19, y / 19, 41, 3) - 1);
+        e += m * (0.35 + 0.65 * rd * rd);
+      }
+      elev[t] = e;
+    }
+  }
+
+  // 6) boje terena + tip terena za igru
+  terr = new Uint8Array(N);
+  tcan = document.createElement('canvas');
+  tcan.width = W; tcan.height = H;
+  const tctx = tcan.getContext('2d');
+  const timg = tctx.createImageData(W, H);
+  const td = timg.data;
+  const greenl = byCountry.get(304);
+  const greenI = greenl ? greenl.i : -1;
+  const MOIST = [
+    [0, 226, 205, 152], [0.14, 218, 192, 136], [0.28, 196, 182, 124], [0.4, 170, 176, 108],
+    [0.55, 142, 170, 92], [0.7, 110, 152, 76], [0.85, 78, 132, 64], [1, 60, 116, 54],
+  ];
+  const col = [0, 0, 0];
+  const mcol = (m) => {
+    m = clamp(m, 0, 1);
+    let i = 1;
+    while (i < MOIST.length - 1 && MOIST[i][0] < m) i++;
+    const a = MOIST[i - 1], b = MOIST[i];
+    const k = (m - a[0]) / (b[0] - a[0] || 1);
+    col[0] = lerp(a[1], b[1], k); col[1] = lerp(a[2], b[2], k); col[2] = lerp(a[3], b[3], k);
+  };
+  const mix = (r, g, b, k) => { col[0] += (r - col[0]) * k; col[1] += (g - col[1]) * k; col[2] += (b - col[2]) * k; };
+  for (let y = 0; y < H; y++) {
+    const lat = 90 - (y + 0.5) * 180 / H;
+    const al = Math.abs(lat);
+    let base;
+    if (al < 8) base = 0.95;
+    else if (al < 16) base = lerp(0.95, 0.45, (al - 8) / 8);
+    else if (al < 30) base = lerp(0.45, 0.25, (al - 16) / 14);
+    else if (al < 42) base = lerp(0.25, 0.62, (al - 30) / 12);
+    else if (al < 62) base = 0.7;
+    else base = 0.55;
+    const snowline = 0.82 - Math.max(0, al - 28) * 0.0085;
+    for (let x = 0; x < W; x++) {
+      const t = y * W + x, p = t * 4;
+      if (!land[t]) {
+        const d = coastD[t] / 3;
+        let r, g, b;
+        if (d < 1.5) { r = 112; g = 182; b = 210; }
+        else if (d < 5) { const k = (d - 1.5) / 3.5; r = lerp(112, 64, k); g = lerp(182, 140, k); b = lerp(210, 196, k); }
+        else if (d < 22) { const k = (d - 5) / 17; r = lerp(64, 40, k); g = lerp(140, 104, k); b = lerp(196, 170, k); }
+        else if (d < 80) { const k = (d - 22) / 58; r = lerp(40, 28, k); g = lerp(104, 76, k); b = lerp(170, 142, k); }
+        else { r = 26; g = 70; b = 134; }
+        const nz = (vnoise(x / 9, y / 9, 61) - 0.5) * 8;
+        td[p] = r + nz; td[p + 1] = g + nz; td[p + 2] = b + nz; td[p + 3] = 255;
+        continue;
+      }
+      const lon = (x + 0.5) * 360 / W - 180;
+      const cd = coastD[t] / 3;
+      let m = base;
+      if (al > 12) m -= clamp((cd - 50) / 420, 0, 0.35);
+      for (const z of DRY) {
+        const dx = (lon - z[0]) / z[2], dy = (lat - z[1]) / z[3];
+        const r2 = dx * dx + dy * dy;
+        if (r2 >= 1) continue;
+        const f = 1 - r2;
+        m -= z[4] * f * f * (3 - 2 * f);
+      }
+      m += (fbm(x / 70, y / 70, 51, 2) - 0.5) * 0.28;
+      const e = elev[t];
+      mcol(m);
+      if (al > 48 && m > 0.38) mix(84, 118, 82, clamp((al - 48) / 12, 0, 1) * 0.8);
+      if (al > 62) mix(160, 160, 132, clamp((al - 62) / 8, 0, 1));
+      if (al > 71) mix(214, 220, 214, clamp((al - 71) / 6, 0, 1));
+      if (owner[t] === greenI && cd > 5) mix(238, 243, 247, clamp((cd - 5) / 8, 0, 1));
+      if (e > 0.36) mix(164, 146, 112, clamp((e - 0.36) / 0.22, 0, 1) * 0.65);
+      if (e > 0.58) mix(142, 132, 122, clamp((e - 0.58) / 0.16, 0, 1) * 0.8);
+      if (e > snowline) mix(246, 247, 250, clamp((e - snowline) / 0.1, 0, 1));
+      const ul = (y > 0 && x > 0) ? elev[t - W - 1] : e;
+      const dr = (y < H - 1 && x < W - 1) ? elev[t + W + 1] : e;
+      const sh = clamp(1 + (ul - dr) * 7, 0.7, 1.32);
+      const gr = 0.965 + vnoise(x / 4, y / 4, 71) * 0.07;
+      td[p] = col[0] * sh * gr;
+      td[p + 1] = col[1] * sh * gr;
+      td[p + 2] = col[2] * sh * gr;
+      td[p + 3] = 255;
+      terr[t] = e > 0.6 ? 4 : e > 0.38 ? 3 : m > 0.72 ? 2 : m < 0.2 ? 5 : 1;
+    }
+  }
+  tctx.putImageData(timg, 0, 0);
+
+  // 7) reke
+  tctx.lineJoin = 'round';
+  tctx.lineCap = 'round';
+  for (const rv of RIVERS) {
+    const pts = [];
+    for (let i = 0; i + 3 < rv.length; i += 2) {
+      const ax = lonX(rv[i]), ay = latY(rv[i + 1]), bx = lonX(rv[i + 2]), by = latY(rv[i + 3]);
+      const len = Math.hypot(bx - ax, by - ay) || 1;
+      const steps = Math.max(1, Math.round(len / 2.5));
+      const nx = -(by - ay) / len, ny = (bx - ax) / len;
+      for (let s = 0; s < steps; s++) {
+        const k = s / steps;
+        const px = ax + (bx - ax) * k, py = ay + (by - ay) * k;
+        const off = (fbm(px / 14, py / 14, 81, 2) - 0.5) * 7;
+        pts.push(px + nx * off, py + ny * off);
+      }
+    }
+    pts.push(lonX(rv[rv.length - 2]), latY(rv[rv.length - 1]));
+    for (let pass = 0; pass < 2; pass++) {
+      tctx.beginPath();
+      tctx.moveTo(pts[0], pts[1]);
+      for (let i = 2; i < pts.length; i += 2) tctx.lineTo(pts[i], pts[i + 1]);
+      tctx.strokeStyle = pass ? 'rgba(84, 150, 206, 0.95)' : 'rgba(40, 80, 120, 0.25)';
+      tctx.lineWidth = pass ? 1.1 : 2.2;
+      tctx.stroke();
+    }
+  }
+
+  // 8) obale, plovidba
+  coastal = new Uint8Array(N);
+  const cl = [];
+  for (let t = 0; t < N; t++) {
+    if (!land[t]) continue;
+    const x = t % W;
+    const l = x ? t - 1 : t + W - 1, r = x < W - 1 ? t + 1 : t - W + 1;
+    if (!land[l] || !land[r] || (t >= W && !land[t - W]) || (t < N - W && !land[t + W])) { coastal[t] = 1; cl.push(t); }
+  }
+  coastList = Int32Array.from(cl);
+  for (const t of coastList) nations[owner[t]].coast.push(t);
+  for (const n of nations) {
+    if (!n || n.coast.length <= 80) continue;
+    const stepK = n.coast.length / 80;
+    n.coast = Array.from({ length: 80 }, (_, k) => n.coast[Math.floor(k * stepK)]);
+  }
+  CWc = Math.ceil(W / CF); CHc = Math.ceil(H / CF);
+  cwater = new Uint8Array(CWc * CHc);
+  for (let t = 0; t < N; t++) {
+    if (land[t]) continue;
+    const x = t % W, y = (t / W) | 0;
+    cwater[((y / CF) | 0) * CWc + ((x / CF) | 0)] = 1;
+  }
+  bfsPrev = new Int32Array(CWc * CHc);
+  bfsSeen = new Uint32Array(CWc * CHc);
+  bfsDist = new Uint16Array(CWc * CHc);
+  bfsQ = new Int32Array(CWc * CHc);
+
+  // 9) sloj teritorija
+  ownerStart = owner.slice();
+  regOwner = new Uint8Array(N);
+  ocan = document.createElement('canvas');
+  ocan.width = W; ocan.height = H;
+  octx = ocan.getContext('2d');
+  ovImg = octx.createImageData(W, H);
+  ov32 = new Uint32Array(ovImg.data.buffer);
+  CWN = Math.ceil(W / CH); CHN = Math.ceil(H / CH);
+  chunkDirty = new Uint8Array(CWN * CHN);
+  landTotal = 0;
+  for (let t = 0; t < N; t++) if (land[t]) landTotal++;
+  resetWorld();
 }
 
-const colorCache = new Map();
-function colorOf(owner) {
-  if (player && owner === player) return '#3c7dff';
-  let c = colorCache.get(owner);
-  if (c) return c;
-  let h = Math.abs((owner * 137.508) % 360);
-  const d = Math.min(Math.abs(h - 217), 360 - Math.abs(h - 217));
-  if (d < 26) h = (h + 42) % 360;
-  c = `hsl(${h | 0} 48% ${46 + (owner % 6)}%)`;
-  colorCache.set(owner, c);
+function resetWorld() {
+  owner.set(ownerStart);
+  for (const n of nations) {
+    if (!n) continue;
+    n.tiles = 0; n.sx = 0; n.sy = 0; n.border.clear(); n.nextAI = 2 + Math.random() * 5;
+    n.lx = n.ax = n.home.label[0]; n.ly = n.ay = n.home.label[1];
+  }
+  regOwner.fill(0);
+  for (let t = 0; t < N; t++) {
+    const o = owner[t];
+    if (!o) continue;
+    const n = nations[o];
+    n.tiles++; n.sx += t % W; n.sy += (t / W) | 0;
+  }
+  for (const n of nations) {
+    if (!n) continue;
+    n.max = maxTroops(n);
+    n.troops = n.max * (0.35 + ((n.id * 13) % 9) / 100);
+  }
+  attacks = []; boats = [];
+  worldT = 0; over = null; target = null;
+  atkAcc = aiAcc = endAcc = botAcc = 0;
+  peakPct = 0; playerAttacks = 0;
+  recolor();
+  for (let t = 0; t < N; t++) {
+    const o = owner[t];
+    if (!o) { ov32[t] = 0; continue; }
+    const b = edgeOf(t);
+    if (b) { regOwner[t] = o; nations[o].border.add(t); }
+    ov32[t] = b ? edgeCol[o] : fillCol[o];
+  }
+  allDirty = true;
+  ovVersion++;
+}
+
+function maxTroops(n) { return 2500 + 55 * Math.pow(Math.max(1, n.tiles), 0.78); }
+function growth(n) { return n.max * 0.026 * (1 - Math.min(1, n.troops / n.max)) + 0.6; }
+
+function recolor() {
+  for (const n of nations) {
+    if (!n) continue;
+    let rgb, edge, fa = 78;
+    if (n.i === player) {
+      rgb = [60, 125, 255]; edge = [26, 76, 222]; fa = 130;
+    } else {
+      let h = (n.i * 137.508) % 360;
+      const d = Math.min(Math.abs(h - 220), 360 - Math.abs(h - 220));
+      if (d < 24) h = (h + 48) % 360;
+      rgb = hsl(h, 52 + (n.i % 3) * 8, 56 + (n.i % 4) * 3);
+      edge = hsl(h, 55, 34);
+    }
+    n.css = `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+    n.edgeCss = `rgb(${edge[0]},${edge[1]},${edge[2]})`;
+    if (n.i === hl) {
+      fillCol[n.i] = pack(Math.min(255, rgb[0] + 30), Math.min(255, rgb[1] + 30), Math.min(255, rgb[2] + 30), 150);
+      edgeCol[n.i] = pack(255, 214, 92, 255);
+    } else {
+      fillCol[n.i] = pack(rgb[0], rgb[1], rgb[2], fa);
+      edgeCol[n.i] = pack(edge[0], edge[1], edge[2], 235);
+    }
+  }
+}
+
+function repaintAll() {
+  recolor();
+  for (let t = 0; t < N; t++) {
+    const o = owner[t];
+    ov32[t] = !o ? 0 : regOwner[t] ? edgeCol[o] : fillCol[o];
+  }
+  allDirty = true;
+  ovVersion++;
+}
+
+function setHighlight(i) {
+  if (i === hl) return;
+  const old = hl;
+  hl = i;
+  recolor();
+  for (let t = 0; t < N; t++) {
+    const o = owner[t];
+    if (o && (o === old || o === i)) ov32[t] = regOwner[t] ? edgeCol[o] : fillCol[o];
+  }
+  allDirty = true;
+  ovVersion++;
+}
+
+// ---------- mreža ----------
+function edgeOf(u) {
+  const o = owner[u];
+  if (!o) return false;
+  const x = u % W;
+  const l = x ? u - 1 : u + W - 1;
+  if (land[l] && owner[l] !== o) return true;
+  const r = x < W - 1 ? u + 1 : u - W + 1;
+  if (land[r] && owner[r] !== o) return true;
+  if (u >= W && land[u - W] && owner[u - W] !== o) return true;
+  if (u < N - W && land[u + W] && owner[u + W] !== o) return true;
+  return false;
+}
+// 4 suseda (x se obmotava), -1 ako ne postoji; deljeni niz — ne pozivati ugnježdeno
+const NB = new Int32Array(4);
+function nbrs(u) {
+  const x = u % W;
+  NB[0] = x ? u - 1 : u + W - 1;
+  NB[1] = x < W - 1 ? u + 1 : u - W + 1;
+  NB[2] = u >= W ? u - W : -1;
+  NB[3] = u < N - W ? u + W : -1;
+  return NB;
+}
+function refresh(u) {
+  const o = owner[u];
+  const b = edgeOf(u);
+  const reg = regOwner[u];
+  if (reg && (reg !== o || !b)) { nations[reg].border.delete(u); regOwner[u] = 0; }
+  if (b && o && !regOwner[u]) { nations[o].border.add(u); regOwner[u] = o; }
+  ov32[u] = !o ? 0 : b ? edgeCol[o] : fillCol[o];
+  ovVersion++;
+  const x = u % W, y = (u / W) | 0;
+  chunkDirty[((y / CH) | 0) * CWN + ((x / CH) | 0)] = 1;
+}
+function conquer(u, a) {
+  const d = owner[u];
+  const x = u % W, y = (u / W) | 0;
+  if (d) { const nd = nations[d]; nd.tiles--; nd.sx -= x; nd.sy -= y; }
+  owner[u] = a;
+  const na = nations[a];
+  na.tiles++; na.sx += x; na.sy += y;
+  const nb = nbrs(u);
+  const n0 = nb[0], n1 = nb[1], n2 = nb[2], n3 = nb[3];
+  refresh(u);
+  if (land[n0]) refresh(n0);
+  if (land[n1]) refresh(n1);
+  if (n2 >= 0 && land[n2]) refresh(n2);
+  if (n3 >= 0 && land[n3]) refresh(n3);
+  if (d && !nations[d].tiles) onEliminated(d, a);
+}
+function adjCount(u, a) {
+  const nb = nbrs(u);
+  let c = 0;
+  for (let k = 0; k < 4; k++) if (nb[k] >= 0 && owner[nb[k]] === a && land[nb[k]]) c++;
   return c;
 }
-
-function bootTroops() {
-  terr = {};
-  attacks = [];
-  aiNext.clear();
-  for (const c of countries) {
-    const jitter = 0.34 + ((c.id * 13) % 9) / 100;
-    terr[c.id] = { owner: c.id, troops: c.cap * jitter };
-  }
-  worldT = 0;
-  over = null;
-  srcId = dstId = null;
-  aiAcc = aiCursor = botAcc = 0;
-  peakTerr = 1;
-  playerAttacks = 0;
+function tileAt(mx, my) {
+  const x = Math.floor(mx), y = Math.floor(my);
+  if (x < 0 || y < 0 || x >= W || y >= H) return -1;
+  return y * W + x;
 }
 
-function linkKind(a, b) {
-  const A = byId.get(a);
-  if (!A) return null;
-  if (A.neighbors.includes(b)) return 'land';
-  if (A.naval.includes(b)) return 'sea';
+// ---------- napadi ----------
+function shareBorder(a, d) {
+  for (const u of nations[a].border) {
+    const nb = nbrs(u);
+    for (let k = 0; k < 4; k++) {
+      const v = nb[k];
+      if (v >= 0 && land[v] && owner[v] === d) return true;
+    }
+  }
+  return false;
+}
+function seedAround(A, u) {
+  const nb = nbrs(u);
+  for (let k = 0; k < 4; k++) {
+    const v = nb[k];
+    if (v >= 0 && land[v] && owner[v] === A.d && !A.inFr.has(v)) { A.inFr.add(v); A.fr.push(v); }
+  }
+}
+function seed(A) {
+  for (const u of nations[A.a].border) seedAround(A, u);
+}
+// napad troši vojsku polje po polje dok ne ostane bez nje ili bez fronta
+function startAttack(a, d, troops, around) {
+  if (a === d || troops < 1) return false;
+  const opp = attacks.find((x) => !x.dead && x.a === d && x.d === a);
+  if (opp) {
+    const c = Math.min(opp.troops, troops);
+    opp.troops -= c;
+    troops -= c;
+    if (opp.troops < 1) opp.dead = true;
+    if (troops < 1) return true;
+  }
+  let A = attacks.find((x) => !x.dead && x.a === a && x.d === d);
+  if (A) {
+    A.troops += troops;
+    if (around !== undefined) seedAround(A, around);
+    return true;
+  }
+  A = { a, d, troops, fr: [], inFr: new Set(), budget: 0, dead: false, reseed: 2 };
+  if (around !== undefined) seedAround(A, around);
+  else seed(A);
+  if (!A.fr.length) {
+    nations[a].troops += troops;
+    return false;
+  }
+  attacks.push(A);
+  if (d === player && !SIM) toast(`${nations[a].name} te napada!`, 'bad');
+  return true;
+}
+function endAttack(A, refund) {
+  if (A.dead) return;
+  A.dead = true;
+  if (refund && nations[A.a].tiles) nations[A.a].troops += A.troops * refund;
+}
+const CAND = [];
+function attackTick(A, dt) {
+  const att = nations[A.a];
+  if (!att.tiles) { A.dead = true; return; }
+  const def = A.d ? nations[A.d] : null;
+  if (def && !def.tiles) { endAttack(A, 1); return; }
+  A.budget += (2.5 + Math.sqrt(A.fr.length) * 1.5 + A.fr.length * 0.04) * dt;
+  let k = Math.floor(A.budget);
+  if (!k) return;
+  A.budget -= k;
+  A.reseed -= dt;
+  if (!A.fr.length || A.reseed <= 0) {
+    A.reseed = 2;
+    seed(A);
+    if (!A.fr.length) { endAttack(A, 1); return; }
+  }
+  // uzmi nasumičan uzorak fronta i prvo osvajaj polja koja su najviše okružena (glatka linija)
+  CAND.length = 0;
+  const want = Math.min(A.fr.length, k * 3 + 6);
+  const seen = new Set();
+  let tries = 0;
+  while (CAND.length < want && A.fr.length && tries < want * 4) {
+    tries++;
+    const i = (Math.random() * A.fr.length) | 0;
+    const u = A.fr[i];
+    const c = owner[u] === A.d ? adjCount(u, A.a) : 0;
+    if (!c) {
+      A.fr[i] = A.fr[A.fr.length - 1];
+      A.fr.pop();
+      A.inFr.delete(u);
+      continue;
+    }
+    if (seen.has(u)) continue;
+    seen.add(u);
+    CAND.push([u, c + Math.random() * 1.6 - TMULT[terr[u]] * 0.45]);
+  }
+  CAND.sort((p, q) => q[1] - p[1]);
+  for (let j = 0; j < CAND.length && k > 0; j++, k--) {
+    const u = CAND[j][0];
+    const tm = TMULT[terr[u]];
+    if (Math.random() > 1 / tm) continue;
+    const dens = def ? def.troops / Math.max(1, def.tiles) : 0;
+    const cost = tileCost(u, def);
+    if (A.troops < cost) { endAttack(A, 1); return; }
+    A.troops -= cost;
+    if (def) def.troops = Math.max(0, def.troops - dens * 0.5);
+    conquer(u, A.a);
+    seedAround(A, u);
+    if (A.dead) return;
+  }
+}
+
+// branilac je jači što je gušće posednut i na svojoj matičnoj zemlji
+function tileCost(u, def) {
+  const tm = TMULT[terr[u]];
+  if (!def) return tm * 1.5;
+  const core = ownerStart[u] === def.i ? 1.4 : 1;
+  return tm * core * (2 + 1.2 * def.troops / Math.max(1, def.tiles) + Math.sqrt(def.troops) / 6);
+}
+
+function onEliminated(d, by) {
+  for (const A of attacks) if (A.a === d) A.dead = true;
+  for (const B of boats) if (B.a === d) B.dead = true;
+  if (SIM || d === player) return;
+  if (by === player) { toast(`Pokorio si: ${nations[d].name}`, 'good'); beep(680, 0.12, 0.05); }
+  else if (nations[d].home.area > 60) toast(`${nations[by].name} je pokorila: ${nations[d].name}`);
+}
+
+// ---------- brodovi ----------
+function cellOfTile(t) {
+  const x = t % W, y = (t / W) | 0;
+  const c = ((y / CF) | 0) * CWc + ((x / CF) | 0);
+  if (cwater[c]) return c;
+  const nb = nbrs(t);
+  for (let k = 0; k < 4; k++) {
+    const v = nb[k];
+    if (v < 0 || land[v]) continue;
+    return (((v / W) | 0) / CF | 0) * CWc + (((v % W) / CF) | 0);
+  }
+  return -1;
+}
+function waterPath(s, g, maxSteps) {
+  if (s < 0 || g < 0) return null;
+  bfsStamp++;
+  let head = 0, tail = 0;
+  bfsQ[tail++] = s; bfsSeen[s] = bfsStamp; bfsPrev[s] = -1; bfsDist[s] = 0;
+  let found = s === g;
+  const last = CWc * (CHc - 1);
+  while (head < tail && !found) {
+    const c = bfsQ[head++];
+    const dd = bfsDist[c];
+    if (dd >= maxSteps) continue;
+    const cx = c % CWc;
+    for (let k = 0; k < 4 && !found; k++) {
+      const v = k === 0 ? (cx ? c - 1 : c + CWc - 1)
+        : k === 1 ? (cx < CWc - 1 ? c + 1 : c - CWc + 1)
+        : k === 2 ? (c >= CWc ? c - CWc : -1)
+        : (c < last ? c + CWc : -1);
+      if (v < 0 || !cwater[v] || bfsSeen[v] === bfsStamp) continue;
+      bfsSeen[v] = bfsStamp; bfsPrev[v] = c; bfsDist[v] = dd + 1;
+      if (v === g) found = true;
+      else bfsQ[tail++] = v;
+    }
+  }
+  if (!found) return null;
+  const cells = [];
+  for (let c = g; c !== -1; c = bfsPrev[c]) cells.push(c);
+  cells.reverse();
+  const pts = [];
+  for (let i = 0; i < cells.length; i += 3) {
+    const c = cells[i];
+    pts.push((c % CWc) * CF + CF / 2, ((c / CWc) | 0) * CF + CF / 2);
+  }
+  const c = cells[cells.length - 1];
+  pts.push((c % CWc) * CF + CF / 2, ((c / CWc) | 0) * CF + CF / 2);
+  return pts;
+}
+function wrapDist2(a, b) {
+  let dx = Math.abs(a % W - b % W);
+  if (dx > W / 2) dx = W - dx;
+  const dy = ((a / W) | 0) - ((b / W) | 0);
+  return dx * dx + dy * dy;
+}
+function planBoat(a, landing) {
+  const best = [];
+  for (let i = 0; i < coastList.length; i++) {
+    const t = coastList[i];
+    if (owner[t] !== a) continue;
+    const d2 = wrapDist2(t, landing);
+    if (best.length < 4 || d2 < best[best.length - 1][1]) {
+      best.push([t, d2]);
+      best.sort((p, q) => p[1] - q[1]);
+      if (best.length > 4) best.pop();
+    }
+  }
+  const g = cellOfTile(landing);
+  for (const [src] of best) {
+    const path = waterPath(cellOfTile(src), g, 700);
+    if (path) {
+      path.unshift(src % W + 0.5, ((src / W) | 0) + 0.5);
+      path.push(landing % W + 0.5, ((landing / W) | 0) + 0.5);
+      return path;
+    }
+  }
   return null;
 }
-
-function toast(text) {
-  const el = document.createElement('div');
-  el.className = 'toast';
-  el.textContent = text;
-  toastsEl.appendChild(el);
-  while (toastsEl.children.length > 3) toastsEl.firstChild.remove();
-  setTimeout(() => el.remove(), 3400);
+function pathLen(path) {
+  let len = 0;
+  for (let k = 2; k + 1 < path.length; k += 2) {
+    let dx = Math.abs(path[k] - path[k - 2]);
+    if (dx > W / 2) dx = W - dx;
+    len += Math.hypot(dx, path[k + 1] - path[k - 1]);
+  }
+  return len;
+}
+const BOAT_SPEED = 34;
+function launchBoat(a, landing, troops) {
+  const n = nations[a];
+  if (troops < 5 || troops > n.troops + 0.5) return false;
+  const path = planBoat(a, landing);
+  if (!path) return false;
+  n.troops -= troops;
+  boats.push({ a, troops, path, seg: 0, k: 0, x: path[0], y: path[1], landing, dead: false });
+  return true;
+}
+function moveBoat(B, dt) {
+  let step = BOAT_SPEED * dt;
+  while (step > 0 && B.seg + 3 < B.path.length) {
+    const ax = B.path[B.seg], ay = B.path[B.seg + 1], by = B.path[B.seg + 3];
+    let dx = B.path[B.seg + 2] - ax;
+    if (Math.abs(dx) > W / 2) dx -= Math.sign(dx) * W;
+    const len = Math.hypot(dx, by - ay) || 0.001;
+    const left = len * (1 - B.k);
+    if (step >= left) { step -= left; B.seg += 2; B.k = 0; }
+    else { B.k += step / len; step = 0; }
+  }
+  if (B.seg + 3 >= B.path.length) {
+    B.x = B.path[B.path.length - 2]; B.y = B.path[B.path.length - 1];
+    arrive(B);
+    return;
+  }
+  const sx = B.path[B.seg], sy = B.path[B.seg + 1];
+  let ex = B.path[B.seg + 2] - sx;
+  if (Math.abs(ex) > W / 2) ex -= Math.sign(ex) * W;
+  B.x = (sx + ex * B.k + W) % W;
+  B.y = sy + (B.path[B.seg + 3] - sy) * B.k;
+}
+function arrive(B) {
+  B.dead = true;
+  const att = nations[B.a];
+  if (!att.tiles) return;
+  const u = B.landing;
+  const d = owner[u];
+  if (d === B.a) { att.troops += B.troops; return; }
+  const def = d ? nations[d] : null;
+  const dens = def ? def.troops / Math.max(1, def.tiles) : 0;
+  const cost = tileCost(u, def) * 3;
+  if (B.troops < cost) {
+    if (B.a === player && !SIM) toast('Desant je odbijen na obali', 'bad');
+    return;
+  }
+  B.troops -= cost;
+  if (def) def.troops = Math.max(0, def.troops - dens);
+  conquer(u, B.a);
+  if (B.a === player && !SIM) toast(`Iskrcavanje: ${def ? def.name : 'obala'}`, 'good');
+  startAttack(B.a, d, B.troops, u);
 }
 
+// ---------- AI ----------
+function neighborsOf(n, cap) {
+  const counts = new Map();
+  let it = 0;
+  for (const u of n.border) {
+    if (++it > cap) break;
+    const nb = nbrs(u);
+    for (let k = 0; k < 4; k++) {
+      const v = nb[k];
+      if (v < 0 || !land[v]) continue;
+      const o = owner[v];
+      if (o !== n.i) counts.set(o, (counts.get(o) || 0) + 1);
+    }
+  }
+  return counts;
+}
+function busy(i) {
+  let c = 0;
+  for (const A of attacks) if (!A.dead && A.a === i) c++;
+  for (const B of boats) if (!B.dead && B.a === i) c++;
+  return c;
+}
+function aiDecide(n, aggressive) {
+  if (!n.tiles) return;
+  if (n.troops < n.max * (aggressive ? 0.5 : 0.6)) return;
+  if (busy(n.i) >= (aggressive ? 3 : 1)) return;
+  const counts = neighborsOf(n, 2500);
+  let best = null;
+  for (const [o, len] of counts) {
+    if (o === player && !aggressive && worldT < 60) continue;
+    const T = o ? nations[o].troops : 0;
+    const ratio = n.troops / (T + 1);
+    if (o && ratio < (aggressive ? 1 : o === player ? 1.8 : 1.15)) continue;
+    const s = (o === player ? 0.6 : 1) * ratio * (0.5 + Math.min(1, len / 40) * 0.5) * (o ? 1 : 3) * (0.75 + Math.random() * 0.5);
+    if (!best || s > best.s) best = { o, s };
+  }
+  if (best) {
+    const send = n.troops * (aggressive ? 0.35 : 0.15 + Math.random() * 0.15);
+    n.troops -= send;
+    if (startAttack(n.i, best.o, send) && n.i === player) playerAttacks++;
+    return;
+  }
+  if ((counts.size === 0 || Math.random() < 0.1) && n.troops > n.max * 0.55 && n.naval.length) {
+    const tn = nations[n.naval[(Math.random() * n.naval.length) | 0]];
+    const opts = tn.coast.filter((u) => owner[u] !== n.i && (!owner[u] || nations[owner[u]].troops < n.troops * 1.4));
+    if (!opts.length) return;
+    if (launchBoat(n.i, opts[(Math.random() * opts.length) | 0], n.troops * 0.3) && n.i === player) playerAttacks++;
+  }
+}
+
+// ---------- tok igre ----------
+function update(dt) {
+  if (!playing || paused || over) return;
+  let left = Math.min(0.05, dt) * speed;
+  while (left > 1e-6 && !over) {
+    const h = Math.min(0.05, left);
+    left -= h;
+    step(h);
+  }
+}
+function step(dt) {
+  worldT += dt;
+  for (let i = 1; i < nations.length; i++) {
+    const n = nations[i];
+    if (!n.tiles) continue;
+    n.max = maxTroops(n);
+    if (n.troops < n.max) n.troops = Math.min(n.max, n.troops + growth(n) * dt);
+    else n.troops -= (n.troops - n.max) * 0.2 * dt;
+  }
+  atkAcc += dt;
+  while (atkAcc >= 0.1) {
+    atkAcc -= 0.1;
+    for (let i = 0; i < attacks.length; i++) if (!attacks[i].dead) attackTick(attacks[i], 0.1);
+    attacks = attacks.filter((A) => !A.dead);
+  }
+  for (const B of boats) if (!B.dead) moveBoat(B, dt);
+  boats = boats.filter((B) => !B.dead);
+  aiAcc += dt;
+  if (aiAcc >= 0.25) {
+    aiAcc = 0;
+    for (let i = 1; i < nations.length; i++) {
+      const n = nations[i];
+      if (i === player || !n.tiles || n.nextAI > worldT) continue;
+      n.nextAI = worldT + 6 + Math.random() * 7;
+      aiDecide(n, false);
+    }
+  }
+  if (BOT && player) {
+    botAcc += dt;
+    if (botAcc >= 2.5) { botAcc = 0; aiDecide(nations[player], true); }
+  }
+  endAcc += dt;
+  if (endAcc >= 0.5) { endAcc = 0; checkEnd(); }
+}
+
+function snapshot() {
+  const me = nations[player];
+  const pct = me ? (me.tiles / landTotal) * 100 : 0;
+  let fac = 0;
+  for (let i = 1; i < nations.length; i++) if (nations[i].tiles) fac++;
+  return { pct, tiles: me ? me.tiles : 0, troops: me ? me.troops : 0, fac, over: over || 'running', worldT, peakPct, playerAttacks };
+}
+function checkEnd() {
+  const info = snapshot();
+  if (info.pct > peakPct) peakPct = info.pct;
+  if (info.pct > bestPct) {
+    bestPct = info.pct;
+    try { localStorage.setItem('osvoji-svet:best', bestPct.toFixed(2)); } catch (e) {}
+  }
+  if (!playing || over) return info;
+  if (info.tiles === 0) finish('lose', info);
+  else if (info.pct >= 80) finish('win', info);
+  return info;
+}
+function finish(kind, info) {
+  over = kind;
+  paused = false;
+  pauseEl.classList.add('hidden');
+  endEl.classList.remove('hidden');
+  $('end-title').textContent = kind === 'win' ? 'Svet je tvoj' : 'Država je pala';
+  $('end-text').textContent = kind === 'win'
+    ? `Držiš ${info.pct.toFixed(0)}% kopna posle ${clock(worldT)}. Vojska: ${fmt(info.troops)}.`
+    : `Najviše si držao ${peakPct.toFixed(1)}% sveta pre nego što su te pregazili.`;
+  if (!SIM) beep(kind === 'win' ? 740 : 110, 0.2, 0.05);
+}
+function clock(t) {
+  const m = Math.floor(t / 60), s = Math.floor(t % 60);
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+// ---------- kamera ----------
+function screenToMap(sx, sy) { return [(sx - cam.x) / cam.z, (sy - cam.y) / cam.z]; }
+function clampCam() {
+  const m = 60;
+  if (cam.x > viewW - m) cam.x = viewW - m;
+  if (cam.y > viewH - m) cam.y = viewH - m;
+  if (cam.x + W * cam.z < m) cam.x = m - W * cam.z;
+  if (cam.y + H * cam.z < m) cam.y = m - H * cam.z;
+}
+// na telefonu pre igre donju polovinu pokriva kartica, pa mapa ide u gornji deo
+function phoneStart() { return !playing && viewW < 720; }
+function frameBox(minx, miny, maxx, maxy, pad) {
+  const vh = phoneStart() ? viewH * 0.5 : viewH;
+  const bw = Math.max(60, (maxx - minx) * pad), bh = Math.max(60, (maxy - miny) * pad);
+  const cx = (minx + maxx) / 2, cy = (miny + maxy) / 2;
+  cam.z = clamp(Math.min(viewW / bw, vh / bh), minZoom(), 10);
+  cam.x = viewW / 2 - cx * cam.z;
+  cam.y = vh / 2 - cy * cam.z;
+  clampCam();
+}
+function fitWorld() {
+  if (viewH > viewW * 1.2) {
+    // uspravan ekran: svet je širi od ekrana, kreni od Evrope i pusti prevlačenje
+    const z = Math.max(minZoom(), viewW * 2.2 / W);
+    cam.z = z;
+    cam.x = viewW / 2 - lonX(15) * z;
+    cam.y = (phoneStart() ? viewH * 0.25 : viewH / 2) - latY(30) * z;
+    clampCam();
+    return;
+  }
+  frameBox(0, 0, W, H, 1.04);
+}
+function frameNation(i) {
+  const n = nations[i];
+  if (!n || !n.tiles) return fitWorld();
+  const portrait = viewH > viewW;
+  const r = Math.max(portrait ? 70 : 150, Math.sqrt(n.tiles) * 1.8);
+  const ax = portrait ? 1 : 1.5;
+  frameBox(n.ax - r * ax, n.ay - r, n.ax + r * ax, n.ay + r, 1.2);
+}
+function zoomAt(sx, sy, factor) {
+  const [wx, wy] = screenToMap(sx, sy);
+  cam.z = clamp(cam.z * factor, minZoom(), 10);
+  cam.x = sx - wx * cam.z;
+  cam.y = sy - wy * cam.z;
+  clampCam();
+}
+function resize() {
+  viewW = canvas.clientWidth || innerWidth;
+  viewH = canvas.clientHeight || innerHeight;
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  canvas.width = Math.max(1, Math.round(viewW * dpr));
+  canvas.height = Math.max(1, Math.round(viewH * dpr));
+  if (!camUser) fitWorld();
+  else clampCam();
+}
+
+// ---------- natpisi ----------
+function updateAnchors() {
+  for (let i = 1; i < nations.length; i++) {
+    const n = nations[i];
+    if (!n.tiles) continue;
+    const cx = Math.round(n.sx / n.tiles), cy = Math.round(n.sy / n.tiles);
+    let t = cy * W + cx;
+    const home = Math.round(n.home.label[1]) * W + Math.round(n.home.label[0]);
+    if (owner[t] !== i) {
+      if (owner[home] === i && wrapDist2(home, t) < n.tiles * 0.6) t = home;
+      else {
+        let found = -1;
+        for (let r = 2; r <= 90 && found < 0; r += 3) {
+          for (let a = 0; a < 16; a++) {
+            const x = (cx + Math.round(Math.cos(a / 16 * Math.PI * 2) * r) + W) % W;
+            const y = clamp(cy + Math.round(Math.sin(a / 16 * Math.PI * 2) * r), 0, H - 1);
+            if (owner[y * W + x] === i) { found = y * W + x; break; }
+          }
+        }
+        if (found < 0) found = owner[home] === i ? home : n.border.values().next().value;
+        if (found === undefined) continue;
+        t = found;
+      }
+    }
+    n.ax = t % W + 0.5;
+    n.ay = ((t / W) | 0) + 0.5;
+  }
+}
+
+function drawLabels() {
+  const items = [];
+  for (let i = 1; i < nations.length; i++) {
+    const n = nations[i];
+    if (!n.tiles) continue;
+    const sx = n.lx * cam.z + cam.x, sy = n.ly * cam.z + cam.y;
+    if (sx < -60 || sy < -30 || sx > viewW + 60 || sy > viewH + 30) continue;
+    const important = i === player || i === hl || i === hover;
+    let size = Math.sqrt(n.tiles) * cam.z * 0.1;
+    if (size < 7.5 && !important) continue;
+    size = clamp(size, 10, viewW < 720 ? 18 : 24);
+    items.push({ n, sx, sy, size, important });
+  }
+  items.sort((a, b) => (b.important - a.important) || (b.n.tiles - a.n.tiles));
+  const placed = [];
+  ctx.textBaseline = 'middle';
+  ctx.lineJoin = 'round';
+  for (const it of items) {
+    const { n, sx, sy, size } = it;
+    ctx.font = `800 ${size}px Manrope, sans-serif`;
+    let name = n.name;
+    const maxW = Math.max(70, Math.min(170, Math.sqrt(n.tiles) * cam.z * 0.9));
+    if (ctx.measureText(name).width > maxW) {
+      while (name.length > 3 && ctx.measureText(name + '…').width > maxW) name = name.slice(0, -1);
+      name += '…';
+    }
+    const fw = size * 1.25, fh = size * 0.94;
+    const tw = ctx.measureText(name).width;
+    const total = fw + 5 + tw;
+    const rect = { x: sx - total / 2 - 3, y: sy - size * 1.1, w: total + 6, h: size * 2.3 };
+    if (!it.important && placed.some((r) => r.x < rect.x + rect.w && r.x + r.w > rect.x && r.y < rect.y + rect.h && r.y + r.h > rect.y)) continue;
+    placed.push(rect);
+    const x0 = sx - total / 2;
+    const y0 = sy - size * 0.42;
+    const img = flagImg(n.code);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(x0 - 1, y0 - fh / 2 - 1, fw + 2, fh + 2);
+    if (img) ctx.drawImage(img, x0, y0 - fh / 2, fw, fh);
+    else { ctx.fillStyle = n.css; ctx.fillRect(x0, y0 - fh / 2, fw, fh); }
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(8, 14, 26, 0.7)';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = n.i === player ? '#ffffff' : '#f4f1e8';
+    ctx.strokeText(name, x0 + fw + 5, y0);
+    ctx.fillText(name, x0 + fw + 5, y0);
+    ctx.textAlign = 'center';
+    ctx.font = `800 ${Math.max(10, size * 0.82)}px Manrope, sans-serif`;
+    const tr = fmt(n.troops);
+    ctx.strokeText(tr, sx, sy + size * 0.62);
+    ctx.fillStyle = n.i === player ? '#bcd6ff' : '#e6e0cf';
+    ctx.fillText(tr, sx, sy + size * 0.62);
+  }
+}
+
+function flushOverlay() {
+  if (allDirty) {
+    octx.putImageData(ovImg, 0, 0);
+    allDirty = false;
+    chunkDirty.fill(0);
+    return;
+  }
+  for (let cy = 0; cy < CHN; cy++) {
+    let cx = 0;
+    while (cx < CWN) {
+      if (!chunkDirty[cy * CWN + cx]) { cx++; continue; }
+      let ex = cx;
+      while (ex < CWN && chunkDirty[cy * CWN + ex]) { chunkDirty[cy * CWN + ex] = 0; ex++; }
+      const x = cx * CH, y = cy * CH;
+      octx.putImageData(ovImg, 0, 0, x, y, Math.min(W - x, (ex - cx) * CH), Math.min(H - y, CH));
+      cx = ex;
+    }
+  }
+}
+
+// pri zumu: teritorije u rezoluciji ekrana, granice kao glatke krive između centara polja
+let scan = null, sctx, simg, s32, sStamp = '', sVersion = -1, sClock = 0;
+let sxs = new Int32Array(0), sfx = new Float32Array(0);
+const OW = new Int32Array(4), WT = new Float32Array(4);
+// sitno zrno u rezoluciji ekrana da reljef ne deluje mutno pri velikom zumu
+let grain = null;
+function grainPattern() {
+  if (grain) return grain;
+  const g = document.createElement('canvas');
+  g.width = g.height = 256;
+  const gc = g.getContext('2d');
+  const im = gc.createImageData(256, 256);
+  for (let y = 0; y < 256; y++) {
+    for (let x = 0; x < 256; x++) {
+      const v = 128 + (fbm(x / 6, y / 6, 91, 3) - 0.5) * 150 + (hash2(x, y, 93) - 0.5) * 50;
+      const p = (y * 256 + x) * 4;
+      im.data[p] = im.data[p + 1] = im.data[p + 2] = clamp(v, 0, 255);
+      im.data[p + 3] = 255;
+    }
+  }
+  gc.putImageData(im, 0, 0);
+  grain = ctx.createPattern(g, 'repeat');
+  return grain;
+}
+
+function renderSmooth(now) {
+  const w = Math.ceil(viewW), h = Math.ceil(viewH);
+  if (!scan || scan.width !== w || scan.height !== h) {
+    scan = document.createElement('canvas');
+    scan.width = w; scan.height = h;
+    sctx = scan.getContext('2d');
+    simg = sctx.createImageData(w, h);
+    s32 = new Uint32Array(simg.data.buffer);
+    sxs = new Int32Array(w); sfx = new Float32Array(w);
+    sStamp = '';
+  }
+  const stamp = `${cam.x},${cam.y},${cam.z},${w},${h}`;
+  if (stamp === sStamp && (sVersion === ovVersion || now - sClock < 100)) return;
+  sStamp = stamp; sVersion = ovVersion; sClock = now;
+  const z = cam.z, thr = 2.1 / z;
+  for (let sx = 0; sx < w; sx++) {
+    const mx = (sx + 0.5 - cam.x) / z - 0.5;
+    const x0 = Math.floor(mx);
+    sfx[sx] = mx - x0;
+    sxs[sx] = ((x0 % W) + W) % W;
+  }
+  let p = 0;
+  for (let sy = 0; sy < h; sy++) {
+    const my = (sy + 0.5 - cam.y) / z - 0.5;
+    const y0 = Math.floor(my);
+    if (y0 < -1 || y0 >= H) { s32.fill(0, p, p + w); p += w; continue; }
+    const fy = my - y0;
+    const ra = clamp(y0, 0, H - 1) * W, rb = clamp(y0 + 1, 0, H - 1) * W;
+    for (let sx = 0; sx < w; sx++, p++) {
+      const xa = sxs[sx], xb = xa + 1 === W ? 0 : xa + 1;
+      const a = owner[ra + xa], b = owner[ra + xb], c = owner[rb + xa], d = owner[rb + xb];
+      if (a === b && a === c && a === d) { s32[p] = a ? fillCol[a] : 0; continue; }
+      const fx = sfx[sx];
+      OW[0] = a; OW[1] = b; OW[2] = c; OW[3] = d;
+      WT[0] = (1 - fx) * (1 - fy); WT[1] = fx * (1 - fy); WT[2] = (1 - fx) * fy; WT[3] = fx * fy;
+      for (let i = 1; i < 4; i++) {
+        for (let j = 0; j < i; j++) if (OW[j] === OW[i] && WT[j] >= 0) { WT[j] += WT[i]; WT[i] = -1; break; }
+      }
+      let bi = 0;
+      for (let i = 1; i < 4; i++) if (WT[i] > WT[bi]) bi = i;
+      const o = OW[bi];
+      if (!o) { s32[p] = 0; continue; }
+      let second = -1;
+      for (let i = 0; i < 4; i++) if (i !== bi && OW[i] && WT[i] > second) second = WT[i];
+      s32[p] = second >= 0 && WT[bi] - second < thr ? edgeCol[o] : fillCol[o];
+    }
+  }
+  sctx.putImageData(simg, 0, 0);
+}
+
+function draw(now) {
+  const dpr = Math.min(2, devicePixelRatio || 1);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#163a6e';
+  ctx.fillRect(0, 0, viewW, viewH);
+  if (!tcan) return;
+  flushOverlay();
+  ctx.save();
+  ctx.translate(cam.x, cam.y);
+  ctx.scale(cam.z, cam.z);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(tcan, 0, 0);
+  if (cam.z > 2) {
+    ctx.save();
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const pat = grainPattern();
+    pat.setTransform(new DOMMatrix().translate(cam.x % 256, cam.y % 256));
+    ctx.fillStyle = pat;
+    ctx.globalAlpha = clamp((cam.z - 2) / 6, 0, 0.38);
+    ctx.globalCompositeOperation = 'soft-light';
+    const x0 = Math.max(0, cam.x), y0 = Math.max(0, cam.y);
+    ctx.fillRect(x0, y0, Math.min(viewW, cam.x + W * cam.z) - x0, Math.min(viewH, cam.y + H * cam.z) - y0);
+    ctx.restore();
+  }
+  const smooth = cam.z >= 1.4;
+  if (!smooth) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(ocan, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+  } else {
+    renderSmooth(now);
+    ctx.restore();
+    ctx.drawImage(scan, 0, 0, viewW, viewH);
+    ctx.save();
+    ctx.translate(cam.x, cam.y);
+    ctx.scale(cam.z, cam.z);
+  }
+
+  for (const B of boats) {
+    const n = nations[B.a];
+    if (B.a === player) {
+      ctx.beginPath();
+      ctx.moveTo(B.x, B.y);
+      for (let i = B.seg + 2; i + 1 < B.path.length; i += 2) ctx.lineTo(B.path[i], B.path[i + 1]);
+      ctx.setLineDash([4 / cam.z, 4 / cam.z]);
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 1.2 / cam.z;
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    const r = Math.max(1.6, 5 / cam.z);
+    ctx.beginPath();
+    ctx.moveTo(B.x - r * 1.4, B.y - r * 0.2);
+    ctx.lineTo(B.x + r * 1.4, B.y - r * 0.2);
+    ctx.lineTo(B.x + r * 0.8, B.y + r * 0.8);
+    ctx.lineTo(B.x - r * 0.8, B.y + r * 0.8);
+    ctx.closePath();
+    ctx.fillStyle = n.css;
+    ctx.fill();
+    ctx.lineWidth = 1.2 / cam.z;
+    ctx.strokeStyle = '#fff';
+    ctx.stroke();
+  }
+  if (target && playing) {
+    const tx = target.tile % W + 0.5, ty = ((target.tile / W) | 0) + 0.5;
+    const pulse = 1 + 0.2 * Math.sin(now / 160);
+    ctx.beginPath();
+    ctx.arc(tx, ty, (7 * pulse) / cam.z, 0, Math.PI * 2);
+    ctx.strokeStyle = '#ffd166';
+    ctx.lineWidth = 2 / cam.z;
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  for (let i = 1; i < nations.length; i++) {
+    const n = nations[i];
+    const k = Math.abs(n.ax - n.lx) > 200 ? 1 : 0.15;
+    n.lx += (n.ax - n.lx) * k;
+    n.ly += (n.ay - n.ly) * k;
+  }
+  drawLabels();
+}
+
+// ---------- UI ----------
+function toast(text, kind) {
+  const el = document.createElement('div');
+  el.className = 'toast ' + (kind || '');
+  el.textContent = text;
+  toastsEl.appendChild(el);
+  while (toastsEl.children.length > 4) toastsEl.firstChild.remove();
+  setTimeout(() => el.remove(), 3600);
+}
 function unlock() {
   if (SIM) return;
-  if (!audioCtx) audioCtx = new AudioContext();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  try {
+    if (!audioCtx) audioCtx = new AudioContext();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  } catch (e) {}
 }
 function beep(freq, dur, vol) {
   if (muted || !audioCtx || SIM) return;
-  const o = audioCtx.createOscillator();
-  const g = audioCtx.createGain();
+  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
   o.type = 'triangle';
   o.frequency.value = freq;
   g.gain.value = vol;
@@ -482,578 +1877,221 @@ function beep(freq, dur, vol) {
   o.stop(audioCtx.currentTime + dur);
 }
 
-function screenToMap(sx, sy) { return [(sx - cam.x) / cam.z, (sy - cam.y) / cam.z]; }
-function mapToScreen(mx, my) { return [mx * cam.z + cam.x, my * cam.z + cam.y]; }
-
-function clampCam() {
-  const m = 60;
-  if (cam.x > viewW - m) cam.x = viewW - m;
-  if (cam.y > viewH - m) cam.y = viewH - m;
-  if (cam.x + MAP_W * cam.z < m) cam.x = m - MAP_W * cam.z;
-  if (cam.y + MAP_H * cam.z < m) cam.y = m - MAP_H * cam.z;
-}
-function frameBox(minx, miny, maxx, maxy, pad) {
-  const bw = Math.max(80, (maxx - minx) * pad);
-  const bh = Math.max(80, (maxy - miny) * pad);
-  const cx = (minx + maxx) / 2, cy = (miny + maxy) / 2;
-  const z = Math.min(viewW / bw, viewH / bh);
-  cam.z = clamp(z, minZoom(), 12);
-  cam.x = viewW / 2 - cx * cam.z;
-  cam.y = viewH / 2 - cy * cam.z;
-  clampCam();
-}
-function fitWorld() { frameBox(0, 0, MAP_W, MAP_H, 1.04); }
-function frameCountry(id) {
-  const c = byId.get(id);
-  if (!c) return fitWorld();
-  let minx = c.box[0], miny = c.box[1], maxx = c.box[2], maxy = c.box[3];
-  const extra = c.neighbors.slice(0, 8);
-  for (const n of extra) {
-    const o = byId.get(n);
-    if (!o || o.box[2] - o.box[0] > MAP_W * 0.6) continue;
-    minx = Math.min(minx, o.box[0]);
-    miny = Math.min(miny, o.box[1]);
-    maxx = Math.max(maxx, o.box[2]);
-    maxy = Math.max(maxy, o.box[3]);
-  }
-  if (maxx - minx > MAP_W * 0.6) return fitWorld();
-  frameBox(minx, miny, maxx, maxy, 1.65);
-}
-function focusOwner(owner) {
-  let best = null;
-  for (const c of countries) {
-    if (terr[c.id].owner !== owner) continue;
-    if (c.box[2] - c.box[0] > MAP_W * 0.6) continue;
-    if (!best || c.area > best.area) best = c;
-  }
-  if (best) frameCountry(best.id);
-  else fitWorld();
-}
-function zoomAt(sx, sy, factor) {
-  const [wx, wy] = screenToMap(sx, sy);
-  cam.z = clamp(cam.z * factor, minZoom(), 12);
-  cam.x = sx - wx * cam.z;
-  cam.y = sy - wy * cam.z;
-  clampCam();
-}
-
-function resize() {
-  const prevW = viewW;
-  viewW = canvas.clientWidth || window.innerWidth;
-  viewH = canvas.clientHeight || window.innerHeight;
-  const dpr = Math.min(2, devicePixelRatio || 1);
-  canvas.width = Math.max(1, Math.round(viewW * dpr));
-  canvas.height = Math.max(1, Math.round(viewH * dpr));
-  if (!camUser) fitWorld();
-  else if (playing && player && Math.abs(viewW - prevW) > 80) focusOwner(player);
-}
-
-function choose(id) {
-  picked = id;
-  const c = byId.get(id);
-  pickedName.textContent = c ? c.name : 'Izaberi državu';
-  playBtn.disabled = !c;
+function choose(i) {
+  picked = i;
+  const n = nations[i];
+  $('picked-name').textContent = n ? n.name : 'Izaberi državu';
+  const pf = $('picked-flag');
+  if (n && n.code) { pf.src = flagUrl(n.code, 80); pf.classList.remove('hidden'); } else pf.classList.add('hidden');
+  playBtn.disabled = !n;
+  setHighlight(i);
   buildList();
-  if (c) frameCountry(id);
+  if (n) { camUser = true; frameNation(i); }
 }
-
 function buildList() {
   const q = norm(searchEl.value.trim());
-  const rows = countries.filter((c) => !q || norm(c.name).includes(q));
-  listEl.innerHTML = rows.map((c) =>
-    `<button type="button" data-id="${c.id}" class="${c.id === picked ? 'on' : ''}">${c.name}</button>`
+  const rows = nations.slice(1).filter((n) => !q || norm(n.name).includes(q));
+  listEl.innerHTML = rows.map((n) =>
+    `<button type="button" data-id="${n.i}" class="${n.i === picked ? 'on' : ''}">${flagTag(n)}<span>${esc(n.name)}</span></button>`
   ).join('');
 }
 
-function launch(from, to, frac) {
-  const kind = linkKind(from, to);
-  if (!kind || over) return false;
-  const src = terr[from], dst = terr[to];
-  if (!src || !dst || src.owner === dst.owner) return false;
-  const send = Math.floor(src.troops * frac);
-  if (send < 8) return false;
-  src.troops -= send;
-  const A = byId.get(from), B = byId.get(to);
-  attacks.push({
-    from, to, send, naval: kind === 'sea', owner: src.owner,
-    x0: A.label[0], y0: A.label[1], x1: B.label[0], y1: B.label[1],
-    t: 0, dur: kind === 'sea' ? 2.35 : 1.15,
-  });
-  if (src.owner === player) playerAttacks++;
-  if ((src.owner === player || dst.owner === player) && !SIM) {
-    const verb = kind === 'sea' ? 'Pomorski desant' : 'Napad';
-    toast(`${verb}: ${A.name} → ${B.name} (${fmt(send)})`);
-    beep(kind === 'sea' ? 300 : 520, 0.07, 0.04);
+function attackMode(i, tile) {
+  if (!player || i === player) return null;
+  if (shareBorder(player, i)) return { mode: 'land' };
+  let landing = -1;
+  if (coastal[tile] && owner[tile] === i) landing = tile;
+  else {
+    const x0 = tile % W, y0 = (tile / W) | 0;
+    let bd = Infinity;
+    for (let dy = -30; dy <= 30; dy++) {
+      const y = y0 + dy;
+      if (y < 0 || y >= H) continue;
+      for (let dx = -30; dx <= 30; dx++) {
+        const t = y * W + ((x0 + dx + W) % W);
+        if (coastal[t] && owner[t] === i) {
+          const d = dx * dx + dy * dy;
+          if (d < bd) { bd = d; landing = t; }
+        }
+      }
+    }
   }
-  return true;
-}
-
-function suggestPct(from, to, naval) {
-  const have = Math.max(1, terr[from].troops);
-  const dst = byId.get(to);
-  const mult = naval ? 0.74 : 1;
-  const keep = naval ? 0.55 : 0.82;
-  const defeat = terr[to].troops * 1.1 / mult;
-  const hold = (terr[to].troops + dst.cap * 0.2 / keep) / mult;
-  const maxSend = have * 0.9;
-  let send = Math.min(maxSend, hold);
-  if (send < defeat) send = Math.min(maxSend, Math.max(defeat, send));
-  if (defeat > maxSend) send = maxSend;
-  return clamp(Math.round((send / have) * 100), 10, 90);
-}
-
-function bestSource(target) {
-  let best = null, bestT = -1;
-  for (const c of countries) {
-    if (terr[c.id].owner !== player) continue;
-    if (!linkKind(c.id, target)) continue;
-    if (terr[c.id].troops > bestT) { best = c.id; bestT = terr[c.id].troops; }
-  }
-  return best;
+  if (landing < 0) return null;
+  const path = planBoat(player, landing);
+  if (!path) return null;
+  return { mode: 'sea', landing, eta: pathLen(path) / BOAT_SPEED };
 }
 
 function onMapClick(mx, my) {
-  const c = pickAt(mx, my);
-  if (!c) return;
-  if (!playing) { choose(c.id); return; }
-  if (over) return;
-  if (terr[c.id].owner === player) {
-    srcId = c.id;
-    dstId = null;
-  } else if (srcId && linkKind(srcId, c.id)) {
-    dstId = c.id;
-    pctInput.value = String(suggestPct(srcId, c.id, linkKind(srcId, c.id) === 'sea'));
+  const t = tileAt(mx, my);
+  if (t < 0 || !land[t]) return;
+  const o = owner[t];
+  if (!playing) { if (o) choose(o); return; }
+  if (over || !o) return;
+  if (o === player) { target = null; setHighlight(0); refreshDock(); return; }
+  if (target && target.i === o) { doAttack(); return; }
+  const m = attackMode(o, t);
+  if (!m) {
+    toast(`Nemaš granicu ni put morem do: ${nations[o].name}`);
+    target = null;
+    setHighlight(0);
   } else {
-    const src = bestSource(c.id);
-    if (!src) { toast('Nemaš granicu ni luku do te države'); return; }
-    srcId = src;
-    dstId = c.id;
-    pctInput.value = String(suggestPct(src, c.id, linkKind(src, c.id) === 'sea'));
+    target = { i: o, tile: m.mode === 'sea' ? m.landing : t, mode: m.mode, eta: m.eta || 0 };
+    setHighlight(o);
   }
   refreshDock();
 }
 
-function resolve(a) {
-  const dst = terr[a.to];
-  const land = byId.get(a.to);
-  if (!dst || !land) return;
-  if (dst.owner === a.owner) {
-    dst.troops = Math.min(land.cap, dst.troops + a.send);
+function doAttack() {
+  if (!target || over) return;
+  const me = nations[player];
+  const send = me.troops * Number(pctInput.value) / 100;
+  if (send < 5) return;
+  if (target.mode === 'land' && !shareBorder(player, target.i)) {
+    const m = attackMode(target.i, target.tile);
+    if (!m) { toast('Više nemaš put do te zemlje'); return; }
+    target.mode = m.mode;
+    if (m.mode === 'sea') { target.tile = m.landing; target.eta = m.eta; }
+  }
+  let ok;
+  if (target.mode === 'land') {
+    me.troops -= send;
+    ok = startAttack(player, target.i, send);
+  } else {
+    if (owner[target.tile] === player) { toast('Ta obala je već tvoja'); return; }
+    ok = launchBoat(player, target.tile, send);
+  }
+  if (ok) { playerAttacks++; beep(target.mode === 'sea' ? 300 : 520, 0.07, 0.04); }
+  else toast('Napad nije moguć odavde');
+}
+
+function refreshDock() {
+  if (!playing || !player) return;
+  const me = nations[player];
+  $('rate').textContent = '+' + fmt(growth(me)) + '/s';
+  $('tfill').style.width = clamp(me.troops / me.max, 0, 1) * 100 + '%';
+  $('ttext').textContent = `${fmt(me.troops)} / ${fmt(me.max)}`;
+  const pct = (me.tiles / landTotal) * 100;
+  $('landPct').textContent = '🌍 ' + (pct >= 10 ? pct.toFixed(0) : pct >= 1 ? pct.toFixed(1) : pct.toFixed(2)) + '%';
+  const frac = Number(pctInput.value) / 100;
+  const send = me.troops * frac;
+  $('sendLbl').textContent = `⚔ ${pctInput.value}% (${fmt(send)})`;
+  const go = $('go');
+  const tf = $('tgt-flag');
+  if (!target || !nations[target.i].tiles || target.i === player) {
+    if (target) { target = null; setHighlight(0); }
+    $('tgt-name').textContent = 'Izaberi metu';
+    $('tgt-info').textContent = 'klikni tuđu teritoriju na mapi';
+    tf.style.visibility = 'hidden';
+    go.disabled = true;
+    go.textContent = 'NAPADNI';
+    hintEl.className = '';
+    hintEl.textContent = 'Front se pomera polje po polje. Planine i šume su sporije i skuplje.';
     return;
   }
-  const power = a.send * (a.naval ? 0.74 : 1);
-  const attackerIsPlayer = a.owner === player;
-  const defenderIsPlayer = dst.owner === player;
-  if (power > dst.troops) {
-    const left = (power - dst.troops) * (a.naval ? 0.55 : 0.82);
-    dst.owner = a.owner;
-    dst.troops = Math.max(1, Math.min(land.cap, left));
-    if (a.owner === player) {
-      let n = 0;
-      for (const c of countries) if (terr[c.id].owner === player) n++;
-      if (n > peakTerr) peakTerr = n;
-    }
-    if (!SIM && (attackerIsPlayer || defenderIsPlayer)) {
-      toast(attackerIsPlayer ? `Osvojeno: ${land.name}` : `Izgubljeno: ${land.name}`);
-      beep(attackerIsPlayer ? 680 : 170, 0.1, 0.045);
-    }
+  const d = nations[target.i];
+  if (d.code && tf.dataset.code !== d.code) { tf.src = flagUrl(d.code, 80); tf.dataset.code = d.code; }
+  tf.style.visibility = d.code ? 'visible' : 'hidden';
+  $('tgt-name').textContent = d.name;
+  const tName = TNAME[terr[target.tile]] || '';
+  $('tgt-info').textContent = `${fmt(d.troops)} vojnika · ${target.mode === 'sea' ? `brodom ~${Math.round(target.eta)}s` : 'kopnom'} · ${tName}`;
+  go.disabled = send < 5;
+  go.textContent = target.mode === 'sea' ? 'ISKRCAJ SE' : 'NAPADNI';
+  const dens = d.troops / Math.max(1, d.tiles);
+  const est = send / (1.3 * (2 + dens * 1.2 + Math.sqrt(d.troops) / 6));
+  const share = est / Math.max(1, d.tiles);
+  if (share >= 1) {
+    hintEl.className = '';
+    hintEl.textContent = 'Dovoljno da je pregaziš celu. Klikni metu opet ili Enter za napad.';
+  } else if (share < 0.05) {
+    hintEl.className = 'warn';
+    hintEl.textContent = `Premalo — zauzećeš tek ~${Math.max(0.1, share * 100).toFixed(1)}% njene zemlje. Sačekaj ili pošalji više.`;
   } else {
-    dst.troops = Math.max(0, dst.troops - power * 0.96);
-    if (!SIM && attackerIsPlayer) {
-      toast(`Napad odbijen: ${land.name}`);
-      beep(150, 0.1, 0.04);
+    hintEl.className = frac >= 0.6 ? 'warn' : '';
+    hintEl.textContent = `Zauzećeš otprilike ${Math.round(share * 100)}% njene zemlje${frac >= 0.6 ? ' — ali kuća ostaje slabo branjena.' : '.'}`;
+  }
+}
+
+function refreshAtks() {
+  const rows = [];
+  if (playing) {
+    for (const A of attacks) {
+      if (A.dead) continue;
+      if (A.a === player) {
+        const d = nations[A.d];
+        rows.push(`<div class="atk">⚔ ${flagTag(d)}${esc(d.name)} ${fmt(A.troops)}<button type="button" data-cancel="${A.d}" aria-label="Povuci">✕</button></div>`);
+      } else if (A.d === player) {
+        const a = nations[A.a];
+        rows.push(`<div class="atk in">🛡 ${flagTag(a)}${esc(a.name)} ${fmt(A.troops)}</div>`);
+      }
+    }
+    for (const B of boats) {
+      if (B.dead) continue;
+      const o = nations[owner[B.landing]];
+      if (B.a === player) rows.push(`<div class="atk">⛵ ${o ? esc(o.name) : 'obala'} ${fmt(B.troops)}</div>`);
+      else if (owner[B.landing] === player) rows.push(`<div class="atk in">⛵ ${flagTag(nations[B.a])}${esc(nations[B.a].name)} ${fmt(B.troops)}</div>`);
     }
   }
-  if (srcId && terr[srcId] && terr[srcId].owner !== player) srcId = null;
-  if (dstId && terr[dstId] && terr[dstId].owner === player) dstId = null;
-  checkEnd();
+  const html = rows.slice(0, 8).join('');
+  if (atksEl.dataset.html !== html) { atksEl.innerHTML = html; atksEl.dataset.html = html; }
 }
 
-function snapshot() {
-  let world = 0, mineA = 0, mineT = 0, mineN = 0;
-  const owners = new Set();
-  for (const c of countries) {
-    world += c.area;
-    const t = terr[c.id];
-    owners.add(t.owner);
-    if (t.owner === player) { mineA += c.area; mineT += t.troops; mineN++; }
-  }
-  return {
-    pct: world ? (mineA / world) * 100 : 0,
-    terr: mineN,
-    troops: mineT,
-    fac: owners.size,
-    over: over || 'running',
-    worldT,
-    peakTerr,
-    playerAttacks,
-  };
-}
-
-function checkEnd() {
-  const info = snapshot();
-  if (info.pct > bestPct) {
-    bestPct = info.pct;
-    try { localStorage.setItem('osvoji-svet:best', bestPct.toFixed(2)); } catch (e) {}
-  }
-  if (!playing || over) return info;
-  if (info.terr === 0) finish('lose', info);
-  else if (info.fac === 1) finish('win', info);
-  return info;
-}
-
-function finish(kind, info) {
-  over = kind;
-  paused = false;
-  pauseEl.classList.add('hidden');
-  endEl.classList.remove('hidden');
-  document.getElementById('end-title').textContent = kind === 'win' ? 'Svet je tvoj' : 'Država je pala';
-  document.getElementById('end-text').textContent = kind === 'win'
-    ? `Držiš sve države. Vojska: ${fmt(info.troops)}.`
-    : `Osvojio si ${info.pct.toFixed(1)}% sveta pre nego što su te pregazili.`;
-  if (!SIM) beep(kind === 'win' ? 740 : 110, 0.2, 0.05);
-}
-
-function aiConsider(fid) {
-  if (fid === player) return;
-  const lands = [];
-  for (const c of countries) if (terr[c.id].owner === fid) lands.push(c);
-  if (!lands.length) return;
-  lands.sort((a, b) => terr[b.id].troops / b.cap - terr[a.id].troops / a.cap);
-  const src = lands[0];
-  const troops = terr[src.id].troops;
-  if (troops < src.cap * 0.58) return;
-  let best = null;
-  const ids = src.neighbors.concat(src.naval);
-  const seen = new Set();
-  for (const id of ids) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    const dst = terr[id];
-    if (!dst || dst.owner === fid) continue;
-    if (dst.owner === player && worldT < 36) continue;
-    if (attacks.some((a) => a.to === id)) continue;
-    const naval = !src.neighbors.includes(id);
-    const mult = naval ? 0.74 : 1;
-    const keep = naval ? 0.55 : 0.82;
-    const defeat = dst.troops * 1.08 / mult;
-    const hold = (dst.troops + byId.get(id).cap * 0.2 / keep) / mult;
-    const spare = troops - src.cap * 0.28;
-    if (spare < defeat) continue;
-    const score = (troops / Math.max(1, dst.troops)) * (naval ? 0.78 : 1);
-    if (!best || score > best.score) best = { id, defeat, hold, spare, score };
-  }
-  if (!best) return;
-  const send = Math.min(troops * 0.68, Math.max(best.defeat, Math.min(best.hold, best.spare)));
-  launch(src.id, best.id, send / troops);
-}
-
-function aiTick() {
-  if (!countries.length) return;
-  for (let k = 0; k < 2; k++) {
-    const c = countries[aiCursor % countries.length];
-    aiCursor++;
-    const fid = terr[c.id].owner;
-    if (fid === player) continue;
-    if ((aiNext.get(fid) || 0) > worldT) continue;
-    aiNext.set(fid, worldT + 7 + (fid % 5) * 0.6);
-    aiConsider(fid);
-  }
-}
-
-function botAct() {
-  if (!player || over) return;
-  let best = null;
-  for (const src of countries) {
-    if (terr[src.id].owner !== player) continue;
-    if (terr[src.id].troops < src.cap * 0.36) continue;
-    const ids = src.neighbors.concat(src.naval);
-    for (const id of ids) {
-      if (terr[id].owner === player) continue;
-      const naval = !src.neighbors.includes(id);
-      const ratio = terr[src.id].troops / Math.max(1, terr[id].troops);
-      const score = ratio * (naval ? 0.85 : 1);
-      if (!best || score > best.score) best = { src: src.id, dst: id, score, naval };
-    }
-  }
-  if (best && best.score > 1.2) {
-    const frac = clamp(suggestPct(best.src, best.dst, best.naval) / 100, 0.15, 0.82);
-    launch(best.src, best.dst, frac);
-  }
-}
-
-function update(dt) {
-  if (!playing || paused || over) return;
-  dt = Math.min(0.05, dt) * speed;
-  if (dt <= 0) return;
-  worldT += dt;
-  for (const c of countries) {
-    const t = terr[c.id];
-    if (t.troops < c.cap) t.troops = Math.min(c.cap, t.troops + c.regen * dt);
-  }
-  for (let i = attacks.length - 1; i >= 0; i--) {
-    attacks[i].t += dt;
-    if (attacks[i].t >= attacks[i].dur) {
-      const a = attacks[i];
-      attacks.splice(i, 1);
-      resolve(a);
-      if (over) return;
-    }
-  }
-  aiAcc += dt;
-  while (aiAcc >= 0.25) {
-    aiAcc -= 0.25;
-    aiTick();
-  }
-  if (BOT) {
-    botAcc += dt;
-    if (botAcc >= 4) { botAcc = 0; botAct(); }
-  }
-}
-
-function totals() {
-  let world = 0, mineA = 0, mineT = 0, mineN = 0;
-  const map = new Map();
-  for (const c of countries) {
-    world += c.area;
-    const t = terr[c.id];
-    let f = map.get(t.owner);
-    if (!f) f = map.set(t.owner, { id: t.owner, name: byId.get(t.owner).name, troops: 0, area: 0, n: 0 }).get(t.owner);
-    f.troops += t.troops;
-    f.area += c.area;
-    f.n++;
-    if (player && t.owner === player) { mineA += c.area; mineT += t.troops; mineN++; }
-  }
-  const list = [...map.values()].sort((a, b) => b.area - a.area);
-  return { world, mineA, mineT, mineN, list, pct: world ? (mineA / world) * 100 : 0 };
-}
-
-function renderBoard(info) {
-  const rows = info.list.slice(0, 6);
-  if (player && !rows.some((r) => r.id === player)) {
-    const me = info.list.find((r) => r.id === player);
-    if (me) rows.push(me);
-  }
-  boardRows.innerHTML = rows.map((r) => {
-    const rank = info.list.indexOf(r) + 1;
-    const pct = info.world ? (r.area / info.world) * 100 : 0;
-    return `<button type="button" class="lb ${r.id === player ? 'me' : ''}" data-id="${r.id}">
-      <i style="background:${colorOf(r.id)}"></i>
-      <b>${rank}. ${r.name}</b>
-      <span>${(pct >= 10 ? pct.toFixed(0) : pct.toFixed(1))}%</span>
-      <em>${fmt(r.troops)}</em>
+function renderBoard() {
+  const alive = nations.slice(1).filter((n) => n.tiles).sort((a, b) => b.tiles - a.tiles);
+  const rows = alive.slice(0, 7);
+  if (player && nations[player].tiles && !rows.includes(nations[player])) rows.push(nations[player]);
+  if (player && nations[player].tiles) $('board-me').textContent = `#${alive.indexOf(nations[player]) + 1} od ${alive.length}`;
+  boardRows.innerHTML = rows.map((n) => {
+    const pct = (n.tiles / landTotal) * 100;
+    return `<button type="button" class="lb ${n.i === player ? 'me' : ''}" data-id="${n.i}">
+      <span class="rk">${alive.indexOf(n) + 1}</span>
+      <span class="who">${flagTag(n)}<b>${esc(n.name)}</b></span>
+      <span class="num">${pct >= 10 ? pct.toFixed(0) : pct.toFixed(1)}%</span>
+      <span class="num tr">${fmt(n.troops)}</span>
     </button>`;
   }).join('');
 }
 
-function refreshHud() {
-  if (!playing || !player) return;
-  const info = totals();
-  document.getElementById('st-troops').textContent = fmt(info.mineT);
-  document.getElementById('st-lands').textContent = String(info.mineN);
-  const p = info.pct;
-  document.getElementById('st-pct').textContent = (p >= 10 ? p.toFixed(0) : p >= 1 ? p.toFixed(1) : p.toFixed(2)) + '%';
-  document.getElementById('hud-name').textContent = byId.get(player).name;
-  uiAcc += 1;
-  if (uiAcc >= 8) { uiAcc = 0; renderBoard(info); }
-}
-
-function refreshDock() {
-  if (!playing || over || !srcId || !terr[srcId] || terr[srcId].owner !== player) {
-    dock.classList.add('hidden');
-    return;
-  }
-  dock.classList.remove('hidden');
-  const src = byId.get(srcId);
-  const have = terr[srcId].troops;
-  document.getElementById('srcSide').innerHTML = `<b>${src.name}</b><span>${fmt(have)} / ${fmt(src.cap)} · +${fmt(src.regen)}/s</span>`;
-  const havePct = clamp(have / src.cap, 0, 1);
-  document.getElementById('meterHave').style.width = (havePct * 100) + '%';
-  const sliderRow = document.getElementById('sliderRow');
-  const kindEl = document.getElementById('kind');
-  if (!dstId || !terr[dstId] || terr[dstId].owner === player || !linkKind(srcId, dstId)) {
-    dstId = null;
-    document.getElementById('dstSide').innerHTML = `<b>Izaberi cilj</b><span>sused ili obala</span>`;
-    sliderRow.classList.add('hidden');
-    kindEl.textContent = '';
-    document.getElementById('meterSend').style.width = '0';
-    hintEl.className = '';
-    hintEl.textContent = 'Klikni susednu državu ili obalu do koje imaš luku.';
-    return;
-  }
-  sliderRow.classList.remove('hidden');
-  const dst = byId.get(dstId);
-  const naval = linkKind(srcId, dstId) === 'sea';
-  const frac = Number(pctInput.value) / 100;
-  const send = Math.floor(have * frac);
-  const power = send * (naval ? 0.74 : 1);
-  const garrison = Math.max(0, power - terr[dstId].troops) * (naval ? 0.55 : 0.82);
-  document.getElementById('dstSide').innerHTML = `<b>${dst.name}</b><span>${fmt(terr[dstId].troops)} vojnika</span>`;
-  kindEl.textContent = naval ? 'POMORSKI DESANT' : 'KOPNO';
-  document.getElementById('meterSend').style.width = clamp(havePct * frac, 0, 1) * 100 + '%';
-  const go = document.getElementById('go');
-  go.disabled = send < 8;
-  go.textContent = 'NAPADNI ' + fmt(send);
-  if (power < terr[dstId].troops) {
-    hintEl.className = 'warn';
-    hintEl.textContent = 'Premalo vojnika. Sačekaj da narastu — ovakav napad te samo slabi.';
-  } else if (frac >= 0.72) {
-    hintEl.className = 'warn';
-    hintEl.textContent = 'Šalješ skoro sve. Dok se kući ne vrate novi, sused može da uđe.';
-  } else if (garrison < dst.cap * 0.16) {
-    hintEl.className = 'warn';
-    hintEl.textContent = 'Osvojićeš je, ali u njoj ostaje malo vojske — lako je vrate.';
-  } else if (naval) {
-    hintEl.className = '';
-    hintEl.textContent = 'More jede deo vojske i put traje duže. Na cilju ostaje manje nego što pošalješ.';
-  } else {
-    hintEl.className = '';
-    hintEl.textContent = 'Dovoljno za osvajanje. Ostatak ostaje da brani kuću.';
-  }
-}
-
-function drawLabels() {
-  const items = [];
-  for (const c of countries) {
-    const sx = c.label[0] * cam.z + cam.x;
-    const sy = c.label[1] * cam.z + cam.y;
-    if (sx < -30 || sy < -20 || sx > viewW + 30 || sy > viewH + 20) continue;
-    const bw = (c.box[2] - c.box[0]) * cam.z;
-    const important = c.id === srcId || c.id === dstId || c.id === picked || c.id === hover;
-    if (bw < 52 && !important) continue;
-    if (c.box[2] - c.box[0] > MAP_W * 0.75 && cam.z < minZoom() * 1.4 && c.id !== player) continue;
-    items.push({ c, sx, sy, bw, important });
-  }
-  items.sort((a, b) => (b.important - a.important) || (b.c.area - a.c.area));
-  const placed = [];
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  for (const it of items) {
-    const size = clamp(it.bw * 0.14, 12, 22);
-    ctx.font = `800 ${size}px Manrope, sans-serif`;
-    let name = it.c.name;
-    const maxW = Math.min(148, Math.max(64, it.bw * 0.9));
-    if (ctx.measureText(name).width > maxW) {
-      while (name.length > 3 && ctx.measureText(name + '…').width > maxW) name = name.slice(0, -1);
-      name += '…';
-    }
-    const tw = ctx.measureText(name).width;
-    const rect = { x: it.sx - tw / 2 - 3, y: it.sy - size, w: tw + 6, h: size * 2.2 };
-    if (!it.important && placed.some((r) => r.x < rect.x + rect.w && r.x + r.w > rect.x && r.y < rect.y + rect.h && r.y + r.h > rect.y)) continue;
-    placed.push(rect);
-    ctx.lineWidth = 3.5;
-    ctx.strokeStyle = 'rgba(6, 12, 24, 0.72)';
-    ctx.fillStyle = '#f4f8ff';
-    ctx.strokeText(name, it.sx, it.sy - 7);
-    ctx.fillText(name, it.sx, it.sy - 7);
-    ctx.font = `800 ${Math.max(11, size - 2)}px Manrope, sans-serif`;
-    ctx.fillStyle = '#d5e8ff';
-    const label = fmt(terr[it.c.id].troops);
-    ctx.strokeText(label, it.sx, it.sy + size * 0.48);
-    ctx.fillText(label, it.sx, it.sy + size * 0.48);
-  }
-}
-
-function draw() {
-  const dpr = Math.min(2, devicePixelRatio || 1);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  const sea = ctx.createLinearGradient(0, 0, 0, viewH);
-  sea.addColorStop(0, '#1d6aab');
-  sea.addColorStop(1, '#0d3c68');
-  ctx.fillStyle = sea;
-  ctx.fillRect(0, 0, viewW, viewH);
-  if (!countries.length) return;
-
-  ctx.save();
-  ctx.translate(cam.x, cam.y);
-  ctx.scale(cam.z, cam.z);
-  for (const c of countries) {
-    const x0 = c.box[0] * cam.z + cam.x, y0 = c.box[1] * cam.z + cam.y;
-    const x1 = c.box[2] * cam.z + cam.x, y1 = c.box[3] * cam.z + cam.y;
-    if (x1 < 0 || y1 < 0 || x0 > viewW || y0 > viewH) continue;
-    ctx.fillStyle = colorOf(terr[c.id].owner);
-    ctx.fill(c.path, 'evenodd');
-  }
-  ctx.lineJoin = 'round';
-  ctx.lineCap = 'round';
-  ctx.strokeStyle = 'rgba(7, 16, 32, 0.55)';
-  ctx.lineWidth = 1.15 / cam.z;
-  for (const c of countries) ctx.stroke(c.path);
-
-  const outline = (id, color, w) => {
-    const c = byId.get(id);
-    if (!c) return;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = w / cam.z;
-    ctx.stroke(c.path);
-  };
-  if (!playing && picked) outline(picked, '#ffffff', 2.6);
-  if (hover && hover !== srcId) outline(hover, 'rgba(255,255,255,0.85)', 1.8);
-  if (srcId) outline(srcId, '#ffffff', 2.8);
-  if (dstId) outline(dstId, '#ffd166', 2.8);
-
-  ctx.setLineDash([]);
-  for (const a of attacks) {
-    const k = clamp(a.t / a.dur, 0, 1);
-    ctx.beginPath();
-    ctx.moveTo(a.x0, a.y0);
-    ctx.lineTo(a.x1, a.y1);
-    ctx.strokeStyle = a.naval ? 'rgba(150, 214, 255, 0.95)' : 'rgba(255, 186, 70, 0.95)';
-    ctx.lineWidth = (a.naval ? 1.5 : 2.1) / cam.z;
-    ctx.setLineDash(a.naval ? [7 / cam.z, 6 / cam.z] : []);
-    ctx.stroke();
-    ctx.setLineDash([]);
-    const x = a.x0 + (a.x1 - a.x0) * k;
-    const y = a.y0 + (a.y1 - a.y0) * k;
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(x, y, 3.4 / cam.z, 0, Math.PI * 2);
-    ctx.fill();
-  }
-  ctx.restore();
-  drawLabels();
-}
-
-function begin(id) {
+function begin(i) {
   unlock();
-  player = id;
-  picked = id;
-  colorCache.clear();
-  playing = true;
-  paused = false;
-  over = null;
-  speed = 1;
-  document.getElementById('speed').textContent = '1×';
-  srcId = id;
-  dstId = null;
+  player = i;
+  picked = i;
+  hl = 0;
+  playing = true; paused = false; over = null; speed = 1;
+  $('speed').textContent = '1×';
+  repaintAll();
+  for (const n of nations) if (n) n.nextAI = 2 + Math.random() * 5;
   startEl.classList.add('hidden');
   endEl.classList.add('hidden');
   pauseEl.classList.add('hidden');
   hud.classList.remove('hidden');
   board.classList.remove('hidden');
+  dock.classList.remove('hidden');
+  const me = nations[i];
+  $('hud-name').textContent = me.name;
+  const hf = $('hud-flag');
+  if (me.code) { hf.src = flagUrl(me.code, 80); hf.style.visibility = 'visible'; } else hf.style.visibility = 'hidden';
   camUser = true;
   resize();
-  frameCountry(id);
-  camUser = true;
-  toast('Pusti vojsku da naraste, pa napadni slabijeg suseda.');
-  refreshHud();
+  frameNation(i);
+  toast('Klikni suseda da ga izabereš, pa NAPADNI. Front ide malo po malo.');
+  renderBoard();
   refreshDock();
   if (SIM > 0) runSim();
 }
 
 function runSim() {
+  const t0 = performance.now();
   const steps = Math.round(SIM / 0.05);
-  const prev = speed;
-  speed = 1;
-  paused = false;
-  for (let i = 0; i < steps; i++) {
-    update(0.05);
-    if (over) break;
-  }
-  speed = prev;
+  for (let i = 0; i < steps && !over; i++) step(0.05);
   const info = snapshot();
+  info.ms = Math.round(performance.now() - t0);
+  info.top = nations.slice(1).filter((n) => n.tiles).sort((a, b) => b.tiles - a.tiles).slice(0, 6)
+    .map((n) => `${n.name}:${((n.tiles / landTotal) * 100).toFixed(1)}`);
   window.simLog = info;
-  document.title = `pct=${info.pct.toFixed(2)} terr=${info.terr} peak=${info.peakTerr} atk=${info.playerAttacks} fac=${info.fac} troops=${Math.round(info.troops)} ${info.over}`;
+  updateAnchors();
+  for (const n of nations) if (n) { n.lx = n.ax; n.ly = n.ay; }
+  document.title = `pct=${info.pct.toFixed(2)} peak=${info.peakPct.toFixed(2)} atk=${info.playerAttacks} fac=${info.fac} troops=${Math.round(info.troops)} ${info.over} t=${Math.round(info.worldT)} ms=${info.ms}`;
 }
 
 function togglePause(force) {
@@ -1061,82 +2099,81 @@ function togglePause(force) {
   paused = force === undefined ? !paused : force;
   pauseEl.classList.toggle('hidden', !paused);
 }
-
 function openSettings() {
   settingsEl.classList.remove('hidden');
   if (playing && !over) togglePause(true);
 }
 function closeSettings() { settingsEl.classList.add('hidden'); }
 
-document.getElementById('gear').onclick = openSettings;
-document.getElementById('settings-close').onclick = closeSettings;
-document.getElementById('mute').onchange = (e) => {
+$('gear').onclick = openSettings;
+$('settings-close').onclick = closeSettings;
+$('mute').onchange = (e) => {
   muted = e.target.checked;
   try { localStorage.setItem('osvoji-svet:mute', muted ? '1' : '0'); } catch (err) {}
 };
-document.getElementById('play').onclick = () => { if (picked) begin(picked); };
-document.getElementById('random').onclick = () => {
-  choose(countries[(Math.random() * countries.length) | 0].id);
-};
-document.getElementById('resume').onclick = () => togglePause(false);
-document.getElementById('pauseBtn').onclick = () => togglePause();
-document.getElementById('speed').onclick = () => {
+playBtn.onclick = () => { if (picked) begin(picked); };
+$('random').onclick = () => choose(1 + ((Math.random() * (nations.length - 1)) | 0));
+$('resume').onclick = () => togglePause(false);
+$('pauseBtn').onclick = () => togglePause();
+$('speed').onclick = () => {
   speed = speed === 1 ? 2 : speed === 2 ? 3 : 1;
-  document.getElementById('speed').textContent = speed + '×';
+  $('speed').textContent = speed + '×';
 };
-document.getElementById('again').onclick = () => {
-  bootTroops();
+$('again').onclick = () => {
   playing = false;
-  player = null;
-  colorCache.clear();
+  player = 0;
+  hl = 0;
+  resetWorld();
   endEl.classList.add('hidden');
   hud.classList.add('hidden');
   board.classList.add('hidden');
   dock.classList.add('hidden');
+  refreshAtks();
   startEl.classList.remove('hidden');
   camUser = false;
   fitWorld();
-  if (picked) choose(picked);
+  if (picked) { const p = picked; picked = 0; choose(p); }
 };
-document.getElementById('cancelAtk').onclick = () => { dstId = null; refreshDock(); };
-document.getElementById('go').onclick = () => {
-  if (!srcId || !dstId) return;
-  if (launch(srcId, dstId, Number(pctInput.value) / 100)) {
-    dstId = null;
-    refreshDock();
-  }
-};
+$('go').onclick = doAttack;
 pctInput.addEventListener('input', refreshDock);
 searchEl.addEventListener('input', buildList);
 listEl.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-id]');
-  if (!btn) return;
-  choose(Number(btn.dataset.id));
+  if (btn) choose(Number(btn.dataset.id));
 });
+$('board-toggle').onclick = () => board.classList.toggle('open');
 boardRows.addEventListener('click', (e) => {
   const btn = e.target.closest('[data-id]');
-  if (!btn) return;
-  focusOwner(Number(btn.dataset.id));
+  if (btn) { camUser = true; frameNation(Number(btn.dataset.id)); }
 });
-document.getElementById('zin').onclick = () => { camUser = true; zoomAt(viewW / 2, viewH / 2, 1.25); };
-document.getElementById('zout').onclick = () => { camUser = true; zoomAt(viewW / 2, viewH / 2, 0.8); };
-document.getElementById('fit').onclick = () => {
+atksEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('[data-cancel]');
+  if (!btn) return;
+  const d = Number(btn.dataset.cancel);
+  const A = attacks.find((x) => !x.dead && x.a === player && x.d === d);
+  if (A) { endAttack(A, 0.75); toast('Vojska se povlači (−25%)'); }
+});
+$('zin').onclick = () => { camUser = true; zoomAt(viewW / 2, viewH / 2, 1.3); };
+$('zout').onclick = () => { camUser = true; zoomAt(viewW / 2, viewH / 2, 1 / 1.3); };
+$('fit').onclick = () => {
   camUser = true;
-  if (playing && player) focusOwner(player);
-  else if (picked) frameCountry(picked);
+  if (playing && player) frameNation(player);
+  else if (picked) frameNation(picked);
   else fitWorld();
 };
 
 addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' && e.target.type === 'search') return;
   if (e.key === 'Escape') {
     if (!settingsEl.classList.contains('hidden')) { closeSettings(); return; }
     if (playing && !over) togglePause();
-  } else if ((e.key === 'p' || e.key === 'P') && playing && !over && e.target.tagName !== 'INPUT') {
+  } else if ((e.key === 'p' || e.key === 'P') && playing && !over) {
     togglePause();
-  } else if (e.key === 'Enter' && playing && dstId) {
-    document.getElementById('go').click();
-  } else if (e.key === '+' || e.key === '=') zoomAt(viewW / 2, viewH / 2, 1.2);
-  else if (e.key === '-' || e.key === '_') zoomAt(viewW / 2, viewH / 2, 1 / 1.2);
+  } else if (e.key === 'Enter' && playing && target) {
+    doAttack();
+  } else if (e.key === '+' || e.key === '=') { camUser = true; zoomAt(viewW / 2, viewH / 2, 1.2); }
+  else if (e.key === '-' || e.key === '_') { camUser = true; zoomAt(viewW / 2, viewH / 2, 1 / 1.2); }
+  else if (playing && /^[1-9]$/.test(e.key)) { pctInput.value = String(Number(e.key) * 10); refreshDock(); }
 });
 document.addEventListener('visibilitychange', () => {
   if (document.hidden && playing && !over && !AUTO) togglePause(true);
@@ -1146,6 +2183,7 @@ canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 canvas.addEventListener('pointerdown', (e) => {
   canvas.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  tipEl.classList.add('hidden');
   if (pointers.size === 1) {
     drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false };
     pinch = null;
@@ -1156,28 +2194,31 @@ canvas.addEventListener('pointerdown', (e) => {
 });
 function pinchInfo() {
   const p = [...pointers.values()];
-  return {
-    dist: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1,
-    midX: (p[0].x + p[1].x) / 2,
-    midY: (p[0].y + p[1].y) / 2,
-  };
+  return { dist: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y) || 1, midX: (p[0].x + p[1].x) / 2, midY: (p[0].y + p[1].y) / 2 };
+}
+function showTip(e) {
+  if (!owner || e.pointerType === 'touch') return;
+  const rect = canvas.getBoundingClientRect();
+  const [mx, my] = screenToMap(e.clientX - rect.left, e.clientY - rect.top);
+  const t = tileAt(mx, my);
+  const o = t >= 0 && land[t] ? owner[t] : 0;
+  hover = o;
+  if (!o) { tipEl.classList.add('hidden'); return; }
+  const n = nations[o];
+  const html = `${flagTag(n)}${esc(n.name)} <span>${fmt(n.troops)} · ${TNAME[terr[t]]}</span>`;
+  if (tipEl.dataset.html !== html) { tipEl.innerHTML = html; tipEl.dataset.html = html; }
+  tipEl.classList.remove('hidden');
+  tipEl.style.left = Math.min(viewW - tipEl.offsetWidth - 8, e.clientX + 14) + 'px';
+  tipEl.style.top = Math.min(viewH - 40, e.clientY + 14) + 'px';
 }
 canvas.addEventListener('pointermove', (e) => {
-  if (!pointers.has(e.pointerId)) {
-    const rect = canvas.getBoundingClientRect();
-    const [mx, my] = screenToMap(e.clientX - rect.left, e.clientY - rect.top);
-    const hit = pickAt(mx, my);
-    hover = hit ? hit.id : null;
-    return;
-  }
+  if (!pointers.has(e.pointerId)) { showTip(e); return; }
   pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
   if (pointers.size >= 2 && pinch) {
     const next = pinchInfo();
     const rect = canvas.getBoundingClientRect();
-    const sx = pinch.midX - rect.left;
-    const sy = pinch.midY - rect.top;
-    const [wx, wy] = screenToMap(sx, sy);
-    cam.z = clamp(cam.z * (next.dist / pinch.dist), minZoom(), 12);
+    const [wx, wy] = screenToMap(pinch.midX - rect.left, pinch.midY - rect.top);
+    cam.z = clamp(cam.z * (next.dist / pinch.dist), minZoom(), 10);
     cam.x = (next.midX - rect.left) - wx * cam.z;
     cam.y = (next.midY - rect.top) - wy * cam.z;
     pinch = next;
@@ -1194,12 +2235,13 @@ canvas.addEventListener('pointermove', (e) => {
     clampCam();
   }
 });
+canvas.addEventListener('pointerleave', () => { tipEl.classList.add('hidden'); hover = 0; });
 canvas.addEventListener('pointerup', (e) => {
   const moved = drag && drag.moved;
   pointers.delete(e.pointerId);
   if (pointers.size < 2) pinch = null;
   if (pointers.size === 0) {
-    if (drag && !moved) {
+    if (drag && !moved && owner) {
       const rect = canvas.getBoundingClientRect();
       const [mx, my] = screenToMap(e.clientX - rect.left, e.clientY - rect.top);
       onMapClick(mx, my);
@@ -1210,16 +2252,12 @@ canvas.addEventListener('pointerup', (e) => {
     drag = { x: p.x, y: p.y, cx: cam.x, cy: cam.y, moved: true };
   }
 });
-canvas.addEventListener('pointercancel', (e) => {
-  pointers.delete(e.pointerId);
-  drag = null;
-  pinch = null;
-});
+canvas.addEventListener('pointercancel', (e) => { pointers.delete(e.pointerId); drag = null; pinch = null; });
 canvas.addEventListener('wheel', (e) => {
   e.preventDefault();
   const rect = canvas.getBoundingClientRect();
   camUser = true;
-  zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY > 0 ? 0.9 : 1.12);
+  zoomAt(e.clientX - rect.left, e.clientY - rect.top, e.deltaY > 0 ? 0.88 : 1.14);
 }, { passive: false });
 addEventListener('resize', resize);
 
@@ -1228,48 +2266,47 @@ function loop(now) {
   const dt = Math.min(0.05, last ? (now - last) / 1000 : 0);
   last = now;
   if (playing) update(dt);
-  draw();
-  if (playing) refreshHud();
-  if (playing && (srcId || dstId)) refreshDock();
-  requestAnimationFrame(loop);
-}
-
-function initData(data) {
-  MAP_W = data.w;
-  MAP_H = data.h;
-  countries = data.countries.slice().sort((a, b) => a.name.localeCompare(b.name, 'sr'));
-  byId = new Map(countries.map((c) => [c.id, c]));
-  for (const key of ['neighbors', 'naval']) {
-    for (const c of countries) {
-      for (const n of c[key]) {
-        const o = byId.get(n);
-        if (o && !o[key].includes(c.id)) o[key].push(c.id);
-      }
+  if (owner) {
+    anchorClock -= dt;
+    if (anchorClock <= 0) { anchorClock = 0.5; updateAnchors(); }
+  }
+  draw(now);
+  if (playing) {
+    uiClock -= dt;
+    if (uiClock <= 0) {
+      uiClock = 0.1;
+      refreshDock();
+      refreshAtks();
+      $('hud-time').textContent = clock(worldT);
     }
+    boardClock -= dt;
+    if (boardClock <= 0) { boardClock = 0.6; renderBoard(); }
   }
-  for (const c of countries) {
-    c.neighbors = [...new Set(c.neighbors)];
-    c.naval = [...new Set(c.naval.filter((id) => !c.neighbors.includes(id)))];
-    c.cap = growthCap(c.area);
-    c.regen = c.cap * 0.0042;
-    c.hit = repairRings(c.rings);
-    c.path = makePath(c.hit);
-  }
-  bootTroops();
-  buildList();
-  resize();
+  requestAnimationFrame(loop);
 }
 
-fetch('./countries.json').then((r) => r.json()).then((data) => {
-  initData(data);
-  requestAnimationFrame(loop);
-  if (AUTO) {
-    const srb = countries.find((c) => c.name === 'Srbija') || countries[0];
-    begin(srb.id);
-  }
-}).catch(() => {
-  pickedName.textContent = 'Mapa se nije učitala. Otvori igru preko lokalnog servera.';
-});
+resize();
+requestAnimationFrame(loop);
+if (!window.OSVOJI_MAP) {
+  $('loading').textContent = 'Mapa se nije učitala.';
+} else {
+  setTimeout(() => {
+    const t0 = performance.now();
+    buildWorld(window.OSVOJI_MAP);
+    window.buildMs = Math.round(performance.now() - t0);
+    $('loading').classList.add('hidden');
+    startEl.classList.remove('hidden');
+    buildList();
+    updateAnchors();
+    for (const n of nations) if (n) { n.lx = n.ax; n.ly = n.ay; }
+    resize();
+    if (AUTO) {
+      const want = params.get('as') || 'Srbija';
+      const srb = nations.find((n) => n && n.name === want) || nations[1];
+      begin(srb.i);
+    }
+  }, 30);
+}
 </script>
 </body>
 </html>

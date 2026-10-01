@@ -23,6 +23,10 @@ npx serve .
 
 Detaljne konvencije: `.claude/skills/browser-games/SKILL.md`.
 
+## Plan monetizacije
+
+`MONETIZATION.md`: roadmap, pravila za reklame i metrike. Agenti ga prate preko `AGENTS.md` / `CLAUDE.md`.
+
 ## Deploy
 
 Vercel, preset **Other**, bez build komande. Config je u `vercel.json`.

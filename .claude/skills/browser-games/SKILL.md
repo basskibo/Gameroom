@@ -7,6 +7,8 @@ description: Konvencije za Gameroom projekat — kolekciju browser igrica (singl
 
 Statički sajt, bez build koraka i bez bundlera. Svaka igra je samostalna stranica, landing je lista igara.
 
+> **Plan monetizacije:** pre rada pročitaj `MONETIZATION.md` u root-u (Status, Tvrda pravila, Principi za razvoj) i uskladi zadatak sa trenutnom fazom. Reklame i analitika idu samo preko `shared/gameroom-sdk.js`.
+
 ## Struktura
 
 ```
