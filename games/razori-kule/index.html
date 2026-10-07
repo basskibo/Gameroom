@@ -115,7 +115,8 @@
   const WORLD_W = 1600, WORLD_H = 900, CELL = 10;
   const COLS = WORLD_W / CELL, ROWS = WORLD_H / CELL;
   const WATER_Y = 770, BEDROCK_Y = 840;
-  const GRAV = 1180;
+  const GRAV = 1100;
+  const MAX_SPEED = 1280;
   const params = new URLSearchParams(location.search);
   const AUTO = params.has('auto');
   const SIM = Number(params.get('sim')) || 0;
@@ -190,7 +191,7 @@
   let viewW = 800, viewH = 450, dpr = 1, zoom = 1, camX = 0, camY = 0, offsetX = 0, offsetY = 0;
   let camFocus = 420;
   let aiming = false, aimOrigin = null, aimPointer = null, cannonAng = -0.75;
-  let keyAim = -0.85, keyPower = 820, keyShow = 0;
+  let keyAim = -0.46, keyPower = 1200, keyShow = 0;
   const keys = {};
   const simStats = { shots: 0, hits: 0, mult: 0, win: 0, lose: 0 };
   let audioCtx = null;
@@ -844,9 +845,9 @@
     const tx = core ? core.x + core.w / 2 : 1400;
     const ty = core ? core.y + core.h / 2 : 520;
     let best = null;
-    for (let a = -1.28; a <= -0.28; a += 0.08) {
+    for (let a = -0.62; a <= -0.18; a += 0.06) {
       for (let pi = 0; pi < 4; pi++) {
-        const p = 520 + pi * 160;
+        const p = 700 + pi * 220;
         const vx = Math.cos(a) * p, vy = Math.sin(a) * p;
         let x = L.x, y = L.y, vvx = vx, vvy = vy, score = 1e9;
         for (let i = 0; i < 110; i++) {
@@ -871,7 +872,7 @@
     const L = launcher();
     const pts = [];
     let x = L.x, y = L.y, vvx = vx, vvy = vy;
-    for (let i = 0; i < 34; i++) {
+    for (let i = 0; i < 52; i++) {
       x += vvx * 0.05; y += vvy * 0.05; vvy += GRAV * 0.05;
       pts.push(x, y);
       if (solidAt(x, y) || hitBlockAt(x, y) || y > WATER_Y) break;
@@ -885,10 +886,15 @@
     let dy = aimPointer.y - aimOrigin.y;
     const len = Math.hypot(dx, dy);
     if (len < 1) return { dx: 0, dy: 0, len: 0, vx: 0, vy: 0 };
-    const max = 158;
+    const max = 170;
     const sc = Math.min(max, len) / len;
     dx *= sc; dy *= sc;
-    return { dx, dy, len: Math.min(len, max), vx: -dx * 6.7, vy: -dy * 6.7 };
+    const power = (Math.min(len, max) / max) * MAX_SPEED;
+    // steep pulls stay in a band that clears the mountain and still lands on the keep
+    const up = clamp(-Math.atan2(-dy, -dx), 0, Math.PI / 2);
+    const t = Math.pow(up / (Math.PI / 2), 0.85);
+    const ang = -(0.26 + t * 0.38);
+    return { dx, dy, len: Math.min(len, max), vx: Math.cos(ang) * power, vy: Math.sin(ang) * power };
   }
 
   function finish(kind) {
@@ -1497,10 +1503,10 @@
       return;
     }
     if (!playing || over || paused) return;
-    if (e.code === 'ArrowLeft') { keyAim = clamp(keyAim - 0.06, -1.45, -0.2); keyShow = 1.2; e.preventDefault(); }
-    if (e.code === 'ArrowRight') { keyAim = clamp(keyAim + 0.06, -1.45, -0.2); keyShow = 1.2; e.preventDefault(); }
-    if (e.code === 'ArrowUp') { keyPower = clamp(keyPower + 40, 420, 1100); keyShow = 1.2; e.preventDefault(); }
-    if (e.code === 'ArrowDown') { keyPower = clamp(keyPower - 40, 420, 1100); keyShow = 1.2; e.preventDefault(); }
+    if (e.code === 'ArrowLeft') { keyAim = clamp(keyAim - 0.04, -0.66, -0.16); keyShow = 1.2; e.preventDefault(); }
+    if (e.code === 'ArrowRight') { keyAim = clamp(keyAim + 0.04, -0.66, -0.16); keyShow = 1.2; e.preventDefault(); }
+    if (e.code === 'ArrowUp') { keyPower = clamp(keyPower + 40, 520, MAX_SPEED); keyShow = 1.2; e.preventDefault(); }
+    if (e.code === 'ArrowDown') { keyPower = clamp(keyPower - 40, 520, MAX_SPEED); keyShow = 1.2; e.preventDefault(); }
     if (e.code === 'Space') {
       e.preventDefault();
       if (!keys.Space) fireVelocity(Math.cos(keyAim) * keyPower, Math.sin(keyAim) * keyPower);

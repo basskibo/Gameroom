@@ -2108,12 +2108,7 @@ function updateMonsters(dt) {
     m.flash -= dt;
     if (m.z > DEFENSE_Z) {
       m.dead = true;
-      state.pressAcc += m.brute ? 1 : 0.018;
-      if (state.pressAcc >= 2) {
-        const d = Math.min(6, Math.floor(state.pressAcc));
-        state.pressAcc -= d;
-        hurtBase(d, m.x, DEFENSE_Z);
-      }
+      hurtBase(m.dmg || 1, m.x, DEFENSE_Z);
       continue;
     }
   }
@@ -2153,6 +2148,8 @@ function updateBosses(dt) {
   for (const b of bosses) {
     if (b.dead) continue;
     b.z += b.speed * dt;
+    const strikeZ = DEFENSE_Z - 0.7;
+    if (b.z >= strikeZ) b.z = strikeZ;
     b.flash -= dt;
     b.phase += dt * b.speed * 2.2 / (b.s / 4);
     b.walkU.value = b.phase;
@@ -2174,11 +2171,20 @@ function updateBosses(dt) {
       sfx.boss();
     }
     if (b.dirty && state.time - b.lastDraw > 0.05) { drawBoss(b); b.dirty = false; b.lastDraw = state.time; }
-    if (b.z > DEFENSE_Z) {
-      b.dead = true;
-      hurtBase(60, b.x, b.z);
-      burst(b.x, b.s, b.z, 0x1b1b2f, 30, 10, 1.6);
-      banner('BOSS JE PROBIO!', '-60 baza');
+    if (b.z >= strikeZ) {
+      b.z = strikeZ;
+      b.swing = (b.swing || 0) - dt;
+      if (b.swing <= 0) {
+        const hit = b.enraged ? 10 : 6;
+        hurtBase(hit, b.x, DEFENSE_Z);
+        b.swing = b.enraged ? 0.7 : 1.05;
+        burst(b.x, 1.4, DEFENSE_Z, 0xff3355, 10, 7, 0.9);
+        state.shake = Math.max(state.shake, 0.35);
+        if (!b.struck) {
+          b.struck = true;
+          banner('KAPETAN UDARA!', `-${hit} po udarcu`);
+        }
+      }
     }
   }
 }
