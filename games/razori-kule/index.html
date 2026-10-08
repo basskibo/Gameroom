@@ -74,6 +74,17 @@
   }
   #specials button.on { background: #e23b3b; color: #fff; }
   #specials button:disabled { opacity: 0.42; cursor: default; }
+  #magics {
+    position: absolute; left: 12px; bottom: calc(62px + env(safe-area-inset-bottom));
+    display: flex; gap: 8px; z-index: 3;
+  }
+  #magics button {
+    pointer-events: auto; width: 48px; height: 48px; border-radius: 50%; padding: 0;
+    border: 3px solid #243044; background: rgba(255,255,255,0.94);
+    font-size: 22px; line-height: 1; cursor: pointer;
+    box-shadow: 0 4px 14px rgba(20,40,60,0.16);
+  }
+  #magics button.on { border-color: #f2c230; box-shadow: 0 0 0 3px #f2c230; }
   @media (max-width: 520px) {
     h1 { font-size: 36px; }
     .pill { font-size: 12px; padding: 5px 8px; }
@@ -94,6 +105,7 @@
     <button id="spec-drill" type="button"></button>
     <button id="spec-heavy" type="button"></button>
   </div>
+  <div id="magics" hidden></div>
   <div id="veil">
     <div class="card">
       <h1 id="title">Razori Kule</h1>
@@ -142,7 +154,7 @@
 
   const I18N = {
     sr: {
-      title: 'Razori Kule', blurb: 'Povuci unazad i pusti. Pogodi bure da otvoriš tunel ili srušiš temelj. Jednom po nivou: bušilica ili bomba. +1 i +3 povećavaju plotun.',
+      title: 'Razori Kule', blurb: 'Povuci unazad i pusti. Zamak raste sa svakim nivoom. Bure se pojavi ponekad, na slučajnom mestu. Kutija daje magiju: zemljotres, led, meteor, obnova ili plotun.',
       play: 'IGRAJ', best: 'Najbolji rezultat', ammo: 'Rakete', you: 'Ti', foe: 'Oni',
       pause: 'Pauza', resume: 'Nastavi', settings: 'Podešavanja', soundOn: 'Zvuk: uključen', soundOff: 'Zvuk: isključen',
       close: 'Zatvori', back: '⌂ Nazad u Gameroom', hint: 'Povuci unazad',
@@ -159,9 +171,11 @@
       keg: 'Bure!', tunnel: 'Tunel!',
       collapseText: 'Kule su pale same na jezgro.',
       normal: 'Običan hitac.',
+      quake: 'Zemljotres', ice: 'Led', meteor: 'Meteor', mend: 'Obnova', fan: 'Plotun',
+      got: 'Magija:', theyGot: 'Oni uzeše', frozen: 'Zaledjeno',
     },
     en: {
-      title: 'Smash the Towers', blurb: 'Pull back and release. Hit a barrel to open a tunnel or drop the foundation. Once per level: a drill or a bomb. +1 and +3 grow the salvo.',
+      title: 'Smash the Towers', blurb: 'Pull back and release. The castle grows every level. A barrel shows up sometimes, in a random spot. A crate grants a spell: quake, ice, meteor, mend, or a volley.',
       play: 'PLAY', best: 'Best score', ammo: 'Rockets', you: 'You', foe: 'Them',
       pause: 'Paused', resume: 'Resume', settings: 'Settings', soundOn: 'Sound: on', soundOff: 'Sound: off',
       close: 'Close', back: '⌂ Back to Gameroom', hint: 'Pull back',
@@ -178,6 +192,8 @@
       keg: 'Barrel!', tunnel: 'Tunnel!',
       collapseText: 'The towers fell onto the core by themselves.',
       normal: 'Normal shot.',
+      quake: 'Quake', ice: 'Ice', meteor: 'Meteor', mend: 'Mend', fan: 'Volley',
+      got: 'Spell:', theyGot: 'They took', frozen: 'Frozen',
     },
   };
 
@@ -240,7 +256,12 @@
   let turn = 'player', turnT = 0, dryT = 0, camBias = 0.32;
   let viewW = 800, viewH = 450, dpr = 1, zoom = 1, camX = 0, camY = 0, offsetX = 0, offsetY = 0;
   let camFocus = 420;
-  let aiming = false, aimOrigin = null, aimPointer = null, cannonAng = -0.75;
+  let aiming = false, aimOrigin = null, aimPointer = null, cannonAng = -0.75, enemyAng = Math.PI + 0.55;
+  let held = [], foeHeld = [], spellArmed = null, skipEnemy = 0, skipPlayer = 0;
+  const SPELL_ICON = { quake: '🌋', ice: '❄️', meteor: '☄️', mend: '💚', fan: '🎯' };
+  const cannonImg = { player: new Image(), enemy: new Image() };
+  cannonImg.player.src = 'assets/cannon-blue.png';
+  cannonImg.enemy.src = 'assets/cannon-red.png';
   let keyAim = -0.46, keyPower = 1200, keyShow = 0;
   const keys = {};
   const simStats = { shots: 0, hits: 0, mult: 0, win: 0, lose: 0 };
@@ -523,16 +544,21 @@
     paintSkin();
   }
 
-  function placeBarrels(baseX, gR) {
+  function placeBarrels() {
     barrels = [];
-    const mx = 700;
-    const foot = Math.max(groundY(mx - 16), groundY(mx + 16));
-    barrels.push({ x: mx - 18, y: foot - 46, w: 36, h: 46, kind: 'mountain', alive: true });
-    if (level !== 2) {
-      barrels.push({ x: baseX - 6, y: gR - 46, w: 36, h: 46, kind: 'wall', alive: true });
+    if (Math.random() < 0.45) {
+      const mx = 520 + Math.random() * 340;
+      const foot = Math.max(groundY(mx - 12), groundY(mx + 12));
+      barrels.push({ x: mx - 16, y: foot - 46, w: 34, h: 44, kind: 'mountain', alive: true });
     }
-    if (level >= 2) {
-      barrels.push({ x: baseX + 22, y: gR - 48, w: 34, h: 40, kind: 'base', alive: true });
+    if (Math.random() < 0.32) {
+      for (let t = 0; t < 10; t++) {
+        const bx = 500 + Math.random() * 420;
+        const by = 140 + Math.random() * 200;
+        if (solidAt(bx, by) || solidAt(bx, by + 24) || by > groundY(bx) - 36) continue;
+        barrels.push({ x: bx, y: by, w: 32, h: 40, kind: 'keg', alive: true });
+        break;
+      }
     }
   }
 
@@ -542,7 +568,7 @@
     for (let i = 0; i < 16; i++) {
       circles.push([cx, cy, 40]);
       cx += 44;
-      if (cx > 1160) break;
+      if (cx > x + 180 || cx > 1000) break;
       if (i > 3 && !solidAt(cx, cy) && !solidAt(cx, cy + 24) && !solidAt(cx, cy - 24)) break;
     }
     stampCircles(circles);
@@ -577,16 +603,8 @@
       numbers.push({ x, y: y - 28, text: t('tunnel'), life: 1.2, vy: -24, big: true });
       toast(t('tunnel'));
     } else {
-      const radius = b.kind === 'base' ? 112 : 86;
-      carve(x, y, radius);
-      damageBlocks(x, y, radius + 8);
-      if (b.kind === 'base') {
-        for (let i = 0; i < blocks.length; i++) {
-          const o = blocks[i];
-          if (!o.dead && o.team === 'enemy' && o.kind === 'base') killBlock(o);
-        }
-      }
-      knockLoose(b);
+      carve(x, y, 36);
+      damageBlocks(x, y, 46);
       numbers.push({ x, y: y - 28, text: t('keg'), life: 1.2, vy: -24, big: true });
       toast(t('keg'));
     }
@@ -618,6 +636,68 @@
     return b;
   }
 
+  function buildEnemyCastle() {
+    const lv = level;
+    const cols = Math.min(8, 1 + lv);
+    const floors = Math.min(5, 1 + Math.floor((lv - 1) / 2));
+    const towers = Math.min(4, 1 + Math.floor((lv - 1) / 2));
+    const stoneW = 42, stoneH = 40;
+    const width = cols * (stoneW + 2) + 12;
+    const baseX = 1544 - width;
+    const gR = groundY(baseX + width * 0.5);
+    const mul = 1 + (lv - 1) * 0.14;
+    const hp = (n) => Math.max(14, Math.round(n * mul));
+    addBlock('enemy', baseX, gR - 32, width, 36, 'base', hp(78 + lv * 9));
+    let coreSet = false;
+    for (let f = 0; f < floors; f++) {
+      for (let c = 0; c < cols; c++) {
+        const x = baseX + 6 + c * (stoneW + 2);
+        const y = gR - 32 - (f + 1) * stoneH;
+        const isCore = !coreSet && f === floors - 1 && c === (cols >> 1);
+        if (isCore) coreSet = true;
+        addBlock('enemy', x, y, stoneW, stoneH - 2, isCore ? 'core' : 'stone',
+          isCore ? hp(96 + lv * 14) : hp(30 + lv * 4),
+          { skull: !isCore && (c + f) % 3 === 0 });
+      }
+    }
+    const top = gR - 32 - floors * stoneH;
+    for (let t = 0; t < towers; t++) {
+      const tx = towers === 1 ? baseX + width / 2 - 22 : baseX + 8 + t * ((width - 56) / (towers - 1));
+      const th = 52 + Math.min(70, (lv - 1) * 6);
+      addBlock('enemy', tx, top - th, 44, th, 'tower', hp(34 + lv * 5), { skull: true });
+      addBlock('enemy', tx - 8, top - th - 18, 60, 22, 'roof', hp(18 + lv * 2));
+    }
+    if (lv >= 4) {
+      const h = 56 + (lv - 4) * 8;
+      addBlock('enemy', baseX - 26, gR - h, 28, h, 'tower', hp(26 + lv * 3));
+    }
+    if (lv >= 8) {
+      const h = 48 + (lv - 8) * 7;
+      addBlock('enemy', baseX + width - 6, gR - h, 26, h, 'tower', hp(24 + lv * 3));
+    }
+  }
+
+  function placeCrates() {
+    orbs = [];
+    const roll = Math.random();
+    const n = roll < 0.35 ? 0 : roll < 0.82 ? 1 : 2;
+    const kinds = ['quake', 'ice', 'meteor', 'mend', 'fan'];
+    for (let i = 0; i < n; i++) {
+      for (let t = 0; t < 12; t++) {
+        const x = 480 + Math.random() * 560;
+        const y = 120 + Math.random() * 190;
+        if (solidAt(x, y) || y > groundY(x) - 40) continue;
+        let near = false;
+        for (let k = 0; k < orbs.length; k++) {
+          if (Math.hypot(orbs[k].x - x, orbs[k].y - y) < 70) near = true;
+        }
+        if (near) continue;
+        orbs.push({ x, y, kind: kinds[(Math.random() * kinds.length) | 0], phase: Math.random() * 6, alive: true });
+        break;
+      }
+    }
+  }
+
   function placeWorld() {
     blocks = []; rockets = []; chunks = []; particles = []; numbers = []; trees = []; orbs = [];
     paintTerrain();
@@ -632,32 +712,20 @@
     addBlock('player', 34, gL - 258, 80, 64, 'roof', 22);
     addBlock('player', 230, gL - 258, 80, 64, 'roof', 22);
 
-    const baseX = 1188;
-    const gR = groundY(baseX + 80);
-    addBlock('enemy', baseX, gR - 34, 360, 34, 'base', 100);
-    const bw = 52, bh = 48;
-    for (let i = 0; i < 6; i++) {
-      const isCore = i === 3;
-      addBlock('enemy', baseX + 18 + i * 56, gR - 34 - bh, isCore ? 52 : bw, bh, isCore ? 'core' : 'stone', isCore ? 100 + level * 18 : 40, { skull: !isCore && i % 2 === 1 });
-    }
-    for (let i = 0; i < 4; i++) {
-      addBlock('enemy', baseX + 46 + i * 70, gR - 34 - bh * 2, bw, bh, 'stone', 40, { skull: i === 0 || i === 3 });
-    }
-    addBlock('enemy', baseX + 22, gR - 34 - bh - 110, 48, 110, 'tower', 38, { skull: true });
-    addBlock('enemy', baseX + 292, gR - 34 - bh - 110, 48, 110, 'tower', 38, { skull: true });
-    addBlock('enemy', baseX + 156, gR - 34 - bh * 2 - 120, 50, 120, 'tower', 42, { skull: true });
-    addBlock('enemy', baseX + 8, gR - 34 - bh - 168, 76, 60, 'roof', 18);
-    addBlock('enemy', baseX + 278, gR - 34 - bh - 168, 76, 60, 'roof', 18);
-    addBlock('enemy', baseX + 140, gR - 34 - bh * 2 - 186, 82, 68, 'roof', 18);
-    placeBarrels(baseX, gR);
+    buildEnemyCastle();
+    placeBarrels();
 
     [16, 390, 1168, 1552].forEach((x, i) => {
       trees.push({ x, y: groundY(x), s: 0.85 + (i % 3) * 0.18, dead: false });
     });
-    orbs = [
-      { x: 560, y: 210, add: 1, phase: 0, cd: 0 },
-      { x: 980, y: 180, add: 3, phase: 1.3, cd: 0 },
-    ];
+    placeCrates();
+    held = [];
+    foeHeld = [];
+    spellArmed = null;
+    skipEnemy = 0;
+    skipPlayer = 0;
+    enemyAng = Math.PI + 0.55;
+    salvo = 1;
     shotsFired = 0;
     turn = 'player';
     turnT = 0;
@@ -734,12 +802,18 @@
   }
 
   function spawnRocket(x, y, vx, vy, team, skipOrb, kind) {
-    if (rockets.length > 28) return;
+    if (rockets.length > 28) return null;
     const k = kind || 'normal';
-    rockets.push({
+    const r = {
       x, y, vx, vy, team, kind: k, age: 0, skipOrb: skipOrb || 0, alive: true, trail: [], sx: x, sy: y,
-      grav: k === 'drill' ? DRILL_GRAV : GRAV,
-    });
+      grav: k === 'drill' ? DRILL_GRAV : GRAV, ice: false,
+    };
+    rockets.push(r);
+    return r;
+  }
+
+  function shotTip(x, y, ang) {
+    return { x: x + Math.cos(ang) * 58, y: y + Math.sin(ang) * 58 };
   }
 
   function liveRockets(team) {
@@ -763,7 +837,9 @@
     if (!playing || over || paused) return false;
     if (!force && turn !== 'player') return false;
     if (!force && shotCd > 0) return false;
-    const kind = (!force && armed && specialLeft > 0) ? armed : 'normal';
+    let kind = (!force && armed && specialLeft > 0) ? armed : 'normal';
+    const spell = (!force && kind === 'normal') ? spellArmed : null;
+    if (spell === 'meteor') kind = 'meteor';
     const cost = kind === 'heavy' ? 2 : 1;
     if (!force && ammo < cost) { toast(cost > 1 ? t('need2') : t('ammo') + ' 0'); return false; }
     const L = launcher();
@@ -772,7 +848,13 @@
       ammo -= cost;
       ammoT = 0;
       shotCd = 0.7;
-      if (kind !== 'normal') { specialLeft = 0; armed = null; }
+      if (kind === 'drill' || kind === 'heavy') { specialLeft = 0; armed = null; }
+      if (spell) {
+        const at = held.indexOf(spell);
+        if (at >= 0) held.splice(at, 1);
+        spellArmed = null;
+        refreshMagics();
+      }
       turn = 'playerFly';
       turnT = 0;
     }
@@ -781,11 +863,14 @@
     let sp = Math.hypot(vx, vy) || 1;
     if (kind === 'heavy') sp *= HEAVY_SCALE;
     const base = Math.atan2(vy, vx);
-    const n = (force || kind !== 'normal') ? 1 : salvo;
-    const spread = 0.065;
+    const fan = spell === 'fan';
+    const n = fan ? 3 : ((force || (kind !== 'normal' && kind !== 'meteor')) ? 1 : salvo);
+    const spread = 0.07;
     for (let i = 0; i < n; i++) {
       const a = base + (i - (n - 1) / 2) * spread;
-      spawnRocket(L.x, L.y - i * 2, Math.cos(a) * sp, Math.sin(a) * sp, 'player', 0.2, kind);
+      const tip = shotTip(L.x, L.y, a);
+      const r = spawnRocket(tip.x, tip.y, Math.cos(a) * sp, Math.sin(a) * sp, 'player', 0.15, kind);
+      if (r && spell === 'ice') r.ice = true;
     }
     cannonAng = base;
     beep(210, 0.09, 'sawtooth', 0.05);
@@ -794,17 +879,17 @@
     return true;
   }
 
-  function collect(o) {
-    o.cd = 8;
-    const add = o.add;
-    salvo = Math.min(6, salvo + add);
-    o.add = add === 3 ? 1 : 3;
-    numbers.push({ x: o.x, y: o.y - 24, text: '+' + add, life: 1, vy: -28, big: true });
+  function pickup(o, team) {
+    o.alive = false;
+    const bag = team === 'player' ? held : foeHeld;
+    if (bag.length >= 3) bag.shift();
+    bag.push(o.kind);
     simStats.mult++;
+    numbers.push({ x: o.x, y: o.y - 24, text: t(o.kind), life: 1, vy: -28, big: true });
     beep(620, 0.08, 'square', 0.05);
     beep(880, 0.12, 'square', 0.04);
-    toast('+' + add + '  →  ' + salvo);
-    refreshHud();
+    toast((team === 'player' ? t('got') : t('theyGot')) + ' ' + t(o.kind));
+    if (team === 'player') refreshMagics();
   }
 
   function hitBlockAt(x, y) {
@@ -964,6 +1049,7 @@
     lastImpactX = r.x;
     let radius = r.team === 'player' ? 52 : 36;
     if (r.kind === 'heavy') radius = 118;
+    if (r.kind === 'meteor') radius = 96;
     if (r.kind === 'drill') radius = 24;
     if (r.kind === 'drill') {
       const sp = Math.hypot(r.vx, r.vy) || 1;
@@ -979,6 +1065,14 @@
     for (let i = 0; i < trees.length; i++) {
       const tree = trees[i];
       if (!tree.dead && Math.hypot(tree.x - r.x, tree.y - 20 - r.y) < radius + 24) tree.dead = true;
+    }
+    if (r.ice) {
+      const gun = r.team === 'player' ? enemyMuzzle() : launcher();
+      if (gun && Math.hypot(gun.x - r.x, gun.y - r.y) < 90) {
+        if (r.team === 'player') skipEnemy = 1; else skipPlayer = 1;
+        numbers.push({ x: r.x, y: r.y - 24, text: t('frozen'), life: 1.2, vy: -22, big: true });
+        toast(t('frozen'));
+      }
     }
     shake = Math.max(shake, r.team === 'player' ? 9 : 5);
     burst(r.x, r.y, 12, '#ffb15a');
@@ -1005,17 +1099,17 @@
         r.vy += (r.grav == null ? GRAV : r.grav) * sdt;
         r.age += sdt;
         if (r.skipOrb > 0) r.skipOrb -= sdt;
-        if (r.team === 'player' && r.skipOrb <= 0) {
+        if (r.skipOrb <= 0) {
           for (let k = 0; k < orbs.length; k++) {
             const o = orbs[k];
-            if (o.cd > 0) continue;
+            if (!o.alive) continue;
             const oy = o.y + Math.sin(time * 2 + o.phase) * 8;
-            if (Math.hypot(r.x - o.x, r.y - oy) < 36) { collect(o); r.skipOrb = 0.4; break; }
+            if (Math.hypot(r.x - o.x, r.y - oy) < 36) { pickup(o, r.team); r.skipOrb = 0.4; break; }
           }
         }
         if (!r.alive) break;
         const flown = Math.hypot(r.x - r.sx, r.y - r.sy);
-        if (r.team === 'player' && flown > 16) {
+        if (flown > 16) {
           const keg = hitBarrel(r.x, r.y);
           if (keg) { detonate(keg); r.alive = false; lastImpactX = r.x; break; }
         }
@@ -1137,36 +1231,85 @@
     let best = null;
     for (let i = 0; i < blocks.length; i++) {
       const b = blocks[i];
-      if (b.team !== 'enemy' || b.dead || b.falling) continue;
+      if (b.team !== 'enemy' || b.dead || b.falling || b.kind !== 'tower') continue;
+      if (b.y > groundY(b.x) - 70) continue;
       if (!best || b.y < best.y) best = b;
     }
     if (!best) return null;
-    return { x: best.x + best.w * 0.5, y: best.y - 14, w: best.w };
+    return { x: best.x - 6, y: best.y + Math.min(30, best.h * 0.42) };
+  }
+
+  function castQuake(team) {
+    const foe = team === 'player' ? 'enemy' : 'player';
+    const chip = 8 + Math.min(10, level);
+    shake = Math.max(shake, 16);
+    for (let i = 0; i < blocks.length; i++) {
+      const b = blocks[i];
+      if (b.dead || b.team !== foe) continue;
+      b.hp -= chip;
+      if (b.hp <= 0) killBlock(b);
+    }
+    const core = foe === 'enemy' ? enemyCore() : playerCore();
+    if (core && !core.dead) burst(core.x + core.w / 2, core.y + core.h / 2, 16, '#c4a07a');
+    beep(42, 0.28, 'sawtooth', 0.08);
+    toast(t('quake'));
+    refreshHud();
+  }
+
+  function castMend(team) {
+    const core = team === 'player' ? playerCore() : enemyCore();
+    if (!core || core.dead) return;
+    const heal = Math.max(12, Math.round(core.maxHp * 0.28));
+    core.hp = Math.min(core.maxHp, core.hp + heal);
+    numbers.push({ x: core.x + core.w / 2, y: core.y - 12, text: '+' + heal, life: 1, vy: -20, big: true });
+    toast(t('mend'));
+    beep(520, 0.1, 'triangle', 0.05);
+    refreshHud();
+  }
+
+  function takeEnemySpell() {
+    if (!foeHeld.length || Math.random() > 0.7) return null;
+    const kind = foeHeld.shift();
+    if (kind === 'quake') { castQuake('enemy'); return null; }
+    if (kind === 'mend') { castMend('enemy'); return null; }
+    return kind;
   }
 
   function enemyShoot() {
     const m = enemyMuzzle();
     const core = playerCore();
-    if (!m || !core) return;
+    if (!m || !core || over) return;
+    const spell = takeEnemySpell();
     const tx = core.x + core.w / 2, ty = core.y + core.h / 2;
     let best = null;
-    for (let a = Math.PI + 0.3; a <= Math.PI + 1.05; a += 0.12) {
-      for (let pi = 0; pi < 3; pi++) {
-        const p = 600 + pi * 180 + level * 15;
+    for (let a = Math.PI + 0.28; a <= Math.PI + 1.15; a += 0.1) {
+      for (let pi = 0; pi < 4; pi++) {
+        const p = 680 + pi * 160 + level * 12;
         const vx = Math.cos(a) * p, vy = Math.sin(a) * p;
-        let x = m.x, y = m.y, vvx = vx, vvy = vy, score = 1e9;
-        for (let i = 0; i < 90; i++) {
+        const tip = shotTip(m.x, m.y, a);
+        let x = tip.x, y = tip.y, vvx = vx, vvy = vy, score = 1e9;
+        for (let i = 0; i < 110; i++) {
           x += vvx * 0.05; y += vvy * 0.05; vvy += GRAV * 0.05;
           const d = Math.hypot(x - tx, y - ty);
           if (d < score) score = d;
-          if (d < 28 || solidAt(x, y) || y > WATER_Y) break;
+          if (d < 26 || solidAt(x, y) || y > WATER_Y) break;
         }
-        if (!best || score < best.score) best = { vx, vy, score };
+        if (!best || score < best.score) best = { vx, vy, score, ang: a };
       }
     }
     if (!best) return;
-    const j = (Math.random() - 0.5) * 90;
-    spawnRocket(m.x, m.y, best.vx + j, best.vy + j * 0.3, 'enemy', 1);
+    enemyAng = best.ang;
+    const kind = spell === 'meteor' ? 'meteor' : 'normal';
+    let shots = spell === 'fan' ? 3 : 1;
+    if (level >= 6 && shots === 1) shots = 2;
+    const j = (Math.random() - 0.5) * Math.max(14, 96 - level * 6);
+    const sp = Math.hypot(best.vx, best.vy);
+    for (let i = 0; i < shots; i++) {
+      const a = best.ang + (i - (shots - 1) / 2) * 0.08;
+      const tip = shotTip(m.x, m.y, a);
+      const r = spawnRocket(tip.x, tip.y, Math.cos(a) * sp + j, Math.sin(a) * sp + j * 0.25, 'enemy', 0.2, kind);
+      if (r && spell === 'ice') r.ice = true;
+    }
     beep(160, 0.08, 'square', 0.03);
   }
 
@@ -1266,6 +1409,7 @@
     sessionSent = false;
     refreshHud();
     refreshSpecials();
+    refreshMagics();
   }
 
   async function extraRockets() {
@@ -1317,11 +1461,48 @@
     heavy.textContent = t('heavy');
   }
 
+  function refreshMagics() {
+    const box = document.getElementById('magics');
+    if (!box) return;
+    box.innerHTML = '';
+    box.hidden = !playing || !!over || held.length === 0;
+    for (let i = 0; i < held.length; i++) {
+      const kind = held[i];
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = SPELL_ICON[kind] || '?';
+      b.title = t(kind);
+      b.setAttribute('aria-label', t(kind));
+      if (spellArmed === kind) b.classList.add('on');
+      b.addEventListener('click', (e) => { e.stopPropagation(); useSpell(i); });
+      box.appendChild(b);
+    }
+  }
+
+  function useSpell(i) {
+    if (!playing || over || paused || turn !== 'player') return;
+    const kind = held[i];
+    if (!kind) return;
+    if (kind === 'quake' || kind === 'mend') {
+      held.splice(i, 1);
+      if (spellArmed === kind) spellArmed = null;
+      if (kind === 'quake') castQuake('player');
+      else castMend('player');
+    } else {
+      spellArmed = spellArmed === kind ? null : kind;
+      toast(spellArmed ? t(kind) : t('normal'));
+    }
+    refreshMagics();
+    refreshHud();
+  }
+
   function refreshHud() {
     let tag = '';
     if (armed === 'drill') tag = '  ·  ' + t('drill');
     if (armed === 'heavy') tag = '  ·  ' + t('heavy');
-    document.getElementById('ammo').textContent = t('ammo') + ' ' + ammo + '  ·  ×' + salvo + tag;
+    if (spellArmed) tag += '  ·  ' + t(spellArmed);
+    const multi = salvo > 1 ? '  ·  ×' + salvo : '';
+    document.getElementById('ammo').textContent = t('ammo') + ' ' + ammo + multi + tag;
     document.getElementById('php-label').textContent = t('you');
     document.getElementById('ehp-label').textContent = t('foe') + ' · ' + t('level') + ' ' + level;
     document.getElementById('php-bar').style.width = Math.round(hpOf('player') * 100) + '%';
@@ -1358,6 +1539,7 @@
     try { sdk.track('game_start', { level }); } catch (e) {}
     refreshHud();
     refreshSpecials();
+    refreshMagics();
   }
 
   function volley() {
@@ -1407,15 +1589,29 @@
     } else if (turn === 'enemy') {
       turnT -= dt;
       if (turnT <= 0) {
-        enemyShoot();
-        turn = liveRockets('enemy') ? 'enemyFly' : 'toPlayer';
-        turnT = 0.45;
+        if (skipEnemy > 0) {
+          skipEnemy--;
+          toast(t('frozen'));
+          turn = 'toPlayer';
+          turnT = 0.35;
+        } else {
+          enemyShoot();
+          turn = liveRockets('enemy') ? 'enemyFly' : 'toPlayer';
+          turnT = 0.45;
+        }
       }
     } else if (turn === 'enemyFly') {
       if (!liveRockets('enemy')) { turn = 'toPlayer'; turnT = 0.45; }
     } else if (turn === 'toPlayer') {
       turnT -= dt;
-      if (turnT <= 0) { turn = 'player'; turnT = 0; dryT = 0; }
+      if (turnT <= 0) {
+        if (skipPlayer > 0) {
+          skipPlayer--;
+          toast(t('frozen'));
+          turn = 'toEnemy';
+          turnT = 0.25;
+        } else { turn = 'player'; turnT = 0; dryT = 0; }
+      }
     } else if (ammo < 1) {
       dryT += dt;
       if (dryT > 1.3) { dryT = 0; turn = 'toEnemy'; turnT = 0.2; }
@@ -1608,12 +1804,15 @@
       ctx.stroke();
       ctx.fillStyle = '#f7fbff';
       ctx.fillRect(ax - 2, ay - 18, 3, 18);
-      ctx.fillStyle = b.team === 'player' ? '#ffd15c' : '#ff5d5d';
+      ctx.fillStyle = b.team === 'player' ? '#2f74e0' : '#d43842';
+      const wave = Math.sin(time * 3 + b.x * 0.01) * 2;
       ctx.beginPath();
-      ctx.moveTo(ax + 1, ay - 18);
-      ctx.lineTo(ax + 16, ay - 12);
-      ctx.lineTo(ax + 1, ay - 7);
+      ctx.moveTo(ax + 1, ay - 22);
+      ctx.lineTo(ax + 24 + wave, ay - 12);
+      ctx.lineTo(ax + 1, ay - 3);
       ctx.fill();
+      ctx.fillStyle = '#f7fbff';
+      ctx.fillRect(ax + 1, ay - 14, 10, 2);
       return;
     }
     if (b.kind === 'tread') {
@@ -1715,6 +1914,25 @@
     }
     if (b.hero) drawKnight(b.x + b.w * 0.5, b.y + 8);
     if (b.skull) drawSkull(b.x + b.w * 0.5, b.y + 6);
+    if (b.kind === 'tower' && b.h > 36) drawBanner(b);
+  }
+
+  function drawBanner(b) {
+    const left = b.team === 'enemy';
+    const poleX = left ? b.x + 3 : b.x + b.w - 6;
+    const y = b.y + 8;
+    const len = Math.min(36, b.h - 12);
+    ctx.fillStyle = '#f4efe4';
+    ctx.fillRect(poleX, y, 3, len);
+    ctx.fillStyle = b.team === 'player' ? '#2f74e0' : '#d43842';
+    const dir = left ? -1 : 1;
+    const wave = Math.sin(time * 3.2 + b.x * 0.02) * 3;
+    ctx.beginPath();
+    ctx.moveTo(poleX + (left ? 0 : 3), y + 2);
+    ctx.lineTo(poleX + dir * (18 + wave), y + 9);
+    ctx.lineTo(poleX + (left ? 0 : 3), y + 18);
+    ctx.closePath();
+    ctx.fill();
   }
 
   function drawKnight(x, y) {
@@ -1828,12 +2046,13 @@
     ctx.lineTo(-22, 0);
     ctx.lineTo(-26, 4);
     ctx.fill();
-    const heavy = r.kind === 'heavy';
+      const heavy = r.kind === 'heavy' || r.kind === 'meteor';
     const drill = r.kind === 'drill';
     if (bulletImg.complete && bulletImg.naturalWidth) {
       const sc = heavy ? 1.5 : 1;
       const bw = 36 * sc, bh = 16 * sc;
       if (drill) ctx.filter = 'hue-rotate(200deg) saturate(1.6) brightness(1.2)';
+      else if (r.ice) ctx.filter = 'hue-rotate(190deg) saturate(1.5) brightness(1.15)';
       else if (r.team === 'enemy') ctx.filter = 'saturate(0.75) hue-rotate(-12deg)';
       ctx.drawImage(bulletImg, -bw * 0.62, -bh / 2, bw, bh);
       ctx.filter = 'none';
@@ -1942,20 +2161,24 @@
   }
 
   function drawOrb(o) {
-    if (o.cd > 0) return;
+    if (!o.alive) return;
     const y = o.y + Math.sin(time * 2 + o.phase) * 8;
+    const icon = { quake: '≋', ice: '❄', meteor: '★', mend: '+', fan: '»' }[o.kind] || '?';
     ctx.save();
     ctx.translate(o.x, y);
     ctx.fillStyle = 'rgba(20,40,20,0.18)';
     ctx.beginPath();
-    ctx.ellipse(4, 26, 18, 6, 0, 0, 7);
+    ctx.ellipse(0, 26, 16, 5, 0, 0, 7);
     ctx.fill();
-    drawBox(-20, -22, 36, 40, o.add >= 3 ? '#ffb703' : '#7CDE6A', 12);
+    drawBox(-18, -20, 36, 36, '#e6b15a', 8);
+    ctx.strokeStyle = '#8a5a22';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(-18, -20, 36, 36);
     ctx.fillStyle = '#243044';
     ctx.font = '800 18px Nunito, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText('+' + o.add, -2, -2);
+    ctx.fillText(icon, 0, -2);
     ctx.restore();
   }
 
@@ -2013,14 +2236,6 @@
       show = true;
       cannonAng = keyAim;
     }
-    ctx.save();
-    ctx.translate(L.x, L.y);
-    ctx.rotate(cannonAng);
-    ctx.fillStyle = '#2c3440';
-    ctx.fillRect(0, -5, 26, 10);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(20, -7, 8, 14);
-    ctx.restore();
     if (!show) return;
     const kind = armed && specialLeft > 0 ? armed : 'normal';
     let pvx = vx, pvy = vy;
@@ -2119,6 +2334,29 @@
     }
     ctx.globalAlpha = 1;
     if (playing && !over) drawAim();
+    drawCannons();
+  }
+
+  function drawCannon(x, y, ang, team) {
+    const img = cannonImg[team];
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(ang);
+    if (img && img.complete && img.naturalWidth) {
+      const sc = 0.2;
+      ctx.drawImage(img, -142 * sc, -218 * sc, img.naturalWidth * sc, img.naturalHeight * sc);
+    } else {
+      ctx.fillStyle = team === 'player' ? '#2f74e0' : '#d43842';
+      ctx.fillRect(0, -6, 28, 12);
+    }
+    ctx.restore();
+  }
+
+  function drawCannons() {
+    const L = launcher();
+    if (L.alive) drawCannon(L.x, L.y, cannonAng, 'player');
+    const m = enemyMuzzle();
+    if (m) drawCannon(m.x, m.y, enemyAng, 'enemy');
   }
 
   function loop(now) {
@@ -2229,12 +2467,31 @@
     get orbs() { return orbs; },
     get blocks() { return blocks; },
     get barrels() { return barrels; },
+    get held() { return held.slice(); },
     armSpecial,
     detonate,
+    give(kind) { held.push(kind); refreshMagics(); },
+    setLevel(n) {
+      level = n;
+      score = 0;
+      over = null;
+      playing = true;
+      paused = false;
+      veil.hidden = true;
+      endEl.hidden = true;
+      placeWorld();
+      refreshHud();
+      refreshSpecials();
+      refreshMagics();
+    },
     get state() {
       return {
         playing, over, ammo, salvo, score, level, armed, specialLeft, coreChip, collapseAwarded, turn,
         hpE: hpOf('enemy'), hpP: hpOf('player'),
+        skipEnemy, skipPlayer, spellArmed, held: held.slice(), foeHeld: foeHeld.slice(),
+        barrels: barrels.filter(b => b.alive).map(b => ({ x: Math.round(b.x), y: Math.round(b.y), kind: b.kind })),
+        crates: orbs.filter(o => o.alive).length,
+        enemyBlocks: blocks.filter(b => b.team === 'enemy' && !b.dead).length,
       };
     },
   };

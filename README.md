@@ -23,6 +23,20 @@ npx serve .
 
 Detaljne konvencije: `.claude/skills/browser-games/SKILL.md`.
 
+## Benchmark
+
+U chatu, za bilo koju igru iz `games/`:
+
+```
+/benchmark pilana-tajkun 15s
+```
+
+`<igra>` je slug foldera (`pilana-tajkun`, `monster-lane`, `surprizi`, `kamp-tajkun`, `razori-kule`, `osvoji-svet`). Trajanje je u sekundama (`15s` ili `15`, podrazumevano 8). Više imena u jednom pozivu daje uporednu tabelu.
+
+Izveštaj: vreme učitavanja, prosečan FPS, 1% low, p95/p99 frejma, trzaji preko 50 ms i JS heap. Chrome ide na pravom GPU-u. Brojevi važe za ovu mašinu.
+
+Još opcija: `mobile` (390×844), `query:?auto`, `actions:click:#startBtn;wait:1000`, `no-start`, `swiftshader`. Skill: `.cursor/skills/benchmark/SKILL.md`.
+
 ## Plan monetizacije
 
 `MONETIZATION.md`: roadmap, pravila za reklame i metrike. Agenti ga prate preko `AGENTS.md` / `CLAUDE.md`.
