@@ -452,6 +452,7 @@ const UP = {
   planerCrew:{ vals: [1, 1.25, 1.5, 1.75, 1.9, 2.1, 2.25, 2.4], costs: [300, 450, 650, 900, 1050, 12000, 40000] },
   boardCap: { vals: [60, 80, 100, 120, 150, 175, 200, 230, 270], costs: [250, 400, 550, 700, 900, 1200, 28000, 90000] },
   boardN:   { vals: [1, 2, 3, 4], costs: [380, 900, 2100] },
+  boardHaul:{ vals: [0, 1, 2], costs: [480, 1600] },
   tub:      { vals: [0, 1, 2, 3, 4, 5, 6], costs: [400, 800, 1400, 2500, 4500, 13000] },
   chipper:  { vals: [0, 1], costs: [900] },
   chipSpd:  { vals: [6.2, 5.95, 5.71, 5.49, 5.27, 5.06, 4.85, 4.66, 4.47, 4.29, 4.12, 3.96, 3.84, 3.72, 3.62], costs: [700, 1100, 1500, 2000, 2500, 2800, 8000, 20000, 50000, 120000, 280000, 700000, 1500000, 3000000] },
@@ -679,6 +680,14 @@ const RIVER_PTS = [[34, -80], [31, -40], [36, -14], [33, 4], [33, 14], [31, 26],
 const riverCurve = new THREE.CatmullRomCurve3(RIVER_PTS.map(p => V(p[0], 0, p[1])), false, 'centripetal');
 const riverS = riverCurve.getSpacedPoints(520);
 const RIVER_HW = 4.6;
+// Customer drive stays inland. The west bank, between this line and the water, is the tree row.
+const BANK_DRIVE = [
+  { x: 19.4, z: -53.4 },
+  { x: 19.4, z: -22 },
+  { x: 25.1, z: -13.5 },
+  { x: 25.1, z: 3.4 },
+  { x: 20.8, z: 9.2 },
+];
 function riverDist(x, z) {
   if (x < 18 || x > 50) return 99;
   let m = 1e9;
@@ -691,10 +700,16 @@ const ROAD_PTS = [[-44, 7.7], [-29, 7.7], [-8, 7.7], [-1, 7.7], [7, 7.9], [14, 1
 const roadCurve = new THREE.CatmullRomCurve3(ROAD_PTS.map(p => V(p[0], 0, p[1])), false, 'centripetal');
 const roadPts = roadCurve.getSpacedPoints(Math.ceil(roadCurve.getLength() / RS_STEP));
 function rightsOf(pts) {
+  let prev = null;
   return pts.map((p, i) => {
     const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
-    const t = b.clone().sub(a).normalize();
-    return V(-t.z, 0, t.x);
+    const t = b.clone().sub(a);
+    if (t.lengthSq() < 1e-8) return prev ? prev.clone() : V(1, 0, 0);
+    t.normalize();
+    const r = V(-t.z, 0, t.x);
+    if (prev && r.dot(prev) < 0) r.negate();
+    prev = r;
+    return r;
   });
 }
 const roadRight = rightsOf(roadPts);
@@ -702,12 +717,12 @@ const LANE = 1.2;
 const outPts = roadPts.map((p, i) => p.clone().addScaledVector(roadRight[i], LANE));
 const retPts = roadPts.map((p, i) => p.clone().addScaledVector(roadRight[i], -LANE)).reverse();
 const loopCurve = new THREE.CatmullRomCurve3([
-  outPts[outPts.length - 1], V(63.5, 0, 11.4), V(68, 0, 11.7), V(71.4, 0, 9.9), V(71.6, 0, 7.3),
-  V(68.3, 0, 5.5), V(63.5, 0, 5.9), retPts[0],
+  outPts[outPts.length - 1], V(64.5, 0, 11.8), V(70.2, 0, 12.6), V(75.2, 0, 10.4),
+  V(75.6, 0, 7.2), V(73.4, 0, 4.6), V(67.2, 0, 4.4), retPts[0],
 ], false, 'centripetal');
 const loopAll = loopCurve.getSpacedPoints(Math.ceil(loopCurve.getLength() / RS_STEP));
 const frameSpurPts = new THREE.CatmullRomCurve3([
-  V(64.6, 0, 5.5), V(67.6, 0, 2.6), V(71.6, 0, 0.4), V(76.0, 0, -1.6), V(78.3, 0, -3.6), V(78.3, 0, -5.6),
+  V(67.2, 0, 4.6), V(69.4, 0, 2.2), V(72.6, 0, 0.2), V(76.0, 0, -1.6), V(78.3, 0, -3.6), V(78.3, 0, -5.6),
 ], false, 'centripetal').getSpacedPoints(26);
 const loopPts = loopAll.slice(1, -1);
 const ROUTE = [...outPts, ...loopPts, ...retPts];
@@ -807,12 +822,7 @@ const waterTex = canvasTex(128, 128, (c, w, h) => {
   c.strokeStyle = 'rgba(255,255,255,0.28)'; c.lineWidth = 2;
   for (let i = 0; i < 14; i++) { const y = Math.random() * h, x = Math.random() * w; c.beginPath(); c.moveTo(x, y); c.quadraticCurveTo(x + 10, y - 3, x + 22, y); c.stroke(); }
 });
-waterTex.wrapS = waterTex.wrapT = THREE.RepeatWrapping; waterTex.repeat.set(3, 18);
-{
-  const w = new THREE.Mesh(new THREE.PlaneGeometry(30, TH), new THREE.MeshStandardMaterial({ map: waterTex, roughness: 0.18, metalness: 0.05, color: 0xffffff }));
-  w.rotation.x = -Math.PI / 2; w.position.set(33.5, -0.6, TCZ); w.receiveShadow = true;
-  scene.add(w);
-}
+waterTex.wrapS = waterTex.wrapT = THREE.RepeatWrapping; waterTex.repeat.set(1, 0.35);
 
 // =====================================================================
 // RIBBON (roads & paint) helper
@@ -841,6 +851,10 @@ function ribbon(pts, rights, halfW, off, y, m, i0 = 0, i1 = pts.length - 1, pare
 function dashed(pts, rights, off, y, m, i0, i1, on = 4, offLen = 4, halfW = 0.08, parent = scene) {
   for (let i = i0; i < i1; i += on + offLen) ribbon(pts, rights, halfW, off, y, m, i, Math.min(i1, i + on), parent);
 }
+{
+  const waterMat = new THREE.MeshStandardMaterial({ map: waterTex, roughness: 0.22, metalness: 0.04, color: 0xffffff });
+  ribbon(riverS, rightsOf(riverS), 6.0, 0, -0.55, waterMat);
+}
 
 // =====================================================================
 // ROADS
@@ -867,14 +881,14 @@ function buildHighway() {
   ribbon(roadPts, roadRight, 0.07, -edge, ROAD_LINE_Y, lineWhite, ROAD_I0, roadPts.length - 1, roadLines);
   dashed(roadPts, roadRight, 0, ROAD_LINE_Y, lineWhite, ROAD_I0, roadPts.length - 1, 4, 4, 0.08, roadLines);
 }
-const loopRight = rightsOf(loopAll);
-ribbon(loopAll, loopRight, 1.7, 0, ROAD_Y, roadMat);
-ribbon(loopAll, loopRight, 0.07, 1.6, ROAD_LINE_Y, lineWhite);
-ribbon(loopAll, loopRight, 0.07, -1.6, ROAD_LINE_Y, lineWhite);
+{
+  const a = loopAll[0], b = loopAll[1], c = loopAll[loopAll.length - 1], d = loopAll[loopAll.length - 2];
+  const inn = a.clone().sub(b).normalize(), out = c.clone().sub(d).normalize();
+  const meshPts = [a.clone().addScaledVector(inn, 3.2), ...loopAll, c.clone().addScaledVector(out, 3.2)];
+  ribbon(meshPts, rightsOf(meshPts), 1.85, 0, ROAD_Y + 0.006, roadMat);
+}
 const frameSpurRight = rightsOf(frameSpurPts);
 ribbon(frameSpurPts, frameSpurRight, 1.7, 0, 0.18, roadMat);
-ribbon(frameSpurPts, frameSpurRight, 0.07, 1.55, 0.2, lineWhite);
-ribbon(frameSpurPts, frameSpurRight, 0.07, -1.55, 0.2, lineWhite);
 function roadBand() {
   const v = UP.road.vals[S.lv.road];
   if (v < 12) return 0;
@@ -896,7 +910,7 @@ roadSignCanvas.width = 256; roadSignCanvas.height = 320;
 const roadSignTex = new THREE.CanvasTexture(roadSignCanvas);
 roadSignTex.colorSpace = THREE.SRGBColorSpace;
 const roadSign = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.75), new THREE.MeshBasicMaterial({ map: roadSignTex, transparent: true, toneMapped: false }));
-roadSign.position.set(7.6, 1.9, 2.15);
+roadSign.position.set(22.2, 1.9, 10.6);
 roadSign.rotation.y = Math.atan2(CAM_DIR.x, CAM_DIR.z);
 scene.add(roadSign);
 function drawRoadSign() {
@@ -999,14 +1013,35 @@ function bayHatchTex() {
   });
 }
 function bayNumTex(n) {
-  return canvasTex(256, 256, (c, w, h) => {
-    c.clearRect(0, 0, w, h);
-    c.fillStyle = 'rgba(255,255,255,0.96)';
-    c.font = '800 168px "Baloo 2", Arial Black, sans-serif';
-    c.textAlign = 'center';
-    c.textBaseline = 'middle';
-    c.fillText(String(n), w / 2, h / 2 + 8);
-  });
+  const cnv = document.createElement('canvas'); cnv.width = 256; cnv.height = 256;
+  const ctx = cnv.getContext('2d');
+  const tex = new THREE.CanvasTexture(cnv); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 4;
+  const paint = () => {
+    const w = cnv.width, h = cnv.height;
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = 'rgba(255,255,255,0.96)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    const label = String(n);
+    let size = 150;
+    const metrics = () => {
+      ctx.font = '800 ' + size + 'px "Baloo 2", Arial Black, sans-serif';
+      const m = ctx.measureText(label);
+      const asc = m.actualBoundingBoxAscent || size * 0.72;
+      const desc = m.actualBoundingBoxDescent || size * 0.18;
+      return { asc, desc, ink: asc + desc };
+    };
+    let box = metrics();
+    if (box.ink > h * 0.78) {
+      size = Math.max(64, Math.floor(size * (h * 0.78) / box.ink));
+      box = metrics();
+    }
+    ctx.fillText(label, w / 2, h / 2 + (box.asc - box.desc) / 2);
+    tex.needsUpdate = true;
+  };
+  paint();
+  if (document.fonts && document.fonts.load) document.fonts.load('800 150px "Baloo 2"').then(paint);
+  return tex;
 }
 const bayHatchMat = new THREE.MeshStandardMaterial({ map: bayHatchTex(), roughness: 0.94 });
 function wheelStop(parent, len) {
@@ -1181,7 +1216,10 @@ let buyerHome = null;
 
 // =====================================================================
 // FOREST (instanced pines everywhere outside the cleared areas)
+// FOREST_DENSITY: higher packs the trees closer. 1.3 is a little denser
+// than the open woods. Try 1.1 to 1.8.
 // =====================================================================
+const FOREST_DENSITY = 1.3;
 function distToPts(pts, x, z, lim) {
   let m = lim * lim;
   for (const p of pts) { const dx = p.x - x, dz = p.z - z; if (Math.abs(dx) > lim || Math.abs(dz) > lim) continue; const d = dx * dx + dz * dz; if (d < m) return 0; }
@@ -1198,9 +1236,8 @@ function cleared(x, z) {
   if (x > -50 && x < -16 && z > -21 && z < 2) return true;          // bin expansion and the pickup apron
   if (x > 8.2 && x < 11.0 && z > -27.2 && z < -5.2) return true;   // forklift link behind the shop row
   if (x > -22 && x < 12 && z > -27.1 && z < -24.7) return true;    // forklift lane along the back of the shops
-  if (x > 22.4 && x < 33.6 && z > -55.4 && z < 15.2) return true; // customer drive, with shoulders, ending at the lot
-  if (x > 12 && x < 33.2 && z > -55.6 && z < -50.2) return true;   // aisle turns onto that drive, clear of the trees
-  if (x > 12.2 && x < 33 && z > -21.6 && z < -7.0) return true;    // yard corner meets the river drive
+  if (x > 14.5 && x < 29 && z > -58 && z < 16) return true;         // customer drive, inland of the west bank
+  if (x > 12 && x < 24 && z > -56 && z < -50) return true;          // aisle turns onto that drive
   if (x > -30 && x < 20 && z > -56.5 && z < -32.4) return true;    // customer square, pushed into the trees
   if (x > -30 && x < 16 && z > -48 && z < -24) return true;         // shop row: joinery, stall, firewood, kits
   if (x > -20.6 && x < -1.4 && z > -34.6 && z < -21.8) return true; // firewood belt and the grass it crosses
@@ -1221,29 +1258,111 @@ function cleared(x, z) {
   return false;
 }
 {
-  const cand = [];
-  const SP = 7.4;
-  for (let x = -92; x < 118; x += SP) for (let z = -70; z < 74; z += SP) {
-    const px = x + rand(-1.15, 1.15), pz = z + rand(-1.15, 1.15);
-    if (!cleared(px, pz)) cand.push([px, pz]);
+  const spots = [];
+  const step = 6.4 / FOREST_DENSITY;
+  const MIN = 5.6 / FOREST_DENSITY, min2 = MIN * MIN;
+  const jitter = step * 0.48;
+  for (let x = -92; x < 118; x += step) for (let z = -70; z < 74; z += step) {
+    const px = x + rand(-jitter, jitter), pz = z + rand(-jitter, jitter);
+    if (cleared(px, pz)) continue;
+    let close = false;
+    for (let i = 0; i < spots.length; i++) {
+      const dx = spots[i][0] - px, dz = spots[i][1] - pz;
+      if (dx * dx + dz * dz < min2) { close = true; break; }
+    }
+    if (!close) spots.push([px, pz, Math.random() < 0.5 ? 0 : 1]);
   }
-  const N = cand.length;
-  const trunk = new THREE.InstancedMesh(cylG(0.16, 0.22, 1.2, 6), mat(0x6e4a2c, { flat: true }), N);
-  const cone1 = new THREE.InstancedMesh(new THREE.ConeGeometry(1.25, 2.3, 7), mat(0xffffff, { flat: true, r: 0.85 }), N);
-  const cone2 = new THREE.InstancedMesh(new THREE.ConeGeometry(0.88, 1.8, 7), mat(0xffffff, { flat: true, r: 0.85 }), N);
+  const pines = spots.filter(s => s[2] === 0);
+  const rounds = spots.filter(s => s[2] === 1);
   const o = new THREE.Object3D(), col = new THREE.Color();
-  const greens = [0x3e9a3a, 0x49aa42, 0x338c36, 0x57b84a, 0x2f7f35];
-  for (let i = 0; i < N; i++) {
-    const [x, z] = cand[i], s = rand(0.85, 1.35), ry = rand(0, 6.3);
-    o.rotation.set(0, ry, 0); o.scale.setScalar(s);
-    o.position.set(x, 0.6 * s, z); o.updateMatrix(); trunk.setMatrixAt(i, o.matrix);
-    o.position.set(x, 1.95 * s, z); o.updateMatrix(); cone1.setMatrixAt(i, o.matrix);
-    o.position.set(x, 3.05 * s, z); o.updateMatrix(); cone2.setMatrixAt(i, o.matrix);
-    col.setHex(greens[i % greens.length]).multiplyScalar(rand(0.9, 1.1));
-    cone1.setColorAt(i, col); cone2.setColorAt(i, col.multiplyScalar(1.08));
+  const pineGreen = [0x3e9a3a, 0x49aa42, 0x338c36, 0x57b84a, 0x2f7f35];
+  const roundGreen = [0x6f9a32, 0x8aaa3a, 0x4f8a28, 0x7cae45, 0x5a9a38];
+  function scatter(list, parts, lift) {
+    const n = list.length;
+    if (!n) return [];
+    const meshes = parts.map(p => new THREE.InstancedMesh(p.geo, p.mat, n));
+    for (let i = 0; i < n; i++) {
+      const [x, z] = list[i], s = rand(0.78, 1.42), ry = rand(0, 6.28);
+      o.rotation.set(0, ry, 0); o.scale.setScalar(s);
+      for (let k = 0; k < parts.length; k++) {
+        o.position.set(x, lift[k] * s, z); o.updateMatrix();
+        meshes[k].setMatrixAt(i, o.matrix);
+      }
+      col.setHex(parts[1].colors[i % parts[1].colors.length]).multiplyScalar(rand(0.86, 1.12));
+      for (let k = 1; k < meshes.length; k++) meshes[k].setColorAt(i, col);
+    }
+    for (let k = 1; k < meshes.length; k++) meshes[k].instanceColor.needsUpdate = true;
+    return meshes;
   }
-  forestDecor = [trunk, cone1, cone2];
-  for (const m of forestDecor) { m.castShadow = true; m.receiveShadow = true; scene.add(m); }
+  const pineParts = [
+    { geo: cylG(0.16, 0.22, 1.2, 6), mat: mat(0x6e4a2c, { flat: true }) },
+    { geo: new THREE.ConeGeometry(1.25, 2.3, 7), mat: mat(0xffffff, { flat: true, r: 0.85 }), colors: pineGreen },
+    { geo: new THREE.ConeGeometry(0.88, 1.8, 7), mat: mat(0xffffff, { flat: true, r: 0.85 }), colors: pineGreen },
+  ];
+  const roundParts = [
+    { geo: cylG(0.18, 0.26, 1.35, 6), mat: mat(0x6e4a2c, { flat: true }) },
+    { geo: new THREE.SphereGeometry(1.15, 6, 5), mat: mat(0xffffff, { flat: true, r: 0.9 }), colors: roundGreen },
+    { geo: new THREE.SphereGeometry(0.72, 6, 5), mat: mat(0xffffff, { flat: true, r: 0.9 }), colors: roundGreen },
+  ];
+  forestDecor = scatter(pines, pineParts, [0.6, 1.95, 3.05]).concat(scatter(rounds, roundParts, [0.68, 2.15, 3.15]));
+  for (const m of forestDecor) { m.castShadow = false; m.receiveShadow = false; scene.add(m); }
+}
+{
+  const west = rightsOf(riverS);
+  const spots = [];
+  const gap = 4.6;
+  let acc = 0, next = 2;
+  const nearDrive = (x, z) => {
+    for (let i = 1; i < BANK_DRIVE.length; i++) {
+      const a = BANK_DRIVE[i - 1], b = BANK_DRIVE[i];
+      const dx = b.x - a.x, dz = b.z - a.z, l2 = dx * dx + dz * dz || 1;
+      const t = clamp(((x - a.x) * dx + (z - a.z) * dz) / l2, 0, 1);
+      const px = x - (a.x + dx * t), pz = z - (a.z + dz * t);
+      if (px * px + pz * pz < 2.25 * 2.25) return true;
+    }
+    return false;
+  };
+  for (let i = 1; i < riverS.length; i++) {
+    const a = riverS[i - 1], b = riverS[i];
+    acc += a.distanceTo(b);
+    if (acc < next) continue;
+    next = acc + gap;
+    const p = riverS[i], n = west[i];
+    const side = n.x <= 0 ? 1 : -1;
+    const x = p.x + n.x * side * 6.7;
+    const z = p.z + n.z * side * 6.7;
+    if (z < -64 || z > 9.2) continue;
+    if (z > 8 && x > 22) continue;
+    if (nearDrive(x, z)) continue;
+    if (distToPts(roadPts, x, z, 6.2) === 0) continue;
+    spots.push([x, z]);
+  }
+  const o = new THREE.Object3D(), col = new THREE.Color();
+  const greens = [0x3e9a3a, 0x49aa42, 0x338c36, 0x57b84a];
+  const parts = [
+    { geo: cylG(0.16, 0.22, 1.15, 6), mat: mat(0x6e4a2c, { flat: true }), lift: 0.55 },
+    { geo: new THREE.ConeGeometry(1.15, 2.15, 7), mat: mat(0xffffff, { flat: true, r: 0.85 }), lift: 1.85 },
+    { geo: new THREE.ConeGeometry(0.8, 1.65, 7), mat: mat(0xffffff, { flat: true, r: 0.85 }), lift: 2.9 },
+  ];
+  if (spots.length) {
+  const meshes = parts.map(p => new THREE.InstancedMesh(p.geo, p.mat, spots.length));
+  spots.forEach((s, i) => {
+    const sc = 0.82 + (i % 3) * 0.12;
+    o.rotation.set(0, i * 1.7, 0);
+    o.scale.setScalar(sc);
+    col.setHex(greens[i % greens.length]);
+    for (let k = 0; k < parts.length; k++) {
+      o.position.set(s[0], parts[k].lift * sc, s[1]);
+      o.updateMatrix();
+      meshes[k].setMatrixAt(i, o.matrix);
+      if (k > 0) meshes[k].setColorAt(i, col);
+    }
+  });
+  for (const m of meshes) {
+    if (m.instanceColor) m.instanceColor.needsUpdate = true;
+    m.castShadow = false; m.receiveShadow = false; scene.add(m);
+  }
+  }
 }
 
 // =====================================================================
@@ -1463,17 +1582,22 @@ const CUTTER_HOME = [V(CAMP.x - 3.2, 0, -0.6), V(CAMP.x - 4.4, 0, 2.2), V(CAMP.x
   sign.position.set(0, 2.45, 2.15); hut.add(sign);
   campHut = { parent: hut, shell: hutShell, sign };
 }
-function buildCampTree(x, z) {
+function buildCampTree(x, z, round) {
   const g = new THREE.Group(); g.position.set(x, 0, z); scene.add(g);
   const pivot = new THREE.Group(); g.add(pivot);
   part(cylG(0.18, 0.28, 1.4, 7), 0x6e4a2c, pivot, 0, 0.7, 0);
-  part(new THREE.ConeGeometry(1.35, 2.2, 7), mat(0x3e9a3a, { flat: true }), pivot, 0, 2.2, 0);
-  part(new THREE.ConeGeometry(0.95, 1.7, 7), mat(0x57b84a, { flat: true }), pivot, 0, 3.2, 0);
+  if (round) {
+    part(new THREE.SphereGeometry(1.15, 6, 5), mat(0x6f9a32, { flat: true }), pivot, 0, 2.15, 0);
+    part(new THREE.SphereGeometry(0.72, 6, 5), mat(0x8aaa3a, { flat: true }), pivot, 0, 3.15, 0);
+  } else {
+    part(new THREE.ConeGeometry(1.35, 2.2, 7), mat(0x3e9a3a, { flat: true }), pivot, 0, 2.2, 0);
+    part(new THREE.ConeGeometry(0.95, 1.7, 7), mat(0x57b84a, { flat: true }), pivot, 0, 3.2, 0);
+  }
   const stump = part(cylG(0.24, 0.3, 0.28, 8), 0x6e4a2c, g, 0, 0.14, 0);
   stump.visible = false;
   return { g, pivot, stump, down: 0, cool: 0 };
 }
-const campTrees = CAMP_TREES_POS.map(p => buildCampTree(p.x, p.z));
+const campTrees = CAMP_TREES_POS.map((p, i) => buildCampTree(p.x, p.z, i % 2 === 1));
 function buildCutter() {
   const g = new THREE.Group(); scene.add(g);
   const body = new THREE.Group(); g.add(body);
@@ -2864,14 +2988,18 @@ function buildPlanerUnit(x, z, index) {
   part(rbox(9.2, 0.16, 4.4, 0.08, 1), 0xb7c2cb, ghost, 0, 0.08, 0, 0, 0, 0, false);
   const floor = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 3.8), bayHatchMat);
   floor.rotation.x = -Math.PI / 2; floor.position.y = 0.16; ghost.add(floor);
-  if (index > 0) {
-    const num = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5), new THREE.MeshBasicMaterial({
-      map: bayNumTex(index + 1), transparent: true, depthWrite: false, toneMapped: false,
-    }));
-    num.rotation.x = -Math.PI / 2; num.position.y = 0.2; ghost.add(num);
-  }
   viz.ghost = ghost;
   const g = new THREE.Group(); g.position.set(x, 0, z); g.visible = false; scene.add(g);
+  const addBayNum = (parent, y) => {
+    const num = new THREE.Mesh(new THREE.PlaneGeometry(1.35, 1.35), new THREE.MeshBasicMaterial({
+      map: bayNumTex(index + 1), transparent: true, depthWrite: false, toneMapped: false,
+    }));
+    num.rotation.x = -Math.PI / 2;
+    num.position.set(0, y, 2.2);
+    parent.add(num);
+  };
+  addBayNum(ghost, 0.2);
+  addBayNum(g, 0.24);
   const shell = new THREE.Group(); g.add(shell);
   part(rbox(9.0, 0.28, 3.2, 0.06, 1), 0x5c656d, shell, 0, 0.2, 0, 0, 0, 0, false);
   part(boxG(8.6, 0.08, 0.16), hazardMat(8.6), shell, 0, 0.38, 1.35);
@@ -2884,6 +3012,17 @@ function buildPlanerUnit(x, z, index) {
     const roll = part(cylG(0.12, 0.12, 1.35, 10), 0xb7c0c6, g, x, 1.02, 0);
     roll.rotation.x = Math.PI / 2;
   }
+  const rollerBed = (x0, x1) => {
+    const cx = (x0 + x1) / 2, len = Math.abs(x1 - x0);
+    part(rbox(len, 0.1, 1.62, 0.03, 1), 0x4a545c, g, cx, 0.78, 0);
+    part(rbox(len - 0.08, 0.035, 1.22, 0.01, 1), 0x2c3338, g, cx, 0.845, 0);
+    for (const s of [-1, 1]) part(rbox(len, 0.1, 0.08, 0.02, 1), 0x6a737b, g, cx, 0.98, s * 0.74);
+    for (const lx of [x0 + 0.18, x1 - 0.18]) for (const s of [-1, 1]) {
+      part(rbox(0.1, 0.74, 0.1, 0.02, 1), 0x3a4248, g, lx, 0.37, s * 0.7);
+    }
+  };
+  rollerBed(-4.05, -1.4);
+  rollerBed(1.45, 3.85);
   const outRoll = new THREE.Group();
   outRoll.position.set(2.5, 1.02, 0);
   outRoll.rotation.x = Math.PI / 2;
@@ -2928,21 +3067,37 @@ function buildBoardPallet(x, z) {
   const g = new THREE.Group();
   g.position.set(x, 0, z);
   scene.add(g);
-  for (const sx of [-0.62, 0, 0.62]) part(rbox(0.16, 0.16, 1.5, 0.02, 1), 0x6b4428, g, sx, 0.1, 0);
-  for (const sz of [-0.58, 0, 0.58]) part(rbox(1.72, 0.05, 0.14, 0.015, 1), 0x8d5a32, g, 0, 0.2, sz);
+  const shell = new THREE.Group();
+  g.add(shell);
+  for (const sx of [-0.62, 0, 0.62]) part(rbox(0.16, 0.16, 1.5, 0.02, 1), 0x6b4428, shell, sx, 0.1, 0);
+  for (const sz of [-0.58, 0, 0.58]) part(rbox(1.72, 0.05, 0.14, 0.015, 1), 0x8d5a32, shell, 0, 0.2, sz);
   const boards = [];
   const tones = [0xf4e6c0, 0xe8cb90, 0xfbf3dc, 0xd4b06a];
   for (let layer = 0; layer < 4; layer++) {
     for (let i = 0; i < 5; i++) {
-      const m = part(rbox(0.26, 0.075, 1.28, 0.01, 1), tones[(layer + i) % tones.length], g, -0.52 + i * 0.26 + (layer % 2) * 0.05, 0.32 + layer * 0.085, layer % 2 ? 0.04 : -0.03);
+      const m = part(rbox(0.26, 0.075, 1.28, 0.01, 1), tones[(layer + i) % tones.length], g, -0.52 + i * 0.26 + (layer % 2) * 0.05, 0.24 + layer * 0.085, layer % 2 ? 0.04 : -0.03);
       m.visible = false;
       boards.push(m);
     }
   }
   g.visible = false;
-  return { g, boards };
+  return { g, boards, shell };
 }
 const boardPallets = BOARD_SLOTS.map(p => buildBoardPallet(p.x, p.z));
+const boardRides = [];
+const boardBelt = new THREE.Group();
+scene.add(boardBelt);
+for (const z of PLANER_Z) {
+  part(rbox(3.15, 0.07, 0.62, 0.015), 0x3e474f, boardBelt, -23.15, 0.38, z);
+  part(rbox(2.9, 0.02, 0.42, 0.004), 0x2a3036, boardBelt, -23.15, 0.43, z);
+}
+const boardRidePool = [];
+for (let i = 0; i < 8; i++) {
+  const m = part(rbox(1.2, 0.07, 0.38, 0.01, 1), 0xf4e6c0, boardBelt, 0, 0.52, 0);
+  m.visible = false;
+  boardRidePool.push(m);
+}
+boardBelt.visible = false;
 function buildPlanerHand() {
   const g = new THREE.Group(); scene.add(g); g.visible = false;
   const body = new THREE.Group(); g.add(body);
@@ -2972,7 +3127,7 @@ planerMill.visible = false;
 scene.add(planerMill);
 function updatePlanerLook() {
   const n = planerCount();
-  planerMill.visible = n > 0;
+  planerMill.visible = false;
   planers.forEach((u, i) => {
     u.g.visible = i < n;
     u.ghost.visible = i >= n && (i === 0 || planerOn());
@@ -2992,6 +3147,7 @@ function syncBoardStack() {
   });
 }
 function boardLimit() { return UP.boardCap.vals[S.lv.boardCap] + (boardSlots() - 1) * 45; }
+function boardHaulLv() { return S.lv.boardHaul | 0; }
 function handSpeed() {
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
   return (4.2 + (2.6 - interval) * 0.8) * UP.planerCrew.vals[S.lv.planerCrew];
@@ -3005,7 +3161,18 @@ function boardsPending() {
   let n = S.boards;
   for (const u of planers) n += u.out;
   for (const h of hands) if (h.carry === 'board') n++;
+  n += boardRides.length;
   return n;
+}
+function tickBoardRides(dt) {
+  for (let i = boardRides.length - 1; i >= 0; i--) {
+    boardRides[i].u += dt * 0.85;
+    if (boardRides[i].u < 1) continue;
+    boardRides.splice(i, 1);
+    S.boards++;
+    bookMade('boards', 1);
+    if (!instant) sfx.drop();
+  }
 }
 function stepHand(h, dt, tx, tz, force) {
   const dx = tx - h.x, dz = tz - h.z, dist = Math.hypot(dx, dz);
@@ -3099,19 +3266,22 @@ function updateHand(h, dt) {
   }
 }
 function updatePlaner(dt) {
+  tickBoardRides(dt);
   if (!planerOn()) return;
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
   const n = planerCount();
+  const belt = boardHaulLv() >= 2;
   for (let i = 0; i < n; i++) {
     const u = planers[i];
-    const blocked = u.out >= OUT_MAX || u.infeed < BOARD_IN || boardsPending() >= boardLimit();
+    const blocked = (belt ? boardRides.length >= boardRidePool.length : u.out >= OUT_MAX) || u.infeed < BOARD_IN || boardsPending() >= boardLimit();
     if (blocked) u.t = Math.min(u.t, interval * 0.2);
     else {
       u.t += dt;
       if (u.t >= interval) {
         u.t = 0;
         u.infeed -= BOARD_IN;
-        u.out++;
+        if (belt) boardRides.push({ u: 0, z: PLANER_Z[i] });
+        else u.out++;
         if (!instant) sfx.planer();
       }
     }
@@ -3123,7 +3293,8 @@ function updatePlaner(dt) {
 }
 function planerBusy(i = 0) {
   const u = planers[i];
-  return planerOn() && u.out < OUT_MAX && u.infeed >= BOARD_IN && boardsPending() < boardLimit();
+  const beltFull = boardHaulLv() >= 2 && boardRides.length >= boardRidePool.length;
+  return planerOn() && !beltFull && u.out < OUT_MAX && u.infeed >= BOARD_IN && boardsPending() < boardLimit();
 }
 function updatePlanerVisual(dt, time) {
   const interval = UP.planerSpd.vals[S.lv.planerSpd];
@@ -3153,11 +3324,24 @@ function updatePlanerVisual(dt, time) {
     h.g.rotation.y = h.yaw;
     h.body.position.y = h.moving ? Math.abs(Math.sin(time * 10 + i)) * 0.06 : 0;
     if (h.actor) h.actor.clip = h.moving ? 'walk' : 'idle';
-    const haul = !!h.wagon && (h.carry === 'pieces' || h.carry === 'board');
-    h.pieces.visible = h.carry === 'pieces' && !haul;
-    h.board.visible = h.carry === 'board' && !haul;
-    if (h.wagon) h.wagon.visible = haul;
+    const wagonBoard = boardHaulLv() === 1 && h.carry === 'board';
+    h.pieces.visible = h.carry === 'pieces';
+    h.board.visible = h.carry === 'board' && !wagonBoard;
+    if (h.wagon) {
+      h.wagon.visible = wagonBoard;
+      if (h.wagon.load) h.wagon.load.visible = wagonBoard;
+    }
   });
+  const beltOn = boardHaulLv() >= 2 && (planerOn() || boardRides.length > 0);
+  boardBelt.visible = beltOn;
+  for (let i = 0; i < boardRidePool.length; i++) {
+    const m = boardRidePool[i];
+    const r = boardRides[i];
+    m.visible = !!r;
+    if (!r) continue;
+    const u = Math.min(1, r.u);
+    m.position.set(lerp(PLANER_X + 2.6, -21.55, u), 0.52, lerp(r.z, BOARD_PILE.z, u * 0.2));
+  }
 }
 
 // =====================================================================
@@ -3434,7 +3618,7 @@ function buildStall() {
     c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('SHOP', w / 2, h / 2 + 4);
   });
   const sign = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.82), new THREE.MeshStandardMaterial({ map: signTex, roughness: 0.7, side: THREE.DoubleSide }));
-  sign.position.set(0, 1.7, -1.35); sign.rotation.y = Math.PI; g.add(sign);
+  sign.position.set(0, 1.7, 1.05); sign.rotation.y = Math.PI; g.add(sign);
   part(rbox(0.28, 0.16, 0.28, 0.04), mat(0xfff5cc, { e: 0xffe9a0, ei: 0.7 }), g, 2.2, 2.35, 1.3, 0, 0, 0, false);
   const saleLog = new THREE.Mesh(logGeo, logMats);
   saleLog.scale.set(0.18, 0.72, 0.18); saleLog.rotation.z = Math.PI / 2;
@@ -3781,7 +3965,7 @@ function grabCustomer() {
 const CAR_SPD = 5.0;
 const SHOP_PARKS = [-9.4, -6.5, -3.6, -0.7];
 const SHOP_PARK_Z = -51.2;
-const SPUR_X = 28.4;
+const SPUR_X = 20.8;
 const shopTmp = V(), shopTmp2 = V();
 let JUNC_OUT = 0, JUNC_RET = 0, CAR_ENTER = 0, CAR_EXIT = 0, RET_Z = 7, OUT_Z = 9;
 function sameRoadLeg(a, b) {
@@ -3847,10 +4031,11 @@ function freePark() {
 function spurToPark(slot) {
   const retJ = routeAt(JUNC_RET, V());
   const x = SHOP_PARKS[slot];
+  const line = BANK_DRIVE.map(p => ({ x: p.x, z: p.z })).reverse();
   return [
     { x: retJ.x, z: retJ.z },
-    { x: SPUR_X, z: retJ.z },
-    { x: SPUR_X, z: SHOP_PARK_Z - 2.2 },
+    { x: line[0].x, z: retJ.z },
+    ...line,
     { x: x, z: SHOP_PARK_Z - 2.2 },
     { x: x, z: SHOP_PARK_Z },
   ];
@@ -3858,10 +4043,11 @@ function spurToPark(slot) {
 function spurToRoad(slot) {
   const outJ = routeAt(JUNC_OUT, V());
   const x = SHOP_PARKS[slot];
+  const line = BANK_DRIVE.map(p => ({ x: p.x, z: p.z }));
   return [
     { x: x, z: SHOP_PARK_Z - 2.2 },
-    { x: SPUR_X, z: SHOP_PARK_Z - 2.2 },
-    { x: SPUR_X, z: outJ.z },
+    ...line,
+    { x: line[line.length - 1].x, z: outJ.z },
     { x: outJ.x, z: outJ.z },
   ];
 }
@@ -3992,7 +4178,8 @@ function updateShopCars(dt) {
   carGap += dt;
   if (carGap > 5.5) {
     carGap = 0;
-    const idle = shopCars.find(c => c.phase === 'idle');
+    const idles = shopCars.filter(c => c.phase === 'idle');
+    const idle = idles.length ? idles[(Math.random() * idles.length) | 0] : null;
     const lined = shopCars.filter(c => c.phase === 'line').length;
     if (idle && shopTraffic() < 2 && carStand() && (freePark() >= 0 || lined < SHOP_LINE.length)) carLaunch(idle);
   }
@@ -5304,7 +5491,7 @@ const STATIONS = [
   { id: 'forks', name: 'Forklifts', icon: '🚜', blurb: 'They take cut wood from the bin, or boards from the pile, and load the trucks. They drive through each other. Unstick pulls a stuck bunch back onto the lane.', ups: ['forkN', 'forkSpd', 'forkCap'], spots: [{ x: -13.0, z: -16.4, r: 6.2 }] },
   { id: 'trucks', name: 'Trucks', icon: '🚚', blurb: 'Trucks haul cut wood and boards over the bridge to the buyer. Diesel comes out of what the load pays.', ups: ['truckN', 'truckCap'], spots: [{ x: -14.5, z: 5.5, r: 5.5 }] },
   { id: 'diesel', name: 'Fuel yard', icon: '⛽', blurb: 'The tanks north of the parking. A bigger tank cuts the diesel taken from every truck load.', ups: ['diesel'], spots: [{ x: -8, z: 20.4, r: 9 }] },
-  { id: 'planer', name: 'Planer', icon: '🪵', blurb: 'Turns spare cut wood into boards. The machines sit on the east side of the bin. A worker fetches from the east side and stacks the boards on the pallets just east of the machines.', ups: ['planer', 'planerN', 'planerSpd', 'planerCrew', 'boardCap', 'boardN'], spots: PLANER_Z.map(z => ({ x: PLANER_X, z, r: 4.2 })) },
+  { id: 'planer', name: 'Planer', icon: '🪵', blurb: 'Turns spare cut wood into boards. The machines sit on the east side of the bin. A worker fetches from the east side. At first he carries each board himself, then a wagon, then a belt stacks them on the pallets.', ups: ['planer', 'planerN', 'planerSpd', 'planerCrew', 'boardCap', 'boardN', 'boardHaul'], spots: PLANER_Z.map(z => ({ x: PLANER_X, z, r: 4.2 })) },
   { id: 'bin', name: 'Wood bin', icon: '📦', blurb: 'Holds the cut wood. Widen it, open another gate for the forklifts, or chip the overflow.', ups: ['tub', 'dockN', 'chipper', 'chipSpd', 'chipBite'], spots: [] },
   { id: 'road', name: 'Road', icon: '🛣️', blurb: 'A wider road gives the trucks room to spread out instead of bunching up.', ups: ['road'], spots: [{ x: 16, z: 12, r: 18 }] },
   { id: 'gate', name: 'Toll gate', icon: '🚧', blurb: 'The arm on the bridge. A faster gate means trucks spend less time waiting.', ups: ['gate'], spots: [{ x: 46, z: 18, r: 9 }] },
@@ -5430,7 +5617,7 @@ const UP_INFO = {
   road: ['Better road', '🛣️'], gate: ['Faster gate', '🚧'], market: ['Better price', '💰'], export: ['Export contract', '🚢'], rushN: ['Another van bay', '🚐'],
   rushBite: ['Bigger grab', '📦'], rushCrew: ['Faster loader', '⚡'], rushVan: ['Quicker vans', '🚐'], rushWait: ['They wait longer', '⏱️'], rushPay: ['Better rush pay', '💰'],
   cutterN: ['Lumberjack', '🪓'], cutterSpd: ['Faster axe', '⚡'], cutterHaul: ['Faster haul', '🪵'], grove: ['More forest', '🌲'],
-  planer: ['Planer', '🪵'], planerN: ['Another planer', '🪵'], planerSpd: ['Faster feed', '⚡'], planerCrew: ['Quicker crew', '🏃'], boardCap: ['Bigger stack', '📚'], boardN: ['More pallets', '📦'],
+  planer: ['Planer', '🪵'], planerN: ['Another planer', '🪵'], planerSpd: ['Faster feed', '⚡'], planerCrew: ['Quicker crew', '🏃'], boardCap: ['Bigger stack', '📚'], boardN: ['More pallets', '📦'], boardHaul: ['Haul boards', '🛒'],
   tub: ['Bigger bin', '📦'], dockN: ['Another pit gate', '🚪'], chipper: ['Chipper', '⚙️'], chipSpd: ['Faster chip', '⚡'], chipBite: ['Bigger bite', '🪵'],
   veneer: ['Veneer lathe', '🌀'], veneerSpd: ['Faster peel', '⚡'],
   shop: ['Open shop', '🏪'], haul: ['Haul wood', '🛒'], beltSpd: ['Faster belt', '⚡'], buyers: ['More buyers', '🧑'], palletN: ['Another pallet', '📦'],
@@ -5489,6 +5676,7 @@ function upEffect(id) {
   if (id === 'planerCrew') return `Crew ×${arrow}`;
   if (id === 'boardCap') return `Each pallet holds more, ${arrow} boards`;
   if (id === 'boardN') return b == null ? `${a} board pallets` : `${a} → ${b} board pallets`;
+  if (id === 'boardHaul') return ['The worker carries each board', 'A wagon hauls the boards', 'A belt carries the boards to the stack'][lv];
   if (id === 'tub') return b == null ? 'The bin is as wide as it gets' : 'One more tile to the west';
   if (id === 'dockN') return b == null ? `${a} gates, one forklift each` : `${a} → ${b} gates at the bin`;
   if (id === 'chipper') return b ? 'Chews extra wood into chips' : 'Chipper is running';
@@ -5535,7 +5723,7 @@ function upEffect(id) {
   return arrow;
 }
 function rowShown(id) {
-  if ((id === 'planerN' || id === 'planerSpd' || id === 'planerCrew' || id === 'boardCap' || id === 'boardN') && !planerOn()) return false;
+  if ((id === 'planerN' || id === 'planerSpd' || id === 'planerCrew' || id === 'boardCap' || id === 'boardN' || id === 'boardHaul') && !planerOn()) return false;
   if ((id === 'chipSpd' || id === 'chipBite') && !S.lv.chipper) return false;
   if (id === 'veneerSpd' && !S.lv.veneer) return false;
   if (id === 'buyers') return false;
@@ -6029,7 +6217,7 @@ function updateCamera(dt) {
 // RUSH ORDERS — lot south of the highway, driveway meets the shoulder, blue loader
 // =====================================================================
 const FURN_NAME = ['Stool', 'Bench', 'Table'];
-const RUSH_BAYS = [{ x: 15.4, z: -2.4 }, { x: 19.0, z: -2.4 }, { x: 22.6, z: -2.4 }];
+const RUSH_BAYS = [{ x: 14.6, z: -2.4 }, { x: 18.2, z: -2.4 }, { x: 21.6, z: -2.4 }];
 const RUSH_LANE_Z = 1.6;
 const RUSH_REAR_Z = -7.6;
 const RUSH_SPUR_X = 19.0;
@@ -6064,16 +6252,16 @@ function buildRushDrive() {
   RUSH_MOUTH_Z = joinZ - 2.4;
   rushDrive = new THREE.Group();
   scene.add(rushDrive);
-  const apron = [V(18.3, 0, joinZ + 2.6), V(18.3, 0, 2.4)];
-  ribbon(apron, rightsOf(apron), 8.2, 0, ROAD_Y + 0.008, roadMat, 0, 1, rushDrive);
+  const apron = [V(17.2, 0, joinZ + 2.6), V(17.2, 0, 2.4)];
+  ribbon(apron, rightsOf(apron), 6.0, 0, ROAD_Y + 0.008, roadMat, 0, 1, rushDrive);
   const mouth = [V(RUSH_SPUR_X, 0, joinZ + 2.6), V(RUSH_SPUR_X, 0, joinZ - 2.2)];
   ribbon(mouth, rightsOf(mouth), 4.4, 0, ROAD_Y + 0.012, roadMat, 0, 1, rushDrive);
   rushSignPost.position.set(RUSH_SPUR_X + 3.4, 0.78, joinZ - 0.6);
   rushSign.position.set(RUSH_SPUR_X + 3.4, 1.7, joinZ - 0.6);
 }
 function buildRushYard() {
-  part(rbox(15.0, 0.03, 13.0, 0.08, 1), ROAD_CURB, scene, 18.3, 0.095, -2.6, 0, 0, 0, false);
-  part(rbox(14.2, 0.02, 12.2, 0.04, 1), roadMat, scene, 18.3, ROAD_Y - 0.006, -2.6, 0, 0, 0, false);
+  part(rbox(13.2, 0.03, 13.0, 0.08, 1), ROAD_CURB, scene, 17.4, 0.095, -2.6, 0, 0, 0, false);
+  part(rbox(12.4, 0.02, 12.2, 0.04, 1), roadMat, scene, 17.4, ROAD_Y - 0.006, -2.6, 0, 0, 0, false);
   for (const b of RUSH_BAYS) {
     for (const s of [-1, 1]) part(boxG(0.1, 0.02, 3.5), lineWhite, scene, b.x + s * 1.2, 0.16, b.z, 0, 0, 0, false);
     part(boxG(2.3, 0.02, 0.1), lineWhite, scene, b.x, 0.16, b.z - 1.75, 0, 0, 0, false);
@@ -6089,18 +6277,19 @@ function buildShopDrive() {
     shopDrive.traverse(o => { if (o.geometry) o.geometry.dispose(); });
     shopDrive = null;
   }
-  const x = SPUR_X;
-  const edge = roadSouthEdge(x);
+  const edge = roadSouthEdge(SPUR_X);
   const zRoad = edge.z - 0.05;
   const zAisle = SHOP_PARK_Z - 2.2;
-  const zSouth = zAisle - 1.5;
+  BANK_DRIVE[0].z = zAisle;
+  BANK_DRIVE[BANK_DRIVE.length - 1].z = zRoad;
   shopDrive = new THREE.Group();
   scene.add(shopDrive);
-  part(rbox(6.2, 0.04, Math.abs(zRoad - zSouth), 0.04, 1), roadMat, shopDrive, x, 0.14, (zRoad + zSouth) / 2, 0, 0, 0, false);
-  part(rbox(6.4, 0.04, 3.4, 0.04, 1), roadMat, shopDrive, x, 0.145, zRoad, 0, 0, 0, false);
-  part(rbox(48, 0.04, 3.8, 0.04, 1), roadMat, shopDrive, 6.4, 0.142, zAisle, 0, 0, 0, false);
-  part(rbox(18.5, 0.04, 4.2, 0.04, 1), roadMat, shopDrive, 20.0, 0.15, -10.2, 0, 0, 0, false);
-  part(rbox(16.8, 0.04, 10.2, 0.04, 1), roadMat, shopDrive, 20.4, 0.148, -16.4, 0, 0, 0, false);
+  const line = BANK_DRIVE.map(p => V(p.x, 0, p.z));
+  const samples = new THREE.CatmullRomCurve3(line, false, 'centripetal').getSpacedPoints(48);
+  ribbon(samples, rightsOf(samples), 1.9, 0, 0.15, roadMat, 0, samples.length - 1, shopDrive);
+  part(rbox(5.4, 0.04, 3.2, 0.04, 1), roadMat, shopDrive, SPUR_X, 0.155, zRoad, 0, 0, 0, false);
+  part(rbox(39.5, 0.04, 3.8, 0.04, 1), roadMat, shopDrive, 1.75, 0.142, zAisle, 0, 0, 0, false);
+  part(rbox(10, 0.04, 7.2, 0.04, 1), roadMat, shopDrive, 15.2, 0.148, -18.4, 0, 0, 0, false);
   part(rbox(16.8, 0.04, 3.8, 0.04, 1), roadMat, shopDrive, -5.05, 0.155, SHOP_PARK_Z, 0, 0, 0, false);
   for (const bx of SHOP_PARKS) {
     for (const s of [-1, 1]) part(boxG(0.08, 0.02, 2.8), lineWhite, shopDrive, bx + s * 1.2, 0.19, SHOP_PARK_Z, 0, 0, 0, false);
@@ -7175,7 +7364,10 @@ async function mountYardModels() {
     wrap.add(obj);
     wrap.scale.setScalar(s);
     wrap.traverse(o => {
-      if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+      if (o.isMesh) {
+        o.castShadow = opts.cast !== false;
+        o.receiveShadow = opts.receive !== false;
+      }
       if (o.isSkinnedMesh) o.frustumCulled = false;
     });
     return wrap;
@@ -7300,38 +7492,77 @@ async function mountYardModels() {
       if (!inv) return;
       for (let b = 0; b < inv.length; b++) o.skeleton.boneInverses[b].copy(inv[b]);
     });
-    const s = (actor.fit || 1.72) / 1.86;
-    model.scale.setScalar(s);
+    model.scale.setScalar(1);
     actor.body.add(model);
+    model.updateWorldMatrix(true, true);
+    let minY = Infinity, maxY = -Infinity;
+    model.traverse(o => {
+      if (!o.isBone) return;
+      const y = o.matrixWorld.elements[13];
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+    });
+    const parentScale = actor.body.getWorldScale(new THREE.Vector3()).y || 1;
+    const span = (maxY - minY) / parentScale;
+    const target = actor.fit || 1.72;
+    model.scale.setScalar(span > 0.4 ? target / span : target / 1.86);
     hideExcept(actor.body, [model]);
     actor.mixer = new THREE.AnimationMixer(model);
     actor.actions = {};
-    for (const clip of gltf.animations) actor.actions[clip.name.split('|').pop()] = actor.mixer.clipAction(clip);
+    for (const clip of gltf.animations) {
+      const short = clip.name.split('|').pop();
+      const low = short.toLowerCase();
+      const key = low === 'man_idle' || low === 'idle' ? 'Idle' : low === 'man_walk' || low === 'walk' || low === 'walking' ? 'Walk' : low === 'interact' ? 'Interact' : short;
+      if (!actor.actions[key]) actor.actions[key] = actor.mixer.clipAction(clip);
+    }
     const idle = actor.actions.Idle || actor.actions.Walk;
     if (idle) { idle.play(); actor._action = idle; }
   }
   function makeWagon(gltf) {
-    const wrap = fitWrap(gltf.scene.clone(true), { length: 2.05 });
-    wrap.position.set(0, 0, -1.45);
+    const wrap = fitWrap(gltf.scene.clone(true), { length: 1.65 });
+    const s = wrap.scale.x || 1;
+    wrap.scale.setScalar(1);
+    wrap.updateWorldMatrix(true, true);
+    let sx = 0, sz = 0, top = 0, n = 0;
+    const v = new THREE.Vector3();
+    wrap.traverse(o => {
+      if (!o.isMesh || !o.geometry?.attributes?.position) return;
+      const attr = o.geometry.attributes.position;
+      for (let i = 0; i < attr.count; i += 4) {
+        v.fromBufferAttribute(attr, i).applyMatrix4(o.matrixWorld);
+        if (v.y < 0.7 || v.y > 1.15) continue;
+        sx += v.x; sz += v.z; n++;
+        if (v.y > top) top = v.y;
+      }
+    });
+    wrap.scale.setScalar(s);
+    const load = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.045, 0.9),
+      new THREE.MeshStandardMaterial({ color: 0xf3e2bc, roughness: 0.78 })
+    );
+    load.scale.setScalar(1 / s);
+    load.position.set(n ? sx / n : 0, (top || 0.9) - 0.06, n ? sz / n : -0.45);
+    load.castShadow = true;
+    load.visible = false;
+    wrap.add(load);
+    wrap.load = load;
+    wrap.rotation.y = Math.PI;
+    wrap.position.set(0, 0, -1.85);
     wrap.visible = false;
     return wrap;
   }
-  function dressTruck(m, gltf) {
-    const model = gltf.scene.clone(true);
-    const wrap = fitWrap(model, { length: 4.35 });
-    m.body.add(wrap);
-    hideExcept(m.body, [wrap, m.cargo]);
-    const dump = [];
-    wrap.traverse(o => {
-      if (o.name === 'CargoHoldThing') o.visible = false;
-      if (o.name === 'Cargo' || o.name === 'CargoTires01' || o.name === 'CargoTires02') dump.push(o);
-    });
-    for (const o of dump) m.bed.attach(o);
-  }
-  function dressFork(root, gltf, length, keep) {
-    const wrap = fitWrap(gltf.scene.clone(true), { length });
-    root.add(wrap);
-    hideExcept(root, keep.concat(wrap));
+  function dressRush(slot, gltf) {
+    const wrap = fitWrap(gltf.scene.clone(true), { length: 4.1 });
+    slot.g.add(wrap);
+    const cargo = slot.logs[0] && slot.logs[0].parent;
+    if (cargo) {
+      slot.g.add(cargo);
+      cargo.position.set(0, 0.42, 0.1);
+    }
+    const wheels = [];
+    wrap.traverse(o => { if (o.name && o.name.indexOf('Wheel') >= 0) wheels.push(o); });
+    hideExcept(slot.g, [wrap]);
+    slot.wheels = wheels;
   }
   function bakeCutLog(gltf) {
     const src = gltf.scene.clone(true);
@@ -7373,13 +7604,11 @@ async function mountYardModels() {
     if (opts.shell) opts.shell.visible = false;
   }
   function dressBuyer(slot, gltf, length) {
-    const wrap = fitWrap(gltf.scene.clone(true), { length, height: length * 0.55 });
+    const wrap = fitWrap(gltf.scene.clone(true), { length });
     slot.g.add(wrap);
-    const wheels = [];
-    wrap.traverse(o => { if (o.name && o.name.indexOf('Wheel') >= 0) wheels.push(o); });
     hideExcept(slot.g, [wrap]);
-    slot.wheels = wheels;
-    slot.axle = true;
+    slot.wheels = [];
+    slot.axle = false;
   }
   try {
     const pack = window.PILANA_PACK;
@@ -7402,68 +7631,67 @@ async function mountYardModels() {
       loader.parse(out.buffer, '', ok, bad);
     });
     const files = {
-      pine: 'assets/Pine Trees by Quaternius - oYtDty0fR6.glb',
-      grove: 'assets/Trees by Quaternius - etFGNvsiFv.glb',
-      marc: 'assets/Tree by Marc Solà - 6Yjt8nIwLsD.glb',
-      parfait: 'assets/Tree by ParfaitUwU - MSuchZNT2G.glb',
       workerA: 'assets/Worker by Quaternius - E8079Ahx7k.glb',
       workerB: 'assets/Worker by Quaternius - Yg2bQZO6Hj.glb',
-      wagon: 'assets/Wagon by Poly by Google - 9J0ma6qneqK.glb',
-      truck: 'assets/Cargo Truck by J-Toastie - Fy3WI3uXNQ.glb',
-      fork: 'assets/Forklift by KolosStudios - DTQBuenKJY.glb',
+      hoodie: 'assets/Hoodie Character by Quaternius - gKLBoRsyKe.glb',
+      punk: 'assets/Punk by Quaternius - BTALZymknF.glb',
+      suit: 'assets/Business Man by Quaternius - JFrLIKqvCH.glb',
+      man: 'assets/Man by Quaternius - HMnuH5geEG.glb',
+      womanA: 'assets/Animated Woman by Quaternius - nIItLV9nxS.glb',
+      womanB: 'assets/Animated Woman by Quaternius - 9kF7eTDbhO.glb',
+      wagon: 'assets/Wagon by Poly by Google - 8HnKzYQeRYD.glb',
+      pallet: 'assets/Pallet by Quaternius - cUAsYHDqfD.glb',
+      rushTruck: 'assets/Truck by Quaternius - cXw6oiFtZ8.glb',
       factoryA: 'assets/Factory by Poly by Google - 3mmIBtmmkkW.glb',
       factoryB: 'assets/Factory by Poly by Google - fCiJW5Qdgbf.glb',
-      suv: 'assets/SUV by Quaternius - xsMtZhBkxL.glb',
-      car: 'assets/Car by Quaternius - unqqkULtRU.glb',
+      redCar: 'assets/Red Car by J-Toastie - dVLJ5CjB0h.glb',
+      polyCar: 'assets/Car by Poly by Google - 75h3mi6uHuC.glb',
+      rover: 'assets/Range Rover by IvOfficial - 8zk4o6nALW.glb',
+      charger: 'assets/Dodge Charger by David Sirera - 4b80hRVxqvv.glb',
+      pickup: 'assets/Pickup Truck by Quaternius - qn4grQgHm8.glb',
       shed: 'assets/Storage shed by Quaternius - TvXpjtD2nk.glb',
       bakery: 'assets/Bakery by Poly by Google - 6BGhNQlUzRR.glb',
       plankMill: 'assets/Factory by Poly by Google - fCiJW5Qdgbf(1).glb',
-      woodLog: 'assets/Wood Log by Quaternius - L4E32Wee6C(1).glb',
       choppedLog: 'assets/Chopped Log by Davemane42 - 9OZx4c2IkAJ.glb',
+      toastieLog: 'assets/Log by J-Toastie - ncDQNqeOFj.glb',
     };
     const loaded = {};
     await Promise.all(Object.keys(files).map(async (k) => {
       loaded[k] = pack && pack.files[k] ? await fromB64(pack.files[k]) : await loader.loadAsync(rel(files[k]));
     }));
-    const plainTruck = buildTruck;
-    buildTruck = function () { const m = plainTruck(); dressTruck(m, loaded.truck); return m; };
-    for (const t of trucks) dressTruck(t.m, loaded.truck);
-    const plainFork = buildForklift;
-    buildForklift = function (color) {
-      const m = plainFork(color);
-      dressFork(m.body, loaded.fork, 2.3, [m.load, m.boardLoad]);
-      return m;
-    };
-    for (const f of forks) dressFork(f.m.body, loaded.fork, 2.3, [f.m.load, f.m.boardLoad]);
-    for (const p of porters) dressFork(p.m.g, loaded.fork, 1.65, [].concat(p.m.logs, p.m.planks, p.m.bundles, p.m.furn));
-    if (buyerHome) dressPlace(loaded.factoryA, { parent: buyerHome.parent, shell: buyerHome.shell, x: buyerHome.x, z: buyerHome.z, length: 11, height: 6.4 });
-    if (frameYard.shell) dressPlace(loaded.factoryB, { parent: frameYard.g, shell: frameYard.shell, z: -2.4, length: 6.4, height: 4.2 });
+    if (frameYard.shell) dressPlace(loaded.factoryB, { parent: frameYard.g, shell: frameYard.shell, z: -2.4, length: 6.4, height: 4.2, receive: false });
     if (campHut) {
-      dressPlace(loaded.shed, { parent: campHut.parent, shell: campHut.shell, length: 5.8, height: 3.6 });
+      dressPlace(loaded.shed, { parent: campHut.parent, shell: campHut.shell, length: 5.8, height: 3.6, receive: false });
       if (campHut.sign) campHut.sign.position.y = 3.9;
     }
     if (shopViz.stall.shell) {
-      dressPlace(loaded.bakery, { parent: shopViz.stall.g, shell: shopViz.stall.shell, length: 7.4, height: 4.2 });
+      dressPlace(loaded.bakery, { parent: shopViz.stall.g, shell: shopViz.stall.shell, length: 7.4, height: 4.2, yaw: -Math.PI / 2, receive: false });
       if (shopViz.stall.sign) shopViz.stall.sign.position.y = 4.65;
     }
-    dressPlace(loaded.plankMill, { parent: planerMill, length: 7, height: 5.2 });
-    for (const u of planers) if (u.shell) u.shell.visible = false;
+    for (const u of planers) dressPlace(loaded.plankMill, { parent: u.g, shell: u.shell, length: 3.7, height: 3.15, receive: false });
     updatePlanerLook();
-    cutLogs = [loaded.woodLog, loaded.choppedLog].map(bakeCutLog);
+    cutLogs = [loaded.choppedLog, loaded.toastieLog].map(bakeCutLog);
+    for (const p of boardPallets) dressPlace(loaded.pallet, { parent: p.g, shell: p.shell, length: 1.75 });
+    for (const s of rushes) dressRush(s.m, loaded.rushTruck);
     pieceIM.visible = false;
     updatePieces(0);
-    shopCars.forEach((car, i) => dressBuyer(car.mesh, i % 2 ? loaded.suv : loaded.car, i % 2 ? 2.35 : 2.15));
-    await new Promise(requestAnimationFrame);
-    const woods = [loaded.pine, loaded.grove, loaded.marc, loaded.parfait];
-    plantForest(woods);
-    dressCamp(woods);
-    const gloves = [loaded.workerA, loaded.workerB];
-    let wi = 0;
-    for (const a of actors) {
-      if (a.role === 'buyer') continue;
-      dressActor(a, gloves[wi % 2], skel.mod.clone);
-      wi++;
-    }
+    const fleet = [loaded.redCar, loaded.polyCar, loaded.rover, loaded.charger, loaded.pickup];
+    const fleetLen = [2.15, 2.25, 2.45, 2.35, 2.55];
+    shopCars.forEach((car, i) => dressBuyer(car.mesh, fleet[i % fleet.length], fleetLen[i % fleet.length]));
+    const crew = [loaded.workerA, loaded.workerB];
+    const shoppers = [loaded.hoodie, loaded.punk, loaded.suit, loaded.man, loaded.womanA, loaded.womanB];
+    const deal = (pool) => {
+      const bag = pool.slice();
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = (Math.random() * (i + 1)) | 0;
+        const t = bag[i]; bag[i] = bag[j]; bag[j] = t;
+      }
+      let n = 0;
+      return () => bag[n++ % bag.length];
+    };
+    const nextCrew = deal(crew);
+    const nextShop = deal(shoppers);
+    for (const a of actors) dressActor(a, a.role === 'buyer' ? nextShop() : nextCrew(), skel.mod.clone);
     const hitch = (owner) => { const w = makeWagon(loaded.wagon); owner.wagon = w; owner.g.add(w); };
     for (const c of cutters) hitch(c);
     hitch(shopViz.walker);
@@ -7518,6 +7746,8 @@ if (SIM > 0) {
           if (id === 'boardCap' && S.boards > 40) w *= 0.45;
           if (id === 'boardN' && S.lv.planer === 0) w *= 6;
           if (id === 'boardN' && S.lv.planer > 0 && S.boards > boardLimit() * 0.72) w *= 0.5;
+          if (id === 'boardHaul' && S.lv.planer === 0) w *= 8;
+          if (id === 'boardHaul' && S.lv.planer > 0 && S.boards > 8) w *= 0.7;
           if (id === 'tub' && S.stockpile < 50) w *= 3;
           if (id === 'tub' && S.stockpile > 120) w *= 0.45;
           if (id === 'chipper' && S.stockpile < 40) w *= 4;
