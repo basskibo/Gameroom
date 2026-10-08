@@ -256,10 +256,12 @@
   }
 }
 </script>
+<script src="kit-bundle.js"></script>
 
 <script type="module">
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 // =====================================================================
 // CONFIG
@@ -728,6 +730,8 @@ const postGeo = new THREE.BoxGeometry(0.28, 1.0, 0.28); postGeo.translate(0, 0.5
 const posts = new THREE.InstancedMesh(postGeo, woodMat, FENCE_XS.length * POSTS_PER);
 posts.castShadow = true;
 scene.add(posts);
+let pierPiles = null;
+const laneRails = [];
 {
   const d = new THREE.Object3D();
   let k = 0;
@@ -742,19 +746,20 @@ scene.add(posts);
 {
   const pileMat = toonMat(0x6b4226);
   const pileGeo = new THREE.CylinderGeometry(0.32, 0.36, 4, 10); pileGeo.translate(0, -1.9, 0);
-  const g = new THREE.Group();
+  pierPiles = new THREE.Group();
   for (const x of [...FENCE_XS, -2.5, 2.5]) for (const z of [PIER_END + 0.4, PIER_END + 5]) {
-    const p = new THREE.Mesh(pileGeo, pileMat); p.position.set(x, 0, z); g.add(p);
+    const p = new THREE.Mesh(pileGeo, pileMat); p.position.set(x, 0, z); pierPiles.add(p);
   }
   const beam = new THREE.Mesh(new THREE.BoxGeometry(FENCE_OUT * 2 + 1, 0.45, 0.6), woodMat);
-  beam.position.set(0, -0.15, PIER_END - 0.1); g.add(beam);
-  addOutline(g, 0.05);
-  scene.add(g);
+  beam.position.set(0, -0.15, PIER_END - 0.1); pierPiles.add(beam);
+  addOutline(pierPiles, 0.05);
+  scene.add(pierPiles);
 }
 for (const x of FENCE_XS) for (const y of [0.45, 0.85]) {
   const rail = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, ROAD_LEN), woodMat);
   rail.position.set(x, y, ROAD_Z);
   rail.castShadow = true;
+  laneRails.push(rail);
   scene.add(rail);
 }
 
@@ -967,9 +972,9 @@ function buildShip(o) {
   return g;
 }
 const sunnyShip = buildShip({ hull: 0xd0782f, stripe: 0xf7e1b5, deck: 0x6cc24a, cabin: 0xf2c26b, sail: '#f7f3e8', ink: '#1a1a1a', strawHat: true, lion: true });
-sunnyShip.position.set(-62, WATER_Y, -105);
-sunnyShip.scale.setScalar(1.5);
-sunnyShip.rotation.y = -0.45;
+sunnyShip.position.set(-38, WATER_Y, -80);
+sunnyShip.scale.setScalar(1.55);
+sunnyShip.rotation.y = -0.5;
 // the pirate ship is moored broadside at the end of the pier; the crew comes down the gangplank
 const enemyShip = buildShip({ hull: 0x3b2a22, stripe: 0xb3122b, deck: 0x6b4a2e, cabin: 0x4a3326, sail: '#1d1d22', ink: '#e8e8e8', strawHat: false, lion: false, along: true });
 enemyShip.position.set(0, WATER_Y, SHIP_Z);
@@ -1025,6 +1030,7 @@ scene.add(sunnyShip, enemyShip);
 
 const dummy = new THREE.Object3D();
 let scrollDist = 0;
+const kitFloats = [];
 
 function updateEnv(dt) {
   // the world is static; only the side lanes run like conveyors, carrying gates and chests
@@ -1037,7 +1043,266 @@ function updateEnv(dt) {
   // moored ship: tiny sway so the gangplank stays attached
   enemyShip.position.y = WATER_Y + Math.sin(t * 0.7 + 2) * 0.05;
   enemyShip.rotation.x = Math.sin(t * 0.5 + 1) * 0.006;
+  for (let i = 0; i < kitFloats.length; i++) {
+    const f = kitFloats[i];
+    f.g.position.y = f.baseY + Math.sin(t * f.speed + f.phase) * f.amp;
+    f.g.rotation.z = Math.sin(t * f.speed * 0.7 + f.phase) * f.roll;
+  }
 }
+
+// Kenney pirate kit: same pier and lanes, dressed with the pack's palms, ships and walls.
+const kitRng = (() => {
+  let a = 11;
+  return () => {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+})();
+const kitRand = (a, b) => a + kitRng() * (b - a);
+
+function mountPirateKit() {
+  const pack = window.PIRATE_KIT;
+  if (!pack) { console.warn('Pirate kit missing'); return; }
+  const loader = new GLTFLoader();
+  const bytes = (b64) => {
+    const bin = atob(b64);
+    const out = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out.buffer;
+  };
+  const texUrl = URL.createObjectURL(new Blob([bytes(pack.colormap)], { type: 'image/png' }));
+  loader.manager.setURLModifier(url => url.indexOf('colormap.png') >= 0 ? texUrl : url);
+  const cache = new Map();
+  const load = async (name) => {
+    if (cache.has(name)) return cache.get(name);
+    const gltf = await new Promise((ok, bad) => loader.parse(bytes(pack.files[name]), '', ok, bad));
+    gltf.scene.traverse(o => {
+      if (!o.isMesh) return;
+      o.castShadow = true;
+      o.receiveShadow = true;
+      const src = Array.isArray(o.material) ? o.material : [o.material];
+      const next = src.map(m => {
+        if (m.map) m.map.colorSpace = THREE.SRGBColorSpace;
+        return toon({ map: m.map || null, color: 0xffffff });
+      });
+      o.material = Array.isArray(o.material) ? next : next[0];
+    });
+    cache.set(name, gltf.scene);
+    return gltf.scene;
+  };
+  const firstMesh = (obj) => {
+    let mesh = null;
+    obj.traverse(o => { if (!mesh && o.isMesh) mesh = o; });
+    return mesh;
+  };
+  const scatter = (src, places, shadow) => {
+    const mesh = firstMesh(src);
+    const geo = mesh.geometry;
+    const im = new THREE.InstancedMesh(geo, mesh.material, places.length);
+    im.castShadow = shadow;
+    im.receiveShadow = true;
+    const d = new THREE.Object3D();
+    for (let i = 0; i < places.length; i++) {
+      const p = places[i];
+      d.position.set(p.x, p.y || 0, p.z);
+      d.rotation.set(p.rx || 0, p.ry || 0, p.rz || 0);
+      d.scale.set(p.sx || p.s || 1, p.sy || p.s || 1, p.sz || p.s || 1);
+      d.updateMatrix();
+      im.setMatrixAt(i, d.matrix);
+    }
+    im.computeBoundingSphere();
+    scene.add(im);
+    return im;
+  };
+  const beach = (n, gap) => {
+    const out = [];
+    let guard = 0;
+    while (out.length < n && guard++ < 5000) {
+      const x = kitRand(-40, 40), z = kitRand(PIER_END + 2, ROAD_NEAR + 4);
+      if (Math.abs(x) < FENCE_OUT + 2.2) continue;
+      if (islandSdf(x, z) > -1.4) continue;
+      if (out.some(p => Math.hypot(p.x - x, p.z - z) < gap)) continue;
+      out.push({ x, z, ry: kitRand(0, Math.PI * 2), s: 1 });
+    }
+    return out;
+  };
+  const afloat = (g, baseY, amp, speed, phase, roll) => {
+    g.position.y = baseY;
+    scene.add(g);
+    kitFloats.push({ g, baseY, amp, speed, phase, roll });
+  };
+  const deckYOf = (obj) => {
+    const mesh = firstMesh(obj);
+    const pos = mesh.geometry.attributes.position;
+    const ys = [];
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i);
+      if (Math.abs(pos.getX(i)) < 1.7 && Math.abs(pos.getZ(i)) < 3.2 && y > 0.5 && y < 4.2) ys.push(y);
+    }
+    ys.sort((a, b) => a - b);
+    return ys.length ? ys[Math.floor(ys.length * 0.62)] : 2.2;
+  };
+
+  load('castle-wall').then(async wall => {
+    const [palmA, palmB, palmC, palmD, rockA, rockB, grass, barrel, crate, flag, gate, dock, plank, cannon, towerS, towerL] = await Promise.all([
+      'palm-straight', 'palm-bend', 'palm-detailed-straight', 'palm-detailed-bend',
+      'rocks-sand-a', 'rocks-a', 'grass-patch', 'barrel', 'crate', 'flag-pirate',
+      'castle-gate', 'structure-platform-dock', 'platform-planks', 'cannon',
+      'tower-complete-small', 'tower-complete-large',
+    ].map(load));
+    const ships = await Promise.all([
+      'ship-pirate-large', 'ship-large', 'ship-wreck', 'ship-pirate-small', 'ship-ghost',
+      'boat-row-small', 'boat-row-large',
+    ].map(load));
+
+    const wallRun = [];
+    for (const side of [-1, 1]) {
+      const x = side * (FENCE_OUT + 1.15);
+      for (let z = PIER_END + 2; z <= ROAD_NEAR - 1; z += 2) {
+        wallRun.push({ x, y: 0, z, ry: side > 0 ? -Math.PI / 2 : Math.PI / 2, s: 1 });
+      }
+    }
+    for (let x = -FENCE_OUT; x <= FENCE_OUT; x += 2) {
+      if (Math.abs(x) < 3.2) continue;
+      wallRun.push({ x, y: 0, z: ROAD_NEAR + 1.2, ry: Math.PI, s: 1 });
+    }
+    scatter(wall, wallRun, true);
+
+    const spots = beach(22, 4.2);
+    const palmKinds = [palmA, palmB, palmC, palmD];
+    for (let t = 0; t < palmKinds.length; t++) {
+      const mine = spots.filter((_, i) => i % palmKinds.length === t).map(p => ({ ...p, s: kitRand(1.15, 1.75) }));
+      if (mine.length) scatter(palmKinds[t], mine, true);
+    }
+    const rockSpots = beach(10, 5).map(p => ({ ...p, s: kitRand(0.38, 0.72) }));
+    if (rockSpots.length > 1) {
+      scatter(rockA, rockSpots.filter((_, i) => i % 2 === 0), true);
+      scatter(rockB, rockSpots.filter((_, i) => i % 2 === 1), true);
+    }
+    const tufts = beach(14, 3.2).map(p => ({ ...p, y: 0.02, s: kitRand(1.1, 1.8) }));
+    if (tufts.length) scatter(grass, tufts, false);
+
+    const flags = [];
+    for (let i = 0; i < wallRun.length; i += 5) {
+      const w = wallRun[i];
+      flags.push({ x: w.x, y: 4.35, z: w.z, ry: w.ry, s: 0.9 });
+    }
+    scatter(flag, flags, false);
+
+    for (const [x, z, ry] of [[-16.8, 12.5, 0.4], [16.8, 12.5, -0.4], [-16.8, -34, 0.2], [16.8, -34, -0.2]]) {
+      const t = towerS.clone(true);
+      t.position.set(x, 0, z);
+      t.rotation.y = ry;
+      scene.add(t);
+    }
+    const keep = towerL.clone(true);
+    keep.position.set(-24, 0, -6);
+    keep.rotation.y = 0.6;
+    scene.add(keep);
+    for (const side of [-1, 1]) {
+      const g = gate.clone(true);
+      g.position.set(side * (FENCE_OUT + 1.15), 0, 2);
+      g.rotation.y = side > 0 ? -Math.PI / 2 : Math.PI / 2;
+      scene.add(g);
+    }
+
+    const props = [];
+    for (const [x, z] of [[-16.2, 8], [16.4, 9], [-15.5, -30], [18, -28], [-22, -4]]) {
+      props.push({ src: barrel, x, z, n: 3 });
+      props.push({ src: crate, x: x + 1.3, z: z + 0.8, n: 2 });
+    }
+    for (const p of props) {
+      const places = [];
+      for (let i = 0; i < p.n; i++) places.push({ x: p.x + (i % 2) * 0.7, z: p.z + Math.floor(i / 2) * 0.7, ry: i, s: 1 });
+      scatter(p.src, places, true);
+    }
+    for (const side of [-1, 1]) {
+      const c = cannon.clone(true);
+      c.position.set(side * (FENCE_OUT + 3.4), 0, -8);
+      c.rotation.y = side > 0 ? 0 : Math.PI;
+      scene.add(c);
+    }
+
+    const docks = [];
+    for (const x of [-10, -5, 0, 5, 10]) docks.push({ x, y: WATER_Y + 0.15, z: PIER_END - 1.6, ry: 0, s: 1.15 });
+    for (const side of [-1, 1]) for (const z of [-34, -28, -22]) {
+      docks.push({ x: side * (FENCE_OUT + 2.4), y: WATER_Y + 0.05, z, ry: Math.PI / 2, s: 1 });
+    }
+    scatter(dock, docks, true);
+    scatter(plank, [
+      { x: -9.2, y: 0.02, z: PIER_END + 1.2, ry: 0.2, s: 1 },
+      { x: 8.4, y: 0.02, z: PIER_END + 2.4, ry: 1.1, s: 1 },
+      { x: -17.5, y: 0.02, z: 6, ry: 0.4, s: 1.1 },
+      { x: 18.2, y: 0.02, z: -12, ry: -0.3, s: 1.1 },
+    ], false);
+
+    const warm = (root, hex) => {
+      root.traverse(o => {
+        if (!o.isMesh || !o.material) return;
+        const list = Array.isArray(o.material) ? o.material : [o.material];
+        for (const m of list) if (m.color) m.color.set(hex);
+      });
+    };
+    warm(wall, 0xffe3b8);
+    warm(towerS, 0xfff4e4);
+    warm(towerL, 0xfff4e4);
+    warm(gate, 0xffe3b8);
+    warm(dock, 0xfff8ee);
+    warm(plank, 0xfff8ee);
+
+    const [pirate, , wreck, skiff, ghost, rowA, rowB] = ships;
+    const moor = pirate.clone(true);
+    const deck = deckYOf(pirate);
+    const moorScale = clamp((DECK_Y - WATER_Y) / deck, 1.5, 2.9);
+    moor.scale.setScalar(moorScale);
+    moor.rotation.y = Math.PI / 2;
+    moor.position.set(0, WATER_Y, 0);
+    moor.updateWorldMatrix(true, true);
+    const hull = new THREE.Box3().setFromObject(moor);
+    moor.position.z += (RAMP_TOP_Z - 0.2) - hull.max.z;
+    afloat(moor, WATER_Y, 0.06, 0.7, 2, 0.004);
+
+    const wreckShip = wreck.clone(true);
+    wreckShip.scale.setScalar(1.15);
+    wreckShip.rotation.y = 0.7;
+    wreckShip.position.set(30, WATER_Y + 0.05, -16);
+    scene.add(wreckShip);
+
+    const small = skiff.clone(true);
+    small.scale.setScalar(1.05);
+    small.rotation.y = 2.2;
+    afloat(small, WATER_Y, 0.22, 0.9, 1.2, 0.018);
+    small.position.x = 36;
+    small.position.z = -62;
+
+    const ghostShip = ghost.clone(true);
+    ghostShip.scale.setScalar(1.8);
+    ghostShip.rotation.y = 0.3;
+    afloat(ghostShip, WATER_Y, 0.35, 0.45, 0.8, 0.012);
+    ghostShip.position.x = 48;
+    ghostShip.position.z = -150;
+
+    const boatA = rowA.clone(true);
+    boatA.rotation.y = 0.4;
+    afloat(boatA, WATER_Y + 0.02, 0.08, 1.1, 0.2, 0.03);
+    boatA.position.set(-18, WATER_Y + 0.02, -42);
+    const boatB = rowB.clone(true);
+    boatB.rotation.y = -0.8;
+    afloat(boatB, WATER_Y + 0.02, 0.07, 0.95, 1.5, 0.025);
+    boatB.position.set(20, WATER_Y + 0.02, -46);
+
+    palms.mesh.visible = palms.ol.visible = false;
+    rocks.mesh.visible = rocks.ol.visible = false;
+    enemyShip.visible = false;
+    posts.visible = false;
+    if (pierPiles) pierPiles.visible = false;
+    for (const rail of laneRails) if (Math.abs(rail.position.x) > FENCE_IN + 1) rail.visible = false;
+    window.__pirateKit = true;
+  }).catch(err => { console.warn('Pirate kit', err); window.__pirateKit = String(err && err.message || err); });
+}
+mountPirateKit();
 
 // =====================================================================
 // MODELS
@@ -1239,7 +1504,7 @@ function buildWeaponModel(id) {
 // ---------------- player: straw-hat pirate holding the weapon ----------------
 const player = new THREE.Group();
 player.position.set(0, 0, PLAYER_Z);
-player.scale.setScalar(1.4);
+player.scale.setScalar(1.18);
 scene.add(player);
 const GUN_POS = new THREE.Vector3(0, 0.55, -0.55);     // in torso space
 const gunMount = new THREE.Group();
@@ -1677,7 +1942,7 @@ function drawBoss(b) {
 // =====================================================================
 // crowd creeps; a pistol that chews the front rank can hold, extra barrels push it back
 function marchSpeed() {
-  return 2.05 + Math.min(1.5, (state.wave - 1) * 0.14);
+  return 1.8 + Math.min(1.35, (state.wave - 1) * 0.12);
 }
 
 function spawnMonster(x, z, brute, col) {
