@@ -40,7 +40,7 @@ Playwright je u `.cache/tools`. Ako import ne nađe `playwright-core`, pokreni s
 NODE_PATH=.cache/tools/node_modules node .cursor/skills/benchmark/scripts/benchmark.mjs <slug>
 ```
 
-Skripta sama podiže `tests/server.mjs` i otvara igru preko http-a (igre učitavaju Three.js iz `shared/` preko importmap-a, što ne radi sa `file://`). Ne koristi CDP `Page.captureScreenshot`.
+Skripta sama podiže `serve.mjs` i otvara igru preko http-a (igre učitavaju Three.js iz `shared/` preko importmap-a, što ne radi sa `file://`). Ne koristi CDP `Page.captureScreenshot`.
 
 Kad postoji `DISPLAY`, Chrome ide **headed** na pravom GPU. Headless meri softverski WebGL i daje lažno nizak FPS. Ako je `mode` `headless`, reci to u izveštaju i ne tretiraj FPS kao broj sa igračevog ekrana. U JSON-u je i `gpu`.
 

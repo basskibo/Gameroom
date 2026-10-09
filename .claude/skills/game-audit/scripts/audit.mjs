@@ -27,7 +27,7 @@ for (const p of ['tests/node_modules/playwright-core/index.mjs', '.cache/tools/n
 if (!chromium) { console.error('playwright-core not found: run `cd tests && npm install`'); process.exit(1); }
 
 const PORT = 4300 + Math.floor(Math.random() * 500);
-const server = spawn(process.execPath, [resolve(root, 'tests/server.mjs')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
+const server = spawn(process.execPath, [resolve(root, 'serve.mjs')], { env: { ...process.env, PORT: String(PORT) }, stdio: 'ignore' });
 await new Promise(r => setTimeout(r, 400));
 const URL = `http://127.0.0.1:${PORT}/games/${slug}/`;
 

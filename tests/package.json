@@ -8,8 +8,7 @@
     "test:pilana": "playwright test games/pilana-tajkun",
     "test:desktop": "playwright test --project=desktop",
     "test:mobile": "playwright test --project=mobile",
-    "report": "playwright show-report reports/html",
-    "serve": "node server.mjs"
+    "report": "playwright show-report reports/html"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0"

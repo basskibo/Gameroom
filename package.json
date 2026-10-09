@@ -1,0 +1,16 @@
+{
+  "name": "gameroom",
+  "private": true,
+  "description": "Static site, no build step. This file only holds dev shortcuts.",
+  "scripts": {
+    "start": "node serve.mjs",
+    "setup": "npm --prefix tests install",
+    "test": "npm --prefix tests test --",
+    "test:pilana": "npm --prefix tests run test:pilana --",
+    "test:desktop": "npm --prefix tests run test:desktop --",
+    "test:mobile": "npm --prefix tests run test:mobile --",
+    "test:report": "npm --prefix tests run report",
+    "bench": "node .cursor/skills/benchmark/scripts/benchmark.mjs",
+    "audit": "node .claude/skills/game-audit/scripts/audit.mjs"
+  }
+}

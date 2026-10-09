@@ -10,6 +10,20 @@ End-to-end testovi pokreću pravu igru u Chrome-u i upravljaju njom preko debug 
 
 ## Pokretanje
 
+Iz roota repoa (ne treba `cd tests`):
+
+```bash
+npm run setup                         # jednom
+npm test                              # sve igre
+npm test -- games/pilana-tajkun       # jedna igra (argumenti idu posle --)
+npm run test:mobile                   # samo telefon
+npm run bench -- pilana-tajkun        # FPS benchmark
+npm run audit -- pilana-tajkun        # audit igre
+npm start                             # lokalni server, http://127.0.0.1:4173/
+```
+
+Isto, ručno iz `tests/`:
+
 ```bash
 cd tests
 npm install            # jednom; koristi sistemski Google Chrome, ne skida browser
@@ -20,7 +34,7 @@ npx playwright test -g "PT-BUG-002"              # jedan test po imenu
 npx playwright show-report reports/html          # HTML izveštaj
 ```
 
-- Server za testove je `tests/server.mjs` (bez zavisnosti, servira root repoa kao Vercel). Playwright ga pokreće sam na portu 4173.
+- Server za testove je `serve.mjs` (u rootu; `npm start`) (bez zavisnosti, servira root repoa kao Vercel). Playwright ga pokreće sam na portu 4173.
 - Promenljive: `PW_WORKERS` (podrazumevano 2, jer svaki radnik vrti softverski WebGL), `PW_CHANNEL` (podrazumevano `chrome`; u CI-ju `npx playwright install chrome`), `PORT`.
 - Trajanje: Pilana ~3 min sa 2 radnika.
 - Igre sa uvodnim preletom kamere primaju `?nointro` (fixture `open()` ga dodaje sam), da merenja i screenshotovi ne hvataju let.
@@ -29,7 +43,7 @@ npx playwright show-report reports/html          # HTML izveštaj
 
 ```
 tests/
-  package.json, playwright.config.mjs, server.mjs
+  package.json, playwright.config.mjs
   games/<slug>/
     fixtures.mjs        # `game` fixture: open, play, debug, run, cheat, tapStation, expectNoErrors
     smoke.spec.mjs      # učitavanje, start, bez grešaka

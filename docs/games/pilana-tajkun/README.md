@@ -9,7 +9,7 @@ Izgled pre/posle „wow“ plana: [img/wow-before-after.jpg](img/wow-before-afte
 Igra se otvara **samo preko http-a** (`file://` više nije podržan od 2026-10-09: Three.js i zajednički moduli se učitavaju iz `shared/` preko importmap-a).
 
 ```bash
-node tests/server.mjs          # pa http://127.0.0.1:4173/games/pilana-tajkun/
+node serve.mjs          # pa http://127.0.0.1:4173/games/pilana-tajkun/
 python3 -m http.server 8000    # ili http://localhost:8000/games/pilana-tajkun/
 ```
 

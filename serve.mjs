@@ -1,11 +1,11 @@
-// Tiny static server for the tests: serves the repo root like Vercel does (trailing slash, index.html).
+// Tiny static server for local dev and tests (npm start): serves the repo root like Vercel does (trailing slash, index.html).
 // No dependencies on purpose. PORT=4173 by default.
 import { createServer } from 'node:http';
 import { createReadStream, statSync } from 'node:fs';
 import { extname, join, normalize, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const root = dirname(fileURLToPath(import.meta.url));
 const port = Number(process.env.PORT || 4173);
 const types = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css',
@@ -29,4 +29,4 @@ createServer((req, res) => {
   }
   res.writeHead(200, { 'Content-Type': types[extname(target).toLowerCase()] || 'application/octet-stream', 'Content-Length': stat.size, 'Cache-Control': 'no-store' });
   createReadStream(target).pipe(res);
-}).listen(port, '127.0.0.1', () => console.log(`gameroom tests: serving ${root} on http://127.0.0.1:${port}`));
+}).listen(port, '127.0.0.1', () => console.log(`gameroom: serving ${root} on http://127.0.0.1:${port}`));

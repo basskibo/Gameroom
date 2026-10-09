@@ -48,4 +48,4 @@ Svaki `new THREE.Mesh` je bar jedan draw call, plus još jedan u senci. Pilana i
 
 ## 6. Učitavanje Three.js
 
-Od 2026-10-09 Three.js r170 je u `shared/vendor/three-0.170.0/` i igre ga uvoze preko importmap-a (keš između igara). `file://` nije podržan — lokalno `node tests/server.mjs`. Geometrija: `bakeStatic`/`bakeViz` iz `shared/gameroom-three.js`; modeli: `node tools/optimize-glb.mjs <slug>` (meshopt + WebP) i `MeshoptDecoder` u `GLTFLoader`-u.
+Od 2026-10-09 Three.js r170 je u `shared/vendor/three-0.170.0/` i igre ga uvoze preko importmap-a (keš između igara). `file://` nije podržan — lokalno `node serve.mjs`. Geometrija: `bakeStatic`/`bakeViz` iz `shared/gameroom-three.js`; modeli: `node tools/optimize-glb.mjs <slug>` (meshopt + WebP) i `MeshoptDecoder` u `GLTFLoader`-u.

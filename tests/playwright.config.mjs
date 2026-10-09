@@ -29,7 +29,7 @@ export default defineConfig({
     { name: 'mobile', use: { ...devices['Pixel 7'], channel: process.env.PW_CHANNEL || 'chrome' }, grep: /@mobile/ },
   ],
   webServer: {
-    command: 'node server.mjs',
+    command: 'node ../serve.mjs',
     url: `http://127.0.0.1:${PORT}/`,
     reuseExistingServer: !process.env.CI,
     env: { PORT: String(PORT) },

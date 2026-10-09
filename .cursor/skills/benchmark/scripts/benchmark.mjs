@@ -181,10 +181,10 @@ async function benchOne(browser, slug, opt) {
 }
 
 const { slugs, opt } = parseArgs(process.argv.slice(2));
-// games load three.js through an importmap from ../../shared, so they are served over http (tests/server.mjs)
+// games load three.js through an importmap from ../../shared, so they are served over http (serve.mjs)
 const { spawn } = await import('child_process');
 const port = 4500 + Math.floor(Math.random() * 400);
-const server = spawn(process.execPath, [resolve(root, 'tests/server.mjs')], { env: { ...process.env, PORT: String(port) }, stdio: 'ignore' });
+const server = spawn(process.execPath, [resolve(root, 'serve.mjs')], { env: { ...process.env, PORT: String(port) }, stdio: 'ignore' });
 await new Promise(r => setTimeout(r, 400));
 const baseUrl = `http://127.0.0.1:${port}`;
 const resolved = slugs.map(resolveSlug);
