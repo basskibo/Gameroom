@@ -1,0 +1,14 @@
+---
+description: Gameroom — pravila repoa za Cursor agente (isti izvor kao Claude Code)
+alwaysApply: true
+---
+
+Pravila za ovaj repo su u `AGENTS.md` (root) — pročitaj ga pre svakog zadatka. Ukratko:
+
+- `MONETIZATION.md` je obavezujući plan: proveri sekciju **Status** i uskladi rad sa fazom.
+- Konvencije za igre, landing i deploy: `.claude/skills/browser-games/SKILL.md`.
+- Tok rada, provera i „definition of done“: `docs/engineering/agent-playbook.md`. Standard kvaliteta: `docs/engineering/game-quality-bar.md`.
+- Za igru prvo `docs/games/<slug>/TRACKER.md` i `README.md` (mapa koda — ne čitaj ceo fajl od 8 000 linija bez potrebe).
+- Posle rada: ažuriraj `BUGS.md`/`TECH-DEBT.md`/`IMPROVEMENTS.md`, štikliraj `TRACKER.md`, upiši `LEDGER.md`.
+- Provera: `cd tests && npx playwright test games/<slug>`; FPS: `node .cursor/skills/benchmark/scripts/benchmark.mjs <slug>`.
+- Bez build koraka i bez root `package.json` (izuzetak: `tests/`). Reklame/analitika samo preko `shared/gameroom-sdk.js`. Korisnički tekst nikad kroz `innerHTML`.

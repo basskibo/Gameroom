@@ -16,3 +16,14 @@ Kolekcija browser igrica (statični single-file HTML, Three.js) sa landing stran
    - Svaka nova igra od starta ima engleski, SDK sloj, analitičke događaje i bar jedno mesto za reklamu za nagradu.
    - Bez build koraka, zajednički kod ide u `shared/` kao običan JS.
 4. Kad završiš stavku iz roadmapa, štikliraj je u `MONETIZATION.md` i ažuriraj **Status**. Kad korisnik donese odluku koja menja plan, upiši je u **Dnevnik odluka** (sa datumom).
+
+## Dokumentacija i tok rada
+
+Mapa svih dokumenata: `docs/README.md`. Važi isto za Claude Code i Cursor (`.cursor/rules/gameroom.mdc` upućuje ovde).
+
+1. **Pre rada na igri:** `docs/games/<slug>/TRACKER.md` (šta je sledeće) i `README.md` (mapa koda, debug kuke, merenja). Igre su fajlovi od više hiljada linija — čitaj samo potrebnu sekciju.
+2. **Kako se radi i kad je gotovo:** `docs/engineering/agent-playbook.md`. Standard kvaliteta („AAA osećaj“, budžeti performansi): `docs/engineering/game-quality-bar.md`, tehnike: `docs/engineering/threejs-performance.md`.
+3. **Provera:** `cd tests && npx playwright test games/<slug>` (vidi `docs/engineering/testing.md`); FPS: `node .cursor/skills/benchmark/scripts/benchmark.mjs <slug>`.
+4. **Posle rada:** bagovi u `BUGS.md`, dug u `TECH-DEBT.md`, ideje u `IMPROVEMENTS.md`, štiklirati `TRACKER.md`, upisati `LEDGER.md` sa brojevima pre/posle. Ozbiljnost S1–S4 i ID-jevi: `docs/engineering/tracking.md`.
+5. **S1 bagovi se rešavaju odmah**, i uvek dobijaju regresioni test koji pada na starom kodu.
+6. **Audit nove igre:** skill `game-audit` (`.claude/skills/game-audit/SKILL.md`), šablon `docs/games/_template/`.

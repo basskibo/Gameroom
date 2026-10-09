@@ -70,7 +70,7 @@ async function benchOne(browser, slug, opt) {
   page.on('pageerror', e => errors.push(String(e.message || e).slice(0, 240)));
   const file = resolve(gamesDir, slug, 'index.html');
   if (!existsSync(file)) throw new Error(`nema ${file}`);
-  const url = pathToFileURL(file).href + (opt.query ? (opt.query.startsWith('?') ? opt.query : '?' + opt.query) : '');
+  const url = `${baseUrl}/games/${slug}/` + (opt.query ? (opt.query.startsWith('?') ? opt.query : '?' + opt.query) : '');
   const t0 = Date.now();
   await page.goto(url, { waitUntil: 'load', timeout: 120000 });
   const loadMs = Date.now() - t0;
@@ -181,6 +181,12 @@ async function benchOne(browser, slug, opt) {
 }
 
 const { slugs, opt } = parseArgs(process.argv.slice(2));
+// games load three.js through an importmap from ../../shared, so they are served over http (tests/server.mjs)
+const { spawn } = await import('child_process');
+const port = 4500 + Math.floor(Math.random() * 400);
+const server = spawn(process.execPath, [resolve(root, 'tests/server.mjs')], { env: { ...process.env, PORT: String(port) }, stdio: 'ignore' });
+await new Promise(r => setTimeout(r, 400));
+const baseUrl = `http://127.0.0.1:${port}`;
 const resolved = slugs.map(resolveSlug);
 const headed = !opt.swiftshader && !!process.env.DISPLAY;
 const args = ['--allow-file-access-from-files'];
@@ -198,5 +204,6 @@ try {
   }
 } finally {
   await browser.close();
+  server.kill();
 }
 process.stdout.write(JSON.stringify(out, null, 2) + '\n');

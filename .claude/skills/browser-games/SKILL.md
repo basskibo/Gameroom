@@ -8,6 +8,8 @@ description: Konvencije za Gameroom projekat — kolekciju browser igrica (singl
 Statički sajt, bez build koraka i bez bundlera. Svaka igra je samostalna stranica, landing je lista igara.
 
 > **Plan monetizacije:** pre rada pročitaj `MONETIZATION.md` u root-u (Status, Tvrda pravila, Principi za razvoj) i uskladi zadatak sa trenutnom fazom. Reklame i analitika idu samo preko `shared/gameroom-sdk.js`.
+>
+> **Dokumentacija i testovi:** `docs/README.md` (tracker, bagovi, dug, standard kvaliteta po igri), testovi u `tests/` (Playwright, `docs/engineering/testing.md`). Audit igre: skill `game-audit`.
 
 ## Struktura
 
@@ -84,15 +86,16 @@ Akcije: `click:<sel>`, `key:<taster>:<ms>`, `wait:<ms>`. Uvek otvori dobijenu sl
 
 - **Jedan HTML fajl** sa inline `<style>` i `<script>` je default. Veći asseti (slike, zvuk, modeli) idu pored u isti folder, sa relativnim putanjama — nikad apsolutnim `/...`.
 - **Jezik UI-ja: srpski latinica** (`<html lang="sr">`), osim ako korisnik kaže drugačije.
-- **Three.js** preko importmap-a sa jsDelivr, verzija fiksirana:
+- **Three.js** iz zajedničke kopije u `shared/vendor/` preko importmap-a (keš između igara, radi offline na portalima):
   ```html
   <script type="importmap">
   { "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/" } }
+      "three": "../../shared/vendor/three-0.170.0/build/three.module.min.js",
+      "three/addons/": "../../shared/vendor/three-0.170.0/examples/jsm/" } }
   </script>
   <script type="module"> import * as THREE from 'three'; ... </script>
   ```
+  Zajednički moduli: `shared/gameroom-three.js` (spajanje geometrije, kvalitet), `shared/gameroom-fx.js` (čestice), `shared/gameroom-audio.js` (zvuk). Mapa: `shared/README.md`.
   Za 2D igre dovoljan je `<canvas>` + 2D context, bez biblioteka.
 - **Fontovi**: Google Fonts (`Baloo 2`, `Nunito`, `Lilita One` su već u upotrebi).
 - **Mobilni prvo**: `<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">`, `touch-action: none` na canvasu, kontrole i mišem/prstom i tastaturom, fullscreen layout (`html,body{height:100%;overflow:hidden}`), `resize` handler koji ažurira kameru/renderer, `devicePixelRatio` ograničen na ~2.
@@ -119,3 +122,4 @@ npx serve .          # ili: python3 -m http.server 8000
 - Ne linkovati igre direktno iz druge igre — sve ide preko landinga.
 - Ne menjati strukturu `games/<slug>/` niti ime `GAMES` niza bez ažuriranja ovog skilla.
 - Ne commitovati velike binarne fajlove (>5 MB) bez pitanja.
+- Ne učitavati velike skripte blokirajuće (`<script src>` u body-ju pre igre). Pilana je tako čekala 24 s na 4G (PT-BUG-001); asseti se učitavaju u pozadini, igra kreće odmah.

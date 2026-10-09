@@ -1,0 +1,13 @@
+---
+description: Pravila pri izmeni igara u games/** (performanse, animacije, testovi)
+globs: games/**
+alwaysApply: false
+---
+
+- Logika u `update(dt)` (fiksni korak), prikaz u `updateVisuals` — prikaz ne menja stanje igre.
+- Bez alokacija u petlji frejma (`new Vector3`, `clone`, `filter`/`map`); koristi privremene objekte na nivou modula.
+- DOM paneli se grade jednom i posle patchuju (`textContent`, `classList`) — ponovno građenje guta klikove (PT-BUG-002).
+- Ne briši debug kuke na `window` (`__debug`, `__run`, `__cheat`, `__cam`…): koriste ih testovi i benchmark.
+- Statična geometrija: spajaj po materijalu ili instanciraj; nove stvari ne smeju da podignu draw call-ove iznad budžeta (`docs/engineering/threejs-performance.md`).
+- Svaka nova pojava objekta/zgrade ima animaciju ulaza; svaka akcija igrača ima zvuk i vizuelni odgovor (`docs/engineering/game-quality-bar.md`).
+- Rešen S1/S2 bag = regresioni test u `tests/games/<slug>/` koji pada na starom kodu.

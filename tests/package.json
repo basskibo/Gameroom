@@ -1,0 +1,17 @@
+{
+  "name": "gameroom-tests",
+  "private": true,
+  "description": "End-to-end tests for the Gameroom browser games. Dev-only: the site itself has no build step and never loads this folder.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:pilana": "playwright test games/pilana-tajkun",
+    "test:desktop": "playwright test --project=desktop",
+    "test:mobile": "playwright test --project=mobile",
+    "report": "playwright show-report reports/html",
+    "serve": "node server.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}

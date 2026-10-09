@@ -1,0 +1,124 @@
+{
+ "worker-a": {
+  "src": "Worker by Quaternius - E8079Ahx7k.glb",
+  "keepClips": [
+   "Idle",
+   "Walk",
+   "Interact",
+   "Wave",
+   "Idle_Neutral"
+  ]
+ },
+ "worker-b": {
+  "src": "Worker by Quaternius - Yg2bQZO6Hj.glb",
+  "keepClips": [
+   "Idle",
+   "Walk",
+   "Interact",
+   "Wave",
+   "Idle_Neutral"
+  ]
+ },
+ "hoodie": {
+  "src": "Hoodie Character by Quaternius - gKLBoRsyKe.glb",
+  "keepClips": [
+   "Idle",
+   "Walk",
+   "Interact",
+   "Wave",
+   "Idle_Neutral"
+  ]
+ },
+ "punk": {
+  "src": "Punk by Quaternius - BTALZymknF.glb",
+  "keepClips": [
+   "Idle",
+   "Walk",
+   "Interact",
+   "Wave",
+   "Idle_Neutral"
+  ]
+ },
+ "business-man": {
+  "src": "Business Man by Quaternius - JFrLIKqvCH.glb",
+  "keepClips": [
+   "Idle",
+   "Walk",
+   "Interact",
+   "Wave",
+   "Idle_Neutral"
+  ]
+ },
+ "man": {
+  "src": "Man by Quaternius - HMnuH5geEG.glb",
+  "keepClips": [
+   "Man_Idle",
+   "Man_Walk",
+   "Man_Clapping"
+  ]
+ },
+ "woman-a": {
+  "src": "Animated Woman by Quaternius - nIItLV9nxS.glb",
+  "keepClips": [
+   "Idle",
+   "Walk",
+   "Interact",
+   "Wave",
+   "Idle_Neutral"
+  ]
+ },
+ "woman-b": {
+  "src": "Animated Woman by Quaternius - 9kF7eTDbhO.glb",
+  "keepClips": [
+   "Idle",
+   "Walking",
+   "PickUp"
+  ]
+ },
+ "wagon": {
+  "src": "Wagon by Poly by Google - 8HnKzYQeRYD.glb"
+ },
+ "pallet": {
+  "src": "Pallet by Quaternius - cUAsYHDqfD.glb"
+ },
+ "rush-truck": {
+  "src": "Truck by Quaternius - cXw6oiFtZ8.glb",
+  "join": false
+ },
+ "factory": {
+  "src": "Factory by Poly by Google - fCiJW5Qdgbf.glb"
+ },
+ "red-car": {
+  "src": "Red Car by J-Toastie - dVLJ5CjB0h.glb"
+ },
+ "poly-car": {
+  "src": "Car by Poly by Google - 75h3mi6uHuC.glb"
+ },
+ "pickup": {
+  "src": "Pickup Truck by Quaternius - qn4grQgHm8.glb"
+ },
+ "shed": {
+  "src": "Storage shed by Quaternius - TvXpjtD2nk.glb"
+ },
+ "bakery": {
+  "src": "Bakery by Poly by Google - 6BGhNQlUzRR.glb"
+ },
+ "chopped-log": {
+  "src": "Chopped Log by Davemane42 - 9OZx4c2IkAJ.glb"
+ },
+ "log": {
+  "src": "Log by J-Toastie - ncDQNqeOFj.glb"
+ },
+ "path-tile": {
+  "src": "Path by Kay Lousberg - h6lw6yUbu7.glb"
+ },
+ "fence": {
+  "src": "Fence by Tomáš Bayer - aKD_ayzKYHw.glb"
+ },
+ "car": {
+  "src": "Car by Quaternius - unqqkULtRU.glb"
+ },
+ "suv": {
+  "src": "SUV by Quaternius - xsMtZhBkxL.glb"
+ }
+}
