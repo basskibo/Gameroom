@@ -51,9 +51,9 @@ test.describe('Pilana Tajkun · smoke', () => {
     await expect(page.locator('#startScreen')).toBeHidden();
   });
 
-  test('page title and landing name agree (plan: one searchable name)', async ({ page }) => {
-    test.fail(true, 'Known: <title> is "Sawmill Tycoon", landing says "Pilana Tajkun" — MONETIZATION.md Faza 0');
+  test('PT-BUG-021: title carries the English and the local name', async ({ page }) => {
     await page.goto(URL);
-    await expect(page).toHaveTitle(/Pilana/);
+    await expect(page).toHaveTitle(/Sawmill Tycoon/);
+    await expect(page).toHaveTitle(/Pilana Tajkun/);
   });
 });

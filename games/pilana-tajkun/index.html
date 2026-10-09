@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Sawmill Tycoon</title>
+<title>Sawmill Tycoon · Pilana Tajkun</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Pilana">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
+<script src="../../shared/gameroom-config.js"></script>
+<script src="../../shared/gameroom-sdk.js"></script>
 <script type="importmap">
 { "imports": {
     "three": "../../shared/vendor/three-0.170.0/build/three.module.min.js",
@@ -49,6 +51,10 @@
     background: radial-gradient(circle at 35% 30%, #fff8c4, #ffd84a 45%, #c98c14); box-shadow: 0 0 0 2px #8a5a0a55, 0 2px 4px #0005;
   }
   .pill.rate { font-size: 14px; color: #a8e6ad; }
+  .pill.boost { font-family: inherit; font-size: 15px; color: #1e2a33; background: linear-gradient(180deg, #ffe27a, #f2b52a); border-color: #fff6; cursor: pointer; pointer-events: auto; animation: boostIn .4s cubic-bezier(.2, 1.4, .4, 1); }
+  .pill.boost.on { cursor: default; color: #ffd84a; background: #1e2a33d0; border-color: #ffd84a88; box-shadow: 0 0 0 2px #ffd84a55, 0 3px 0 #0003; }
+  .pill.boost.hidden { display: none; }
+  @keyframes boostIn { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
   .pill.wood { font-size: 16px; color: #f0d2a0; }
   .pill.stock { font-size: 16px; color: #f0a05a; }
   .pill.board { font-size: 16px; color: #f6e7c1; }
@@ -366,6 +372,7 @@
     <div class="hud-left">
       <div class="pill money stroke" id="moneyPill" title="Mill books"><span>💰</span><span id="money">0</span></div>
       <div class="pill rate stroke" id="ratePill">0/s</div>
+      <button class="pill boost stroke hidden" id="boostBtn" type="button" title="Watch a short ad: double income for 3 minutes"><span>📺</span><span id="boostTxt">×2 · 3 min</span></button>
       <div class="hud-res">
         <div class="pill wood stroke" id="woodPill" title="Logs left to cut"><span id="woodIco"></span><span id="wood">0</span></div>
         <div class="pill stock stroke" id="stockPill" title="Cut wood in the bin"><span id="stockIco"></span><span id="stock">0</span></div>
@@ -530,6 +537,8 @@ let forestDecor = [];
 // CONFIG / ECONOMY
 // =====================================================================
 const SAVE_KEY = 'pilana-tajkun:v2';
+const GAME_VERSION = '1.1.0';
+let boostT = 0; // seconds of double income left (rewarded ad), counts game time
 const SLOT_KEY = 'pilana-tajkun:slots';
 const HELP_KEY = 'pilana-tajkun:help';
 const qs = new URLSearchParams(location.search);
@@ -3506,6 +3515,7 @@ function toast(main, sub = '', err = false) {
 const earnLog = [];
 function addMoney(v, at) {
   if (v <= 0) return;
+  if (boostT > 0) v *= 2; // rewarded ad: double income
   S.money += v; S.earned += v; earnLog.push([S.time, v]);
   if (at) floatText(`+${fmt(v)} 💰`, at);
   if (instant) return;
@@ -6951,6 +6961,7 @@ function buy(id, fromUi) {
   if (id === 'frame') refreshFrame();
   if (id === 'rushN') refreshRush(true);
   if (fromUi) {
+    sdk.track('upgrade', { id, lv: S.lv[id], cost: Math.round(cost), minute: Math.floor(S.time / 60) });
     heroBuyAt = performance.now();
     sfx.buy();
     const st = STATIONS.find(s => s.ups.includes(id)) || openStation;
@@ -8124,6 +8135,8 @@ function updateDeal(dt) {
 function update(dt) {
   if (!S.running || S.paused) return;
   S.time += dt;
+  if (boostT > 0) boostT = Math.max(0, boostT - dt);
+  if (!firstMinute && S.time - sessionT0 >= 60) { firstMinute = true; sdk.track('first_minute', { money: Math.round(S.money) }); }
   updateDeal(dt);
   tickBooks();
   const int = UP.saw.vals[S.lv.saw];
@@ -8394,6 +8407,7 @@ function render() {
     $('furnN').textContent = fmt(furnPile.length);
     $('fireN').textContent = fmt(firePile);
     $('ratePill').textContent = fmt(incomeRate()) + '/s';
+    syncBoost();
     syncOrderHud();
     if (rushes.some(s => s.dirty)) drawOrderBoard();
     drawShop();
@@ -8423,6 +8437,9 @@ function startGame() {
   sfx.ensure(); clock.getDelta();
   tickJobs();
   startGuide();
+  sessionT0 = S.time;
+  sdk.gameplayStart();
+  sdk.track('game_start', { first, money: Math.round(S.money), earned: Math.round(S.earned) });
 }
 function closeHelp() {
   $('startScreen').classList.add('hidden');
@@ -8451,6 +8468,7 @@ function startGuide() {
   hideHint();
 }
 function endGuide() {
+  if (guide) sdk.track('guide_done', { step: guide.step });
   guide = null;
   $('coach').classList.add('hidden');
   document.querySelectorAll('button.urow.coach').forEach(b => b.classList.remove('coach'));
@@ -8499,7 +8517,45 @@ function updateGuide(dt) {
   }
 }
 window.__guide = () => guide && { step: guide.step, t: +guide.t.toFixed(2) };
+// ---------------------------------------------------------------------
+// ADS + ANALYTICS — only through shared/gameroom-sdk.js (MONETIZATION.md). With no ad network (plain web)
+// the reward button never shows and nothing else changes.
+// ---------------------------------------------------------------------
+const sdk = window.Gameroom;
+let firstMinute = false, sessionT0 = 0, adHeld = false, boostOffered = false;
+sdk.init({ game: 'pilana-tajkun', version: GAME_VERSION });
+sdk.on('adStart', () => { // the ad owns the screen and the speakers
+  if (S.running && !S.paused) { adHeld = true; S.paused = true; }
+  audio.setMuted(true);
+});
+sdk.on('adEnd', () => {
+  if (adHeld) { adHeld = false; S.paused = false; clock.getDelta(); }
+  audio.setMuted(soundWasMuted);
+});
+let soundWasMuted = audio.muted;
+function syncBoost() {
+  const btn = $('boostBtn');
+  const offer = S.running && !guide && S.time > 90 && boostT <= 0 && sdk.rewardedAvailable('boost_x2');
+  const show = boostT > 0 || offer;
+  btn.classList.toggle('hidden', !show);
+  btn.classList.toggle('on', boostT > 0);
+  if (boostT > 0) setText($('boostTxt'), '×2 · ' + clockTxt(boostT));
+  else if (offer) setText($('boostTxt'), '×2 · 3 min');
+  if (offer && !boostOffered) { boostOffered = true; sdk.track('rewarded_offer', { placement: 'boost_x2' }); }
+  if (!offer) boostOffered = false;
+}
+$('boostBtn').addEventListener('click', async () => {
+  if (boostT > 0) return;
+  sfx.ensure();
+  soundWasMuted = audio.muted;
+  const ok = await sdk.showRewarded('boost_x2');
+  sdk.track('rewarded_watched', { placement: 'boost_x2', ok });
+  if (ok) { boostT = 180; sfx.buy(); toast('Double income!', 'every sale pays ×2 for 3 minutes 💰'); }
+  syncBoost();
+});
+window.__boost = (t = 180) => { boostT = t; syncBoost(); return boostT; };
 function setPaused(p) {
+  if (p) sdk.gameplayStop(); else if (S.running) sdk.gameplayStart();
   S.paused = p;
   audio.ambienceOn(!p);
   $('pauseScreen').classList.toggle('hidden', !p);
@@ -8594,7 +8650,11 @@ function confirmSaveScreen() {
   }
 }
 $('startBtn').addEventListener('click', () => { if (S.running) closeHelp(); else startGame(); });
-$('resumeBtn').addEventListener('click', () => setPaused(false));
+$('resumeBtn').addEventListener('click', () => {
+  setPaused(false);
+  soundWasMuted = audio.muted;
+  sdk.showMidgame('resume'); // a natural break the player chose; the SDK caps how often (and never early in a session)
+});
 $('settingsBtn').addEventListener('click', () => {
   sfx.ensure();
   $('settingsMenu').classList.toggle('hidden');
