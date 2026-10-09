@@ -2,7 +2,7 @@
 
 3D idle/tajkun igra pilane (Three.js r170). Igrač kupuje nadogradnje na mašinama, a radnici, viljuškari, kamioni i kupci rade sami. Fajl: `games/pilana-tajkun/index.html` (~8 700 linija, ~420 KB).
 
-Povezano: [BUGS](BUGS.md) · [TECH-DEBT](TECH-DEBT.md) · [IMPROVEMENTS](IMPROVEMENTS.md) · [TRACKER](TRACKER.md) · [LEDGER](LEDGER.md) · [izveštaj 2026-10-09](REPORT-2026-10-09.md) · testovi u `tests/games/pilana-tajkun/`.
+Izgled pre/posle „wow“ plana: [img/wow-before-after.jpg](img/wow-before-after.jpg). Povezano: [BUGS](BUGS.md) · [TECH-DEBT](TECH-DEBT.md) · [IMPROVEMENTS](IMPROVEMENTS.md) · [TRACKER](TRACKER.md) · [LEDGER](LEDGER.md) · [izveštaj 2026-10-09](REPORT-2026-10-09.md) · testovi u `tests/games/pilana-tajkun/`.
 
 ## Kako se pokreće
 
