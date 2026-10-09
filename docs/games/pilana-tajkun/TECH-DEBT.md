@@ -23,7 +23,7 @@ Stvari koje rade, ali koče performanse, razvoj ili plan. Procena: **S** < pola 
 | PT-TD-017 | srednji | — | otvoren | Kolizije i raspored kao stotine ručnih koordinata |
 | PT-TD-018 | nizak | S | plaćen 2026-10-09 | Asset fajlovi sa razmacima i dijakriticima u imenu |
 | PT-TD-019 | nizak | S | otvoren | Git repo raste od binarnih fajlova (26 MB pack + garbage) |
-| PT-TD-020 | srednji | S | otvoren | Trzaji kad se nova zgrada prvi put pojavi u kadru (kompajliranje shader-a) |
+| PT-TD-020 | srednji | S | delimično | Trzaji kad se nova zgrada prvi put pojavi u kadru (kompajliranje shader-a) |
 
 ## Detalji
 
@@ -114,3 +114,5 @@ Stvari koje rade, ali koče performanse, razvoj ili plan. Procena: **S** < pola 
 ### PT-TD-020 — Kompajliranje shader-a pri prvom pojavljivanju
 
 Kasna igra ima 1% low ~20 FPS zbog nekoliko frejmova od 50–150 ms kad se kupljena zgrada prvi put nacrta (novi materijal/kombinacija → kompajliranje programa). Rešenje: `renderer.compileAsync(scene, camera)` posle učitavanja modela i pre otkrivanja zgrade, ili deljenje materijala tako da nove zgrade ne prave nove programe.
+
+**2026-10-09:** prvi frejm sada čeka `compileAsync` (do igre bez throttlinga ~3,6 s → 0,9–2,4 s u SwiftShader-u). Ostaje: sakrivene zgrade se ne kompajliraju unapred (`compile` ide samo kroz vidljive objekte).

@@ -9304,7 +9304,10 @@ if (SIM > 0) {
   document.title = 'SIMDONE';
   window.__simDone = true;
 } else {
-  render();
+  // the title card is plain HTML and shows at once; shaders compile off the main thread where the
+  // browser can (KHR_parallel_shader_compile), and the first frame is drawn when they are ready
+  applyCamera();
+  renderer.compileAsync(scene, camera).catch(() => {}).finally(() => requestAnimationFrame(render));
 }
 
 </script>
