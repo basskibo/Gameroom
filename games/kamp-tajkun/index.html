@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Kamp Tajkun</title>
+<title>Camp Tycoon</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="Kamp">
+<meta name="apple-mobile-web-app-title" content="Camp Tycoon">
+<script src="../../shared/gameroom-i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
@@ -47,6 +48,8 @@
     display: flex; flex-direction: column; gap: 6px; z-index: 61; pointer-events: auto;
   }
   #settingsMenu.hidden { display: none; }
+  #langRow .gr-lang { display: flex !important; width: 100%; }
+  #settingsMenu #langRow button { flex: 1; width: auto; height: 32px; justify-content: center; padding: 0; }
   #settingsMenu button, #settingsMenu a {
     width: 100%; min-width: 0; height: 40px; font-size: 16px; text-decoration: none;
     display: flex; align-items: center; justify-content: flex-start; padding: 0 12px; background: #3a2752;
@@ -120,44 +123,45 @@
       <div class="pill order stroke" id="orderPill" style="display:none"><span class="ic">🚚</span><span id="orderTxt"></span></div>
     </div>
     <div class="btns">
-      <button id="settingsBtn" type="button" title="Podešavanja">⚙</button>
+      <button id="settingsBtn" type="button" data-i18n-attr="title:settings;aria-label:settings">⚙</button>
       <div id="settingsMenu" class="hidden">
-        <button id="menuSound" type="button">♪ Zvuk uključen</button>
-        <button id="menuPause" type="button">II Pauza</button>
+        <button id="menuSound" type="button" data-i18n="soundOn"></button>
+        <button id="menuPause" type="button" data-i18n="pauseBtn"></button>
+        <div id="langRow"></div>
         <!-- gameroom:back -->
-        <a href="../../" id="gameroom-back" title="Nazad u Gameroom" aria-label="Nazad u Gameroom">⌂ Nazad u Gameroom</a>
+        <a href="../../" id="gameroom-back" data-i18n="back" data-i18n-attr="title:backPlain;aria-label:backPlain">⌂ Back to Gameroom</a>
         <!-- /gameroom:back -->
       </div>
     </div>
   </div>
   <div id="toast" class="stroke"></div>
-  <div id="maxTag" class="stroke">PUNO!</div>
+  <div id="maxTag" class="stroke" data-i18n="full"></div>
   <div id="joy"><div id="joyKnob"></div></div>
 
   <div id="startScreen" class="overlay">
     <div class="card">
-      <h1>KAMP<br>TAJKUN</h1>
-      <p>Kreneš sa šatorom i sekirom. Skupljaj, preradi, prodaj — i pretvori kamp u dvorac.</p>
+      <h1 data-i18n-html="titleHtml"></h1>
+      <p data-i18n="intro"></p>
       <div class="steps">
-        <span>🪓</span><span>Priđi drvetu da ga sečeš, svinji u oboru za meso — stvari se slažu na leđa.</span>
-        <span>🪚</span><span>Ostavi drva u pilani, meso na roštilju, pa pokupi gotovu robu.</span>
-        <span>🏪</span><span>Napuni tezge — mušterije dolaze, kupuju i ostavljaju pare.</span>
-        <span>🏠</span><span>Stani na krug sa cenom da platiš: nove zgrade, alati, radnici i veća baza.</span>
-        <span>👷</span><span>Zaposli drvoseče, mesare, berače, ribare i nosače — kamp počinje da radi sam.</span>
-        <span>🚚</span><span>Kamion porudžbina plaća duplo, ali samo ti možeš da ga utovariš — i to na vreme!</span>
+        <span>🪓</span><span data-i18n="step1"></span>
+        <span>🪚</span><span data-i18n="step2"></span>
+        <span>🏪</span><span data-i18n="step3"></span>
+        <span>🏠</span><span data-i18n="step4"></span>
+        <span>👷</span><span data-i18n="step5"></span>
+        <span>🚚</span><span data-i18n="step6"></span>
       </div>
-      <button class="play" id="startBtn">IGRAJ</button><br>
-      <button class="link hidden" id="newBtn">Nova igra (briše napredak)</button>
-      <div class="keys">Prevuci prstom/mišem bilo gde ili WASD/strelice · P — pauza</div>
+      <button class="play" id="startBtn" data-i18n="play"></button><br>
+      <button class="link hidden" id="newBtn" data-i18n="newGame"></button>
+      <div class="keys" data-i18n="keys"></div>
     </div>
   </div>
 
   <div id="pauseScreen" class="overlay hidden">
     <div class="card">
-      <h2>PAUZA</h2>
-      <p>Napredak se čuva automatski.</p>
-      <button class="play" id="resumeBtn">NASTAVI</button><br>
-      <button class="link" id="resetBtn">Počni ispočetka</button>
+      <h2 data-i18n="paused"></h2>
+      <p data-i18n="autosave"></p>
+      <button class="play" id="resumeBtn" data-i18n="resume"></button><br>
+      <button class="link" id="resetBtn" data-i18n="restart"></button>
     </div>
   </div>
 </div>
@@ -175,6 +179,63 @@
 import * as THREE from 'three';
 
 // =====================================================================
+// I18N (shared/gameroom-i18n.js): engleski podrazumevano, srpski po izboru u podešavanjima
+// =====================================================================
+const i18n = window.GameroomI18n;
+const tr = (k, v) => i18n.t(k, v);
+i18n.add({
+  en: {
+    settings: 'Settings', soundOn: '♪ Sound on', soundOff: '🔇 Sound off', pauseBtn: 'II Pause', resumeBtn: '▶ Resume',
+    back: '⌂ Back to Gameroom', backPlain: 'Back to Gameroom', full: 'FULL!', title: 'Camp Tycoon', titleHtml: 'CAMP<br>TYCOON',
+    intro: 'You start with a tent and an axe. Gather, process, sell, and turn your camp into a castle.',
+    step1: 'Walk up to a tree to chop it, or to a pig in the pen for meat. Everything stacks on your back.',
+    step2: 'Drop wood at the sawmill and meat at the grill, then pick up the finished goods.',
+    step3: 'Stock the stalls. Customers come by, buy, and leave cash.',
+    step4: 'Stand on a price circle to pay: new buildings, tools, workers and a bigger base.',
+    step5: 'Hire lumberjacks, butchers, pickers, fishers and carriers, and the camp starts running itself.',
+    step6: 'The order truck pays double, but only you can load it, and only in time!',
+    play: 'PLAY', resume: 'RESUME', newGame: 'New game (erases progress)', keys: 'Drag with finger or mouse anywhere, or WASD/arrows · P to pause',
+    paused: 'PAUSED', autosave: 'Progress saves automatically.', restart: 'Start over',
+    confirmReset: 'Erase all progress and start over?',
+    b0: 'Tent', b1: 'Cabin', b2: 'House', b3: 'Villa', b4: 'Castle',
+    i_log: 'Logs', i_plank: 'Planks', i_meat: 'Meat', i_steak: 'Barbecue', i_apple: 'Apples', i_juice: 'Juice', i_fish: 'Fish', i_smoked: 'Smoked fish', i_cash: 'Cash',
+    p_sawmill: 'Sawmill', p_plankStand: 'Plank stall', p_forest2: 'New forest', p_pen: 'Pig pen', p_grill: 'Grill', p_meatStand: 'Barbecue stall',
+    p_cashier: 'Cashier', p_orders: 'Order loading', p_orchard: 'Orchard', p_press: 'Juice press', p_juiceStand: 'Juice stall', p_pond: 'Fish pond',
+    p_smokehouse: 'Smokehouse', p_fishStand: 'Fish stall', p_carry_sawmill: 'Plank carrier', p_carry_grill: 'Barbecue carrier', p_carry_press: 'Juice carrier', p_carry_smoke: 'Fish carrier',
+    u_bag: 'Bigger backpack', u_axe: 'Sharper axe', u_boots: 'Faster boots', u_lumberjacks: 'Lumberjack', u_butchers: 'Butcher', u_pickers: 'Picker', u_fishers: 'Fisher', u_wbag: 'Worker backpack',
+    orderDone: '🚚 Order delivered!', orderIn: '🚚 An order has arrived!', orderInSub: 'Bring the goods to the truck at the loading bay',
+    orderGone: '🚚 The truck has left', orderGoneSub: 'The order was not delivered in time',
+    baseEstate: 'The camp is a real estate now! 🎉', baseUp: 'More customers and higher prices', level: 'Level {n}', unlocked: 'Unlocked',
+  },
+  sr: {
+    settings: 'Podešavanja', soundOn: '♪ Zvuk uključen', soundOff: '🔇 Zvuk isključen', pauseBtn: 'II Pauza', resumeBtn: '▶ Nastavi',
+    back: '⌂ Nazad u Gameroom', backPlain: 'Nazad u Gameroom', full: 'PUNO!', title: 'Kamp Tajkun', titleHtml: 'KAMP<br>TAJKUN',
+    intro: 'Kreneš sa šatorom i sekirom. Skupljaj, preradi, prodaj — i pretvori kamp u dvorac.',
+    step1: 'Priđi drvetu da ga sečeš, svinji u oboru za meso — stvari se slažu na leđa.',
+    step2: 'Ostavi drva u pilani, meso na roštilju, pa pokupi gotovu robu.',
+    step3: 'Napuni tezge — mušterije dolaze, kupuju i ostavljaju pare.',
+    step4: 'Stani na krug sa cenom da platiš: nove zgrade, alati, radnici i veća baza.',
+    step5: 'Zaposli drvoseče, mesare, berače, ribare i nosače — kamp počinje da radi sam.',
+    step6: 'Kamion porudžbina plaća duplo, ali samo ti možeš da ga utovariš — i to na vreme!',
+    play: 'IGRAJ', resume: 'NASTAVI', newGame: 'Nova igra (briše napredak)', keys: 'Prevuci prstom/mišem bilo gde ili WASD/strelice · P — pauza',
+    paused: 'PAUZA', autosave: 'Napredak se čuva automatski.', restart: 'Počni ispočetka',
+    confirmReset: 'Obrisati sav napredak i početi ispočetka?',
+    b0: 'Šator', b1: 'Koliba', b2: 'Kuća', b3: 'Vila', b4: 'Dvorac',
+    i_log: 'Drva', i_plank: 'Daske', i_meat: 'Meso', i_steak: 'Roštilj', i_apple: 'Jabuke', i_juice: 'Sok', i_fish: 'Riba', i_smoked: 'Dimljena riba', i_cash: 'Pare',
+    p_sawmill: 'Pilana', p_plankStand: 'Tezga za daske', p_forest2: 'Nova šuma', p_pen: 'Obor sa svinjama', p_grill: 'Roštilj', p_meatStand: 'Tezga za roštilj',
+    p_cashier: 'Kasir', p_orders: 'Utovar porudžbina', p_orchard: 'Voćnjak', p_press: 'Presa za sok', p_juiceStand: 'Tezga za sok', p_pond: 'Ribnjak',
+    p_smokehouse: 'Pušnica', p_fishStand: 'Tezga za ribu', p_carry_sawmill: 'Nosač dasaka', p_carry_grill: 'Nosač roštilja', p_carry_press: 'Nosač soka', p_carry_smoke: 'Nosač ribe',
+    u_bag: 'Veći ranac', u_axe: 'Oštrija sekira', u_boots: 'Brže čizme', u_lumberjacks: 'Drvoseča', u_butchers: 'Mesar', u_pickers: 'Berač', u_fishers: 'Ribar', u_wbag: 'Ranac radnika',
+    orderDone: '🚚 Porudžbina isporučena!', orderIn: '🚚 Stigla porudžbina!', orderInSub: 'Donesi robu kamionu kod utovara',
+    orderGone: '🚚 Kamion je otišao', orderGoneSub: 'Porudžbina nije stigla na vreme',
+    baseEstate: 'Kamp je postao pravo imanje! 🎉', baseUp: 'Više mušterija i veće cene', level: 'Nivo {n}', unlocked: 'Otključano',
+  },
+});
+document.title = tr('title');
+i18n.apply();
+document.getElementById('langRow').appendChild(i18n.picker());
+
+// =====================================================================
 // CONFIG
 // =====================================================================
 const SAVE_KEY = 'kamp-tajkun:save';
@@ -187,7 +248,7 @@ const BASE_POS = new THREE.Vector3(4, 0, -10);
 const BAG = [8, 12, 16, 22, 28, 36], BAG_COST = [20, 60, 140, 300, 600];
 const AXE = [0.5, 0.42, 0.35, 0.29, 0.23], AXE_COST = [30, 90, 220, 480];
 const BOOTS = [5.8, 6.6, 7.4, 8.2, 9.0], BOOTS_COST = [35, 100, 240, 520];
-const BASE_NAMES = ['Šator', 'Koliba', 'Kuća', 'Vila', 'Dvorac'];
+const BASE_NAMES = ['b0', 'b1', 'b2', 'b3', 'b4'].map(k => tr(k));
 const BASE_COST = [150, 550, 2000, 9000];
 const BASE_REQ = [['sawmill'], ['grill'], ['juiceStand'], ['fishStand']];
 const PRICE = { log: 4, plank: 10, steak: 18, juice: 26, smoked: 38 };
@@ -195,38 +256,38 @@ const WORKER_BAG = [4, 6, 8, 11, 14], WBAG_COST = [150, 400, 1200, 3000];
 const TREE_HP = 3, TREE_REGROW = 9;
 
 const ITEMS = {
-  log:   { h: 0.34, color: 0x9a6233, icon: '🪵', name: 'Drva' },
-  plank: { h: 0.14, color: 0xe9c27f, icon: '🪚', name: 'Daske' },
-  meat:  { h: 0.30, color: 0xef6b73, icon: '🥩', name: 'Meso' },
-  steak: { h: 0.16, color: 0x8e3a1e, icon: '🍖', name: 'Roštilj' },
-  apple: { h: 0.30, color: 0xe53935, icon: '🍎', name: 'Jabuke' },
-  juice: { h: 0.38, color: 0xffa726, icon: '🧃', name: 'Sok' },
-  fish:  { h: 0.22, color: 0x78a6c8, icon: '🐟', name: 'Riba' },
-  smoked:{ h: 0.22, color: 0xc0772e, icon: '🍣', name: 'Dimljena riba' },
-  cash:  { h: 0.11, color: 0x57c26a, icon: '💵', name: 'Pare' },
+  log:   { h: 0.34, color: 0x9a6233, icon: '🪵', name: tr('i_log') },
+  plank: { h: 0.14, color: 0xe9c27f, icon: '🪚', name: tr('i_plank') },
+  meat:  { h: 0.30, color: 0xef6b73, icon: '🥩', name: tr('i_meat') },
+  steak: { h: 0.16, color: 0x8e3a1e, icon: '🍖', name: tr('i_steak') },
+  apple: { h: 0.30, color: 0xe53935, icon: '🍎', name: tr('i_apple') },
+  juice: { h: 0.38, color: 0xffa726, icon: '🧃', name: tr('i_juice') },
+  fish:  { h: 0.22, color: 0x78a6c8, icon: '🐟', name: tr('i_fish') },
+  smoked:{ h: 0.22, color: 0xc0772e, icon: '🍣', name: tr('i_smoked') },
+  cash:  { h: 0.11, color: 0x57c26a, icon: '💵', name: tr('i_cash') },
 };
 
 // one-time buildings; each appears once its requirements are unlocked
 const PLOTS = [
-  { id: 'sawmill',    name: 'Pilana',            icon: '🪚', cost: 40,  at: [-12, 3],  req: [] },
-  { id: 'plankStand', name: 'Tezga za daske',    icon: '🏪', cost: 40,  at: [-12, 12], req: ['sawmill'] },
-  { id: 'forest2',    name: 'Nova šuma',         icon: '🌲', cost: 180, at: [-27, 2],  req: ['sawmill'] },
-  { id: 'pen',        name: 'Obor sa svinjama',  icon: '🐷', cost: 150, at: [21, -9],  req: ['plankStand'] },
-  { id: 'grill',      name: 'Roštilj',           icon: '🔥', cost: 120, at: [11, 2],   req: ['pen'] },
-  { id: 'meatStand',  name: 'Tezga za roštilj',  icon: '🍖', cost: 100, at: [9, 12],   req: ['grill'] },
-  { id: 'cashier',    name: 'Kasir',             icon: '🧾', cost: 450, at: [3, 6],    req: ['meatStand'] },
-  { id: 'orders',     name: 'Utovar porudžbina', icon: '🚚', cost: 200, at: [26, 16.3], req: ['plankStand'] },
-  { id: 'orchard',    name: 'Voćnjak',           icon: '🍎', cost: 400, at: [21.5, 1.8], req: ['meatStand'] },
-  { id: 'press',      name: 'Presa za sok',      icon: '🧃', cost: 350, at: [23.5, 7.5], req: ['orchard'] },
-  { id: 'juiceStand', name: 'Tezga za sok',      icon: '🧃', cost: 250, at: [18, 12],   req: ['press'] },
-  { id: 'pond',       name: 'Ribnjak',           icon: '🎣', cost: 1800, at: [-40, -8],  req: ['juiceStand'] },
-  { id: 'smokehouse', name: 'Pušnica',           icon: '🔥', cost: 1400, at: [-38, 4],   req: ['pond'] },
-  { id: 'fishStand',  name: 'Tezga za ribu',     icon: '🐟', cost: 900, at: [-21, 12],  req: ['smokehouse'] },
+  { id: 'sawmill',    name: tr('p_sawmill'), icon: '🪚', cost: 40,  at: [-12, 3],  req: [] },
+  { id: 'plankStand', name: tr('p_plankStand'), icon: '🏪', cost: 40,  at: [-12, 12], req: ['sawmill'] },
+  { id: 'forest2',    name: tr('p_forest2'), icon: '🌲', cost: 180, at: [-27, 2],  req: ['sawmill'] },
+  { id: 'pen',        name: tr('p_pen'), icon: '🐷', cost: 150, at: [21, -9],  req: ['plankStand'] },
+  { id: 'grill',      name: tr('p_grill'), icon: '🔥', cost: 120, at: [11, 2],   req: ['pen'] },
+  { id: 'meatStand',  name: tr('p_meatStand'), icon: '🍖', cost: 100, at: [9, 12],   req: ['grill'] },
+  { id: 'cashier',    name: tr('p_cashier'), icon: '🧾', cost: 450, at: [3, 6],    req: ['meatStand'] },
+  { id: 'orders',     name: tr('p_orders'), icon: '🚚', cost: 200, at: [26, 16.3], req: ['plankStand'] },
+  { id: 'orchard',    name: tr('p_orchard'), icon: '🍎', cost: 400, at: [21.5, 1.8], req: ['meatStand'] },
+  { id: 'press',      name: tr('p_press'), icon: '🧃', cost: 350, at: [23.5, 7.5], req: ['orchard'] },
+  { id: 'juiceStand', name: tr('p_juiceStand'), icon: '🧃', cost: 250, at: [18, 12],   req: ['press'] },
+  { id: 'pond',       name: tr('p_pond'), icon: '🎣', cost: 1800, at: [-40, -8],  req: ['juiceStand'] },
+  { id: 'smokehouse', name: tr('p_smokehouse'), icon: '🔥', cost: 1400, at: [-38, 4],   req: ['pond'] },
+  { id: 'fishStand',  name: tr('p_fishStand'), icon: '🐟', cost: 900, at: [-21, 12],  req: ['smokehouse'] },
   // carriers: haul finished goods from a station to its stand (after the station + stand exist)
-  { id: 'carry_sawmill', name: 'Nosač dasaka',   icon: '🛒', cost: 300,  at: [-9.3, 6.3], req: ['sawmill', 'plankStand'] },
-  { id: 'carry_grill',   name: 'Nosač roštilja', icon: '🛒', cost: 500,  at: [13.7, 5],   req: ['grill', 'meatStand'] },
-  { id: 'carry_press',   name: 'Nosač soka',     icon: '🛒', cost: 1500, at: [26.2, 10.5], req: ['press', 'juiceStand'] },
-  { id: 'carry_smoke',   name: 'Nosač ribe',     icon: '🛒', cost: 3500, at: [-35.3, 7.5], req: ['smokehouse', 'fishStand'] },
+  { id: 'carry_sawmill', name: tr('p_carry_sawmill'), icon: '🛒', cost: 300,  at: [-9.3, 6.3], req: ['sawmill', 'plankStand'] },
+  { id: 'carry_grill',   name: tr('p_carry_grill'), icon: '🛒', cost: 500,  at: [13.7, 5],   req: ['grill', 'meatStand'] },
+  { id: 'carry_press',   name: tr('p_carry_press'), icon: '🛒', cost: 1500, at: [26.2, 10.5], req: ['press', 'juiceStand'] },
+  { id: 'carry_smoke',   name: tr('p_carry_smoke'), icon: '🛒', cost: 3500, at: [-35.3, 7.5], req: ['smokehouse', 'fishStand'] },
 ];
 // hired helpers per resource (repeatable: each level = one more worker)
 const JOBS = {
@@ -237,15 +298,15 @@ const JOBS = {
 };
 // repeatable upgrades in front of the base
 const UPGRADES = [
-  { id: 'bag',   name: 'Veći ranac',     icon: '🎒', at: [-1, -4.3], costs: BAG_COST },
-  { id: 'axe',   name: 'Oštrija sekira', icon: '🪓', at: [4, -4.3], costs: AXE_COST },
-  { id: 'boots', name: 'Brže čizme',     icon: '👟', at: [9, -4.3], costs: BOOTS_COST },
+  { id: 'bag',   name: tr('u_bag'), icon: '🎒', at: [-1, -4.3], costs: BAG_COST },
+  { id: 'axe',   name: tr('u_axe'), icon: '🪓', at: [4, -4.3], costs: AXE_COST },
+  { id: 'boots', name: tr('u_boots'), icon: '👟', at: [9, -4.3], costs: BOOTS_COST },
   { id: 'base',  name: lv => BASE_NAMES[lv + 1], icon: '🏠', at: [-3.5, -10], costs: BASE_COST, req: lv => BASE_REQ[lv] },
-  { id: 'lumberjacks', name: 'Drvoseča', icon: '👷', at: [-6, -2],     costs: [250, 700, 2400], req: () => ['plankStand'] },
-  { id: 'butchers',    name: 'Mesar',    icon: '🔪', at: [12.5, -6.5], costs: [450, 1100],      req: () => ['meatStand'] },
-  { id: 'pickers',     name: 'Berač',    icon: '🧺', at: [14.5, -1.8], costs: [1200, 2800],     req: () => ['juiceStand'] },
-  { id: 'fishers',     name: 'Ribar',    icon: '🎣', at: [-32, -12],   costs: [3000, 6000],     req: () => ['fishStand'] },
-  { id: 'wbag',        name: 'Ranac radnika', icon: '🎒', at: [12, -10.5], costs: WBAG_COST,
+  { id: 'lumberjacks', name: tr('u_lumberjacks'), icon: '👷', at: [-6, -2],     costs: [250, 700, 2400], req: () => ['plankStand'] },
+  { id: 'butchers',    name: tr('u_butchers'), icon: '🔪', at: [12.5, -6.5], costs: [450, 1100],      req: () => ['meatStand'] },
+  { id: 'pickers',     name: tr('u_pickers'), icon: '🧺', at: [14.5, -1.8], costs: [1200, 2800],     req: () => ['juiceStand'] },
+  { id: 'fishers',     name: tr('u_fishers'), icon: '🎣', at: [-32, -12],   costs: [3000, 6000],     req: () => ['fishStand'] },
+  { id: 'wbag',        name: tr('u_wbag'), icon: '🎒', at: [12, -10.5], costs: WBAG_COST,
     req: () => S.lv.lumberjacks + S.lv.butchers + S.lv.pickers + S.lv.fishers > 0 },
 ];
 
@@ -1357,7 +1418,7 @@ function loadOrder(xfers) {
   if (Object.keys(order.needs).every(t => orderLeft(t) <= 0)) {
     order.state = 'done';
     addMoney(order.reward, ORDER_POS.clone().setY(3));
-    toast('🚚 Porudžbina isporučena!', `+${order.reward} 💰`);
+    toast(tr('orderDone'), `+${order.reward} 💰`);
     burst(ORDER_POS.clone().setY(1.5), [0xffd84a, 0x7ed957, 0xffffff], 30, 6);
     sfx.unlock();
     simEvents.push(`order+${order.reward}@${S.time.toFixed(0)}`);
@@ -1370,10 +1431,10 @@ function updateOrders(dt) {
   const o = order;
   if (o.state === 'arriving') {
     o.x = Math.max(ORDER_POS.x, o.x - 14 * dt);
-    if (o.x === ORDER_POS.x) { o.state = 'waiting'; toast('🚚 Stigla porudžbina!', 'Donesi robu kamionu kod utovara'); }
+    if (o.x === ORDER_POS.x) { o.state = 'waiting'; toast(tr('orderIn'), tr('orderInSub')); }
   } else if (o.state === 'waiting') {
     o.time -= dt;
-    if (o.time <= 0) { simEvents.push(`orderFAIL@${S.time.toFixed(0)} ` + Object.keys(o.needs).map(t => `${t}:${o.got[t]}/${o.needs[t]}`).join(',')); o.state = 'failed'; toast('🚚 Kamion je otišao', 'Porudžbina nije stigla na vreme'); }
+    if (o.time <= 0) { simEvents.push(`orderFAIL@${S.time.toFixed(0)} ` + Object.keys(o.needs).map(t => `${t}:${o.got[t]}/${o.needs[t]}`).join(',')); o.state = 'failed'; toast(tr('orderGone'), tr('orderGoneSub')); }
   } else {
     o.x -= 14 * dt;
     if (o.x < -60) { order = null; truck.g.visible = false; orderWait = rand(20, 35); return; }
@@ -1572,12 +1633,12 @@ function completePad(p) {
     if (JOBS[id]) spawnWorker(id);
     if (id === 'base') {
       setBase(S.lv.base, true);
-      toast(`🏠 ${BASE_NAMES[S.lv.base]}!`, S.lv.base === 3 ? 'Kamp je postao pravo imanje! 🎉' : 'Više mušterija i veće cene');
-    } else toast(`${p.def.icon} ${p.def.name}!`, `Nivo ${S.lv[id] + 1}`);
+      toast(`🏠 ${BASE_NAMES[S.lv.base]}!`, tr(S.lv.base === 3 ? 'baseEstate' : 'baseUp'));
+    } else toast(`${p.def.icon} ${p.def.name}!`, tr('level', { n: S.lv[id] + 1 }));
     simEvents.push(`${id}${S.lv[id]}@${S.time.toFixed(0)}`);
   } else {
     unlock(id, true);
-    toast(`${p.def.icon} ${name}!`, 'Otključano');
+    toast(`${p.def.icon} ${name}!`, tr('unlocked'));
     simEvents.push(`${id}@${S.time.toFixed(0)}`);
   }
   burst(p.pos.clone().setY(1), [0xffd84a, 0xff7eb6, 0x6fd3ff, 0x9be15d], 40, 7);
@@ -1839,7 +1900,7 @@ function buildWorld(data) {
 let saveT = 0;
 
 const saved = loadSave();
-if (saved) { $('startBtn').textContent = 'NASTAVI'; $('newBtn').classList.remove('hidden'); }
+if (saved) { $('startBtn').textContent = tr('resume'); $('newBtn').classList.remove('hidden'); }
 buildWorld(saved);
 
 function startGame() {
@@ -1856,13 +1917,13 @@ function setPaused(p) {
   if (!S.running) return;
   S.paused = p;
   $('pauseScreen').classList.toggle('hidden', !p);
-  $('menuPause').textContent = p ? '▶ Nastavi' : 'II Pauza';
+  $('menuPause').textContent = tr(p ? 'resumeBtn' : 'pauseBtn');
   if (p) { closeSettings(); save(); }
 }
 $('startBtn').addEventListener('click', startGame);
-$('newBtn').addEventListener('click', () => { if (confirm('Obrisati sav napredak i početi ispočetka?')) resetGame(); });
+$('newBtn').addEventListener('click', () => { if (confirm(tr('confirmReset'))) resetGame(); });
 $('resumeBtn').addEventListener('click', () => setPaused(false));
-$('resetBtn').addEventListener('click', () => { if (confirm('Obrisati sav napredak i početi ispočetka?')) resetGame(); });
+$('resetBtn').addEventListener('click', () => { if (confirm(tr('confirmReset'))) resetGame(); });
 $('settingsBtn').addEventListener('click', e => {
   e.stopPropagation();
   $('settingsMenu').classList.toggle('hidden');
@@ -1871,7 +1932,7 @@ $('menuPause').addEventListener('click', e => { e.stopPropagation(); setPaused(!
 $('menuSound').addEventListener('click', e => {
   e.stopPropagation();
   sfx.ensure();
-  $('menuSound').textContent = sfx.toggle() ? '🔇 Zvuk isključen' : '♪ Zvuk uključen';
+  $('menuSound').textContent = tr(sfx.toggle() ? 'soundOff' : 'soundOn');
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden) { setPaused(true); save(); } });
 addEventListener('pagehide', save);

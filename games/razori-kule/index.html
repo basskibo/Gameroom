@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>Razori Kule</title>
+<title>Smash the Towers</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="Razori Kule">
+<meta name="apple-mobile-web-app-title" content="Smash the Towers">
+<script src="../../shared/gameroom-i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
 <style>
@@ -102,7 +103,7 @@
     <div class="pill" id="ammo"></div>
     <div class="pill" id="php"><span id="php-label"></span><span class="bar"><i id="php-bar"></i></span></div>
     <div class="pill" id="ehp"><span id="ehp-label"></span><span class="bar"><i id="ehp-bar"></i></span></div>
-    <button id="gear" type="button" aria-label="Podešavanja">⚙</button>
+    <button id="gear" type="button" aria-label="Settings">⚙</button>
   </div>
   <div id="specials" hidden>
     <button id="spec-drill" type="button"></button>
@@ -111,10 +112,10 @@
   <div id="magics" hidden></div>
   <div id="veil">
     <div class="card">
-      <h1 id="title">Razori Kule</h1>
+      <h1 id="title">Smash the Towers</h1>
       <p class="blurb" id="blurb"></p>
       <p class="best" id="best"></p>
-      <button class="btn" id="play" type="button">IGRAJ</button>
+      <button class="btn" id="play" type="button">PLAY</button>
     </div>
   </div>
   <div id="end" class="card" hidden>
@@ -125,18 +126,18 @@
   </div>
   <div id="pause" hidden>
     <div class="card">
-      <h1 id="pause-title" style="font-size:34px">Pauza</h1>
-      <button class="btn" id="resume" type="button">Nastavi</button>
+      <h1 id="pause-title" style="font-size:34px">Paused</h1>
+      <button class="btn" id="resume" type="button">Resume</button>
     </div>
   </div>
   <div id="settings" hidden>
     <div class="card">
-      <h1 id="set-title" style="font-size:30px">Podešavanja</h1>
+      <h1 id="set-title" style="font-size:30px">Settings</h1>
       <button class="btn" id="mute" type="button"></button>
       <button class="btn ghost" id="lang" type="button"></button>
       <!-- gameroom:back — link nazad na landing (ne brisati) -->
-      <a href="../../" id="gameroom-back">⌂ Nazad u Gameroom</a>
-      <button class="btn ghost" id="set-close" type="button">Zatvori</button>
+      <a href="../../" id="gameroom-back">⌂ Back to Gameroom</a>
+      <button class="btn ghost" id="set-close" type="button">Close</button>
     </div>
   </div>
   <div id="toast"></div>
@@ -210,8 +211,9 @@
     try { localStorage.setItem(key, String(v)); } catch (e) {}
   }
 
-  let lang = load('razori-kule:lang', (navigator.language || '').toLowerCase().startsWith('en') ? 'en' : 'sr');
-  if (!I18N[lang]) lang = 'sr';
+  // jezik je zajednički za ceo sajt (shared/gameroom-i18n.js): engleski podrazumevano, srpski za srpske browsere ili po izboru
+  let lang = window.GameroomI18n ? window.GameroomI18n.lang : 'en';
+  if (!I18N[lang]) lang = 'en';
   let muted = load('razori-kule:mute', '0') === '1';
   let best = Number(load('razori-kule:best', '0')) || 0;
   const t = (k) => I18N[lang][k];
@@ -1522,6 +1524,7 @@
     document.getElementById('pause-title').textContent = t('pause');
     document.getElementById('resume').textContent = t('resume');
     document.getElementById('set-title').textContent = t('settings');
+    document.getElementById('gear').setAttribute('aria-label', t('settings'));
     document.getElementById('mute').textContent = muted ? t('soundOff') : t('soundOn');
     document.getElementById('lang').textContent = lang === 'sr' ? 'English' : 'Srpski';
     document.getElementById('gameroom-back').textContent = t('back');
@@ -2441,7 +2444,7 @@
   });
   document.getElementById('lang').addEventListener('click', () => {
     lang = lang === 'sr' ? 'en' : 'sr';
-    save('razori-kule:lang', lang);
+    if (window.GameroomI18n) window.GameroomI18n.set(lang, { reload: false });
     applyLang();
   });
   document.getElementById('spec-drill').addEventListener('click', () => armSpecial('drill'));

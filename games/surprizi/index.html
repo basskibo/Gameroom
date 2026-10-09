@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SuperUkis — Otvori. Skupljaj. Izloži.</title>
+<title>Surprise Toys — Open. Collect. Display.</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="Surprizi">
+<meta name="apple-mobile-web-app-title" content="Surprise Toys">
+<script src="../../shared/gameroom-i18n.js"></script>
 <style>
 /* ===================== SuperUkis — crtaći kolekcionarski UI ===================== */
 @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Lilita+One&family=Luckiest+Guy&family=Nunito:wght@600;700;800&display=swap');
@@ -365,7 +366,7 @@ body.reveal-open #gameroom-back{ display:none !important; }
 <body>
 <div id="loading">
   <div class="spinner"></div>
-  <div class="ltext">Učitavanje sveta SuperUkis...</div>
+  <div class="ltext" data-i18n="loading"></div>
 </div>
 
 <div id="app">
@@ -382,19 +383,19 @@ body.reveal-open #gameroom-back{ display:none !important; }
         <span id="token-count">5 / 5</span>
         <div id="token-bar-bg"><div id="token-bar-fill"></div></div>
       </div>
-      <button class="icon-btn" id="settings-btn" title="Podešavanja">⚙️</button>
+      <button class="icon-btn" id="settings-btn" data-i18n-attr="title:settingsTitle;aria-label:settingsTitle">⚙️</button>
     </div>
   </div>
 
   <div id="tabs">
-    <button class="tab-btn active" data-mode="open">Otvaranje</button>
-    <button class="tab-btn" data-mode="showroom">🏆 Showroom</button>
+    <button class="tab-btn active" data-mode="open" data-i18n="tabOpen"></button>
+    <button class="tab-btn" data-mode="showroom" data-i18n="tabShowroom"></button>
   </div>
 
   <div id="toast"></div>
 
   <div id="open-panel">
-    <button id="open-btn">OTVORI KESICU</button>
+    <button id="open-btn" data-i18n="openBag"></button>
     <div id="open-hint"></div>
   </div>
 
@@ -402,34 +403,35 @@ body.reveal-open #gameroom-back{ display:none !important; }
   <div id="rarity-pop"></div>
 
   <div id="series-bar" class="hidden">
-    <button type="button" data-series="slatko" class="active">🍬 Slatki svet</button>
-    <button type="button" data-series="garaza">🚗 Garaža</button>
-    <button type="button" data-series="more">🌊 More</button>
-    <button type="button" data-series="voce">🍏 Voće i Povrće</button>
+    <button type="button" data-series="slatko" class="active">🍬 <span data-i18n="s_slatko"></span></button>
+    <button type="button" data-series="garaza">🚗 <span data-i18n="s_garaza"></span></button>
+    <button type="button" data-series="more">🌊 <span data-i18n="s_more"></span></button>
+    <button type="button" data-series="voce">🍏 <span data-i18n="s_voce"></span></button>
   </div>
 
   <div id="settings" class="hidden">
     <div id="settings-card">
       <div id="settings-head">
-        <h2>Kesice</h2>
-        <button type="button" id="settings-close" aria-label="Zatvori">✕</button>
+        <h2 data-i18n="bagsTitle"></h2>
+        <button type="button" id="settings-close" data-i18n-attr="aria-label:close">✕</button>
       </div>
-      <p id="settings-note">Čekirane serije ulaze u izvlačenje.</p>
+      <p id="settings-note" data-i18n="bagsNote"></p>
       <div id="series-toggles"></div>
       <div id="settings-actions">
-        <button type="button" class="settings-action-btn" id="save-btn">💾 Sačuvaj</button>
-        <button type="button" class="settings-action-btn" id="load-btn">📂 Učitaj</button>
+        <button type="button" class="settings-action-btn" id="save-btn" data-i18n="save"></button>
+        <button type="button" class="settings-action-btn" id="load-btn" data-i18n="load"></button>
         <input type="file" id="load-input" accept="application/json" class="hidden">
       </div>
       <!-- gameroom:back — link nazad na landing (ne brisati) -->
-      <a href="../../" id="gameroom-back">⌂ Nazad u Gameroom</a>
+      <div id="langRow"></div>
+      <a href="../../" id="gameroom-back" data-i18n="back">⌂ Back to Gameroom</a>
     </div>
   </div>
 
   <div id="info-panel">
-    <div id="info-head"><span>Detalji</span><button type="button" id="info-back">Nazad</button></div>
-    <div class="rarity-block" id="info-rarity" aria-label="Obično">
-      <div class="rarity-label">✦ Obično ✦</div>
+    <div id="info-head"><span data-i18n="details"></span><button type="button" id="info-back" data-i18n="infoBack"></button></div>
+    <div class="rarity-block" id="info-rarity" aria-label="">
+      <div class="rarity-label"></div>
       <div class="rarity-pips"></div>
     </div>
     <div id="info-name" class="font-title">—</div>
@@ -440,15 +442,15 @@ body.reveal-open #gameroom-back{ display:none !important; }
 
   <div id="reveal-modal">
     <div id="reveal-card">
-      <div class="rarity-block" id="reveal-badge" aria-label="Obično">
-        <div class="rarity-label">✦ Obično ✦</div>
+      <div class="rarity-block" id="reveal-badge" aria-label="">
+        <div class="rarity-label"></div>
         <div class="rarity-pips"></div>
       </div>
       <div id="reveal-name" class="font-title">—</div>
       <div id="reveal-faction">—</div>
       <div id="reveal-desc">—</div>
       <div id="reveal-dup"></div>
-      <button id="reveal-close">Super!</button>
+      <button id="reveal-close" data-i18n="super"></button>
     </div>
   </div>
 </div>
@@ -464,6 +466,175 @@ body.reveal-open #gameroom-back{ display:none !important; }
 </script>
 <script>
 'use strict';
+
+/* ============================= JEZIK (shared/gameroom-i18n.js) ============================= */
+// engleski podrazumevano, srpski po izboru. Srpski nazivi figura i dalje žive u CHARACTERS, engleski u CHAR_EN.
+const i18n = window.GameroomI18n;
+const tr = (k, v) => i18n.t(k, v);
+i18n.add({
+  en: {
+    title: 'Surprise Toys — Open. Collect. Display.', loading: 'Loading the SuperUkis world...', settingsTitle: 'Settings',
+    tabOpen: 'Opening', tabShowroom: '🏆 Showroom', openBag: 'OPEN A BAG', bagsTitle: 'Bags', close: 'Close',
+    bagsNote: 'Checked series go into the draw.', save: '💾 Save', load: '📂 Load', back: '⌂ Back to Gameroom',
+    details: 'Details', infoBack: 'Back', super: 'Awesome!',
+    r_common: 'Common', r_rare: 'Rare', r_legendary: 'Legendary', popLegendary: '★ LEGENDARY! ★', popRare: 'RARE!',
+    owned: 'You own: x{n}', waitToken: 'Waiting for a new token… ({s}s)', newToken: 'You got a new token! 💎',
+    newInCollection: 'NEW IN YOUR COLLECTION! 🎉', dupBonus: 'Duplicate: +1 bonus token 💎', dup: 'Duplicate',
+    exported: 'Progress saved to a file! 💾', imported: 'Progress loaded! 📂', badFile: 'File not recognized.', loadError: 'Error loading the file.',
+    oneBagOn: 'At least one bag has to stay on.', saveFile: 'surprise-toys-save.json',
+    bagSeries: 'SERIES', bagGarage: 'GARAGE', bagCollect: 'COLLECT', bagToy: 'TOY', bagAll: 'ALL', bagCollectAll: 'COLLECT ALL',
+    s_slatko: 'Sweet World', s_garaza: 'Garage', s_more: 'Sea', s_voce: 'Fruit & Veggies',
+    sb_slatko: 'SERIES 1 · SWEET WORLD', sb_garaza: 'SERIES 2 · GARAGE', sb_more: 'SERIES 3 · SEA', sb_voce: 'SERIES 4 · FRUIT & VEGGIES',
+    f_blistavci: 'Shiners', f_mrakoni: 'Gloomies', f_divljaci: 'Wildlings', f_slatkisi: 'Sweets', f_vockice: 'Fruities',
+    f_bolidi: 'Racers', f_gradiliste: 'Construction', f_letelice: 'Flyers', f_brodice: 'Boats', f_masine: 'Machines',
+    f_ribice: 'Fishies', f_rakovi: 'Crabs & Co.', f_mekusi: 'Mollusks', f_sisari: 'Sea Mammals', f_zvezde: 'Reef Stars',
+    f_citrusi: 'Citrus', f_jagodicke: 'Berries', f_tropsko: 'Tropical Fruit', f_korenasto: 'Root Veggies', f_listasto: 'Leafy Greens',
+  },
+  sr: {
+    title: 'Male igračke — Otvori. Skupljaj. Izloži.', loading: 'Učitavanje sveta SuperUkis...', settingsTitle: 'Podešavanja',
+    tabOpen: 'Otvaranje', tabShowroom: '🏆 Showroom', openBag: 'OTVORI KESICU', bagsTitle: 'Kesice', close: 'Zatvori',
+    bagsNote: 'Čekirane serije ulaze u izvlačenje.', save: '💾 Sačuvaj', load: '📂 Učitaj', back: '⌂ Nazad u Gameroom',
+    details: 'Detalji', infoBack: 'Nazad', super: 'Super!',
+    r_common: 'Obično', r_rare: 'Retko', r_legendary: 'Legendarno', popLegendary: '★ LEGENDARNO! ★', popRare: 'RETKO!',
+    owned: 'Poseduješ: x{n}', waitToken: 'Čekaj novi token… ({s}s)', newToken: 'Dobio si novi token! 💎',
+    newInCollection: 'NOVO U KOLEKCIJI! 🎉', dupBonus: 'Duplikat — +1 token na poklon 💎', dup: 'Duplikat',
+    exported: 'Napredak izvezen u fajl! 💾', imported: 'Napredak učitan! 📂', badFile: 'Fajl nije prepoznat.', loadError: 'Greška pri učitavanju fajla.',
+    oneBagOn: 'Bar jedna kesica mora da ostane uključena.', saveFile: 'surprizi-sacuvano.json',
+    bagSeries: 'SERIJA', bagGarage: 'GARAŽA', bagCollect: 'SAKUPI', bagToy: 'IGRAČKA', bagAll: 'SVE', bagCollectAll: 'SAKUPI SVE',
+    s_slatko: 'Slatki svet', s_garaza: 'Garaža', s_more: 'More', s_voce: 'Voće i Povrće',
+    sb_slatko: 'SERIJA 1 · SLATKI SVET', sb_garaza: 'SERIJA 2 · GARAŽA', sb_more: 'SERIJA 3 · MORE', sb_voce: 'SERIJA 4 · VOĆE I POVRĆE',
+    f_blistavci: 'Blistavci', f_mrakoni: 'Mrakoni', f_divljaci: 'Divljaci', f_slatkisi: 'Slatkiši', f_vockice: 'Voćkice',
+    f_bolidi: 'Bolidi', f_gradiliste: 'Gradilište', f_letelice: 'Letelice', f_brodice: 'Brodice', f_masine: 'Mašine',
+    f_ribice: 'Ribice', f_rakovi: 'Rakovi', f_mekusi: 'Mekušci', f_sisari: 'Sisari', f_zvezde: 'Zvezde',
+    f_citrusi: 'Citrusi', f_jagodicke: 'Bobičasto voće', f_tropsko: 'Tropsko voće', f_korenasto: 'Korenasto povrće', f_listasto: 'Lisnato povrće',
+  },
+});
+document.title = tr('title');
+i18n.apply();
+document.getElementById('langRow').appendChild(i18n.picker());
+// engleski nazivi i opisi figura (id -> [ime, opis])
+const CHAR_EN = {
+  'iskrica': ['Sparky', 'A tiny spark of energy, always first to the party.'],
+  'zumby': ['Zumby', 'A bouncy candy critter with springs instead of legs.'],
+  'oblacko': ['Cloudy', 'After every rain, a rainbow pops out from under him.'],
+  'kapetan-sjaj': ['Captain Shine', 'Squad leader with a shield made of pure light.'],
+  'munjica': ['Zippy', 'The fastest in the whole world, and the buzziest!'],
+  'zvezdana': ['Stella', 'Legend says she was born from a falling star.'],
+  'zupko': ['Cogsy', 'A little cog-toothed rascal who loves tinkering with machines.'],
+  'kiselko': ['Sourpuss', 'Drips sour-green energy whenever he smiles.'],
+  'robotic': ['Robbie', 'His screen always says he is happy.'],
+  'lord-mrak': ['Lord Gloom', 'Rules the shadows, but deep down he is really nice.'],
+  'magnetko': ['Magnetty', 'Attracts friends, and every spoon in the kitchen.'],
+  'kraljica-senki': ['Shadow Queen', 'The most powerful figure in the whole shadow world.'],
+  'liscan': ['Leafy', 'Made of leaves, he rustles wherever he walks.'],
+  'kamenko': ['Shroomy', 'Tough outside, soft inside: the jolliest mushroom in the forest.'],
+  'kaktusko': ['Prickles', 'Only pokes when someone tickles him.'],
+  'vatrenko': ['Blaze', 'Carries a little flame that never goes out.'],
+  'suncokret': ['Sunny', 'Always turns toward the sun, and toward you.'],
+  'drevni-koren': ['Ancient Root', 'Older than every story ever told about him.'],
+  'krofnica': ['Donutella', 'Her glaze is always fresh, and her smile is even sweeter.'],
+  'sladoledko': ['Scoops', 'Two scoops and a cherry. He never melts, except from joy.'],
+  'lizalica': ['Lolly', 'Spins so fast she makes herself dizzy.'],
+  'kolacic': ['Cupcake', 'A whipped-cream muffin that sings birthday songs.'],
+  'bombocic': ['Bonbon', 'Wrapped in crinkly paper, and in happy thoughts.'],
+  'torta': ['Queen Cake', 'Three tiers of party and candles that never burn out.'],
+  'jagodica': ['Strawbelle', 'The sweetest in the whole garden, and she knows it.'],
+  'kruskica': ['Pearly', 'A little shy, but always juicy.'],
+  'lubenica': ['Mellow', 'Summer is his favorite season. Every single summer.'],
+  'ananas': ['Pineapple Pete', 'Wears a crown of leaves and acts like the king of the beach.'],
+  'tresnjice': ['Cherry Twins', 'Twins who do everything together.'],
+  'zlatna-jabuka': ['Golden Apple', 'They say it grants one wish a day.'],
+  'brzinko': ['Speedy', 'Low, wide and always first off the line.'],
+  'zutko': ['Cabby', 'A taxi that sings while waiting for the green light.'],
+  'plavko': ['Bluebug', 'Round as a beetle and just as stubborn.'],
+  'munjeviti': ['Bolt', 'Leaves lightning instead of tire tracks.'],
+  'roze-kart': ['Pink Kart', 'A tiny kart with huge rear wheels.'],
+  'zlatni-bolid': ['Golden Racer', 'A champion who never looks back.'],
+  'bagerko': ['Diggy', 'Digs trenches and builds sandcastles.'],
+  'kiper': ['Dumpy', 'When he tips his trailer, everything goes flying.'],
+  'valjak': ['Rolly', 'Irons the road until it shines like a mirror.'],
+  'dizalica': ['Cranky', 'Reaches up to the clouds to hang a flag.'],
+  'mikser': ['Mixer', 'His drum keeps spinning even when he sleeps.'],
+  'kralj-grad': ['King of the Site', 'The biggest truck with the loudest horn.'],
+  'avioncic': ['Planey', 'Loops circles over the playground.'],
+  'heliko': ['Heli', 'Hovers in place just to wave hello.'],
+  'dronko': ['Droney', 'Four propellers, and not one of them sits still.'],
+  'raketica': ['Little Rocket', 'Counts 3, 2, 1, then scares herself.'],
+  'mlaznjak': ['Jetty', 'Faster than sound, slower than snack time.'],
+  'zvezdani-satl': ['Star Shuttle', 'Comes back from space with souvenirs.'],
+  'camac': ['Rowy', 'Rows slowly and hums along.'],
+  'jedrilica': ['Sails', 'Her sail is always full of wind.'],
+  'podmornica': ['Subby', 'Watches the world through a periscope.'],
+  'gliser': ['Speedboat', 'Only the tips of the waves touch his hull.'],
+  'feribot': ['Ferry', 'Carries friends from shore to shore.'],
+  'zlatna-jahta': ['Golden Yacht', 'There is always room on deck for one more.'],
+  'vozic': ['Choo-Choo', 'Puffs clouds shaped like hearts.'],
+  'traktor': ['Tracky', 'Big back wheels, little patience.'],
+  'kamionce': ['Truckie', 'Carries other people\'s dreams in his trailer.'],
+  'busko': ['Busby', 'Stops at every stop, even the made-up ones.'],
+  'robot-ruka': ['Robo-Arm', 'Grabs, turns and never drops a thing.'],
+  'lokomotiva': ['Steam Engine', 'Older than the tracks he runs on.'],
+  'klavnko': ['Clowny', 'Orange and always laughing in his anemone.'],
+  'plavica': ['Tangy', 'The fastest blue in the whole reef.'],
+  'prugica': ['Stripey', 'Her stripes count the waves.'],
+  'napuhko': ['Puffy', 'When he gets scared, he turns into a ball.'],
+  'ajkulica': ['Sharky', 'Big, but afraid of jellyfish.'],
+  'zlatna-ribica': ['Goldfish', 'Grants wishes, if you whisper them.'],
+  'krabko': ['Crabby', 'Walks sideways, and that is his style.'],
+  'jastog': ['Lobby', 'His claws play music on the rocks.'],
+  'skamp': ['Shrimpy', 'Bendy and always hungry.'],
+  'samac': ['Hermit', 'His house is the prettiest shell around.'],
+  'makaze': ['Snips', 'One claw is bigger, the other is faster.'],
+  'kralj-rak': ['Crab King', 'The widest smile on the sea floor.'],
+  'oktopod': ['Octo', 'Eight arms, and still hugs everyone.'],
+  'meduza': ['Jelly', 'Floats like an umbrella made of light.'],
+  'skoljkica': ['Shelly', 'Keeps one pearl and one secret inside.'],
+  'lignja': ['Squiddy', 'Draws heart-shaped clouds of ink.'],
+  'nautko': ['Nauty', 'A spiral house and a true compass.'],
+  'kraljica-pipaka': ['Tentacle Queen', 'Her tentacles glow like lanterns.'],
+  'delfinko': ['Dolphy', 'Jumps through hoops made of bubbles.'],
+  'fokica': ['Sealy', 'Claps her flippers when she is happy.'],
+  'vidrica': ['Otterly', 'Holds a pebble like treasure.'],
+  'kitko': ['Whaley', 'The biggest one, yet he sings the softest.'],
+  'narvalko': ['Narwhally', 'His horn is made of pure light.'],
+  'orka': ['Orca', 'The black-and-white queen of the waves.'],
+  'zvezdica': ['Starry', 'Five arms and five reasons to smile.'],
+  'morski-konj': ['Seahorse', 'Stands up straight and waves his tail.'],
+  'kornjaca': ['Shelby', 'Her shell is a map of the islands.'],
+  'morski-jez': ['Urchin', 'His spines glow when he smiles.'],
+  'raza': ['Ray', 'Glides like a shadow over the sand.'],
+  'koral-kralj': ['Coral King', 'His crown is the whole reef.'],
+  'limunko': ['Lemmy', 'Smiles a little sourly, but lifts everyone\'s mood.'],
+  'mandarinko': ['Mandy', 'Easy to peel, with a hundred smiles under the rind.'],
+  'limeta': ['Limey', 'The smallest of the crew, but the bounciest.'],
+  'pomorandzo': ['Orangey', 'Smells like a summer morning all day long.'],
+  'grejpfruta': ['Grapefruity', 'A little bitter, but with a huge heart.'],
+  'kralj-citrus': ['Citrus King', 'Rules the orchard with a crown of peel.'],
+  'malinko': ['Razzy', 'Made of a hundred tiny drops of sweetness.'],
+  'borovko': ['Bluebo', 'Small and round, but full of energy.'],
+  'kupinko': ['Brambly', 'Darker than night, sweet as day.'],
+  'jagoda-zvezda': ['Star Berry', 'Every seed has a kiss of sunshine.'],
+  'ribizla': ['Currants', 'When they gather, they make real color fireworks.'],
+  'kraljica-bobica': ['Berry Queen', 'Her crown is made of the sweetest berries in the garden.'],
+  'bananko': ['Bananito', 'Always smiling, always a little bent.'],
+  'kivinko': ['Kiwiko', 'Fuzzy outside, a real emerald inside.'],
+  'mangovic': ['Mangoli', 'So sweet that even the bees bow to him.'],
+  'papajko': ['Papi', 'Carries little black seed pearls in his belly.'],
+  'ananasic': ['Pina', 'Prickly wrapper, honey smile.'],
+  'kralj-tropiko': ['King Tropico', 'Came from the warmest corner of the garden and never hurries.'],
+  'mrkvica': ['Carrie', 'Sees best in the dark, and says it is all the carrots.'],
+  'rotkvica': ['Raddy', 'Spicy outside, mild inside.'],
+  'krompirko': ['Spud', 'Looks ordinary, but surprises you in every dish.'],
+  'cveklana': ['Beety', 'Leaves a purple trail wherever she goes.'],
+  'celeric': ['Celly', 'Fills the whole kitchen with his scent in a flash.'],
+  'kralj-koren': ['Root King', 'So deeply rooted that nobody can move him.'],
+  'brokolina': ['Brocco', 'Looks like a little tree and smells like victory.'],
+  'salatko': ['Letty', 'Light as a feather, crunchy as laughter.'],
+  'spanacko': ['Spinny', 'They say he makes your muscles stronger, and your smile too.'],
+  'kupusko': ['Cabbo', 'Under every leaf there is a new layer of surprise.'],
+  'paprikana': ['Paprika', 'Colorful outside, fiery inside.'],
+  'kraljica-list': ['Leaf Queen', 'Her crown is made of the freshest leaves in the garden.'],
+};
 if(!CanvasRenderingContext2D.prototype.roundRect){
   CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
     r = Math.min(r, w/2, h/2);
@@ -539,6 +710,8 @@ const SERIES = {
     band:'#1f3a10', ink:'#eaffb0', sticker:'#ff8a3d',
   },
 };
+Object.keys(FACTIONS).forEach(id=>{ FACTIONS[id].name = tr('f_'+id); });
+Object.keys(SERIES).forEach(id=>{ SERIES[id].name = tr('s_'+id); SERIES[id].badge = tr('sb_'+id); });
 let pouchSeries = 'slatko';
 let showroomSeries = 'slatko';
 const enabledSeries = {};
@@ -549,9 +722,9 @@ function activeSeriesIds(){
 }
 
 const RARITY = {
-  common:    { id:'common',    label:'Obično',     color:'#8fe3a0', hex:0x8fe3a0, weight:14, rank:1 },
-  rare:      { id:'rare',      label:'Retko',      color:'#6fc3ff', hex:0x4fb4ff, weight:7,  rank:2 },
-  legendary: { id:'legendary', label:'Legendarno', color:'#ffcf4a', hex:0xffcf4a, weight:3,  rank:3 },
+  common:    { id:'common',    label:tr('r_common'),     color:'#8fe3a0', hex:0x8fe3a0, weight:14, rank:1 },
+  rare:      { id:'rare',      label:tr('r_rare'),      color:'#6fc3ff', hex:0x4fb4ff, weight:7,  rank:2 },
+  legendary: { id:'legendary', label:tr('r_legendary'), color:'#ffcf4a', hex:0xffcf4a, weight:3,  rank:3 },
 };
 const RARITY_BARS = Math.max.apply(null, Object.keys(RARITY).map(id=> RARITY[id].rank));
 function paintRarityPips(el, rarity){
@@ -712,6 +885,7 @@ const CHARACTERS = [
   C('paprikana',    'Paprikana',      'listasto','rare',      0xff5252,0x43a047,0xffee58,'Šarena spolja, vatrena iznutra.'),
   C('kraljica-list','Kraljica List',  'listasto','legendary', 0x2e7d32,0xc6ff00,0xffffff,'Njena kruna je od najsvežijeg lišća u vrtu.'),
 ];
+if(i18n.lang==='en') CHARACTERS.forEach(ch=>{ const e = CHAR_EN[ch.id]; if(e){ ch.name = e[0]; ch.desc = e[1]; } });
 const CHAR_BY_ID = {}; CHARACTERS.forEach(c => CHAR_BY_ID[c.id] = c);
 
 /* ============================= UTILS ============================= */
@@ -1297,15 +1471,15 @@ function paintGarageFront(ctx, W, H){
   ctx.beginPath(); ctx.arc(0, 0, 48, 0, Math.PI*2); ctx.fill();
   ctx.lineWidth = 5; ctx.strokeStyle = '#1a2744'; ctx.stroke();
   ctx.fillStyle = '#e10600'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.font = '900 14px "Lilita One", Arial'; ctx.fillText('SERIJA', 0, -14);
+  ctx.font = '900 14px "Lilita One", Arial'; ctx.fillText(tr('bagSeries'), 0, -14);
   ctx.font = '900 40px "Lilita One", Arial'; ctx.fillText('2', 0, 14);
   ctx.restore();
   comicLogo(ctx, 'SuperUkis', W*0.64, H*0.175, 34, '#fffdf6');
   ctx.save();
   ctx.font = '800 30px "Baloo 2", "Nunito", Arial';
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
-  ctx.lineWidth = 8; ctx.strokeStyle = '#1a2744'; ctx.strokeText('GARAŽA', W*0.64, H*0.275);
-  ctx.fillStyle = '#ffe14d'; ctx.fillText('GARAŽA', W*0.64, H*0.275);
+  ctx.lineWidth = 8; ctx.strokeStyle = '#1a2744'; ctx.strokeText(tr('bagGarage'), W*0.64, H*0.275);
+  ctx.fillStyle = '#ffe14d'; ctx.fillText(tr('bagGarage'), W*0.64, H*0.275);
   ctx.restore();
   ctx.fillStyle = '#e10600';
   ctx.fillRect(0, H*0.69, W, H*0.31);
@@ -1315,7 +1489,7 @@ function paintGarageFront(ctx, W, H){
   ctx.beginPath(); ctx.roundRect(-58, -38, 116, 70, 18); ctx.fill();
   ctx.lineWidth = 4; ctx.strokeStyle = '#1a2744'; ctx.stroke();
   ctx.fillStyle = '#1a2744'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.font = '900 16px "Lilita One", Arial'; ctx.fillText('SAKUPI', 0, -12);
+  ctx.font = '900 16px "Lilita One", Arial'; ctx.fillText(tr('bagCollect'), 0, -12);
   ctx.font = '900 28px "Lilita One", Arial'; ctx.fillText(String(n), 0, 16);
   ctx.restore();
   ctx.save(); ctx.translate(W*0.52, H*0.82); ctx.scale(0.58, 0.58);
@@ -1357,8 +1531,8 @@ function pouchSplash(ctx, x, y, color){
   ctx.fillStyle = '#ffe14d';
   ctx.font = '900 22px "Lilita One", "Arial Black", Arial';
   ctx.lineWidth = 5; ctx.strokeStyle = '#1a3f9a';
-  ctx.strokeText('IGRAČKA', 0, 40);
-  ctx.fillText('IGRAČKA', 0, 40);
+  ctx.strokeText(tr('bagToy'), 0, 40);
+  ctx.fillText(tr('bagToy'), 0, 40);
   ctx.restore();
 }
 const PACK_LOOK = {
@@ -1392,7 +1566,7 @@ function makePouchFrontTexture(series){
     ctx.fillStyle = '#ffffff'; ctx.beginPath(); ctx.arc(0,0,42,0,Math.PI*2); ctx.fill();
     ctx.lineWidth = 5; ctx.strokeStyle = '#1f5eff'; ctx.stroke();
     ctx.fillStyle = '#e10600'; ctx.font = '900 16px "Lilita One", Arial'; ctx.textAlign='center'; ctx.textBaseline='middle';
-    ctx.fillText('SAKUPI', 0, -6); ctx.fillText('SVE', 0, 12);
+    ctx.fillText(tr('bagCollect'), 0, -6); ctx.fillText(tr('bagAll'), 0, 12);
     ctx.restore();
     }
     crimp(ctx, 0, H*0.1, W, pack.a);
@@ -1406,7 +1580,7 @@ function makePouchBackTexture(series){
   const pack = PACK_LOOK[theme.id] || PACK_LOOK.slatko;
   return srgb(makeCanvasTexture((ctx,W,H)=>{
     pouchBurst(ctx, W, H, pack);
-    comicLogo(ctx, 'SAKUPI SVE', W/2, H*0.22, 42, '#1f5eff');
+    comicLogo(ctx, tr('bagCollectAll'), W/2, H*0.22, 42, '#1f5eff');
     const cols = 6, cell = 70, x0 = W/2 - cols*cell/2 + cell/2, y0 = H*0.32;
     theme.factions.forEach((f,row)=>{
       for(let c=0;c<cols;c++){
@@ -3531,7 +3705,7 @@ function screenFlash(color, strength){
 function rarityPop(char){
   const el = document.getElementById('rarity-pop');
   el.className = ''; void el.offsetWidth;
-  el.textContent = char.rarity==='legendary' ? '★ LEGENDARNO! ★' : 'RETKO!';
+  el.textContent = tr(char.rarity==='legendary' ? 'popLegendary' : 'popRare');
   el.className = 'show ' + char.rarity;
 }
 
@@ -3610,7 +3784,7 @@ function renderSeriesSettings(){
     input.addEventListener('change', ()=>{
       if(!input.checked && activeSeriesIds().filter(k=>k!==id).length===0){
         input.checked = true;
-        showToast('Bar jedna kesica mora da ostane uključena.');
+        showToast(tr('oneBagOn'));
         return;
       }
       enabledSeries[id] = input.checked;
@@ -4766,7 +4940,7 @@ function selectCharacterInfo(charId){
   document.getElementById('info-name').textContent = char.name;
   document.getElementById('info-faction').textContent = FACTIONS[char.faction].emoji+' '+FACTIONS[char.faction].name;
   document.getElementById('info-desc').textContent = char.desc;
-  document.getElementById('info-count').textContent = 'Poseduješ: x'+(state.collection[char.id]||0);
+  document.getElementById('info-count').textContent = tr('owned', { n: state.collection[char.id]||0 });
   document.getElementById('info-panel').classList.add('show');
   const fig = shelfFigures[char.id];
   if(fig){ fig.userData.bumpT = 0; focusShelfFigure(fig); }
@@ -4810,7 +4984,7 @@ function updateTokenUI(){
   const btn = document.getElementById('open-btn');
   const hint = document.getElementById('open-hint');
   btn.disabled = state.tokens<1 || phase!=='idle';
-  hint.textContent = state.tokens<1 ? ('Čekaj novi token… ('+Math.max(0,Math.ceil(state.tokenInterval-state.tokenTimer))+'s)') : '';
+  hint.textContent = state.tokens<1 ? tr('waitToken', { s: Math.max(0,Math.ceil(state.tokenInterval-state.tokenTimer)) }) : '';
   hint.classList.toggle('hidden', !hint.textContent);
 }
 function updateProgressUI(){
@@ -4829,7 +5003,7 @@ function tickTokens(dt){
     state.tokenTimer += dt;
     if(state.tokenTimer>=state.tokenInterval){
       state.tokenTimer = 0; state.tokens = Math.min(state.maxTokens, state.tokens+1);
-      showToast('Dobio si novi token! 💎');
+      showToast(tr('newToken'));
       saveLocal();
     }
   }
@@ -4846,7 +5020,7 @@ function showResultCard(char, isNew, bonus){
   document.getElementById('reveal-name').textContent = char.name;
   document.getElementById('reveal-faction').textContent = FACTIONS[char.faction].emoji+' '+FACTIONS[char.faction].name;
   document.getElementById('reveal-desc').textContent = char.desc;
-  document.getElementById('reveal-dup').textContent = isNew ? 'NOVO U KOLEKCIJI! 🎉' : (bonus ? 'Duplikat — +1 token na poklon 💎' : 'Duplikat');
+  document.getElementById('reveal-dup').textContent = tr(isNew ? 'newInCollection' : bonus ? 'dupBonus' : 'dup');
   document.body.classList.add('reveal-open');
   requestAnimationFrame(()=> card.classList.add('show'));
 }
@@ -4861,10 +5035,10 @@ function setupSaveLoad(){
     const blob = new Blob([JSON.stringify(data)], { type:'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url; a.download = 'surprizi-sacuvano.json';
+    a.href = url; a.download = tr('saveFile');
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast('Napredak izvezen u fajl! 💾');
+    showToast(tr('exported'));
   });
   document.getElementById('load-btn').addEventListener('click', ()=> document.getElementById('load-input').click());
   document.getElementById('load-input').addEventListener('change', e=>{
@@ -4884,9 +5058,9 @@ function setupSaveLoad(){
           if(phase==='idle') spawnPouch(true);
           saveLocal(); updateTokenUI(); updateProgressUI();
           if(currentMode==='showroom') rebuildShowroom();
-          showToast('Napredak učitan! 📂');
-        } else showToast('Fajl nije prepoznat.');
-      }catch(err){ showToast('Greška pri učitavanju fajla.'); }
+          showToast(tr('imported'));
+        } else showToast(tr('badFile'));
+      }catch(err){ showToast(tr('loadError')); }
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -4985,6 +5159,10 @@ init();
 <style>
 #gameroom-back{display:flex;align-items:center;justify-content:center;margin-top:12px;font-family:'Lilita One',cursive;font-size:16px;text-decoration:none;color:#2a1450;background:#fff4c8;border:3px solid #2a1450;border-radius:14px;padding:10px 12px;box-shadow:3px 3px 0 #8a5cff}
 #gameroom-back:hover,#gameroom-back:focus-visible{transform:translateY(-2px)}
+#langRow{display:flex;justify-content:center;margin-top:12px}
+#langRow .gr-lang{background:#fff4c8!important;border:3px solid #2a1450;font-family:'Lilita One',cursive}
+#langRow .gr-lang button{color:#2a1450!important;font-size:15px!important;padding:6px 16px!important}
+#langRow .gr-lang button[aria-pressed="true"]{background:#2a1450!important;color:#fff4c8!important}
 </style>
 </body>
 </html>

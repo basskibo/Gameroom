@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Osvoji Svet</title>
+<title>Conquer the World</title>
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
-<meta name="apple-mobile-web-app-title" content="Osvoji Svet">
+<meta name="apple-mobile-web-app-title" content="Conquer the World">
+<script src="../../shared/gameroom-i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Unbounded:wght@700&display=swap" rel="stylesheet">
@@ -259,25 +260,26 @@
     #start { top: 8px; bottom: 8px; left: 8px; width: min(360px, 50vw); max-height: none; }
     #list { max-height: 30vh; }
   }
+  #langRow { margin: 4px 0 12px; }
 </style>
 </head>
 <body>
 <canvas id="map"></canvas>
 <div id="ui">
-  <div id="loading">Crtam mapu sveta…</div>
+  <div id="loading" data-i18n="loading"></div>
 
   <div id="hud" class="hidden">
-    <div id="hud-me"><img class="flag" id="hud-flag" alt=""><span id="hud-name">Država</span></div>
+    <div id="hud-me"><img class="flag" id="hud-flag" alt=""><span id="hud-name" data-i18n="country"></span></div>
     <span id="hud-time">0:00</span>
     <div id="hud-actions">
       <button type="button" id="speed">1×</button>
-      <button type="button" id="pauseBtn" aria-label="Pauza">❚❚</button>
+      <button type="button" id="pauseBtn" data-i18n-attr="aria-label:pause">❚❚</button>
     </div>
   </div>
 
   <div id="board" class="hidden">
-    <button type="button" id="board-toggle" aria-label="Rang lista">🏆 <span id="board-me">Rang</span> <i>▾</i></button>
-    <h3><span>#</span><span>NACIJA</span><span>ZEMLJA</span><span>VOJSKA</span></h3>
+    <button type="button" id="board-toggle" data-i18n-attr="aria-label:board">🏆 <span id="board-me" data-i18n="rank"></span> <i>▾</i></button>
+    <h3><span>#</span><span data-i18n="hNation"></span><span data-i18n="hLand"></span><span data-i18n="hArmy"></span></h3>
     <div id="board-rows"></div>
   </div>
 
@@ -291,12 +293,12 @@
     </div>
     <div class="row2">
       <span class="chip" id="sendLbl">⚔ 20%</span>
-      <input id="pct" type="range" min="5" max="100" step="5" value="20" aria-label="Deo vojske za napad">
+      <input id="pct" type="range" min="5" max="100" step="5" value="20" data-i18n-attr="aria-label:sendShare">
     </div>
     <div id="tgt">
       <img class="flag" id="tgt-flag" alt="">
-      <div><b id="tgt-name">Izaberi metu</b><span id="tgt-info">klikni tuđu teritoriju na mapi</span></div>
-      <button type="button" id="go" disabled>NAPADNI</button>
+      <div><b id="tgt-name" data-i18n="pickTarget"></b><span id="tgt-info" data-i18n="pickTargetHint"></span></div>
+      <button type="button" id="go" disabled data-i18n="attack"></button>
     </div>
     <p id="hint"></p>
   </div>
@@ -305,35 +307,36 @@
   <div id="toasts"></div>
 
   <div id="tools">
-    <button type="button" id="zin" aria-label="Uvećaj">+</button>
-    <button type="button" id="zout" aria-label="Umanji">−</button>
-    <button type="button" id="fit" aria-label="Namesti mapu">⌖</button>
+    <button type="button" id="zin" data-i18n-attr="aria-label:zoomIn">+</button>
+    <button type="button" id="zout" data-i18n-attr="aria-label:zoomOut">−</button>
+    <button type="button" id="fit" data-i18n-attr="aria-label:fit">⌖</button>
   </div>
 
-  <button type="button" id="gear" aria-label="Podešavanja">⚙</button>
+  <button type="button" id="gear" data-i18n-attr="aria-label:settings">⚙</button>
   <div id="settings" class="hidden">
     <div id="settings-card">
       <div id="settings-head">
-        <h2>Podešavanja</h2>
-        <button type="button" id="settings-close" aria-label="Zatvori">✕</button>
+        <h2 data-i18n="settings"></h2>
+        <button type="button" id="settings-close" data-i18n-attr="aria-label:close">✕</button>
       </div>
-      <label class="mute-row"><input type="checkbox" id="mute"> Isključi zvuk</label>
+      <label class="mute-row"><input type="checkbox" id="mute"> <span data-i18n="mute"></span></label>
+      <div id="langRow"></div>
       <!-- gameroom:back — link nazad na landing (ne brisati) -->
-      <a href="../../" id="gameroom-back">⌂ Nazad u Gameroom</a>
+      <a href="../../" id="gameroom-back" data-i18n="back">⌂ Back to Gameroom</a>
     </div>
   </div>
 
   <div id="start" class="hidden">
     <div class="card">
-      <p class="eyebrow">STRATEGIJA</p>
-      <h2>Osvoji Svet</h2>
-      <p>Izaberi državu. Vojska raste sama. Napadaj susede i front se pomera malo po malo — planine i šume se teže osvajaju, a preko mora ideš brodovima.</p>
-      <div id="picked"><img class="flag hidden" id="picked-flag" alt=""><span id="picked-name">Izaberi državu na mapi ili sa liste.</span></div>
-      <input id="search" type="search" placeholder="Traži državu" autocomplete="off" aria-label="Traži državu">
+      <p class="eyebrow" data-i18n="eyebrow"></p>
+      <h2 data-i18n="title"></h2>
+      <p data-i18n="intro"></p>
+      <div id="picked"><img class="flag hidden" id="picked-flag" alt=""><span id="picked-name" data-i18n="pickHint"></span></div>
+      <input id="search" type="search" autocomplete="off" data-i18n-attr="placeholder:search;aria-label:search">
       <div id="list"></div>
       <div class="start-actions">
-        <button type="button" id="random" class="text-btn">Nasumično</button>
-        <button type="button" id="play" disabled>IGRAJ</button>
+        <button type="button" id="random" class="text-btn" data-i18n="random"></button>
+        <button type="button" id="play" disabled data-i18n="play"></button>
       </div>
       <p id="best"></p>
     </div>
@@ -341,9 +344,9 @@
 
   <div id="pause" class="hidden">
     <div class="card">
-      <h2>Pauza</h2>
-      <p>Vojska čeka. P ili Esc nastavljaju.</p>
-      <button type="button" id="resume">NASTAVI</button>
+      <h2 data-i18n="pause"></h2>
+      <p data-i18n="pauseText"></p>
+      <button type="button" id="resume" data-i18n="resume"></button>
     </div>
   </div>
 
@@ -351,12 +354,96 @@
     <div class="card">
       <h2 id="end-title"></h2>
       <p id="end-text"></p>
-      <button type="button" id="again">IGRAJ PONOVO</button>
+      <button type="button" id="again" data-i18n="again"></button>
     </div>
   </div>
 </div>
 <script src="./countries.js"></script>
 <script>
+// ---------- jezik (shared/gameroom-i18n.js): engleski podrazumevano, srpski po izboru ----------
+const i18n = window.GameroomI18n;
+const tr = (k, v) => i18n.t(k, v);
+i18n.add({
+  en: {
+    title: 'Conquer the World', loading: 'Drawing the world map…', country: 'Country', pause: 'Paused', board: 'Leaderboard', rank: 'Rank',
+    hNation: 'NATION', hLand: 'LAND', hArmy: 'ARMY', sendShare: 'Share of army to send',
+    pickTarget: 'Pick a target', pickTargetHint: 'click enemy territory on the map', attack: 'ATTACK', land: 'LAND',
+    zoomIn: 'Zoom in', zoomOut: 'Zoom out', fit: 'Fit map', settings: 'Settings', close: 'Close', mute: 'Mute sound', back: '⌂ Back to Gameroom',
+    eyebrow: 'STRATEGY',
+    intro: 'Pick a country. Your army grows by itself. Attack your neighbors and the front moves bit by bit. Mountains and forests are harder to take, and you cross the sea by boat.',
+    pickHint: 'Pick a country on the map or from the list.', search: 'Search countries', random: 'Random', play: 'PLAY',
+    pauseText: 'Your army waits. P or Esc to resume.', resume: 'RESUME', again: 'PLAY AGAIN',
+    t0: 'sea', t1: 'plains', t2: 'forest', t3: 'hills', t4: 'mountains', t5: 'desert',
+    best: 'Best: {p}% of the world', underAttack: '{name} is attacking you!', youConquered: 'You conquered {name}',
+    theyConquered: '{by} conquered {name}', landingRepelled: 'Your landing was repelled at the shore', landing: 'Landing: {name}', shore: 'shore',
+    winTitle: 'The world is yours', loseTitle: 'Your country has fallen',
+    winText: 'You hold {p}% of the land after {time}. Army: {troops}.',
+    loseText: 'At your peak you held {p}% of the world before they overran you.',
+    pickCountry: 'Pick a country', noRoute: 'No border or sea route to {name}', routeLost: 'You no longer have a route to that country',
+    coastYours: 'That coast is already yours', cantAttack: 'You cannot attack from here',
+    frontHint: 'The front moves tile by tile. Mountains and forests are slower and cost more.',
+    targetInfo: '{troops} troops · {mode} · {terrain}', bySea: 'by sea ~{s}s', byLand: 'by land',
+    enough: 'Enough to overrun all of it. Click the target again or press Enter to attack.',
+    tooFew: 'Too few: you will take only ~{p}% of its land. Wait or send more.',
+    take: 'You will take about {p}% of its land.', takeWeak: 'You will take about {p}% of its land, but your home stays weakly defended.',
+    retreat: 'Retreat', rankOf: '#{r} of {n}', startHint: 'Click a neighbor to select it, then ATTACK. The front advances bit by bit.',
+    retreating: 'The army retreats (−25%)', mapFailed: 'The map did not load.',
+  },
+  sr: {
+    title: 'Osvoji Svet', loading: 'Crtam mapu sveta…', country: 'Država', pause: 'Pauza', board: 'Rang lista', rank: 'Rang',
+    hNation: 'NACIJA', hLand: 'ZEMLJA', hArmy: 'VOJSKA', sendShare: 'Deo vojske za napad',
+    pickTarget: 'Izaberi metu', pickTargetHint: 'klikni tuđu teritoriju na mapi', attack: 'NAPADNI', land: 'ISKRCAJ SE',
+    zoomIn: 'Uvećaj', zoomOut: 'Umanji', fit: 'Namesti mapu', settings: 'Podešavanja', close: 'Zatvori', mute: 'Isključi zvuk', back: '⌂ Nazad u Gameroom',
+    eyebrow: 'STRATEGIJA',
+    intro: 'Izaberi državu. Vojska raste sama. Napadaj susede i front se pomera malo po malo — planine i šume se teže osvajaju, a preko mora ideš brodovima.',
+    pickHint: 'Izaberi državu na mapi ili sa liste.', search: 'Traži državu', random: 'Nasumično', play: 'IGRAJ',
+    pauseText: 'Vojska čeka. P ili Esc nastavljaju.', resume: 'NASTAVI', again: 'IGRAJ PONOVO',
+    t0: 'more', t1: 'ravnica', t2: 'šuma', t3: 'brda', t4: 'planine', t5: 'pustinja',
+    best: 'Najbolje: {p}% sveta', underAttack: '{name} te napada!', youConquered: 'Pokorio si: {name}',
+    theyConquered: '{by} je pokorila: {name}', landingRepelled: 'Desant je odbijen na obali', landing: 'Iskrcavanje: {name}', shore: 'obala',
+    winTitle: 'Svet je tvoj', loseTitle: 'Država je pala',
+    winText: 'Držiš {p}% kopna posle {time}. Vojska: {troops}.',
+    loseText: 'Najviše si držao {p}% sveta pre nego što su te pregazili.',
+    pickCountry: 'Izaberi državu', noRoute: 'Nemaš granicu ni put morem do: {name}', routeLost: 'Više nemaš put do te zemlje',
+    coastYours: 'Ta obala je već tvoja', cantAttack: 'Napad nije moguć odavde',
+    frontHint: 'Front se pomera polje po polje. Planine i šume su sporije i skuplje.',
+    targetInfo: '{troops} vojnika · {mode} · {terrain}', bySea: 'brodom ~{s}s', byLand: 'kopnom',
+    enough: 'Dovoljno da je pregaziš celu. Klikni metu opet ili Enter za napad.',
+    tooFew: 'Premalo — zauzećeš tek ~{p}% njene zemlje. Sačekaj ili pošalji više.',
+    take: 'Zauzećeš otprilike {p}% njene zemlje.', takeWeak: 'Zauzećeš otprilike {p}% njene zemlje — ali kuća ostaje slabo branjena.',
+    retreat: 'Povuci', rankOf: '#{r} od {n}', startHint: 'Klikni suseda da ga izabereš, pa NAPADNI. Front ide malo po malo.',
+    retreating: 'Vojska se povlači (−25%)', mapFailed: 'Mapa se nije učitala.',
+  },
+});
+document.title = tr('title');
+// engleski nazivi država po ISO numeričkom kodu (countries.js ima srpske)
+const EN_NAMES = {
+  4: 'Afghanistan', 8: 'Albania', 12: 'Algeria', 24: 'Angola', 31: 'Azerbaijan', 32: 'Argentina', 36: 'Australia', 40: 'Austria', 44: 'Bahamas',
+  50: 'Bangladesh', 51: 'Armenia', 56: 'Belgium', 64: 'Bhutan', 68: 'Bolivia', 70: 'Bosnia and Herzegovina', 72: 'Botswana', 76: 'Brazil',
+  84: 'Belize', 90: 'Solomon Islands', 96: 'Brunei', 100: 'Bulgaria', 104: 'Myanmar', 108: 'Burundi', 112: 'Belarus', 116: 'Cambodia', 120: 'Cameroon',
+  124: 'Canada', 140: 'Central African Republic', 144: 'Sri Lanka', 148: 'Chad', 152: 'Chile', 156: 'China', 158: 'Taiwan', 170: 'Colombia',
+  178: 'Republic of the Congo', 180: 'DR Congo', 188: 'Costa Rica', 191: 'Croatia', 192: 'Cuba', 196: 'Cyprus', 203: 'Czechia', 204: 'Benin',
+  208: 'Denmark', 214: 'Dominican Republic', 218: 'Ecuador', 222: 'El Salvador', 226: 'Equatorial Guinea', 231: 'Ethiopia', 232: 'Eritrea',
+  233: 'Estonia', 238: 'Falkland Islands', 242: 'Fiji', 246: 'Finland', 250: 'France', 262: 'Djibouti', 266: 'Gabon', 268: 'Georgia', 270: 'Gambia',
+  275: 'Palestine', 276: 'Germany', 288: 'Ghana', 300: 'Greece', 304: 'Greenland', 320: 'Guatemala', 324: 'Guinea', 328: 'Guyana', 332: 'Haiti',
+  340: 'Honduras', 348: 'Hungary', 352: 'Iceland', 356: 'India', 360: 'Indonesia', 364: 'Iran', 368: 'Iraq', 372: 'Ireland', 376: 'Israel',
+  380: 'Italy', 384: 'Ivory Coast', 388: 'Jamaica', 392: 'Japan', 398: 'Kazakhstan', 400: 'Jordan', 404: 'Kenya', 408: 'North Korea',
+  410: 'South Korea', 414: 'Kuwait', 417: 'Kyrgyzstan', 418: 'Laos', 422: 'Lebanon', 426: 'Lesotho', 428: 'Latvia', 430: 'Liberia', 434: 'Libya',
+  440: 'Lithuania', 442: 'Luxembourg', 450: 'Madagascar', 454: 'Malawi', 458: 'Malaysia', 466: 'Mali', 478: 'Mauritania', 484: 'Mexico',
+  496: 'Mongolia', 498: 'Moldova', 499: 'Montenegro', 504: 'Morocco', 508: 'Mozambique', 512: 'Oman', 516: 'Namibia', 524: 'Nepal', 528: 'Netherlands',
+  540: 'New Caledonia', 548: 'Vanuatu', 554: 'New Zealand', 558: 'Nicaragua', 562: 'Niger', 566: 'Nigeria', 578: 'Norway', 586: 'Pakistan',
+  591: 'Panama', 598: 'Papua New Guinea', 600: 'Paraguay', 604: 'Peru', 608: 'Philippines', 616: 'Poland', 620: 'Portugal', 624: 'Guinea-Bissau',
+  626: 'Timor-Leste', 630: 'Puerto Rico', 634: 'Qatar', 642: 'Romania', 643: 'Russia', 646: 'Rwanda', 682: 'Saudi Arabia', 686: 'Senegal',
+  688: 'Serbia', 694: 'Sierra Leone', 703: 'Slovakia', 704: 'Vietnam', 705: 'Slovenia', 706: 'Somalia', 710: 'South Africa', 716: 'Zimbabwe',
+  724: 'Spain', 728: 'South Sudan', 729: 'Sudan', 732: 'Western Sahara', 740: 'Suriname', 748: 'Eswatini', 752: 'Sweden', 756: 'Switzerland',
+  760: 'Syria', 762: 'Tajikistan', 764: 'Thailand', 768: 'Togo', 780: 'Trinidad and Tobago', 784: 'United Arab Emirates', 788: 'Tunisia',
+  792: 'Turkey', 795: 'Turkmenistan', 800: 'Uganda', 804: 'Ukraine', 807: 'North Macedonia', 818: 'Egypt', 826: 'United Kingdom', 834: 'Tanzania',
+  840: 'United States', 854: 'Burkina Faso', 858: 'Uruguay', 860: 'Uzbekistan', 862: 'Venezuela', 887: 'Yemen', 894: 'Zambia', 9001: 'Northern Cyprus',
+  9002: 'Somaliland', 9003: 'Kosovo',
+};
+i18n.apply();
+document.getElementById('langRow').appendChild(i18n.picker());
+
 const params = new URLSearchParams(location.search);
 const AUTO = params.has('auto');
 const SIM = Math.max(0, Number(params.get('sim')) || 0);
@@ -547,7 +634,7 @@ let hl = 0;
 let allDirty = false;
 let ovVersion = 0;
 const TMULT = [0, 1, 1.3, 1.6, 2.4, 1.15];
-const TNAME = ['more', 'ravnica', 'šuma', 'brda', 'planine', 'pustinja'];
+const TNAME = ['t0', 't1', 't2', 't3', 't4', 't5'].map((k) => tr(k));
 // grube ćelije za plovidbu
 const CF = 3;
 let CWc = 0, CHc = 0, cwater, bfsPrev, bfsSeen, bfsDist, bfsQ;
@@ -574,7 +661,7 @@ let anchorClock = 0, uiClock = 0, boardClock = 0;
 try { muted = localStorage.getItem('osvoji-svet:mute') === '1'; } catch (e) {}
 try { bestPct = Number(localStorage.getItem('osvoji-svet:best')) || 0; } catch (e) {}
 $('mute').checked = muted;
-$('best').textContent = bestPct > 0.05 ? `Najbolje: ${bestPct.toFixed(1)}% sveta` : '';
+$('best').textContent = bestPct > 0.05 ? tr('best', { p: bestPct.toFixed(1) }) : '';
 
 // ---------- pomoćne ----------
 function fmt(n) {
@@ -733,12 +820,13 @@ function chamfer(seed) {
 // ---------- izgradnja sveta ----------
 function buildWorld(data) {
   W = data.w; H = data.h; N = W * H;
-  const list = data.countries.slice().sort((a, b) => a.name.localeCompare(b.name, 'sr'));
+  const nameOf = (c) => (i18n.lang === 'en' && EN_NAMES[c.id]) || c.name;
+  const list = data.countries.slice().sort((a, b) => nameOf(a).localeCompare(nameOf(b), i18n.lang));
   nations = [null];
   byCountry = new Map();
   list.forEach((c, k) => {
     const n = {
-      i: k + 1, id: c.id, name: c.name, code: ISO2[c.id] || '', home: c,
+      i: k + 1, id: c.id, name: nameOf(c), code: ISO2[c.id] || '', home: c,
       rings: repairRings(c.rings), troops: 0, max: 1, tiles: 0, sx: 0, sy: 0,
       border: new Set(), coast: [], naval: [], ax: c.label[0], ay: c.label[1], lx: c.label[0], ly: c.label[1],
       nextAI: 0, css: '#888', edgeCss: '#444',
@@ -1186,7 +1274,7 @@ function startAttack(a, d, troops, around) {
     return false;
   }
   attacks.push(A);
-  if (d === player && !SIM) toast(`${nations[a].name} te napada!`, 'bad');
+  if (d === player && !SIM) toast(tr('underAttack', { name: nations[a].name }), 'bad');
   return true;
 }
 function endAttack(A, refund) {
@@ -1258,8 +1346,8 @@ function onEliminated(d, by) {
   for (const A of attacks) if (A.a === d) A.dead = true;
   for (const B of boats) if (B.a === d) B.dead = true;
   if (SIM || d === player) return;
-  if (by === player) { toast(`Pokorio si: ${nations[d].name}`, 'good'); beep(680, 0.12, 0.05); }
-  else if (nations[d].home.area > 60) toast(`${nations[by].name} je pokorila: ${nations[d].name}`);
+  if (by === player) { toast(tr('youConquered', { name: nations[d].name }), 'good'); beep(680, 0.12, 0.05); }
+  else if (nations[d].home.area > 60) toast(tr('theyConquered', { by: nations[by].name, name: nations[d].name }));
 }
 
 // ---------- brodovi ----------
@@ -1392,13 +1480,13 @@ function arrive(B) {
   const dens = def ? def.troops / Math.max(1, def.tiles) : 0;
   const cost = tileCost(u, def) * 3;
   if (B.troops < cost) {
-    if (B.a === player && !SIM) toast('Desant je odbijen na obali', 'bad');
+    if (B.a === player && !SIM) toast(tr('landingRepelled'), 'bad');
     return;
   }
   B.troops -= cost;
   if (def) def.troops = Math.max(0, def.troops - dens);
   conquer(u, B.a);
-  if (B.a === player && !SIM) toast(`Iskrcavanje: ${def ? def.name : 'obala'}`, 'good');
+  if (B.a === player && !SIM) toast(tr('landing', { name: def ? def.name : tr('shore') }), 'good');
   startAttack(B.a, d, B.troops, u);
 }
 
@@ -1521,10 +1609,10 @@ function finish(kind, info) {
   paused = false;
   pauseEl.classList.add('hidden');
   endEl.classList.remove('hidden');
-  $('end-title').textContent = kind === 'win' ? 'Svet je tvoj' : 'Država je pala';
+  $('end-title').textContent = tr(kind === 'win' ? 'winTitle' : 'loseTitle');
   $('end-text').textContent = kind === 'win'
-    ? `Držiš ${info.pct.toFixed(0)}% kopna posle ${clock(worldT)}. Vojska: ${fmt(info.troops)}.`
-    : `Najviše si držao ${peakPct.toFixed(1)}% sveta pre nego što su te pregazili.`;
+    ? tr('winText', { p: info.pct.toFixed(0), time: clock(worldT), troops: fmt(info.troops) })
+    : tr('loseText', { p: peakPct.toFixed(1) });
   if (!SIM) beep(kind === 'win' ? 740 : 110, 0.2, 0.05);
 }
 function clock(t) {
@@ -1665,10 +1753,10 @@ function drawLabels() {
     ctx.fillText(name, x0 + fw + 5, y0);
     ctx.textAlign = 'center';
     ctx.font = `800 ${Math.max(10, size * 0.82)}px Manrope, sans-serif`;
-    const tr = fmt(n.troops);
-    ctx.strokeText(tr, sx, sy + size * 0.62);
+    const trp = fmt(n.troops);
+    ctx.strokeText(trp, sx, sy + size * 0.62);
     ctx.fillStyle = n.i === player ? '#bcd6ff' : '#e6e0cf';
-    ctx.fillText(tr, sx, sy + size * 0.62);
+    ctx.fillText(trp, sx, sy + size * 0.62);
   }
 }
 
@@ -1883,7 +1971,7 @@ function beep(freq, dur, vol) {
 function choose(i) {
   picked = i;
   const n = nations[i];
-  $('picked-name').textContent = n ? n.name : 'Izaberi državu';
+  $('picked-name').textContent = n ? n.name : tr('pickCountry');
   const pf = $('picked-flag');
   if (n && n.code) { pf.src = flagUrl(n.code, 80); pf.classList.remove('hidden'); } else pf.classList.add('hidden');
   playBtn.disabled = !n;
@@ -1935,7 +2023,7 @@ function onMapClick(mx, my) {
   if (target && target.i === o) { doAttack(); return; }
   const m = attackMode(o, t);
   if (!m) {
-    toast(`Nemaš granicu ni put morem do: ${nations[o].name}`);
+    toast(tr('noRoute', { name: nations[o].name }));
     target = null;
     setHighlight(0);
   } else {
@@ -1952,7 +2040,7 @@ function doAttack() {
   if (send < 5) return;
   if (target.mode === 'land' && !shareBorder(player, target.i)) {
     const m = attackMode(target.i, target.tile);
-    if (!m) { toast('Više nemaš put do te zemlje'); return; }
+    if (!m) { toast(tr('routeLost')); return; }
     target.mode = m.mode;
     if (m.mode === 'sea') { target.tile = m.landing; target.eta = m.eta; }
   }
@@ -1961,11 +2049,11 @@ function doAttack() {
     me.troops -= send;
     ok = startAttack(player, target.i, send);
   } else {
-    if (owner[target.tile] === player) { toast('Ta obala je već tvoja'); return; }
+    if (owner[target.tile] === player) { toast(tr('coastYours')); return; }
     ok = launchBoat(player, target.tile, send);
   }
   if (ok) { playerAttacks++; beep(target.mode === 'sea' ? 300 : 520, 0.07, 0.04); }
-  else toast('Napad nije moguć odavde');
+  else toast(tr('cantAttack'));
 }
 
 function refreshDock() {
@@ -1983,13 +2071,13 @@ function refreshDock() {
   const tf = $('tgt-flag');
   if (!target || !nations[target.i].tiles || target.i === player) {
     if (target) { target = null; setHighlight(0); }
-    $('tgt-name').textContent = 'Izaberi metu';
-    $('tgt-info').textContent = 'klikni tuđu teritoriju na mapi';
+    $('tgt-name').textContent = tr('pickTarget');
+    $('tgt-info').textContent = tr('pickTargetHint');
     tf.style.visibility = 'hidden';
     go.disabled = true;
-    go.textContent = 'NAPADNI';
+    go.textContent = tr('attack');
     hintEl.className = '';
-    hintEl.textContent = 'Front se pomera polje po polje. Planine i šume su sporije i skuplje.';
+    hintEl.textContent = tr('frontHint');
     return;
   }
   const d = nations[target.i];
@@ -1997,21 +2085,21 @@ function refreshDock() {
   tf.style.visibility = d.code ? 'visible' : 'hidden';
   $('tgt-name').textContent = d.name;
   const tName = TNAME[terr[target.tile]] || '';
-  $('tgt-info').textContent = `${fmt(d.troops)} vojnika · ${target.mode === 'sea' ? `brodom ~${Math.round(target.eta)}s` : 'kopnom'} · ${tName}`;
+  $('tgt-info').textContent = tr('targetInfo', { troops: fmt(d.troops), mode: target.mode === 'sea' ? tr('bySea', { s: Math.round(target.eta) }) : tr('byLand'), terrain: tName });
   go.disabled = send < 5;
-  go.textContent = target.mode === 'sea' ? 'ISKRCAJ SE' : 'NAPADNI';
+  go.textContent = tr(target.mode === 'sea' ? 'land' : 'attack');
   const dens = d.troops / Math.max(1, d.tiles);
   const est = send / (1.3 * (2 + dens * 1.2 + Math.sqrt(d.troops) / 6));
   const share = est / Math.max(1, d.tiles);
   if (share >= 1) {
     hintEl.className = '';
-    hintEl.textContent = 'Dovoljno da je pregaziš celu. Klikni metu opet ili Enter za napad.';
+    hintEl.textContent = tr('enough');
   } else if (share < 0.05) {
     hintEl.className = 'warn';
-    hintEl.textContent = `Premalo — zauzećeš tek ~${Math.max(0.1, share * 100).toFixed(1)}% njene zemlje. Sačekaj ili pošalji više.`;
+    hintEl.textContent = tr('tooFew', { p: Math.max(0.1, share * 100).toFixed(1) });
   } else {
     hintEl.className = frac >= 0.6 ? 'warn' : '';
-    hintEl.textContent = `Zauzećeš otprilike ${Math.round(share * 100)}% njene zemlje${frac >= 0.6 ? ' — ali kuća ostaje slabo branjena.' : '.'}`;
+    hintEl.textContent = tr(frac >= 0.6 ? 'takeWeak' : 'take', { p: Math.round(share * 100) });
   }
 }
 
@@ -2022,7 +2110,7 @@ function refreshAtks() {
       if (A.dead) continue;
       if (A.a === player) {
         const d = nations[A.d];
-        rows.push(`<div class="atk">⚔ ${flagTag(d)}${esc(d.name)} ${fmt(A.troops)}<button type="button" data-cancel="${A.d}" aria-label="Povuci">✕</button></div>`);
+        rows.push(`<div class="atk">⚔ ${flagTag(d)}${esc(d.name)} ${fmt(A.troops)}<button type="button" data-cancel="${A.d}" aria-label="${tr('retreat')}">✕</button></div>`);
       } else if (A.d === player) {
         const a = nations[A.a];
         rows.push(`<div class="atk in">🛡 ${flagTag(a)}${esc(a.name)} ${fmt(A.troops)}</div>`);
@@ -2031,7 +2119,7 @@ function refreshAtks() {
     for (const B of boats) {
       if (B.dead) continue;
       const o = nations[owner[B.landing]];
-      if (B.a === player) rows.push(`<div class="atk">⛵ ${o ? esc(o.name) : 'obala'} ${fmt(B.troops)}</div>`);
+      if (B.a === player) rows.push(`<div class="atk">⛵ ${o ? esc(o.name) : tr('shore')} ${fmt(B.troops)}</div>`);
       else if (owner[B.landing] === player) rows.push(`<div class="atk in">⛵ ${flagTag(nations[B.a])}${esc(nations[B.a].name)} ${fmt(B.troops)}</div>`);
     }
   }
@@ -2043,7 +2131,7 @@ function renderBoard() {
   const alive = nations.slice(1).filter((n) => n.tiles).sort((a, b) => b.tiles - a.tiles);
   const rows = alive.slice(0, 7);
   if (player && nations[player].tiles && !rows.includes(nations[player])) rows.push(nations[player]);
-  if (player && nations[player].tiles) $('board-me').textContent = `#${alive.indexOf(nations[player]) + 1} od ${alive.length}`;
+  if (player && nations[player].tiles) $('board-me').textContent = tr('rankOf', { r: alive.indexOf(nations[player]) + 1, n: alive.length });
   boardRows.innerHTML = rows.map((n) => {
     const pct = (n.tiles / landTotal) * 100;
     return `<button type="button" class="lb ${n.i === player ? 'me' : ''}" data-id="${n.i}">
@@ -2077,7 +2165,7 @@ function begin(i) {
   camUser = true;
   resize();
   frameNation(i);
-  toast('Klikni suseda da ga izabereš, pa NAPADNI. Front ide malo po malo.');
+  toast(tr('startHint'));
   renderBoard();
   refreshDock();
   if (SIM > 0) runSim();
@@ -2154,7 +2242,7 @@ atksEl.addEventListener('click', (e) => {
   if (!btn) return;
   const d = Number(btn.dataset.cancel);
   const A = attacks.find((x) => !x.dead && x.a === player && x.d === d);
-  if (A) { endAttack(A, 0.75); toast('Vojska se povlači (−25%)'); }
+  if (A) { endAttack(A, 0.75); toast(tr('retreating')); }
 });
 $('zin').onclick = () => { camUser = true; zoomAt(viewW / 2, viewH / 2, 1.3); };
 $('zout').onclick = () => { camUser = true; zoomAt(viewW / 2, viewH / 2, 1 / 1.3); };
@@ -2291,7 +2379,7 @@ function loop(now) {
 resize();
 requestAnimationFrame(loop);
 if (!window.OSVOJI_MAP) {
-  $('loading').textContent = 'Mapa se nije učitala.';
+  $('loading').textContent = tr('mapFailed');
 } else {
   setTimeout(() => {
     const t0 = performance.now();
@@ -2305,7 +2393,7 @@ if (!window.OSVOJI_MAP) {
     resize();
     if (AUTO) {
       const want = params.get('as') || 'Srbija';
-      const srb = nations.find((n) => n && n.name === want) || nations[1];
+      const srb = nations.find((n) => n && (n.name === want || n.home.name === want)) || nations[1];
       begin(srb.i);
     }
   }, 30);

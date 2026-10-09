@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
@@ -7,6 +7,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Monster Lane">
+<script src="../../shared/gameroom-i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet">
@@ -47,6 +48,8 @@
     width: 100%; min-width: 0; height: 38px; font-size: 15px; text-decoration: none;
     display: flex; align-items: center; justify-content: flex-start; padding: 0 12px; background: #2a2a44;
   }
+  #langRow .gr-lang { display: flex !important; width: 100%; }
+  #settingsMenu #langRow button { flex: 1; width: auto; height: 32px; justify-content: center; padding: 0; }
   #bossWrap {
     position: absolute; top: 74px; left: 50%; transform: translateX(-50%);
     width: min(420px, calc(100vw - 32px)); display: none; text-align: center;
@@ -184,19 +187,20 @@
 
 <div id="ui">
   <div id="top">
-    <div class="pill stroke"><span id="wave">TALAS 1</span><small>Poeni: <span id="score">0</span></small></div>
+    <div class="pill stroke"><span id="wave"></span><small><span data-i18n="score"></span>: <span id="score">0</span></small></div>
     <div id="baseBox">
-      <div class="pill stroke">BAZA <span id="baseTxt">100</span>
+      <div class="pill stroke"><span data-i18n="base"></span> <span id="baseTxt">100</span>
         <div id="basebar"><div id="basefill"></div></div>
       </div>
       <div class="btns">
-        <button id="settingsBtn" type="button" title="Podešavanja">⚙</button>
+        <button id="settingsBtn" type="button" data-i18n-attr="title:settings;aria-label:settings">⚙</button>
         <div id="settingsMenu" class="hidden">
-          <button id="menuSound" type="button">♪ Zvuk uključen</button>
-          <button id="menuQuality" type="button">Grafika: HQ</button>
-          <button id="menuPause" type="button">II Pauza</button>
+          <button id="menuSound" type="button" data-i18n="soundOn"></button>
+          <button id="menuQuality" type="button"></button>
+          <button id="menuPause" type="button" data-i18n="pauseBtn"></button>
+          <div id="langRow"></div>
           <!-- gameroom:back -->
-          <a href="../../" id="gameroom-back" title="Nazad u Gameroom" aria-label="Nazad u Gameroom">⌂ Nazad u Gameroom</a>
+          <a href="../../" id="gameroom-back" data-i18n="back" data-i18n-attr="title:backPlain;aria-label:backPlain">⌂ Back to Gameroom</a>
           <!-- /gameroom:back -->
         </div>
       </div>
@@ -210,7 +214,7 @@
 
   <div id="weapon" class="stroke">
     <div class="plank">
-      <div class="ribbon"><div class="ribbon-in"><span class="skull">☠</span><span id="wName">Pištolj</span></div></div>
+      <div class="ribbon"><div class="ribbon-in"><span class="skull">☠</span><span id="wName"></span></div></div>
       <div class="tier" id="wTier"></div>
       <div id="wStats"></div>
       <div class="levels" id="wLevels"></div>
@@ -223,30 +227,30 @@
   <div id="startScreen" class="overlay">
     <div class="card">
       <h1>MONSTER<br>LANE</h1>
-      <p>Gusarski brod je pristao i posada silazi niz dasku. Pomeraj pirata levo-desno i ne daj im da stignu do baze.</p>
+      <p data-i18n="intro"></p>
       <div class="legend">
-        <div class="sw" style="background:#4aa3ff"></div><div><b>Leva staza — kapije</b>: razbij ih i dobiješ +1 cev, više štete ili bržu paljbu.</div>
-        <div class="sw" style="background:#f4c95d"></div><div><b>Desna staza — specijalna oružja</b>: imaju mnogo HP-a, ali kad ih osvojiš dobijaš jače oružje.</div>
-        <div class="sw" style="background:#e63946"></div><div><b>Sredina — gusari</b>: mornari, grmalji i kapetani-bosovi koji dozivaju posadu i pobesne na pola HP-a.</div>
+        <div class="sw" style="background:#4aa3ff"></div><div data-i18n-html="legendL"></div>
+        <div class="sw" style="background:#f4c95d"></div><div data-i18n-html="legendR"></div>
+        <div class="sw" style="background:#e63946"></div><div data-i18n-html="legendM"></div>
       </div>
-      <button class="play" id="startBtn">IGRAJ</button>
-      <div class="keys">Miš ili prevlačenje prstom bilo gde — pomeranje · A/D ili ←/→ · P — pauza</div>
+      <button class="play" id="startBtn" data-i18n="play"></button>
+      <div class="keys" data-i18n="keys"></div>
     </div>
   </div>
 
   <div id="overScreen" class="overlay hidden">
     <div class="card">
-      <h2>BAZA JE PALA!</h2>
+      <h2 data-i18n="baseFell"></h2>
       <div class="stats" id="overStats"></div>
-      <button class="play" id="restartBtn">PONOVO</button>
+      <button class="play" id="restartBtn" data-i18n="again"></button>
     </div>
   </div>
 
   <div id="pauseScreen" class="overlay hidden">
     <div class="card">
-      <h2>PAUZA</h2>
-      <p>Klikni ili pritisni P za nastavak.</p>
-      <button class="play" id="resumeBtn">NASTAVI</button>
+      <h2 data-i18n="paused"></h2>
+      <p data-i18n="pausedHint"></p>
+      <button class="play" id="resumeBtn" data-i18n="resume"></button>
     </div>
   </div>
 </div>
@@ -265,6 +269,57 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+// =====================================================================
+// I18N (shared/gameroom-i18n.js): engleski podrazumevano, srpski po izboru u podešavanjima
+// =====================================================================
+const i18n = window.GameroomI18n;
+const tr = (k, v) => i18n.t(k, v);
+i18n.add({
+  en: {
+    score: 'Score', base: 'BASE', settings: 'Settings', soundOn: '♪ Sound on', soundOff: '🔇 Sound off',
+    quality: 'Graphics: {q}', pauseBtn: 'II Pause', resumeBtn: '▶ Resume', back: '⌂ Back to Gameroom', backPlain: 'Back to Gameroom',
+    intro: 'The pirate ship has docked and the crew is coming down the plank. Move your pirate left and right and keep them away from the base.',
+    legendL: '<b>Left lane: gates</b>. Break them for +1 barrel, more damage or a faster fire rate.',
+    legendR: '<b>Right lane: special weapons</b>. They have lots of HP, but capture one and you get a stronger gun.',
+    legendM: '<b>Middle: pirates</b>. Sailors, brutes and captain bosses who call in their crew and go berserk at half HP.',
+    play: 'PLAY', keys: 'Mouse or swipe anywhere to move · A/D or ←/→ · P to pause',
+    baseFell: 'THE BASE HAS FALLEN!', again: 'AGAIN', paused: 'PAUSED', pausedHint: 'Click or press P to continue.', resume: 'RESUME',
+    w_pistol: 'Pistol', w_smg: 'Minigun', w_shotgun: 'Shotgun', w_laser: 'Laser', w_rocket: 'Rocket launcher', w_plasma: 'Plasma cannon',
+    g_barrel: 'BARREL', g_dmgLabel: '+DMG', g_dmg: '+10% DAMAGE', g_rateLabel: '+RATE', g_rate: '+8% FIRE RATE',
+    b_red: 'CAPTAIN REDBEARD', b_black: 'BLACK CORSAIR', b_admiral: 'ADMIRAL SEA DOG', b_king: 'PIRATE KING',
+    c_dmg: 'DAMAGE {n}', c_shots: 'SHOTS ×{n}', c_pierce: 'PIERCE {n}', c_boom: 'EXPLOSIVE',
+    lv_shot: 'BARRELS', lv_dmg: 'DAMAGE', lv_rate: 'RATE',
+    wave: 'WAVE {n}', captain: 'CAPTAIN!', bossDown: 'BOSS DEFEATED!', plusBarrel: '+1 BARREL',
+    newWeapon: 'New weapon unlocked', bonus20: '+20% DAMAGE', weaponBonus: 'Weapon bonus',
+    enraged: 'CAPTAIN ENRAGED!', enragedSub: 'Faster, and calling more crew', strikes: 'CAPTAIN STRIKES!', perHit: '-{n} per hit',
+    waveBoss: 'Boss at the end: {hp} HP', waveDone: 'WAVE {n} CLEARED!', wavePts: '+{n} points',
+    overStats: 'Wave: <b>{wave}</b><br>Score: <b>{score}</b><br>Kills: <b>{kills}</b><br>Weapon: <b>{weapon}</b><br><small>Best: {best}</small>',
+  },
+  sr: {
+    score: 'Poeni', base: 'BAZA', settings: 'Podešavanja', soundOn: '♪ Zvuk uključen', soundOff: '🔇 Zvuk isključen',
+    quality: 'Grafika: {q}', pauseBtn: 'II Pauza', resumeBtn: '▶ Nastavi', back: '⌂ Nazad u Gameroom', backPlain: 'Nazad u Gameroom',
+    intro: 'Gusarski brod je pristao i posada silazi niz dasku. Pomeraj pirata levo-desno i ne daj im da stignu do baze.',
+    legendL: '<b>Leva staza — kapije</b>: razbij ih i dobiješ +1 cev, više štete ili bržu paljbu.',
+    legendR: '<b>Desna staza — specijalna oružja</b>: imaju mnogo HP-a, ali kad ih osvojiš dobijaš jače oružje.',
+    legendM: '<b>Sredina — gusari</b>: mornari, grmalji i kapetani-bosovi koji dozivaju posadu i pobesne na pola HP-a.',
+    play: 'IGRAJ', keys: 'Miš ili prevlačenje prstom bilo gde — pomeranje · A/D ili ←/→ · P — pauza',
+    baseFell: 'BAZA JE PALA!', again: 'PONOVO', paused: 'PAUZA', pausedHint: 'Klikni ili pritisni P za nastavak.', resume: 'NASTAVI',
+    w_pistol: 'Pištolj', w_smg: 'Minigun', w_shotgun: 'Sačmara', w_laser: 'Laser', w_rocket: 'Raketni bacač', w_plasma: 'Plazma top',
+    g_barrel: 'CEV', g_dmgLabel: '+DMG', g_dmg: '+10% ŠTETA', g_rateLabel: '+BRZ', g_rate: '+8% PALJBA',
+    b_red: 'KAPETAN CRVENOBRADI', b_black: 'CRNI KORSAR', b_admiral: 'ADMIRAL MORSKI PAS', b_king: 'KRALJ PIRATA',
+    c_dmg: 'ŠTETA {n}', c_shots: 'METAKA ×{n}', c_pierce: 'PROBOJ {n}', c_boom: 'EKSPLOZIJA',
+    lv_shot: 'CEVI', lv_dmg: 'ŠTETA', lv_rate: 'BRZINA',
+    wave: 'TALAS {n}', captain: 'KAPETAN!', bossDown: 'BOSS POBEĐEN!', plusBarrel: '+1 CEV',
+    newWeapon: 'Novo oružje osvojeno', bonus20: '+20% ŠTETA', weaponBonus: 'Bonus za oružje',
+    enraged: 'KAPETAN BESNI!', enragedSub: 'Brži je i zove još posade', strikes: 'KAPETAN UDARA!', perHit: '-{n} po udarcu',
+    waveBoss: 'Boss na kraju: {hp} HP', waveDone: 'TALAS {n} ZAVRŠEN!', wavePts: '+{n} poena',
+    overStats: 'Talas: <b>{wave}</b><br>Poeni: <b>{score}</b><br>Ubijeno: <b>{kills}</b><br>Oružje: <b>{weapon}</b><br><small>Rekord: {best}</small>',
+  },
+});
+i18n.apply();
+document.getElementById('wave').textContent = tr('wave', { n: 1 });
+document.getElementById('langRow').appendChild(i18n.picker());
 
 // =====================================================================
 // CONFIG
@@ -302,26 +357,26 @@ const bossHpFor = w => w <= BOSS_HP.length
 
 // capture = HP of the pedestal that must be shot down to get the weapon
 const WEAPONS = [
-  { id: 'pistol',  name: 'Pištolj',       dmg: 10, rate: 5,   speed: 55, spread: 0.03, pellets: 1, pierce: 0, splash: 0,   color: 0xffd23f, size: 1,   len: 1, capture: 0 },
-  { id: 'smg',     name: 'Minigun',       dmg: 9,  rate: 13,  speed: 62, spread: 0.07, pellets: 1, pierce: 0, splash: 0,   color: 0xff9f1c, size: 0.9, len: 1, capture: 500 },
-  { id: 'shotgun', name: 'Sačmara',       dmg: 15, rate: 2.6, speed: 52, spread: 0.30, pellets: 5, pierce: 0, splash: 0,   color: 0xfff3b0, size: 0.9, len: 0.8, capture: 1000 },
-  { id: 'laser',   name: 'Laser',         dmg: 24, rate: 7,   speed: 95, spread: 0.02, pellets: 1, pierce: 5, splash: 0,   color: 0x3ff3ff, size: 0.9, len: 3, capture: 1800 },
-  { id: 'rocket',  name: 'Raketni bacač', dmg: 60, rate: 2,   speed: 38, spread: 0.04, pellets: 1, pierce: 0, splash: 3.6, color: 0xff5a36, size: 2,   len: 1.3, capture: 2800 },
-  { id: 'plasma',  name: 'Plazma top',    dmg: 45, rate: 5,   speed: 70, spread: 0.04, pellets: 1, pierce: 4, splash: 0,   color: 0xc77dff, size: 1.7, len: 1.2, capture: 4000 },
+  { id: 'pistol',  name: tr('w_pistol'), dmg: 10, rate: 5,   speed: 55, spread: 0.03, pellets: 1, pierce: 0, splash: 0,   color: 0xffd23f, size: 1,   len: 1, capture: 0 },
+  { id: 'smg',     name: tr('w_smg'), dmg: 9,  rate: 13,  speed: 62, spread: 0.07, pellets: 1, pierce: 0, splash: 0,   color: 0xff9f1c, size: 0.9, len: 1, capture: 500 },
+  { id: 'shotgun', name: tr('w_shotgun'), dmg: 15, rate: 2.6, speed: 52, spread: 0.30, pellets: 5, pierce: 0, splash: 0,   color: 0xfff3b0, size: 0.9, len: 0.8, capture: 1000 },
+  { id: 'laser',   name: tr('w_laser'), dmg: 24, rate: 7,   speed: 95, spread: 0.02, pellets: 1, pierce: 5, splash: 0,   color: 0x3ff3ff, size: 0.9, len: 3, capture: 1800 },
+  { id: 'rocket',  name: tr('w_rocket'), dmg: 60, rate: 2,   speed: 38, spread: 0.04, pellets: 1, pierce: 0, splash: 3.6, color: 0xff5a36, size: 2,   len: 1.3, capture: 2800 },
+  { id: 'plasma',  name: tr('w_plasma'), dmg: 45, rate: 5,   speed: 70, spread: 0.04, pellets: 1, pierce: 4, splash: 0,   color: 0xc77dff, size: 1.7, len: 1.2, capture: 4000 },
 ];
 
 const GATE_DEFS = {
-  barrel: { label: '+1',   sub: 'CEV',         c1: 'rgba(110,190,255,0.85)', c2: 'rgba(30,100,230,0.85)', ink: '#12306b', color: 0x4aa3ff },
-  dmg:    { label: '+DMG', sub: '+10% ŠTETA',  c1: 'rgba(255,140,110,0.85)', c2: 'rgba(210,40,40,0.85)',  ink: '#5c0b0b', color: 0xff6b6b },
-  rate:   { label: '+BRZ', sub: '+8% PALJBA', c1: 'rgba(140,235,140,0.85)', c2: 'rgba(30,150,60,0.85)',  ink: '#0d3d17', color: 0x5fd35f },
+  barrel: { label: '+1',   sub: tr('g_barrel'), c1: 'rgba(110,190,255,0.85)', c2: 'rgba(30,100,230,0.85)', ink: '#12306b', color: 0x4aa3ff },
+  dmg:    { label: tr('g_dmgLabel'), sub: tr('g_dmg'), c1: 'rgba(255,140,110,0.85)', c2: 'rgba(210,40,40,0.85)',  ink: '#5c0b0b', color: 0xff6b6b },
+  rate:   { label: tr('g_rateLabel'), sub: tr('g_rate'), c1: 'rgba(140,235,140,0.85)', c2: 'rgba(30,150,60,0.85)',  ink: '#0d3d17', color: 0x5fd35f },
 };
 
 // pirate captains (bosses), one look per wave, cycling
 const BOSS_TYPES = [
-  { name: 'KAPETAN CRVENOBRADI', coat: 0xb3122b, hat: 0x1b1b1f, beard: 0xe8590c, trim: 0xffd23f },
-  { name: 'CRNI KORSAR',         coat: 0x24242e, hat: 0x111116, beard: 0x181818, trim: 0xc9ced6 },
-  { name: 'ADMIRAL MORSKI PAS',  coat: 0x1f5fa8, hat: 0xf1f1f1, beard: 0xe0e0e0, trim: 0xffd23f },
-  { name: 'KRALJ PIRATA',        coat: 0x6a1b9a, hat: 0x2a0d38, beard: 0x8d8d8d, trim: 0xffd23f },
+  { name: tr('b_red'), coat: 0xb3122b, hat: 0x1b1b1f, beard: 0xe8590c, trim: 0xffd23f },
+  { name: tr('b_black'), coat: 0x24242e, hat: 0x111116, beard: 0x181818, trim: 0xc9ced6 },
+  { name: tr('b_admiral'), coat: 0x1f5fa8, hat: 0xf1f1f1, beard: 0xe0e0e0, trim: 0xffd23f },
+  { name: tr('b_king'), coat: 0x6a1b9a, hat: 0x2a0d38, beard: 0x8d8d8d, trim: 0xffd23f },
 ];
 
 // =====================================================================
@@ -1840,21 +1895,21 @@ function updateWeaponHud() {
   $('wName').textContent = w.name;
   const dmg = curDmg(), rate = curRate(), n = curShots();
   const chips = [
-    ['c-dmg', '⚔', `ŠTETA ${Math.round(dmg)}`],
-    ['c-shot', '✦', `METAKA ×${n}`],
+    ['c-dmg', '⚔', tr('c_dmg', { n: Math.round(dmg) })],
+    ['c-shot', '✦', tr('c_shots', { n })],
     ['c-rate', '⚡', `${rate.toFixed(1)}/s`],
     ['c-dps', '☠', `DPS ~${Math.round(dmg * n * rate)}`],
   ];
-  if (w.pierce) chips.push(['c-pierce', '➶', `PROBOJ ${w.pierce}`]);
-  if (w.splash) chips.push(['c-boom', '✹', 'EKSPLOZIJA']);
+  if (w.pierce) chips.push(['c-pierce', '➶', tr('c_pierce', { n: w.pierce })]);
+  if (w.splash) chips.push(['c-boom', '✹', tr('c_boom')]);
   $('wStats').innerHTML = chips.map(([cls, icon, text]) => `<span class="chip ${cls}"><i>${icon}</i>${text}</span>`).join('');
   $('wTier').innerHTML = WEAPONS.map((_, i) => `<span class="${i <= state.weaponTier ? 'on' : ''}">☠</span>`).join('');
   const lv = (cls, name, v, max) =>
     `<div class="lv ${cls}">${name} ${v}/${max}<div class="bar"><b style="width:${v / max * 100}%"></b></div></div>`;
   $('wLevels').innerHTML =
-    lv('lv-shot', 'CEVI', state.barrels, MAX_BARRELS) +
-    lv('lv-dmg', 'ŠTETA', state.dmgLvl, MAX_DMG_LVL) +
-    lv('lv-rate', 'BRZINA', state.rateLvl, MAX_RATE_LVL);
+    lv('lv-shot', tr('lv_shot'), state.barrels, MAX_BARRELS) +
+    lv('lv-dmg', tr('lv_dmg'), state.dmgLvl, MAX_DMG_LVL) +
+    lv('lv-rate', tr('lv_rate'), state.rateLvl, MAX_RATE_LVL);
   placeBossBar();
 }
 // portrait phones: the weapon strip can wrap to 1–3 rows, so the boss bar follows its height
@@ -1864,7 +1919,7 @@ function placeBossBar() {
 addEventListener('resize', placeBossBar);
 
 function updateHud() {
-  setT('wave', `TALAS ${state.wave}`);
+  setT('wave', tr('wave', { n: state.wave }));
   setT('score', String(state.score));
   setT('baseTxt', String(Math.max(0, Math.ceil(state.baseHp))));
   setW('basefill', state.baseHp / BASE_HP);
@@ -2092,7 +2147,7 @@ function spawnBoss() {
               dead: false, gone: false, phase: 0, summon: 2, enraged: false };
   drawBoss(b);
   bosses.push(b);
-  banner('KAPETAN!', `${b.name} · ${hp} HP`, 2400);
+  banner(tr('captain'), `${b.name} · ${hp} HP`, 2400);
   sfx.boss();
   state.shake = 0.6;
 }
@@ -2208,7 +2263,7 @@ function onKill(t) {
       state.score += Math.round(t.maxHp / 2);
       burst(t.x, t.s, t.z, BOSS_TYPES[(state.wave - 1) % BOSS_TYPES.length].coat, 60, 14, 2);
       burst(t.x, t.s, t.z, 0xffd23f, 30, 10, 1.4);
-      floatText('BOSS POBEĐEN!', t.x, t.s * 1.5, t.z, 'big');
+      floatText(tr('bossDown'), t.x, t.s * 1.5, t.z, 'big');
       shockwave(t.x, t.z, t.s * 2.5, 0xffd23f, 0.7);
       flashLight(t.x, t.z, 600);
       state.shake = 0.8;
@@ -2231,9 +2286,9 @@ function onKill(t) {
 
 function applyUpgrade(g) {
   let text;
-  if (g.type === 'barrel') { state.barrels = Math.min(MAX_BARRELS, state.barrels + 1); text = '+1 CEV'; }
-  else if (g.type === 'dmg') { state.dmgLvl = Math.min(MAX_DMG_LVL, state.dmgLvl + 1); text = '+10% ŠTETA'; }
-  else { state.rateLvl = Math.min(MAX_RATE_LVL, state.rateLvl + 1); text = '+8% PALJBA'; }
+  if (g.type === 'barrel') { state.barrels = Math.min(MAX_BARRELS, state.barrels + 1); text = tr('plusBarrel'); }
+  else if (g.type === 'dmg') { state.dmgLvl = Math.min(MAX_DMG_LVL, state.dmgLvl + 1); text = tr('g_dmg'); }
+  else { state.rateLvl = Math.min(MAX_RATE_LVL, state.rateLvl + 1); text = tr('g_rate'); }
   state.upgradesTaken++;
   state.score += 25;
   floatText(text, g.x, 3, g.z);
@@ -2247,11 +2302,11 @@ function captureWeapon(p) {
     state.weaponTier = p.tier;
     rebuildGun();
     updateWeaponHud();
-    banner(p.w.name.toUpperCase() + '!', 'Novo oružje osvojeno');
+    banner(p.w.name.toUpperCase() + '!', tr('newWeapon'));
   } else {
     state.dmgLvl = Math.min(MAX_DMG_LVL, state.dmgLvl + 2);
     updateWeaponHud();
-    banner('+20% ŠTETA', 'Bonus za oružje');
+    banner(tr('bonus20'), tr('weaponBonus'));
   }
   state.score += 150;
   floatText(p.w.name.toUpperCase(), p.x, 4, p.z, 'big');
@@ -2434,7 +2489,7 @@ function updateBosses(dt) {
     if (!b.enraged && b.hp < b.maxHp * 0.5) {
       b.enraged = true;
       b.speed *= 1.5;
-      banner('KAPETAN BESNI!', 'Brži je i zove još posade', 1800);
+      banner(tr('enraged'), tr('enragedSub'), 1800);
       state.shake = Math.max(state.shake, 0.5);
       sfx.boss();
     }
@@ -2450,7 +2505,7 @@ function updateBosses(dt) {
         state.shake = Math.max(state.shake, 0.35);
         if (!b.struck) {
           b.struck = true;
-          banner('KAPETAN UDARA!', `-${hit} po udarcu`);
+          banner(tr('strikes'), tr('perHit', { n: hit }));
         }
       }
     }
@@ -2507,7 +2562,7 @@ function startWave() {
   state.bossSpawned = false;
   state.rowTimer = 0.35;
   if (monsters.length < 160) fillCrowd();
-  banner(`TALAS ${state.wave}`, `Boss na kraju: ${bossHpFor(state.wave)} HP`);
+  banner(tr('wave', { n: state.wave }), tr('waveBoss', { hp: bossHpFor(state.wave) }));
 }
 
 const waveDuration = w => 22 + w * 4;
@@ -2531,7 +2586,7 @@ function updateWave(dt) {
       state.bossSpawned = false;
       state.betweenWaves = 4;
       state.score += 100 * state.wave;
-      banner(`TALAS ${state.wave} ZAVRŠEN!`, `+${100 * state.wave} poena`);
+      banner(tr('waveDone', { n: state.wave }), tr('wavePts', { n: 100 * state.wave }));
     }
   }
 }
@@ -2639,8 +2694,7 @@ function gameOver() {
     if (state.score > best) { best = state.score; localStorage.setItem('monsterLaneBest', String(best)); }
   } catch (e) { best = Math.max(best, state.score); }
   $('overStats').innerHTML =
-    `Talas: <b>${state.wave}</b><br>Poeni: <b>${state.score}</b><br>Ubijeno: <b>${state.kills}</b><br>` +
-    `Oružje: <b>${curWeapon().name}</b><br><small>Rekord: ${best}</small>`;
+    tr('overStats', { wave: state.wave, score: state.score, kills: state.kills, weapon: curWeapon().name, best });
   $('overScreen').classList.remove('hidden');
   $('bossWrap').style.display = 'none';
   hudCache.bossShow = 'none';
@@ -2651,7 +2705,7 @@ function setPaused(p) {
   if (!state.running) return;
   state.paused = p;
   $('pauseScreen').classList.toggle('hidden', !p);
-  $('menuPause').textContent = p ? '▶ Nastavi' : 'II Pauza';
+  $('menuPause').textContent = tr(p ? 'resumeBtn' : 'pauseBtn');
   if (p) closeSettings();
   clock.getDelta();
 }
@@ -2667,7 +2721,7 @@ $('menuPause').addEventListener('click', e => { e.stopPropagation(); setPaused(!
 $('menuSound').addEventListener('click', e => {
   e.stopPropagation();
   sfx.ensure();
-  $('menuSound').textContent = sfx.toggle() ? '🔇 Zvuk isključen' : '♪ Zvuk uključen';
+  $('menuSound').textContent = tr(sfx.toggle() ? 'soundOff' : 'soundOn');
 });
 document.addEventListener('visibilitychange', () => { if (document.hidden) setPaused(true); });
 
@@ -2736,7 +2790,7 @@ function applyQuality(level) {
     if (sun.shadow.map) { sun.shadow.map.dispose(); sun.shadow.map = null; }
   }
   resize();
-  $('menuQuality').textContent = `Grafika: ${q.label}`;
+  $('menuQuality').textContent = tr('quality', { q: q.label });
 }
 $('menuQuality').addEventListener('click', e => {
   e.stopPropagation();
