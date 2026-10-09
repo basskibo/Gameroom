@@ -8,6 +8,14 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Camp Tycoon">
 <script src="../../shared/gameroom-i18n.js"></script>
+<script src="../../shared/gameroom-config.js"></script>
+<script src="../../shared/gameroom-sdk.js"></script>
+<script type="importmap">
+{ "imports": {
+    "three": "../../shared/vendor/three-0.170.0/build/three.module.min.js",
+    "three/addons/": "../../shared/vendor/three-0.170.0/examples/jsm/" } }
+</script>
+<link rel="modulepreload" href="../../shared/vendor/three-0.170.0/build/three.module.min.js">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&display=swap" rel="stylesheet">
@@ -105,6 +113,21 @@
   button.play:active { transform: translateY(3px); box-shadow: 0 2px 0 #a04000; }
   button.link { background: none; border: none; font-family: inherit; font-size: 15px; color: #8a7f96; text-decoration: underline; cursor: pointer; margin-top: 8px; }
   .keys { font-family: system-ui, sans-serif; font-size: 12px; color: #8a7f96; margin-top: 10px; }
+  button.link.hidden, .steps.hidden { display: none; }
+  #howBtn { display: block; margin: 0 auto 10px; }
+  /* rewarded-ad offers (the player picks them; hidden when no ad network is there) */
+  #adBtns { position: absolute; left: 12px; top: calc(max(10px, env(safe-area-inset-top)) + 54px); display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+  #adBtns button {
+    pointer-events: auto; font-family: inherit; font-size: 16px; font-weight: 800; color: #2a1b3d; border: 0; cursor: pointer;
+    background: linear-gradient(#ffe066, #f5b800); border-radius: 14px; padding: 5px 12px; box-shadow: 0 3px 0 #b07d00;
+    display: flex; align-items: center; gap: 6px; animation: offerIn .35s cubic-bezier(.2, 1.5, .4, 1);
+  }
+  #adBtns button small { font-size: 10px; background: #2a1b3d; color: #ffe066; border-radius: 6px; padding: 1px 6px; }
+  #adBtns button.on { background: linear-gradient(#9be15d, #4caf50); box-shadow: 0 3px 0 #2e7d32; color: #fff; cursor: default; }
+  #adBtns button.hidden { display: none; }
+  @keyframes offerIn { from { transform: scale(.6); opacity: 0; } to { transform: none; opacity: 1; } }
+  .overlay .card { animation: cardIn .28s cubic-bezier(.2, 1.4, .4, 1); }
+  @keyframes cardIn { from { transform: scale(.88) translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
   @media (max-width: 600px) {
     .pill { font-size: 18px; padding: 3px 11px 3px 7px; }
     .pill.money { font-size: 22px; }
@@ -127,12 +150,17 @@
       <div id="settingsMenu" class="hidden">
         <button id="menuSound" type="button" data-i18n="soundOn"></button>
         <button id="menuPause" type="button" data-i18n="pauseBtn"></button>
+        <button id="menuGfx" type="button"></button>
         <div id="langRow"></div>
         <!-- gameroom:back -->
         <a href="../../" id="gameroom-back" data-i18n="back" data-i18n-attr="title:backPlain;aria-label:backPlain">⌂ Back to Gameroom</a>
         <!-- /gameroom:back -->
       </div>
     </div>
+  </div>
+  <div id="adBtns">
+    <button id="helperBtn" type="button" class="hidden"><span id="helperTxt"></span><small data-i18n="adTag"></small></button>
+    <button id="orderX2Btn" type="button" class="hidden"><span data-i18n="orderX2"></span><small data-i18n="adTag"></small></button>
   </div>
   <div id="toast" class="stroke"></div>
   <div id="maxTag" class="stroke" data-i18n="full"></div>
@@ -142,7 +170,8 @@
     <div class="card">
       <h1 data-i18n-html="titleHtml"></h1>
       <p data-i18n="intro"></p>
-      <div class="steps">
+      <button class="link" id="howBtn" type="button" data-i18n="how"></button>
+      <div class="steps hidden" id="steps">
         <span>🪓</span><span data-i18n="step1"></span>
         <span>🪚</span><span data-i18n="step2"></span>
         <span>🏪</span><span data-i18n="step3"></span>
@@ -166,17 +195,13 @@
   </div>
 </div>
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
-  }
-}
-</script>
 
 <script type="module">
 import * as THREE from 'three';
+import { createPost } from '../../shared/gameroom-post.js';
+import { createParticles } from '../../shared/gameroom-fx.js';
+import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
+import { createQuality } from '../../shared/gameroom-three.js';
 
 // =====================================================================
 // I18N (shared/gameroom-i18n.js): engleski podrazumevano, srpski po izboru u podešavanjima
@@ -206,6 +231,9 @@ i18n.add({
     orderDone: '🚚 Order delivered!', orderIn: '🚚 An order has arrived!', orderInSub: 'Bring the goods to the truck at the loading bay',
     orderGone: '🚚 The truck has left', orderGoneSub: 'The order was not delivered in time',
     baseEstate: 'The camp is a real estate now! 🎉', baseUp: 'More customers and higher prices', level: 'Level {n}', unlocked: 'Unlocked',
+    how: 'How to play ▾', gfx: '🎨 Graphics: {q}', adTag: 'AD', helperOffer: '👷 Free helper · 2 min', helperOn: '👷 Helper · {t}',
+    helperIn: '👷 A helper joined!', helperInSub: 'He chops and sells logs for 2 minutes', helperOut: '👷 The helper went home',
+    orderX2: '🚚 ×2 order reward', orderDoubled: '🚚 Order reward doubled!',
   },
   sr: {
     settings: 'Podešavanja', soundOn: '♪ Zvuk uključen', soundOff: '🔇 Zvuk isključen', pauseBtn: 'II Pauza', resumeBtn: '▶ Nastavi',
@@ -229,6 +257,9 @@ i18n.add({
     orderDone: '🚚 Porudžbina isporučena!', orderIn: '🚚 Stigla porudžbina!', orderInSub: 'Donesi robu kamionu kod utovara',
     orderGone: '🚚 Kamion je otišao', orderGoneSub: 'Porudžbina nije stigla na vreme',
     baseEstate: 'Kamp je postao pravo imanje! 🎉', baseUp: 'Više mušterija i veće cene', level: 'Nivo {n}', unlocked: 'Otključano',
+    how: 'Kako se igra ▾', gfx: '🎨 Grafika: {q}', adTag: 'REKLAMA', helperOffer: '👷 Besplatan pomoćnik · 2 min', helperOn: '👷 Pomoćnik · {t}',
+    helperIn: '👷 Stigao je pomoćnik!', helperInSub: 'Seče i prodaje drva 2 minuta', helperOut: '👷 Pomoćnik je otišao kući',
+    orderX2: '🚚 ×2 nagrada za porudžbinu', orderDoubled: '🚚 Nagrada za porudžbinu duplirana!',
   },
 });
 document.title = tr('title');
@@ -335,6 +366,11 @@ renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.prepend(renderer.domElement);
+// HDR + soft bloom (fire, sparkles) and a light warm grade; the toon colours stay as authored (no ACES).
+// Low quality renders without it.
+const post = createPost({ renderer });
+Object.assign(post.params, { aces: false, bloom: 0.5, threshold: 1.0, knee: 0.4, exposure: 1.0, contrast: 1.04, saturation: 1.08, vignette: 0.2 });
+post.params.tint.set(1.02, 1.0, 0.97);
 
 const SKY = 0xa9ddff;
 const scene = new THREE.Scene();
@@ -419,12 +455,46 @@ function panel(ctx, w, h, border) {
 }
 const labelsToRedraw = [];
 
+// wind: instanced grass and tree crowns lean in the vertex shader (top moves, base stays), no CPU cost
+const windU = { value: 0 };
+function sway(mat, amp) {
+  mat.onBeforeCompile = sh => {
+    sh.uniforms.uWind = windU;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uWind;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        #ifdef USE_INSTANCING
+          vec3 ip = instanceMatrix[3].xyz;
+          float h = max(0.0, position.y + 0.5);
+          transformed.x += sin(uWind * 1.7 + ip.x * 0.35 + ip.z * 0.2) * ${amp.toFixed(3)} * h;
+          transformed.z += cos(uWind * 1.3 + ip.z * 0.3) * ${(amp * 0.6).toFixed(3)} * h;
+        #endif`);
+  };
+  mat.customProgramCacheKey = () => 'sway' + amp;
+  return mat;
+}
+
 // =====================================================================
 // WORLD
 // =====================================================================
 const colliders = [];      // { x, z, r }
 {
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), M(0x8fd16a));
+  // mottled grass (value noise baked into a small tiling texture) so the field is not one flat colour
+  const gtex = (() => {
+    const N = 256, k = canvas(N, N), img = k.ctx.createImageData(N, N), rr = seeded(3);
+    const g = Array.from({ length: 16 * 16 }, () => rr());
+    const at = (x, y) => g[((y & 15) * 16) + (x & 15)];
+    const vn = (x, y) => { const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, sx = fx * fx * (3 - 2 * fx), sy = fy * fy * (3 - 2 * fy);
+      return lerp(lerp(at(xi, yi), at(xi + 1, yi), sx), lerp(at(xi, yi + 1), at(xi + 1, yi + 1), sx), sy); };
+    for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+      const v = vn(x / 32, y / 32) * 0.6 + vn(x / 8 + 7, y / 8 + 3) * 0.4, j = rr() * 0.06;
+      const i = (y * N + x) * 4;
+      img.data[i] = 120 + v * 40 + j * 255; img.data[i + 1] = 190 + v * 34 + j * 120; img.data[i + 2] = 80 + v * 28; img.data[i + 3] = 255;
+    }
+    k.ctx.putImageData(img, 0, 0);
+    k.tex.wrapS = k.tex.wrapT = THREE.RepeatWrapping; k.tex.repeat.set(24, 24); k.tex.anisotropy = 4;
+    return k.tex;
+  })();
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(240, 240), new THREE.MeshToonMaterial({ map: gtex, gradientMap: ramp }));
   ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
   const dirt = M(0xdcc08c);
   const flat = (geo, x, z, mat = dirt, y = 0.012) => { const m = new THREE.Mesh(geo, mat); m.rotation.x = -Math.PI / 2; m.position.set(x, y, z); m.receiveShadow = true; scene.add(m); return m; };
@@ -440,7 +510,7 @@ const colliders = [];      // { x, z, r }
   const onDirt = (x, z) => Math.hypot(x - BASE_POS.x, z - BASE_POS.z + 1) < 8.3 || (Math.abs(x - 2) < 2 && z > -10 && z < 21) ||
     (Math.abs(x + 1.5) < 25.3 && Math.abs(z - 10.5) < 2.8) || Math.abs(z - ROAD_Z) < 3 || Math.hypot(x + 40, z + 8) < 5.6;
   const spot = () => { let x, z; do { x = lerp(-50, 36, r()); z = lerp(-28, 18, r()); } while (onDirt(x, z)); return [x, z]; };
-  const tuft = new THREE.InstancedMesh(new THREE.ConeGeometry(0.12, 0.45, 4), M(0x5fae42), 500);
+  const tuft = new THREE.InstancedMesh(new THREE.ConeGeometry(0.12, 0.45, 4), sway(new THREE.MeshToonMaterial({ color: 0x5fae42, gradientMap: ramp }), 0.12), 500);
   for (let i = 0; i < 500; i++) {
     const [x, z] = spot(); d.position.set(x, 0.2, z); d.rotation.set(0, r() * 6, (r() - 0.5) * 0.4);
     d.scale.setScalar(0.7 + r() * 0.8); d.updateMatrix(); tuft.setMatrixAt(i, d.matrix);
@@ -455,7 +525,7 @@ const colliders = [];      // { x, z, r }
   scene.add(flowers);
   const N = 130;
   const trunks = new THREE.InstancedMesh(cyl(0.25, 0.32, 1.4, 6), M(0x7a4a24), N);
-  const crowns = new THREE.InstancedMesh(new THREE.ConeGeometry(1.6, 3.6, 7), M(0x3f8f3a), N);
+  const crowns = new THREE.InstancedMesh(new THREE.ConeGeometry(1.6, 3.6, 7), sway(new THREE.MeshToonMaterial({ color: 0x3f8f3a, gradientMap: ramp }), 0.08), N);
   for (let i = 0; i < N; i++) {
     let x, z;
     const side = i % 4, t = r();
@@ -620,6 +690,19 @@ partMesh.frustumCulled = false; partMesh.count = 0;
 for (let i = 0; i < PART_MAX; i++) partMesh.setColorAt(i, new THREE.Color(1, 1, 1));
 scene.add(partMesh);
 const parts = [];
+// soft glowing particles (one draw call): leaves, dust, embers, sparkles — glow > 1 blooms
+const fx = createParticles({ renderer, camera, max: 900 });
+scene.add(fx.points);
+function sparkle(pos, color, n, speed = 4, glow = 3, size = 0.22) {
+  if (instant) return;
+  fx.burst(n, { x: pos.x, y: pos.y, z: pos.z, vy: speed * 0.6, life: 0.7, size, size1: size * 0.2, color, glow, gravity: 6, drag: 2 },
+    { x: 0.3, y: 0.2, z: 0.3, vx: speed, vy: speed * 0.5, vz: speed });
+}
+function dust(pos, n = 2, color = 0xd8c39a) {
+  if (instant) return;
+  fx.burst(n, { x: pos.x, y: 0.15, z: pos.z, vy: 0.6, life: 0.7, size: 0.35, size1: 0.9, color, alpha: 0.45, drag: 3 },
+    { x: 0.2, z: 0.2, vx: 0.8, vz: 0.8, vy: 0.3 });
+}
 function burst(pos, colors, n, speed = 5) {
   if (instant) return;
   for (let i = 0; i < n; i++) {
@@ -788,22 +871,18 @@ const hasStand = item => stands.some(s => s.item === item);
 // =====================================================================
 // AUDIO
 // =====================================================================
+// shared bus with a compressor; forest ambience (wind + birds) under the game
+const audio = createAudioBus({ storageKey: 'kamp-tajkun:audio' });
+audio.ambience({ wind: 0.6, birds: 0.9 });
 const sfx = (() => {
-  let ctx = null, muted = false;
   const last = {};
   const ok = (k, ms) => { const n = performance.now(); if (n - (last[k] || 0) < ms) return false; last[k] = n; return true; };
-  function tone(f, d, type = 'square', v = 0.05, f2 = null, delay = 0) {
-    if (!ctx || muted || instant) return;
-    const t = ctx.currentTime + delay, o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = type; o.frequency.setValueAtTime(f, t);
-    if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + d);
-    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(g).connect(ctx.destination); o.start(t); o.stop(t + d + 0.02);
-  }
+  const tone = (f, d, type = 'square', v = 0.05, f2 = null, delay = 0) => { if (!instant) audio.tone({ f, d, type, v, f2, delay }); };
   return {
-    ensure() { try { if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === 'suspended') ctx.resume(); } catch (e) { /* no audio */ } },
-    toggle() { muted = !muted; return muted; },
-    chop() { if (ok('chop', 80)) tone(180, 0.09, 'square', 0.04, 90); },
+    ensure() { audio.ensure(); },
+    toggle() { return audio.toggleMute(); },
+    get muted() { return audio.muted; },
+    chop() { if (ok('chop', 80)) { tone(180, 0.09, 'square', 0.035, 90); if (!instant) audio.noise({ d: 0.12, v: 0.12, f: 1800, f2: 400 }); } },
     pick() { if (ok('pick', 40)) tone(rand(600, 760), 0.05, 'triangle', 0.035); },
     drop() { if (ok('drop', 40)) tone(rand(380, 460), 0.05, 'triangle', 0.035); },
     coin() { if (ok('coin', 60)) { tone(988, 0.06, 'square', 0.03); tone(1319, 0.1, 'square', 0.03, null, 0.05); } },
@@ -877,6 +956,7 @@ function hitTree(t, agent, isPlayer) {
   agent.pile.add('log', t.pos.clone().setY(1.3));
   if (isPlayer) sfx.chop();
   burst(t.pos.clone().setY(1.2), [0x8b5a2b, 0xc89b6a], 3, 3);
+  if (!instant) fx.burst(4, { x: t.pos.x, y: 2.2, z: t.pos.z, vy: 0.5, life: 1.4, size: 0.2, color: 0x5fc653, gravity: 1.2, drag: 1.2 }, { x: 0.8, y: 0.5, z: 0.8, vx: 1.2, vz: 1.2 });
   if (t.hp <= 0) { t.state = 'falling'; t.timer = 0; t.fallDir = rand(0, 6); }
 }
 function updateTrees(dt) {
@@ -1264,16 +1344,17 @@ function updateCustomers(dt) {
 // =====================================================================
 // WORKERS (gather → fill the bag → deliver everything), CARRIERS, CASHIER
 // =====================================================================
-function spawnWorker(job) {
+function spawnWorker(job, temp = 0) {
   const J = JOBS[job];
   const home = pads.find(p => p.def.id === job).pos;
-  const c = makeCharacter(J.look);
+  const c = makeCharacter(temp ? { ...J.look, shirt: 0xffd84a, hatColor: 0xff7eb6 } : J.look);
   scene.add(c.root);
-  const w = { job, res: J.res, interval: J.interval, c, pos: V(home.x + rand(-1, 1), 0, home.z + rand(-1, 1)), state: 'gather', chopT: 0, dep: 0, dock: null, capFn: wcap };
+  const w = { job, res: J.res, interval: J.interval, c, pos: V(home.x + rand(-1, 1), 0, home.z + rand(-1, 1)), state: 'gather', chopT: 0, dep: 0, dock: null, capFn: wcap, temp };
   w.pile = new Pile(c.back, V(), stackLayout);
   c.root.position.copy(w.pos);
   workers.push(w);
   pop(c.root);
+  return w;
 }
 // where a worker drops a resource: the station that processes it (if its goods can be sold), else a stand
 function dropZoneFor(res) {
@@ -1419,7 +1500,9 @@ function loadOrder(xfers) {
     order.state = 'done';
     addMoney(order.reward, ORDER_POS.clone().setY(3));
     toast(tr('orderDone'), `+${order.reward} 💰`);
-    burst(ORDER_POS.clone().setY(1.5), [0xffd84a, 0x7ed957, 0xffffff], 30, 6);
+    burst(ORDER_POS.clone().setY(1.5), [0xffd84a, 0x7ed957, 0xffffff], 20, 6);
+    sparkle(ORDER_POS.clone().setY(1.6), 0xffd84a, 30, 6, 3.5);
+    sdk.track('order_done', { reward: order.reward, doubled: !!order.doubled });
     sfx.unlock();
     simEvents.push(`order+${order.reward}@${S.time.toFixed(0)}`);
     drawOrder();
@@ -1434,7 +1517,7 @@ function updateOrders(dt) {
     if (o.x === ORDER_POS.x) { o.state = 'waiting'; toast(tr('orderIn'), tr('orderInSub')); }
   } else if (o.state === 'waiting') {
     o.time -= dt;
-    if (o.time <= 0) { simEvents.push(`orderFAIL@${S.time.toFixed(0)} ` + Object.keys(o.needs).map(t => `${t}:${o.got[t]}/${o.needs[t]}`).join(',')); o.state = 'failed'; toast(tr('orderGone'), tr('orderGoneSub')); }
+    if (o.time <= 0) { simEvents.push(`orderFAIL@${S.time.toFixed(0)} ` + Object.keys(o.needs).map(t => `${t}:${o.got[t]}/${o.needs[t]}`).join(',')); o.state = 'failed'; toast(tr('orderGone'), tr('orderGoneSub')); sdk.track('order_missed'); }
   } else {
     o.x -= 14 * dt;
     if (o.x < -60) { order = null; truck.g.visible = false; orderWait = rand(20, 35); return; }
@@ -1482,7 +1565,7 @@ function buildBase(lv) {
   if (lv <= 1) {
     // campfire in front
     for (let i = 0; i < 4; i++) { const l = mesh(ITEM_GEO.log, ITEMS.log.color, g, 0, 0.18, 0); l.position.set(-3 + Math.cos(i * 1.6) * 0.3, 0.15, 3.4 + Math.sin(i * 1.6) * 0.3); l.rotation.y = i * 1.6; }
-    flame = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 7), new THREE.MeshBasicMaterial({ color: 0xffa12b }));
+    flame = new THREE.Mesh(new THREE.ConeGeometry(0.35, 0.9, 7), new THREE.MeshBasicMaterial({ color: new THREE.Color(0xffa12b).multiplyScalar(2.4) }));
     flame.position.set(-3, 0.6, 3.4); g.add(flame);
   }
   if (lv === 0) {
@@ -1641,7 +1724,11 @@ function completePad(p) {
     toast(`${p.def.icon} ${name}!`, tr('unlocked'));
     simEvents.push(`${id}@${S.time.toFixed(0)}`);
   }
-  burst(p.pos.clone().setY(1), [0xffd84a, 0xff7eb6, 0x6fd3ff, 0x9be15d], 40, 7);
+  burst(p.pos.clone().setY(1), [0xffd84a, 0xff7eb6, 0x6fd3ff, 0x9be15d], 26, 7);
+  sparkle(p.pos.clone().setY(0.8), 0xffe58a, 40, 6, 3.5, 0.26);
+  dust(p.pos, 8, 0xe8d6ae);
+  haptic(25);
+  sdk.track(p.upgrade ? 'upgrade' : 'unlock', { id, lv: p.upgrade ? S.lv[id] : 1, t: Math.round(S.time) });
   sfx.unlock();
   refreshPads();
   save();
@@ -1865,10 +1952,93 @@ function updateHint(dt) {
 }
 
 // =====================================================================
+// ADS + ANALYTICS — only through shared/gameroom-sdk.js (MONETIZATION.md)
+// =====================================================================
+const GAME_VERSION = '1.1.0';
+const sdk = window.Gameroom;
+sdk.init({ game: 'kamp-tajkun', version: GAME_VERSION });
+let adHeld = false, soundWasMuted = false, firstMinute = false, helper = null, helperOffered = false, orderOffered = false;
+sdk.on('adStart', () => {
+  if (S.running && !S.paused) { adHeld = true; S.paused = true; }
+  audio.setMuted(true);
+});
+sdk.on('adEnd', () => {
+  if (adHeld) { adHeld = false; S.paused = false; clock.getDelta(); }
+  audio.setMuted(soundWasMuted);
+});
+async function watch(placement) {
+  sfx.ensure();
+  soundWasMuted = audio.muted;
+  const ok = await sdk.showRewarded(placement);
+  sdk.track('rewarded_watched', { placement, ok });
+  return ok;
+}
+// free helper: a lumberjack in a yellow shirt for 2 minutes, once logs can be sold
+function updateHelper(dt) {
+  if (!helper) return;
+  helper.left -= dt;
+  if (helper.left <= 0) {
+    const w = helper.w;
+    helper = null;
+    const i = workers.indexOf(w);
+    if (i >= 0) workers.splice(i, 1);
+    burst(w.pos.clone().setY(1), [0xffd84a, 0xffffff], 12, 4);
+    sparkle(w.pos.clone().setY(1), 0xffd84a, 16, 4);
+    scene.remove(w.c.root);
+    toast(tr('helperOut'));
+  }
+}
+function syncOffers() {
+  const hb = $('helperBtn');
+  const helperCan = S.running && S.time > 60 && S.unlocked.has('plankStand') && sdk.rewardedAvailable('helper');
+  hb.classList.toggle('hidden', !helper && !helperCan);
+  hb.classList.toggle('on', !!helper);
+  const txt = helper ? tr('helperOn', { t: `${Math.floor(helper.left / 60)}:${String(Math.floor(helper.left % 60)).padStart(2, '0')}` }) : tr('helperOffer');
+  if ($('helperTxt').textContent !== txt) $('helperTxt').textContent = txt;
+  if (helperCan && !helper && !helperOffered) { helperOffered = true; sdk.track('rewarded_offer', { placement: 'helper' }); }
+  const ob = $('orderX2Btn');
+  const orderCan = S.running && order && order.state === 'waiting' && !order.doubled && order.time > 10 && sdk.rewardedAvailable('order_x2');
+  ob.classList.toggle('hidden', !orderCan);
+  if (orderCan && !orderOffered) { orderOffered = true; sdk.track('rewarded_offer', { placement: 'order_x2' }); }
+  if (!orderCan) orderOffered = false;
+}
+$('helperBtn').addEventListener('click', async () => {
+  if (helper) return;
+  $('helperBtn').classList.add('hidden');
+  if (await watch('helper')) {
+    helper = { w: spawnWorker('lumberjacks', 120), left: 120 };
+    sparkle(helper.w.pos.clone().setY(1), 0xffd84a, 24, 4);
+    toast(tr('helperIn'), tr('helperInSub'));
+    sfx.unlock();
+  }
+  helperOffered = false;
+});
+$('orderX2Btn').addEventListener('click', async () => {
+  if (!order || order.doubled) return;
+  $('orderX2Btn').classList.add('hidden');
+  const o = order;
+  if (await watch('order_x2') && o === order && o.state === 'waiting') {
+    o.doubled = true;
+    o.reward *= 2;
+    o.time += 15;    // the ad took a while: the driver waits a bit longer
+    drawOrder();
+    toast(tr('orderDoubled'), `💰 ${fmt(o.reward)}`);
+    sfx.coin();
+  }
+});
+window.__helper = () => helper && { left: +helper.left.toFixed(1), workers: workers.length };
+window.__order = () => order && { state: order.state, reward: order.reward, doubled: !!order.doubled, time: order.time };
+window.__forceOrder = () => { if (!truck) unlock('orders', false); orderWait = 0; for (let i = 0; i < 400 && (!order || order.state !== 'waiting'); i++) updateOrders(0.1); return window.__order(); };
+window.__state = () => ({ running: S.running, paused: S.paused, time: S.time, money: S.money, unlocked: [...S.unlocked], workers: workers.length });
+window.__money = v => { S.money += v; return S.money; };
+window.__unlock = id => { if (!S.unlocked.has(id)) unlock(id, false); refreshPads(true); return [...S.unlocked]; };
+window.__run = (n = 60, dt = 1 / 30) => { for (let i = 0; i < n && S.running; i++) update(dt); return window.__state(); };
+
+// =====================================================================
 // SAVE / LOAD / FLOW
 // =====================================================================
 function save() {
-  if (AUTO) return;
+  if (AUTO || (!S.running && S.time === 0)) return;   // never write a save for a camp nobody played yet
   try {
     localStorage.setItem(SAVE_KEY, JSON.stringify({ v: 1, money: Math.floor(S.money), unlocked: [...S.unlocked], paid: S.paid, lv: S.lv, earned: S.earned }));
   } catch (e) { /* storage unavailable */ }
@@ -1907,7 +2077,10 @@ function startGame() {
   sfx.ensure();
   S.running = true;
   $('startScreen').classList.add('hidden');
+  sdk.gameplayStart();
+  sdk.track('game_start', { saved: !!saved, unlocked: S.unlocked.size, base: S.lv.base });
 }
+window.__start = startGame;
 function resetGame() {
   try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* ignore */ }
   location.reload();
@@ -1915,6 +2088,8 @@ function resetGame() {
 function closeSettings() { $('settingsMenu').classList.add('hidden'); }
 function setPaused(p) {
   if (!S.running) return;
+  if (p) sdk.gameplayStop(); else sdk.gameplayStart();
+  audio.ambienceOn(!p);
   S.paused = p;
   $('pauseScreen').classList.toggle('hidden', !p);
   $('menuPause').textContent = tr(p ? 'resumeBtn' : 'pauseBtn');
@@ -1922,7 +2097,16 @@ function setPaused(p) {
 }
 $('startBtn').addEventListener('click', startGame);
 $('newBtn').addEventListener('click', () => { if (confirm(tr('confirmReset'))) resetGame(); });
-$('resumeBtn').addEventListener('click', () => setPaused(false));
+$('resumeBtn').addEventListener('click', () => { setPaused(false); soundWasMuted = audio.muted; sdk.showMidgame('resume'); });
+$('howBtn').addEventListener('click', () => { $('steps').classList.toggle('hidden'); $('howBtn').classList.add('hidden'); });
+// graphics: Auto steps the resolution down when frames run long; Low also drops bloom and soft shadows
+const gfx = createQuality({ renderer, storageKey: 'kamp-tajkun:gfx', maxDpr: 2, onChange: mode => {
+  post.enabled = mode !== 'low';
+  renderer.shadowMap.type = mode === 'low' ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+} });
+const drawGfx = () => { $('menuGfx').textContent = tr('gfx', { q: gfx.label() }); };
+$('menuGfx').addEventListener('click', e => { e.stopPropagation(); gfx.cycle(); drawGfx(); });
+gfx.apply(); drawGfx();
 $('resetBtn').addEventListener('click', () => { if (confirm(tr('confirmReset'))) resetGame(); });
 $('settingsBtn').addEventListener('click', e => {
   e.stopPropagation();
@@ -1933,7 +2117,9 @@ $('menuSound').addEventListener('click', e => {
   e.stopPropagation();
   sfx.ensure();
   $('menuSound').textContent = tr(sfx.toggle() ? 'soundOff' : 'soundOn');
+  soundWasMuted = audio.muted;
 });
+$('menuSound').textContent = tr(audio.muted ? 'soundOff' : 'soundOn');
 document.addEventListener('visibilitychange', () => { if (document.hidden) { setPaused(true); save(); } });
 addEventListener('pagehide', save);
 
@@ -2003,6 +2189,7 @@ function update(dt) {
   updateApples(dt);
   if (docks.length) updatePond(dt);
   for (const w of workers) updateWorker(w, dt);
+  updateHelper(dt);
   for (const k of carriers) updateCarrier(k, dt);
   updateOrders(dt);
   updateCashier(dt);
@@ -2010,13 +2197,24 @@ function update(dt) {
   if (padRefreshT <= 0) { padRefreshT = 0.12; refreshPads(); }
   saveT += dt;
   if (saveT > 5) { saveT = 0; save(); }
+  if (!firstMinute && S.time >= 60) { firstMinute = true; sdk.track('first_minute', { unlocked: S.unlocked.size }); }
 }
 function updateVisuals(dt) {
   updateFlights(dt);
   updatePops(dt);
   updateParts(dt);
   if (!instant) updateHint(dt);
-  if (flame) { flame.scale.set(1 + Math.sin(S.time * 17) * 0.12, 1 + Math.sin(S.time * 23) * 0.2, 1); }
+  if (flame) {
+    flame.scale.set(1 + Math.sin(S.time * 17) * 0.12, 1 + Math.sin(S.time * 23) * 0.2, 1);
+    if (Math.random() < dt * 8) { flame.getWorldPosition(projV); fx.emit({ x: projV.x + rand(-0.15, 0.15), y: projV.y + 0.3, z: projV.z + rand(-0.15, 0.15), vy: 1.4, vx: rand(-0.3, 0.3), life: 1.1, size: 0.12, size1: 0.02, color: 0xff9a3a, glow: 4, drag: 0.5 }); }
+  }
+  windU.value += dt;
+  fx.update(dt);
+  // footstep dust while running
+  stepT -= dt;
+  if (stepT <= 0 && S.running && input.lengthSq() > 0.2) { stepT = 0.18; dust(player.pos, 1); }
+  syncT -= dt;
+  if (syncT <= 0) { syncT = 0.25; syncOffers(); }
   // camera + shadow frustum follow the player
   const want = player.pos.clone().add(camOff);
   camera.position.lerp(want, Math.min(1, dt * 6));
@@ -2025,14 +2223,16 @@ function updateVisuals(dt) {
   sun.position.copy(sun.target.position).add(SUN_OFF);
 }
 
+let stepT = 0, syncT = 0;
 const clock = new THREE.Clock();
 function loop() {
   requestAnimationFrame(loop);
-  const dt = Math.min(clock.getDelta(), 0.05);
+  const raw = clock.getDelta(), dt = Math.min(raw, 0.05);
   if (S.running && !S.paused) update(dt);
   updateVisuals(dt);
   updateHud(dt);
-  renderer.render(scene, camera);
+  if (S.running && !S.paused) gfx.tick(raw * 1000);
+  post.render(scene, camera);
 }
 camera.position.copy(player.pos).add(camOff);
 document.fonts?.ready?.then(() => { refreshPads(true); for (const f of labelsToRedraw) f(); });

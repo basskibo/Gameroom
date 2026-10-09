@@ -7,6 +7,8 @@
 //   const post = createPost({ renderer });
 //   post.params.bloom = 0.6; post.params.tint.set(1.05, 0.98, 0.9);
 //   post.render(scene, camera)  — instead of renderer.render; it follows renderer size / pixel ratio itself.
+//   params.aces = false keeps the colours exactly as authored (flat toon games rendered without tone mapping):
+//   the scene only gets bloom, grading, vignette and dither. Pair it with renderer.toneMapping = NoToneMapping.
 import * as THREE from 'three';
 
 const VERT = /* glsl */`
@@ -56,7 +58,7 @@ const UP = /* glsl */`
 
 const FINAL = /* glsl */`
   uniform sampler2D tScene, tBloom;
-  uniform float uBloom, uExposure, uContrast, uSaturation, uVignette, uAspect;
+  uniform float uBloom, uExposure, uContrast, uSaturation, uVignette, uAspect, uAces;
   uniform vec3 uTint, uLift;
   varying vec2 vUv;
   vec3 RRTAndODTFit(vec3 v) { vec3 a = v * (v + 0.0245786) - 0.000090537; vec3 b = v * (0.983729 * v + 0.4329510) + 0.238081; return a / b; }
@@ -73,7 +75,7 @@ const FINAL = /* glsl */`
     vec3 hdr = texture2D(tScene, vUv).rgb;
     hdr = any(isnan(hdr)) ? vec3(0.0) : min(max(hdr, vec3(0.0)), vec3(64.0));
     hdr += texture2D(tBloom, vUv).rgb * uBloom;
-    vec3 c = toSRGB(aces(hdr * uTint));
+    vec3 c = toSRGB(uAces > 0.5 ? aces(hdr * uTint) : clamp(hdr * uTint * uExposure, 0.0, 1.0));
     float l = dot(c, vec3(0.2126, 0.7152, 0.0722));
     c = mix(vec3(l), c, uSaturation);
     c = (c - 0.5) * uContrast + 0.5 + uLift;
@@ -86,7 +88,7 @@ const FINAL = /* glsl */`
 export function createPost({ renderer, levels = 5 } = {}) {
   const params = {
     bloom: 0.35, threshold: 1.0, knee: 0.5, radius: 1.0,
-    exposure: 1.0, contrast: 1.0, saturation: 1.0, vignette: 0.18,
+    exposure: 1.0, contrast: 1.0, saturation: 1.0, vignette: 0.18, aces: true,
     tint: new THREE.Color(1, 1, 1), lift: new THREE.Vector3(0, 0, 0),
   };
   const half = { type: THREE.HalfFloatType, depthBuffer: false, minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter };
@@ -102,7 +104,7 @@ export function createPost({ renderer, levels = 5 } = {}) {
   const up = mk(UP, { tSrc: { value: null }, tAdd: { value: null }, uTexel: { value: new THREE.Vector2() }, uRadius: { value: 1 } });
   const fin = mk(FINAL, {
     tScene: { value: sceneRT.texture }, tBloom: { value: ups[0].texture },
-    uBloom: { value: 0 }, uExposure: { value: 1 }, uContrast: { value: 1 }, uSaturation: { value: 1 }, uVignette: { value: 0 }, uAspect: { value: 1 },
+    uBloom: { value: 0 }, uAces: { value: 1 }, uExposure: { value: 1 }, uContrast: { value: 1 }, uSaturation: { value: 1 }, uVignette: { value: 0 }, uAspect: { value: 1 },
     uTint: { value: new THREE.Color() }, uLift: { value: new THREE.Vector3() },
   });
   const quad = new THREE.Mesh(tri, fin);
@@ -163,6 +165,7 @@ export function createPost({ renderer, levels = 5 } = {}) {
       u.uBloom.value = bloomOn ? params.bloom / levels : 0;
       u.uExposure.value = params.exposure; u.uContrast.value = params.contrast; u.uSaturation.value = params.saturation;
       u.uVignette.value = params.vignette; u.uAspect.value = size.x / Math.max(1, size.y);
+      u.uAces.value = params.aces ? 1 : 0;
       u.uTint.value.copy(params.tint); u.uLift.value.copy(params.lift);
       pass(fin, null);
     },
