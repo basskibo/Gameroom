@@ -6,7 +6,7 @@
 
 | Faza | Stanje |
 |---|---|
-| Faza 0 — Temelji | 🔨 u toku (Pilana: SDK sloj, analitika, mesto za reklamu za nagradu) |
+| Faza 0 — Temelji | 🔨 u toku (Pilana: SDK sloj, analitika, mesto za reklamu za nagradu; engleski za sve igre i landing gotov 2026-10-10) |
 | Faza 1 — Portali | ⏸ |
 | Faza 1A — Google Play (Android), paralelno sa portalima | 🔨 u toku (Pilana: Capacitor + AdMob, test reklame) |
 | Faza 2 — Ulaganje u najbolju igru | ⏸ |
@@ -60,11 +60,11 @@ Igre po narudžbini (tačka 5) su verovatno najbrži pravi prihod. Surprizi se m
   - API: `Gameroom.init()`, `gameplayStart()`, `gameplayStop()`, `showRewarded(placement) → Promise<boolean>`, `showMidgame()`, `track(event, props)`.
   - Adapteri: AdMob (Android aplikacija), CrazyGames, Poki, GameDistribution, sopstveni sajt, test adapter (`?ads=test`, lažna reklama za proveru toka) i prazan adapter (podrazumevani, ne radi ništa). Adapter se bira po okruženju, hostu ili query parametru.
 - [ ] Analitika (Plausible ili PostHog). SDK šalje događaje u PostHog čim se upiše ključ (`shared/gameroom-config.js`); nalog još ne postoji — PostHog ima besplatan nivo. Događaji: `game_start`, `first_minute`, `session_end` (sa trajanjem), `return_d1`, `rewarded_offer`, `rewarded_watched`.
-- [ ] Engleski prevod (i18n) za sve igre. Podrazumevani jezik po `navigator.language`, uz izbor u meniju podešavanja.
+- [x] Engleski prevod (i18n) za sve igre. Podrazumevani jezik po `navigator.language`, uz izbor u meniju podešavanja. (2026-10-10: `shared/gameroom-i18n.js`; landing, Monster Lane, Kamp, Osvoji svet, Surprizi i Razori Kule imaju EN + SR, engleski je podrazumevani; Pilana je samo na engleskom, srpska opcija za nju je otvorena stavka)
 - [ ] Performanse: izdvojiti i kompresovati slike iz Pilane (~1 MB) i Surprizija (~845 KB), dodati ekran za učitavanje. Cilj: prvo iscrtavanje za manje od 3 s na prosečnom telefonu.
 - [ ] Verzija na `localStorage` save (`version` polje i migracija), da nadogradnje ne brišu napredak.
 - [ ] Politika privatnosti (`/privacy/`) i saglasnost za kolačiće na sopstvenom sajtu.
-- [ ] Sređivanje imena: jedno englesko ime koje se može pretraživati i jedno lokalno ime po igri, ujednačeno u `<title>`, `GAMES` nizu i u igri. Danas Surprizi ima tri imena („Male igracke“, „SuperUkis“, „Surprizi“), a Pilana ima „Sawmill Tycoon“ u `<title>` i „Pilana Tajkun“ na landingu.
+- [x] Sređivanje imena: jedno englesko ime koje se može pretraživati i jedno lokalno ime po igri, ujednačeno u `<title>`, `GAMES` nizu i u igri. (2026-10-10: Sawmill Tycoon / Pilana Tajkun, Smash the Towers / Razori Kule, Conquer the World / Osvoji Svet, Camp Tycoon / Kamp Tajkun, Surprise Toys / Male igračke, Monster Lane. „SuperUkis“ ostaje kao brend igračaka na kesicama u igri; slug-ovi foldera se ne menjaju.)
 
 ### Faza 1 — Izlazak na portale (novembar–decembar 2026)
 
@@ -127,3 +127,4 @@ Igre po narudžbini (tačka 5) su verovatno najbrži pravi prihod. Surprizi se m
 - **2026-10-09:** korisnik pokreće „polish“ svih igara ka „AAA osećaju“ (performanse, animacije, izgled, doslednost), igra po igra, počevši od Pilane Tajkun. Za svaku igru: audit, zavedeni bagovi/dug/unapređenja u `docs/games/<slug>/`, odmah se rešavaju samo S1 i kozmetika, Playwright testovi u `tests/`. Pilana: audit gotov, S1 rešeni (do igre na 4G 24 s → 1,8 s; gubljenje klikova u panelu). Napomena: polish svih igara pre Faze 1 odlaže merenje na portalima — predlog je da Pilana ide do kraja, a ostale igre samo audit + S1/S2 dok podaci ne izaberu najbolju (vidi `docs/games/pilana-tajkun/TRACKER.md`, odluka D4).
 - **2026-10-09:** `file://` napušten (Three.js i zajednički moduli iz `shared/`). Pilana: faze performansi, izgleda i animacija završene (4G 24 s → 2,9 s, kasna igra 40 → 59 FPS). Korisnik bira vizuelni „wow“ plan V1–V5 (modeli, dan/noć, teren, herojski kadrovi, UI) pre Faze 0; agent upozorio da SDK, analitika i engleski čekaju — predlog da Faza 0 ide posle V1–V2.
 - **2026-10-09:** korisnik menja plan: **Google Play (Android) ide paralelno sa portalima**, počevši od Pilane (Capacitor + AdMob); Apple kasnije, kad budu podaci. Nova Faza 1A, stara Faza 3 postaje Apple + kupovina u aplikaciji. Troškovi: Play nalog 25 $ jednom, AdMob, Capacitor i alati besplatni; vreme za zatvoreno testiranje (12 testera / 14 dana za nove lične naloge), politika privatnosti i formulari su obavezni. Pilana: Kenney CC0 modeli (V1) gotovi, kreće Faza 0 (SDK, analitika, mesto za reklamu za nagradu) i Android projekat.
+- **2026-10-10:** korisnik traži ceo sajt i sve igre na engleskom. Odluka: **engleski je podrazumevani jezik, srpski ostaje kao izbor** (po planu, jezik po browseru + izbor u podešavanjima, zajednički za ceo sajt), i **igre dobijaju engleska imena** (srpsko ime ostaje u srpskom jeziku). Landing je redizajniran (video u hero-u, bento grid igara, trejler).

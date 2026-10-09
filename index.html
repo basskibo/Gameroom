@@ -1,386 +1,698 @@
 <!DOCTYPE html>
-<html lang="sr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gameroom</title>
-<meta name="description" content="Gameroom — kolekcija browser igrica. Izaberi i igraj odmah, bez instalacije.">
+<meta name="description" content="Gameroom: a collection of 3D browser games. Pick one and play right away, nothing to install.">
 <meta name="theme-color" content="#08080d">
+<meta property="og:title" content="Gameroom">
+<meta property="og:description" content="Six games, zero installs. Play instantly in your browser, on your phone or computer.">
+<meta property="og:image" content="assets/hero/trailer-poster.jpg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Gameroom">
+<script src="shared/gameroom-i18n.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;800;900&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;700;800;900&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="assets/hero/hero-poster.jpg" fetchpriority="high">
 <style>
   :root {
     --bg: #08080d;
     --surface: #12121b;
     --line: rgba(255,255,255,0.08);
+    --line-strong: rgba(255,255,255,0.16);
     --text: #f5f5fa;
-    --text-dim: rgba(245,245,250,0.68);
-    --text-faint: rgba(245,245,250,0.42);
+    --text-dim: rgba(245,245,250,0.7);
+    --text-faint: rgba(245,245,250,0.45);
     --accent: #c6ff3d;
+    --ink: #0b0b10;
     --radius-lg: 32px;
     --radius: 24px;
     --ease: cubic-bezier(.2,.8,.2,1);
+    --gutter: clamp(16px, 4vw, 48px);
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html { background: var(--bg); }
+  html { background: var(--bg); scroll-behavior: smooth; }
   body {
-    min-height: 100vh;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Manrope', system-ui, sans-serif;
-    -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    min-height: 100vh; background: var(--bg); color: var(--text);
+    font-family: 'Manrope', system-ui, sans-serif; -webkit-font-smoothing: antialiased;
   }
   a { color: inherit; text-decoration: none; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+  img, video { display: block; }
+  main { overflow-x: hidden; width: 100%; max-width: 100%; }
+  .wrap { width: min(1320px, 100%); margin: 0 auto; padding: 0 var(--gutter); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-  /* ambient glow koji prati boju istaknute igre */
-  .ambient {
-    position: fixed; inset: -20vh -10vw auto; height: 90vh; z-index: -1; pointer-events: none;
-    background:
-      radial-gradient(40% 50% at 20% 30%, var(--glow-1, #6a3dff) 0%, transparent 70%),
-      radial-gradient(35% 45% at 80% 20%, var(--glow-2, #00c2ff) 0%, transparent 70%);
-    opacity: .22; filter: blur(60px);
-  }
   .grain {
-    position: fixed; inset: 0; z-index: -1; pointer-events: none; opacity: .06; mix-blend-mode: overlay;
+    position: fixed; inset: 0; z-index: 60; pointer-events: none; opacity: .05; mix-blend-mode: overlay;
     background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   }
 
-  .wrap { width: min(1320px, 100%); margin: 0 auto; padding: 0 24px; }
+  /* ---------- dugmad ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    font: 800 16px 'Manrope', sans-serif; letter-spacing: .2px; white-space: nowrap;
+    padding: 17px 28px; border-radius: 999px;
+    transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .25s;
+  }
+  .btn svg { width: 18px; height: 18px; flex: none; }
+  .btn-lime { background: var(--accent); color: var(--ink); box-shadow: 0 12px 40px -12px rgba(198,255,61,.6); }
+  .btn-lime:hover { transform: translateY(-2px); box-shadow: 0 18px 50px -10px rgba(198,255,61,.75); }
+  .btn-glass {
+    background: rgba(255,255,255,.08); color: var(--text); border: 1px solid var(--line-strong);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  }
+  .btn-glass:hover { background: rgba(255,255,255,.14); transform: translateY(-2px); }
 
-  /* ---------- nav ---------- */
-  nav { display: flex; align-items: center; justify-content: space-between; padding: 24px 0; }
+  /* ---------- navigacija: plutajuća staklena pilula ---------- */
+  .nav {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%); z-index: 50;
+    width: min(1100px, calc(100% - 32px));
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 10px 10px 10px 14px; border-radius: 999px;
+    background: rgba(12,12,18,.45); border: 1px solid var(--line-strong);
+    backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%);
+    transition: background .4s var(--ease), box-shadow .4s var(--ease);
+  }
+  .nav.solid { background: rgba(12,12,18,.82); box-shadow: 0 20px 50px -20px rgba(0,0,0,.8); }
   .brand { display: flex; align-items: center; gap: 12px; }
   .brand-mark {
-    width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
-    background: var(--accent); color: #0b0b10; font: 900 18px 'Unbounded', sans-serif;
+    width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
+    background: var(--accent); color: var(--ink); font: 900 17px 'Unbounded', sans-serif;
   }
-  .brand-name { font: 800 18px 'Unbounded', sans-serif; letter-spacing: .5px; }
-  .count {
-    font-size: 13px; font-weight: 700; color: var(--text-dim);
-    padding: 8px 14px; border: 1px solid var(--line); border-radius: 999px;
-    background: rgba(255,255,255,0.03); backdrop-filter: blur(10px);
+  .brand-name { font: 800 16px 'Unbounded', sans-serif; letter-spacing: .5px; }
+  .nav-links { display: flex; gap: 6px; }
+  .nav-links a {
+    font-size: 14px; font-weight: 700; color: var(--text-dim); padding: 10px 16px; border-radius: 999px;
+    transition: color .2s, background .2s;
   }
+  .nav-links a:hover { color: var(--text); background: rgba(255,255,255,.07); }
+  .nav-right { display: flex; align-items: center; gap: 10px; }
+  .count { font-size: 13px; font-weight: 700; color: var(--text-dim); padding: 0 6px; }
   .count b { color: var(--text); }
+  .nav .btn { padding: 12px 20px; font-size: 14px; box-shadow: none; }
+  .lang-pick { background: rgba(255,255,255,.07) !important; }
+  .lang-pick button { padding: 6px 10px !important; font-size: 12px !important; }
 
-  /* ---------- hero ---------- */
+  /* ---------- hero: video preko celog ekrana ---------- */
   .hero {
-    position: relative; display: block; overflow: hidden;
-    border-radius: var(--radius-lg); margin-top: 8px;
-    aspect-ratio: 21 / 9; min-height: 440px; max-height: 620px; width: 100%;
-    background: var(--surface);
-    isolation: isolate;
+    position: relative; isolation: isolate; overflow: hidden;
+    min-height: 100vh; min-height: 100svh; display: grid; place-items: center;
+    padding: 120px var(--gutter) 96px;
   }
-  .hero {
-    background:
-      radial-gradient(70% 90% at 0% 100%, color-mix(in srgb, var(--h1, #6a3dff) 35%, transparent), transparent 70%),
-      radial-gradient(50% 70% at 30% 0%, color-mix(in srgb, var(--h2, #00c2ff) 22%, transparent), transparent 70%),
-      var(--surface);
-    box-shadow: 0 0 0 1px var(--line);
-  }
-  .hero .media {
-    position: absolute; inset: 0 0 0 32%; z-index: -1; overflow: hidden;
-    -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 38%);
-            mask-image: linear-gradient(90deg, transparent 0%, #000 38%);
-  }
-  .hero .media picture { display: contents; }
-  .hero .media img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); transition: transform 1.2s var(--ease); }
-  .hero:hover .media img { transform: scale(1.08); }
+  .hero-media { position: absolute; inset: 0; z-index: -2; background: #0d0d14 url(assets/hero/hero-poster.jpg) center / cover no-repeat; }
+  .hero-media video { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); }
   .hero::before {
     content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
-    background: linear-gradient(0deg, rgba(8,8,13,.55) 0%, rgba(8,8,13,0) 35%);
+    background:
+      radial-gradient(60% 55% at 50% 48%, rgba(8,8,13,.72) 0%, rgba(8,8,13,.5) 55%, rgba(8,8,13,.2) 100%),
+      linear-gradient(180deg, rgba(8,8,13,.55) 0%, rgba(8,8,13,0) 22%, rgba(8,8,13,0) 62%, var(--bg) 100%);
   }
-  .hero-content {
-    position: absolute; left: 0; bottom: 0; padding: clamp(24px, 4vw, 56px);
-    max-width: min(640px, 52%); display: flex; flex-direction: column; gap: 18px;
-  }
-  .eyebrow {
-    display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
-    font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase;
-    color: #0b0b10; background: var(--accent); padding: 7px 12px; border-radius: 999px;
-  }
-  .eyebrow::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; animation: pulse 1.6s infinite; }
-  @keyframes pulse { 50% { opacity: .25; } }
+  .hero-inner { width: 100%; max-width: 72rem; display: flex; flex-direction: column; align-items: center; text-align: center; }
   .hero h1 {
-    font: 900 clamp(40px, 7vw, 96px)/.92 'Unbounded', sans-serif;
-    letter-spacing: -2px; text-transform: uppercase;
-    text-shadow: 0 6px 40px rgba(0,0,0,.45);
+    font: 900 clamp(2rem, 6.2vw, 6.5rem)/.98 'Unbounded', sans-serif;
+    letter-spacing: -0.035em; text-transform: uppercase; text-wrap: balance;
+    text-shadow: 0 10px 60px rgba(0,0,0,.55);
   }
-  .hero p { font-size: clamp(15px, 1.4vw, 18px); line-height: 1.55; color: var(--text-dim); max-width: 520px; }
-  .hero-actions { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
-  .btn {
-    display: inline-flex; align-items: center; gap: 10px;
-    font: 800 16px 'Manrope', sans-serif; letter-spacing: .3px;
-    padding: 16px 26px; border-radius: 999px;
-    background: var(--text); color: #0b0b10;
-    transition: transform .2s var(--ease), box-shadow .2s var(--ease), background .2s;
+  .hero h1 .line { display: block; }
+  .hero h1 .lime { color: var(--accent); }
+  .hero-sub {
+    margin-top: 28px; max-width: 40rem;
+    font-size: clamp(16px, 1.45vw, 20px); line-height: 1.6; font-weight: 600; color: var(--text-dim);
+    text-shadow: 0 2px 20px rgba(0,0,0,.6);
   }
-  .hero:hover .btn { background: var(--accent); box-shadow: 0 10px 40px -8px var(--accent); transform: translateY(-2px); }
-  .btn svg { width: 18px; height: 18px; }
+  .hero-actions { margin-top: 40px; display: flex; gap: 14px; flex-wrap: wrap; justify-content: center; }
+  .video-toggle {
+    position: absolute; right: var(--gutter); bottom: 32px; z-index: 2;
+    width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+    background: rgba(8,8,13,.5); border: 1px solid var(--line-strong);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+  }
+  .video-toggle svg { width: 16px; height: 16px; }
+  .video-toggle .i-play { display: none; }
+  .video-toggle[aria-pressed="true"] .i-play { display: block; }
+  .video-toggle[aria-pressed="true"] .i-pause { display: none; }
 
-  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
-  .chip {
-    font-size: 12px; font-weight: 700; letter-spacing: .4px; color: var(--text);
-    padding: 6px 12px; border-radius: 999px;
-    background: rgba(8,8,13,0.45); border: 1px solid rgba(255,255,255,0.16);
-    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  /* ---------- marquee ---------- */
+  .marquee { position: relative; padding: 28px 0; border-block: 1px solid var(--line); overflow: hidden; }
+  .marquee::before, .marquee::after {
+    content: ''; position: absolute; top: 0; bottom: 0; width: 12vw; z-index: 1; pointer-events: none;
+  }
+  .marquee::before { left: 0; background: linear-gradient(90deg, var(--bg), transparent); }
+  .marquee::after { right: 0; background: linear-gradient(-90deg, var(--bg), transparent); }
+  .marquee-track { display: flex; width: max-content; animation: marquee 38s linear infinite; }
+  .marquee:hover .marquee-track { animation-play-state: paused; }
+  .marquee-group { display: flex; align-items: center; gap: 36px; padding-right: 36px; }
+  .marquee-item { display: flex; align-items: center; gap: 36px; white-space: nowrap; }
+  .marquee-item span { font: 800 clamp(26px, 3.4vw, 48px) 'Unbounded', sans-serif; letter-spacing: -.02em; text-transform: uppercase; }
+  .marquee-item:nth-child(even) span { color: transparent; -webkit-text-stroke: 1.5px rgba(245,245,250,.55); }
+  .marquee-pill { width: clamp(84px, 9vw, 128px); height: clamp(40px, 4.2vw, 58px); border-radius: 999px; object-fit: cover; }
+  @keyframes marquee { to { transform: translateX(-50%); } }
+
+  /* ---------- poglavlja ---------- */
+  .chapter { padding: clamp(96px, 13vw, 192px) 0; position: relative; }
+  .chapter-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: clamp(32px, 4vw, 56px); flex-wrap: wrap; }
+  .chapter-head h2 { font: 900 clamp(2.2rem, 5vw, 4.6rem)/1 'Unbounded', sans-serif; letter-spacing: -.035em; text-transform: uppercase; }
+  .chapter-head p { max-width: 26rem; color: var(--text-dim); font-size: 17px; line-height: 1.6; font-weight: 600; }
+  .glow {
+    position: absolute; z-index: -1; pointer-events: none; filter: blur(90px); opacity: .22;
+    width: 60vw; height: 60vw; max-width: 900px; max-height: 900px; border-radius: 50%;
   }
 
-  /* ---------- sekcija ---------- */
-  .section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 72px 0 24px; gap: 16px; }
-  .section-head h2 { font: 800 clamp(24px, 3vw, 34px) 'Unbounded', sans-serif; letter-spacing: -.5px; }
-  .section-head span { color: var(--text-faint); font-size: 14px; font-weight: 700; }
-
-  /* ---------- kartice ---------- */
-  .grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr)); }
+  /* ---------- bento igara (12 kolona, dense, bez rupa) ---------- */
+  .bento {
+    display: grid; gap: 16px;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    grid-auto-rows: clamp(230px, 22vw, 320px);
+    grid-auto-flow: dense;
+  }
   .card {
-    --tx: 0deg; --ty: 0deg;
     position: relative; display: block; overflow: hidden; isolation: isolate;
-    aspect-ratio: 4 / 3; border-radius: var(--radius);
-    background: var(--surface);
-    transform: perspective(1000px) rotateX(var(--tx)) rotateY(var(--ty));
-    transition: transform .35s var(--ease), box-shadow .35s var(--ease);
+    grid-column: span var(--c, 4); grid-row: span var(--r, 1);
+    border-radius: var(--radius); background: var(--surface);
     box-shadow: 0 0 0 1px var(--line);
+    transition: box-shadow .5s var(--ease), transform .5s var(--ease);
   }
-  .card:hover, .card:focus-visible {
-    box-shadow: 0 0 0 1px rgba(255,255,255,.18), 0 30px 60px -20px var(--card-glow, #000);
-    outline: none;
-  }
+  .card:hover, .card:focus-visible { box-shadow: 0 0 0 1px rgba(255,255,255,.2), 0 40px 80px -30px var(--card-glow, #000); outline: none; }
   .card .media { position: absolute; inset: 0; z-index: -2; }
-  .card .media img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
-  .card:hover .media img { transform: scale(1.07); }
+  .card .media img { width: 100%; height: 100%; object-fit: cover; transition: transform .7s var(--ease); }
+  .card:hover .media img, .card:focus-visible .media img { transform: scale(1.05); }
   .card .fallback {
-    width: 100%; height: 100%; display: grid; place-items: center; font-size: 110px;
+    width: 100%; height: 100%; display: grid; place-items: center; font-size: 96px;
     background: linear-gradient(135deg, var(--c1, #6a3dff), var(--c2, #00c2ff));
   }
   .card::after {
     content: ''; position: absolute; inset: 0; z-index: -1;
-    background: linear-gradient(0deg, rgba(8,8,13,.95) 0%, rgba(8,8,13,.55) 32%, rgba(8,8,13,0) 62%);
+    background: linear-gradient(0deg, rgba(8,8,13,.94) 0%, rgba(8,8,13,.5) 34%, rgba(8,8,13,0) 64%);
   }
-  .card .chips { position: absolute; top: 18px; left: 18px; right: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    font-size: 12px; font-weight: 700; letter-spacing: .4px; color: var(--text);
+    padding: 6px 12px; border-radius: 999px;
+    background: rgba(8,8,13,.45); border: 1px solid rgba(255,255,255,.16);
+    backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  }
+  .card .chips { position: absolute; top: 18px; left: 18px; right: 90px; }
   .card .new {
     position: absolute; top: 18px; right: 18px;
-    font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #0b0b10;
+    font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: var(--ink);
     background: var(--accent); padding: 6px 10px; border-radius: 999px;
   }
   .card-body {
-    position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 28px;
+    position: absolute; left: 0; right: 0; bottom: 0; padding: clamp(20px, 2vw, 28px);
     display: flex; align-items: flex-end; justify-content: space-between; gap: 20px;
   }
-  .card h3 {
-    font: 900 clamp(26px, 3.2vw, 40px)/1 'Unbounded', sans-serif;
-    letter-spacing: -1px; text-transform: uppercase;
-  }
+  .card h3 { font: 900 clamp(22px, 2.3vw, 34px)/1 'Unbounded', sans-serif; letter-spacing: -.02em; text-transform: uppercase; }
+  .card.big h3 { font-size: clamp(30px, 3.6vw, 54px); }
   .card p {
-    margin-top: 10px; font-size: 15px; line-height: 1.5; color: var(--text-dim); max-width: 440px;
+    margin-top: 10px; font-size: 15px; line-height: 1.5; color: var(--text-dim); max-width: 460px;
     display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
   }
+  .card.big p { font-size: 17px; -webkit-line-clamp: 3; }
+  .card .go {
+    flex: none; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+    background: var(--text); color: var(--ink);
+    transform: scale(.85); opacity: 0; transition: transform .4s var(--ease), opacity .4s var(--ease), background .3s;
+  }
+  .card .go svg { width: 18px; height: 18px; }
+  .card:hover .go, .card:focus-visible .go { transform: none; opacity: 1; background: var(--accent); }
 
-  footer {
-    margin: 96px 0 40px; padding-top: 28px; border-top: 1px solid var(--line);
-    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
-    color: var(--text-faint); font-size: 14px; font-weight: 600;
+  /* ---------- izjava sa slikama u tekstu (scrub reveal) ---------- */
+  .statement {
+    font: 700 clamp(1.7rem, 3.7vw, 3.6rem)/1.22 'Unbounded', sans-serif; letter-spacing: -.03em;
+    max-width: 68rem;
+  }
+  .statement .w { display: inline-block; }
+  .statement .lime { color: var(--accent); }
+  .inline-pill {
+    display: inline-block; vertical-align: middle; width: 2.3em; height: .95em; margin: 0 .12em;
+    border-radius: 999px; background-size: cover; background-position: center;
+    box-shadow: 0 0 0 1px rgba(255,255,255,.18); transform: translateY(-.06em);
   }
 
-  /* ulazna animacija */
-  .reveal { opacity: 0; transform: translateY(24px); animation: rise .8s var(--ease) forwards; }
-  @keyframes rise { to { opacity: 1; transform: none; } }
+  /* ---------- trejler ---------- */
+  .trailer {
+    position: relative; margin-top: clamp(72px, 9vw, 128px); border-radius: var(--radius-lg); overflow: hidden;
+    aspect-ratio: 16 / 9; background: var(--surface) url(assets/hero/trailer-poster.jpg) center / cover;
+    box-shadow: 0 0 0 1px var(--line-strong), 0 60px 140px -50px rgba(198,255,61,.25);
+  }
+  .trailer video { width: 100%; height: 100%; object-fit: cover; }
+  .sound {
+    position: absolute; left: 20px; bottom: 20px;
+    padding: 12px 18px; font-size: 14px;
+  }
+  .facts { margin-top: clamp(48px, 6vw, 80px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+  .fact { padding: 28px; border-radius: var(--radius); background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.015)); box-shadow: inset 0 0 0 1px var(--line); }
+  .fact h3 { font: 800 20px/1.2 'Unbounded', sans-serif; letter-spacing: -.01em; }
+  .fact p { margin-top: 10px; color: var(--text-dim); font-size: 15px; line-height: 1.6; }
+  .fact .ico { width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: rgba(198,255,61,.12); color: var(--accent); margin-bottom: 22px; }
+  .fact .ico svg { width: 22px; height: 22px; }
 
+  /* ---------- CTA + footer ---------- */
+  .cta { text-align: center; display: flex; flex-direction: column; align-items: center; }
+  .cta h2 {
+    font: 900 clamp(2.6rem, 8vw, 8.5rem)/.95 'Unbounded', sans-serif; letter-spacing: -.045em; text-transform: uppercase;
+    max-width: 80rem;
+  }
+  .cta h2 .lime { color: var(--accent); }
+  .cta p { margin-top: 26px; color: var(--text-dim); font-size: clamp(16px, 1.4vw, 19px); font-weight: 600; }
+  .cta .hero-actions { margin-top: 44px; }
+  footer { border-top: 1px solid var(--line); padding: 36px 0 44px; }
+  .foot { display: flex; justify-content: space-between; gap: 32px; flex-wrap: wrap; align-items: flex-start; }
+  .foot-games { display: flex; flex-wrap: wrap; gap: 8px 22px; max-width: 640px; }
+  .foot-games a { color: var(--text-dim); font-weight: 700; font-size: 14px; transition: color .2s; }
+  .foot-games a:hover { color: var(--accent); }
+  .foot-meta { margin-top: 28px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; color: var(--text-faint); font-size: 14px; font-weight: 600; }
+
+  /* ---------- tablet / telefon ---------- */
+  @media (max-width: 1100px) {
+    .bento { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: clamp(240px, 38vw, 360px); }
+    .card { grid-column: span var(--t, 1); grid-row: span 1; }
+    .card.big { grid-row: span 2; }
+    .nav-links { display: none; }
+  }
   @media (max-width: 760px) {
-    .wrap { padding: 0 16px; }
-    nav { padding: 18px 0; }
-    .hero { aspect-ratio: auto; min-height: 560px; max-height: none; border-radius: var(--radius); }
-    .hero .media {
-      inset: 0 0 42% 0;
-      -webkit-mask-image: linear-gradient(0deg, transparent 0%, #000 45%);
-              mask-image: linear-gradient(0deg, transparent 0%, #000 45%);
-    }
-    .hero-content { max-width: none; }
-    .section-head span { display: none; }
-    .hero h1 { letter-spacing: -1px; }
-    .card { aspect-ratio: 4 / 5; }
-    .card-body { padding: 20px; }
-    .section-head { margin-top: 48px; }
+    .count { display: none; }
+    .brand-name { font-size: 14px; }
+  }
+  @media (max-width: 420px) {
+    .brand-name { display: none; }
+    .nav { top: 12px; width: calc(100% - 24px); }
+    .hero { padding: 104px 16px 88px; }
+    .hero-actions { flex-direction: column; align-items: stretch; width: 100%; max-width: 360px; }
+    .bento { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; gap: 14px; }
+    .card, .card.big { grid-column: auto; grid-row: auto; aspect-ratio: 4 / 5; }
+    .card .go { opacity: 1; transform: none; width: 46px; height: 46px; }
+    .facts { grid-template-columns: minmax(0, 1fr); }
+    .video-toggle { bottom: 20px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { animation: none !important; transition: none !important; }
-    .reveal { opacity: 1; transform: none; }
+    html { scroll-behavior: auto; }
+    .marquee-track { animation: none; }
+    *, *::before, *::after { transition: none !important; }
   }
 </style>
 </head>
 <body>
-<div class="ambient" id="ambient"></div>
 <div class="grain"></div>
 
-<div class="wrap">
-  <nav>
-    <a class="brand" href="./">
-      <span class="brand-mark">G</span>
-      <span class="brand-name">GAMEROOM</span>
-    </a>
-    <span class="count" id="count"></span>
-  </nav>
-
-  <a class="hero reveal" id="hero"></a>
-
-  <div class="section-head reveal" style="animation-delay:.1s">
-    <h2>Sve igre</h2>
-    <span>Igraj odmah u browseru — bez instalacije</span>
+<nav class="nav" id="nav" data-i18n-attr="aria-label:navMain">
+  <a class="brand" href="./" aria-label="Gameroom">
+    <span class="brand-mark">G</span>
+    <span class="brand-name">GAMEROOM</span>
+  </a>
+  <div class="nav-links">
+    <a href="#igre" data-i18n="navGames"></a>
+    <a href="#trejler" data-i18n="navTrailer"></a>
   </div>
-  <main class="grid" id="grid" aria-label="Lista igara"></main>
+  <div class="nav-right">
+    <span class="count" id="count"></span>
+    <span id="langSlot"></span>
+    <a class="btn btn-lime" id="navPlay" href="#igre" data-i18n="play"></a>
+  </div>
+</nav>
+
+<main>
+  <header class="hero" id="top">
+    <div class="hero-media" aria-hidden="true">
+      <video id="heroVideo" muted loop playsinline preload="none" poster="assets/hero/hero-poster.jpg"></video>
+    </div>
+    <div class="hero-inner">
+      <h1 id="heroTitle"><span class="line" id="heroCount"></span><span class="line lime" data-i18n="heroZero"></span></h1>
+      <p class="hero-sub" data-i18n="heroSub"></p>
+      <div class="hero-actions">
+        <a class="btn btn-lime" id="heroPlay" href="#igre"></a>
+        <a class="btn btn-glass" href="#igre" data-i18n="allGames"></a>
+      </div>
+    </div>
+    <button class="video-toggle" id="videoToggle" type="button" aria-pressed="false">
+      <svg class="i-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="5" width="4" height="14" rx="1"/><rect x="14" y="5" width="4" height="14" rx="1"/></svg>
+      <svg class="i-play" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>
+    </button>
+  </header>
+
+  <div class="marquee" aria-hidden="true"><div class="marquee-track" id="marquee"></div></div>
+
+  <section class="chapter" id="igre" data-i18n-attr="aria-label:navGames">
+    <div class="glow" style="background:#6a3dff; left:-20vw; top:10%"></div>
+    <div class="wrap">
+      <div class="chapter-head">
+        <h2 data-i18n="pickTitle"></h2>
+        <p data-i18n="pickSub"></p>
+      </div>
+      <div class="bento" id="grid"></div>
+    </div>
+  </section>
+
+  <section class="chapter" id="trejler" data-i18n-attr="aria-label:navTrailer">
+    <div class="glow" style="background:#c6ff3d; right:-25vw; top:30%; opacity:.1"></div>
+    <div class="wrap">
+      <p class="statement" id="statement"></p>
+      <div class="trailer" id="trailerBox">
+        <video id="trailer" muted playsinline preload="none" loop poster="assets/hero/trailer-poster.jpg" aria-label="Gameroom trailer">
+          <source src="assets/hero/trailer-720.mp4" type="video/mp4">
+        </video>
+        <button class="btn btn-glass sound" id="sound" type="button" aria-pressed="false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M19 5a10 10 0 0 1 0 14"/></svg>
+          <span data-i18n="soundOn"></span>
+        </button>
+      </div>
+      <div class="facts">
+        <div class="fact">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg></div>
+          <h3 data-i18n="f1t"></h3>
+          <p data-i18n="f1p"></p>
+        </div>
+        <div class="fact">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+          <h3 data-i18n="f2t"></h3>
+          <p data-i18n="f2p"></p>
+        </div>
+        <div class="fact">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg></div>
+          <h3 data-i18n="f3t"></h3>
+          <p data-i18n="f3p"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chapter cta" data-i18n-attr="aria-label:play">
+    <div class="wrap">
+      <h2><span data-i18n="ctaA"></span><br><span class="lime" data-i18n="ctaB"></span></h2>
+      <p data-i18n="ctaSub"></p>
+      <div class="hero-actions">
+        <a class="btn btn-lime" id="ctaPlay" href="#igre"></a>
+        <a class="btn btn-glass" id="randomPlay" href="#igre" data-i18n="random"></a>
+      </div>
+    </div>
+  </section>
 
   <footer>
-    <span>© <span id="year"></span> Gameroom</span>
-    <span>Radi na telefonu i računaru</span>
+    <div class="wrap">
+      <div class="foot">
+        <a class="brand" href="#top" data-i18n-attr="aria-label:toTop">
+          <span class="brand-mark">G</span>
+          <span class="brand-name">GAMEROOM</span>
+        </a>
+        <nav class="foot-games" id="footGames" data-i18n-attr="aria-label:allGames"></nav>
+      </div>
+      <div class="foot-meta">
+        <span>© <span id="year"></span> Gameroom</span>
+        <span data-i18n="worksOn"></span>
+      </div>
+    </div>
   </footer>
-</div>
+</main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js" defer></script>
 <script>
   // ====================================================================
   //  REGISTAR IGARA — nova igra = novi objekat NA POČETKU niza + folder games/<slug>/
-  //  Prva igra u nizu je istaknuta (hero) na vrhu stranice.
+  //  Prva igra u nizu je istaknuta: dugme u hero-u i CTA-u, najveća kartica u bento gridu.
   //  slug:    ime foldera u games/ (kebab-case)
+  //  title, description, tags: na engleskom (podrazumevani jezik)
+  //  sr:      { title, description, tags } — srpska verzija, prikazuje se kad je jezik srpski
   //  cover:   slika kartice u games/<slug>/ (screenshot 1200x900, vidi skill browser-games)
-  //  hero:    opciono, široka slika 1600x700 za hero kad je igra istaknuta (fallback: cover)
-  //  accent:  [boja1, boja2] — glow iza hero-a/kartice i fallback gradijent
+  //  hero:    opciono, široka slika 1600x700 za široke kartice u bento gridu (fallback: cover)
+  //  accent:  [boja1, boja2] — glow iza kartice i fallback gradijent
   //  emoji:   fallback kad nema cover slike
-  //  isNew:   opciono, bedž "NOVO"
+  //  isNew:   opciono, bedž "NEW"/"NOVO"
   // ====================================================================
   const GAMES = [
     {
       slug: 'razori-kule',
-      title: 'Razori Kule',
-      description: 'Povuci praćku preko planine ili kroz nju. Bure otvara tunel ili ruši temelj, a bušilica i bomba su specijal jednom po nivou.',
+      title: 'Smash the Towers',
+      description: 'Pull the slingshot over the mountain or straight through it. A barrel opens a tunnel or breaks a foundation, and the drill and bomb are one-per-level specials.',
+      sr: { title: 'Razori Kule', description: 'Povuci praćku preko planine ili kroz nju. Bure otvara tunel ili ruši temelj, a bušilica i bomba su specijal jednom po nivou.', tags: ['Akcija', 'Rakete', 'Rušenje'] },
       cover: 'cover.jpg',
       hero: 'hero.jpg',
       accent: ['#e23b3b', '#ffc83d'],
       emoji: '🚀',
-      tags: ['Akcija', 'Rakete', 'Rušenje'],
+      tags: ['Action', 'Rockets', 'Demolition'],
       isNew: true,
     },
     {
       slug: 'osvoji-svet',
-      title: 'Osvoji Svet',
-      description: 'Izaberi državu i pomeraj front polje po polje preko prave mape sveta — planine, reke, mora i zastave svih država.',
+      title: 'Conquer the World',
+      description: 'Pick a country and push the front tile by tile across a real world map, with mountains, rivers, seas and the flag of every nation.',
+      sr: { title: 'Osvoji Svet', description: 'Izaberi državu i pomeraj front polje po polje preko prave mape sveta — planine, reke, mora i zastave svih država.', tags: ['Strategija', 'Mapa', 'Osvajanje'] },
       cover: 'cover.jpg',
       hero: 'hero.jpg',
       accent: ['#2f6fed', '#3ddc97'],
       emoji: '🌍',
-      tags: ['Strategija', 'Mapa', 'Osvajanje'],
+      tags: ['Strategy', 'Map', 'Conquest'],
     },
     {
       slug: 'pilana-tajkun',
-      title: 'Pilana Tajkun',
-      description: 'Automatska pilana seče i utovaruje daske u kamione — nadogradi testeru, viljuškar i most, i širi mrežu puteva do novih pijaca.',
+      title: 'Sawmill Tycoon',
+      description: 'An automated sawmill cuts logs and loads them onto trucks. Upgrade the saw, the forklifts and the bridge, and grow your road network to new markets.',
+      sr: { title: 'Pilana Tajkun', description: 'Automatska pilana seče i utovaruje daske u kamione — nadogradi testeru, viljuškar i most, i širi mrežu puteva do novih pijaca.', tags: ['3D', 'Tajkun', 'Idle'] },
       cover: 'cover.jpg',
       hero: 'hero.jpg',
       accent: ['#f5a623', '#4fa0d8'],
       emoji: '🪚',
-      tags: ['3D', 'Tajkun', 'Idle'],
+      tags: ['3D', 'Tycoon', 'Idle'],
     },
     {
       slug: 'kamp-tajkun',
-      title: 'Kamp Tajkun',
-      description: 'Seci drvo, lovi, beri voće i pecaj — zaposli radnike, ispuni porudžbine i pretvori šator u dvorac.',
+      title: 'Camp Tycoon',
+      description: 'Chop wood, hunt, pick fruit and fish. Hire workers, fill orders and turn a tent into a castle.',
+      sr: { title: 'Kamp Tajkun', description: 'Seci drvo, lovi, beri voće i pecaj — zaposli radnike, ispuni porudžbine i pretvori šator u dvorac.', tags: ['3D', 'Tajkun', 'Gradnja'] },
       cover: 'cover.jpg',
       hero: 'hero.jpg',
       accent: ['#7ed957', '#ffb347'],
       emoji: '🪓',
-      tags: ['3D', 'Tajkun', 'Gradnja'],
+      tags: ['3D', 'Tycoon', 'Building'],
     },
     {
       slug: 'surprizi',
-      title: 'Male igracke',
-      description: 'Otvaraj kesice iznenađenja, skupljaj retke figurice i složi svoju kolekciju na 3D policama.',
+      title: 'Surprise Toys',
+      description: 'Open surprise bags, collect rare figures and arrange your collection on 3D shelves.',
+      sr: { title: 'Male igračke', description: 'Otvaraj kesice iznenađenja, skupljaj retke figurice i složi svoju kolekciju na 3D policama.', tags: ['3D', 'Kolekcija', 'Opuštena'] },
       cover: 'cover.jpg',
       hero: 'hero.jpg',
       accent: ['#ff5fc8', '#3dc8ff'],
       emoji: '🎁',
-      tags: ['3D', 'Kolekcija', 'Opuštena'],
+      tags: ['3D', 'Collecting', 'Relaxing'],
     },
     {
       slug: 'monster-lane',
       title: 'Monster Lane',
-      description: 'Gusarska posada silazi sa broda niz dasku — pomeraj pirata, razbijaj kapije za jača oružja i čuvaj bazu.',
+      description: 'A pirate crew pours off the ship down the plank. Move your pirate, smash gates for stronger weapons and guard the base.',
+      sr: { title: 'Monster Lane', description: 'Gusarska posada silazi sa broda niz dasku — pomeraj pirata, razbijaj kapije za jača oružja i čuvaj bazu.', tags: ['3D', 'Akcija', 'Talasi'] },
       cover: 'cover.jpg',
       hero: 'hero.jpg',
       accent: ['#ff8a00', '#00a2ff'],
       emoji: '🏴‍☠️',
-      tags: ['3D', 'Akcija', 'Talasi'],
+      tags: ['3D', 'Action', 'Waves'],
     },
   ];
 
+  // ---- jezik (shared/gameroom-i18n.js): engleski podrazumevano, srpski za srpske browsere ili po izboru
+  const I = window.GameroomI18n;
+  const sr = I.lang === 'sr';
+  const L = (g, k) => (sr && g.sr && g.sr[k] != null ? g.sr[k] : g[k]);
+  I.add({
+    en: {
+      navMain: 'Main navigation', navGames: 'Games', navTrailer: 'Trailer', play: 'Play', playGame: 'Play {title}',
+      heroZero: 'Zero installs.',
+      heroSub: 'Cut planks, smash towers, hold the dock against pirates and conquer the world map. Play instantly in your browser, on your phone or computer.',
+      allGames: 'All games', pauseVideo: 'Pause background video', playVideo: 'Play background video',
+      pickTitle: 'Pick a game', pickSub: 'Every game opens in your browser in seconds. Your progress stays saved on your device.',
+      soundOn: 'Sound on', soundOff: 'Sound off',
+      f1t: 'Phone and computer', f1p: 'Swipe on your phone, mouse and keyboard on your computer. Same game, no separate version.',
+      f2t: 'Nothing to download', f2p: 'No store, no install, no account. Tap a game and it loads.',
+      f3t: 'Progress stays', f3p: 'Your sawmill, camp and collection are saved on your device, so you pick up where you left off.',
+      ctaA: 'One click', ctaB: 'to play.', ctaSub: 'Nothing to install. Works on your phone and computer.',
+      random: 'Random game', toTop: 'Back to top', worksOn: 'Works on phone and computer', isNew: 'NEW',
+      count: ({ n }) => `${n} ${n === 1 ? 'game' : 'games'}`,
+      heroCount: ({ n }) => `${['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'][n] || n} ${n === 1 ? 'game' : 'games'}.`,
+      statement: 'Cut {pilana-tajkun} planks, smash {razori-kule} towers, hold {monster-lane} the dock and conquer {osvoji-svet} the map. Rip open {surprizi} surprise bags and turn a tent {kamp-tajkun} into a castle. [All in one tab.]',
+    },
+    sr: {
+      navMain: 'Glavna navigacija', navGames: 'Igre', navTrailer: 'Trejler', play: 'Igraj', playGame: 'Igraj {title}',
+      heroZero: 'Nula instalacija.',
+      heroSub: 'Sečeš daske, rušiš kule, braniš pristanište od pirata i osvajaš mapu sveta. Igraj odmah u browseru, na telefonu ili računaru.',
+      allGames: 'Sve igre', pauseVideo: 'Pauziraj video u pozadini', playVideo: 'Pusti video u pozadini',
+      pickTitle: 'Izaberi igru', pickSub: 'Svaka igra se otvara u browseru za par sekundi. Napredak ostaje sačuvan na tvom uređaju.',
+      soundOn: 'Uključi zvuk', soundOff: 'Isključi zvuk',
+      f1t: 'Telefon i računar', f1p: 'Prevlačenje prstom na telefonu, miš i tastatura na računaru. Ista igra, bez posebne verzije.',
+      f2t: 'Bez preuzimanja', f2p: 'Nema prodavnice, instalacije ni naloga. Klikneš na igru i ona se učita.',
+      f3t: 'Napredak ostaje', f3p: 'Pilana, kamp i kolekcija se čuvaju na tvom uređaju, pa nastavljaš gde si stao.',
+      ctaA: 'Jedan klik', ctaB: 'do igre.', ctaSub: 'Bez instalacije. Radi na telefonu i računaru.',
+      random: 'Nasumična igra', toTop: 'Na vrh', worksOn: 'Radi na telefonu i računaru', isNew: 'NOVO',
+      count: ({ n }) => `${n} ${I.plural(n, 'igra', 'igre', 'igara')}`,
+      heroCount: ({ n }) => `${['Nula', 'Jedna', 'Dve', 'Tri', 'Četiri', 'Pet', 'Šest', 'Sedam', 'Osam', 'Devet', 'Deset', 'Jedanaest', 'Dvanaest'][n] || n} ${I.plural(n, 'igra', 'igre', 'igara')}.`,
+      statement: 'Sečeš {pilana-tajkun} daske, rušiš {razori-kule} kule, čuvaš {monster-lane} pristanište i osvajaš {osvoji-svet} mapu. Otvaraš {surprizi} kesice i od šatora {kamp-tajkun} praviš dvorac. [Sve u jednom tabu.]',
+    },
+  });
+  if (sr) {
+    document.title = 'Gameroom';
+    document.querySelector('meta[name="description"]').content = 'Gameroom — kolekcija browser igrica. Izaberi i igraj odmah, bez instalacije.';
+  }
+  I.apply();
+  document.getElementById('langSlot').appendChild(I.picker({ className: 'lang-pick' }));
+
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const href = g => `games/${g.slug}/index.html`;
-  const media = g => g.cover
-    ? `<img src="games/${g.slug}/${esc(g.cover)}" alt="" loading="lazy" decoding="async">`
-    : `<div class="fallback" style="--c1:${g.accent?.[0]};--c2:${g.accent?.[1]}">${g.emoji || '🎮'}</div>`;
-  const chips = g => `<div class="chips">${(g.tags || []).map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>`;
+  const img = (g, which) => `games/${g.slug}/${esc(which === 'hero' && g.hero ? g.hero : g.cover)}`;
   const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>';
+  const ICON_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+  const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const store = {
+    get(k) { try { return localStorage.getItem('gameroom:' + k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem('gameroom:' + k, v); } catch (e) {} },
+  };
 
-  // hero
+  // ---- broj igara (hero naslov i nav)
+  const n = GAMES.length;
+  document.getElementById('heroCount').textContent = I.t('heroCount', { n });
+  document.getElementById('count').innerHTML = I.t('count', { n }).replace(/^(\d+)/, '<b>$1</b>');
+
+  // ---- dugmad: istaknuta igra je prva u nizu
   const featured = GAMES[0];
-  const hero = document.getElementById('hero');
-  hero.href = href(featured);
-  hero.setAttribute('aria-label', `Igraj ${featured.title}`);
-  hero.innerHTML = `
-    <div class="media">${featured.hero && featured.cover
-      ? `<picture><source media="(max-width: 760px)" srcset="games/${featured.slug}/${esc(featured.cover)}"><img src="games/${featured.slug}/${esc(featured.hero)}" alt="" fetchpriority="high"></picture>`
-      : media({ ...featured, cover: featured.hero || featured.cover }).replace('loading="lazy"', 'fetchpriority="high"')}</div>
-    <div class="hero-content">
-      <span class="eyebrow">${featured.isNew ? 'Nova igra' : 'Istaknuto'}</span>
-      <h1>${esc(featured.title)}</h1>
-      <p>${esc(featured.description)}</p>
-      <div class="hero-actions">
-        <span class="btn">${ICON_PLAY} Igraj sad</span>
-        ${chips(featured)}
-      </div>
-    </div>`;
-  if (featured.accent) {
-    const amb = document.getElementById('ambient').style;
-    amb.setProperty('--glow-1', featured.accent[0]);
-    amb.setProperty('--glow-2', featured.accent[1]);
-    hero.style.setProperty('--h1', featured.accent[0]);
-    hero.style.setProperty('--h2', featured.accent[1]);
+  for (const id of ['heroPlay', 'ctaPlay']) {
+    const a = document.getElementById(id);
+    a.href = href(featured);
+    a.innerHTML = `${ICON_PLAY} ${esc(I.t('playGame', { title: L(featured, 'title') }))}`;
   }
+  document.getElementById('navPlay').href = href(featured);
+  document.getElementById('randomPlay').addEventListener('click', e => {
+    e.preventDefault();
+    location.href = href(GAMES[Math.floor(Math.random() * n)]);
+  });
 
-  // grid
-  document.getElementById('grid').innerHTML = GAMES.map((g, i) => `
-    <a class="card reveal" href="${href(g)}" style="--card-glow:${g.accent?.[0] || '#000'}; animation-delay:${0.15 + i * 0.08}s" aria-label="Igraj ${esc(g.title)}">
-      <div class="media">${media(g)}</div>
-      ${chips(g)}
-      ${g.isNew ? '<span class="new">NOVO</span>' : ''}
+  // ---- bento: 12 kolona bez rupa. Prva 7x2, sledeće dve 5x1 (desna kolona), ostale po tri u redu (4+4+4).
+  //      Ostatak reda: jedna kartica = 12, dve = 6+6. Tablet (2 kolone): prva 2x2, neparan ostatak = poslednja preko cele širine.
+  function spans(i) {
+    if (n === 1) return { c: 12, r: 2, t: 2 };
+    if (n === 2) return { c: i ? 5 : 7, r: 2, t: i ? 2 : 2 };
+    if (i === 0) return { c: 7, r: 2, t: 2 };
+    if (i <= 2) return { c: 5, r: 1, t: 1 };
+    const rest = n - 3, k = i - 3, tail = rest % 3, inTail = k >= rest - tail;
+    const c = !inTail ? 4 : tail === 1 ? 12 : 6;
+    const t = (n - 1) % 2 === 1 && i === n - 1 ? 2 : 1;
+    return { c, r: 1, t };
+  }
+  document.getElementById('grid').innerHTML = GAMES.map((g, i) => {
+    const s = spans(i), big = i === 0, wide = s.c >= 5 && s.r === 1;
+    const media = g.cover
+      ? `<img src="${img(g, wide ? 'hero' : 'cover')}" alt="" loading="${i < 3 ? 'eager' : 'lazy'}" decoding="async">`
+      : `<div class="fallback" style="--c1:${g.accent?.[0]};--c2:${g.accent?.[1]}">${g.emoji || ''}</div>`;
+    return `
+    <a class="card${big ? ' big' : ''}" href="${href(g)}" style="--c:${s.c};--r:${s.r};--t:${s.t};--card-glow:${g.accent?.[0] || '#000'}" aria-label="${esc(I.t('playGame', { title: L(g, 'title') }))}">
+      <div class="media">${media}</div>
+      <div class="chips">${(L(g, 'tags') || []).map(t => `<span class="chip">${esc(t)}</span>`).join('')}</div>
+      ${g.isNew ? `<span class="new">${I.t('isNew')}</span>` : ''}
       <div class="card-body">
         <div>
-          <h3>${esc(g.title)}</h3>
-          <p>${esc(g.description)}</p>
+          <h3>${esc(L(g, 'title'))}</h3>
+          <p>${esc(L(g, 'description'))}</p>
         </div>
+        <span class="go" aria-hidden="true">${ICON_ARROW}</span>
       </div>
-    </a>`).join('');
+    </a>`;
+  }).join('');
 
-  document.getElementById('count').innerHTML = `<b>${GAMES.length}</b> ${GAMES.length === 1 ? 'igra' : GAMES.length < 5 ? 'igre' : 'igara'}`;
+  // ---- marquee: naslovi igara sa malim slikama, duplirano za beskonačnu petlju
+  const group = `<div class="marquee-group">${GAMES.map(g => `
+    <div class="marquee-item"><span>${esc(L(g, 'title'))}</span>${g.cover ? `<img class="marquee-pill" src="${img(g, 'cover')}" alt="" loading="lazy" decoding="async">` : ''}</div>`).join('')}</div>`;
+  document.getElementById('marquee').innerHTML = group + group;
+
+  // ---- izjava sa slikama u tekstu: {slug} = mala slika igre, [tekst] = lime. Svaka reč u svoj span (za scrub).
+  const pill = slug => { const g = GAMES.find(x => x.slug === slug); return g && g.cover ? `<span class="inline-pill" style="background-image:url('${img(g, 'cover')}')"></span>` : ''; };
+  const words = (txt, cls) => txt.split(/\s+/).filter(Boolean).map(w => `<span class="w${cls ? ' ' + cls : ''}">${esc(w)}</span>`).join(' ');
+  document.getElementById('statement').innerHTML = I.t('statement')
+    .split(/(\{[\w-]+\}|\[[^\]]+\])/)
+    .map(part => part.startsWith('{') ? pill(part.slice(1, -1)) : part.startsWith('[') ? words(part.slice(1, -1), 'lime') : words(part))
+    .filter(Boolean).join(' ');
+
+  // ---- footer
+  document.getElementById('footGames').innerHTML = GAMES.map(g => `<a href="${href(g)}">${esc(L(g, 'title'))}</a>`).join('');
   document.getElementById('year').textContent = new Date().getFullYear();
 
-  // blagi 3D tilt kartica na mišu
-  if (matchMedia('(hover: hover) and (prefers-reduced-motion: no-preference)').matches) {
-    document.querySelectorAll('.card').forEach(card => {
-      card.addEventListener('pointermove', e => {
-        const r = card.getBoundingClientRect();
-        const x = (e.clientX - r.left) / r.width - 0.5;
-        const y = (e.clientY - r.top) / r.height - 0.5;
-        card.style.setProperty('--ty', `${x * 6}deg`);
-        card.style.setProperty('--tx', `${-y * 6}deg`);
-      });
-      card.addEventListener('pointerleave', () => {
-        card.style.setProperty('--tx', '0deg');
-        card.style.setProperty('--ty', '0deg');
-      });
+  // ---- nav postaje gušći posle hero-a
+  const nav = document.getElementById('nav');
+  const onScroll = () => nav.classList.toggle('solid', scrollY > innerHeight * 0.6);
+  addEventListener('scroll', onScroll, { passive: true }); onScroll();
+
+  // ---- hero video: manji fajl na telefonu, bez autoplay-a za reduced motion / save-data, pauza van ekrana
+  const hv = document.getElementById('heroVideo');
+  const toggle = document.getElementById('videoToggle');
+  const saveData = navigator.connection && navigator.connection.saveData;
+  let userPaused = store.get('hero-paused') === '1' || reduceMotion || saveData;
+  hv.src = matchMedia('(max-width: 760px)').matches ? 'assets/hero/hero-960.mp4' : 'assets/hero/hero-1600.mp4';
+  const setToggle = () => {
+    toggle.setAttribute('aria-pressed', String(userPaused));
+    toggle.setAttribute('aria-label', I.t(userPaused ? 'playVideo' : 'pauseVideo'));
+  };
+  const playHero = () => { if (!userPaused) { hv.preload = 'auto'; hv.play().catch(() => {}); } };
+  setToggle();
+  toggle.addEventListener('click', () => {
+    userPaused = !userPaused;
+    store.set('hero-paused', userPaused ? '1' : '0');
+    setToggle();
+    userPaused ? hv.pause() : playHero();
+  });
+  new IntersectionObserver(([e]) => { e.isIntersecting ? playHero() : hv.pause(); }).observe(hv);
+
+  // ---- trejler: igra (bez zvuka) samo dok je na ekranu, zvuk na klik
+  const tv = document.getElementById('trailer'), sound = document.getElementById('sound');
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !reduceMotion) { tv.preload = 'auto'; tv.play().catch(() => {}); } else tv.pause();
+  }, { threshold: 0.35 }).observe(tv);
+  sound.addEventListener('click', () => {
+    tv.muted = !tv.muted;
+    if (!tv.muted) { tv.currentTime = 0; tv.play().catch(() => {}); }
+    sound.setAttribute('aria-pressed', String(!tv.muted));
+    sound.querySelector('span').textContent = I.t(tv.muted ? 'soundOn' : 'soundOff');
+  });
+
+  // ---- GSAP: samo kao dodatak. Bez GSAP-a (blokiran CDN) ili uz reduced motion stranica je statična i kompletna.
+  addEventListener('DOMContentLoaded', () => {
+    if (!window.gsap || !window.ScrollTrigger || reduceMotion) return;
+    gsap.registerPlugin(ScrollTrigger);
+
+    // ulaz hero-a
+    gsap.from('.hero h1 .line', { yPercent: 40, opacity: 0, duration: 1.1, ease: 'expo.out', stagger: 0.12, delay: 0.1 });
+    gsap.from('.hero .hero-sub, .hero .hero-actions', { y: 24, opacity: 0, duration: 1, ease: 'expo.out', stagger: 0.1, delay: 0.35 });
+    gsap.from('.nav', { y: -30, opacity: 0, duration: 0.9, ease: 'expo.out', delay: 0.2 });
+
+    // hero video se blago povlači dok skroluješ
+    gsap.to('.hero-media video', { scale: 1.14, yPercent: 8, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+    gsap.to('.hero-inner', { y: -80, opacity: 0.15, ease: 'none', scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom top', scrub: true } });
+
+    // kartice ulaze u talasu
+    gsap.set('.card', { y: 60, opacity: 0 });
+    ScrollTrigger.batch('.card', {
+      start: 'top 90%', once: true,
+      onEnter: els => gsap.to(els, { y: 0, opacity: 1, duration: 1, ease: 'expo.out', stagger: 0.08 }),
     });
-  }
+
+    // izjava: reči se pale redom dok skroluješ
+    gsap.fromTo('#statement .w, #statement .inline-pill', { opacity: 0.12 }, {
+      opacity: 1, ease: 'none', stagger: 0.05,
+      scrollTrigger: { trigger: '#statement', start: 'top 80%', end: 'bottom 45%', scrub: true },
+    });
+
+    // trejler: raste iz 0.8 u 1, pa se gasi kad izlazi
+    gsap.fromTo('#trailerBox', { scale: 0.8, opacity: 0.6 }, {
+      scale: 1, opacity: 1, ease: 'none',
+      scrollTrigger: { trigger: '#trailerBox', start: 'top 95%', end: 'top 35%', scrub: true },
+    });
+    gsap.to('#trailerBox', {
+      opacity: 0.2, ease: 'none',
+      scrollTrigger: { trigger: '#trailerBox', start: 'bottom 40%', end: 'bottom top', scrub: true },
+    });
+
+    gsap.from('.fact', { y: 40, opacity: 0, duration: 0.9, ease: 'expo.out', stagger: 0.1, scrollTrigger: { trigger: '.facts', start: 'top 85%' } });
+    gsap.from('.cta h2, .cta p, .cta .hero-actions', { y: 50, opacity: 0, duration: 1.1, ease: 'expo.out', stagger: 0.1, scrollTrigger: { trigger: '.cta', start: 'top 75%' } });
+  });
 </script>
 </body>
 </html>

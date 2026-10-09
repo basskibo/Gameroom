@@ -31,18 +31,19 @@ games/<slug>/...            # opciono — dodatni asseti igre (relativne putanje
 1. Napravi `games/<slug>/index.html`.
 2. Link **gameroom:back** ka `../../` ide u meni podešavanja (jedno dugme ⚙), ne kao kružić po ekranu. Zvuk, pauza i ostala podešavanja su u istom meniju. Komentar `gameroom:back` ostaje oko linka. Kopiraj obrazac iz `games/surprizi/index.html` ili `games/pilana-tajkun/index.html`.
 3. Napravi screenshotove (vidi „Cover slike“ dole) → `cover.jpg` i `hero.jpg`.
-4. Dodaj objekat **na početak** `GAMES` niza u `index.html` (prva igra je istaknuta u hero-u):
+4. Dodaj objekat **na početak** `GAMES` niza u `index.html` (prva igra je istaknuta u hero-u). Glavna polja su na engleskom, srpska verzija ide u `sr`:
    ```js
-   { slug: 'moja-igra', title: 'Moja Igra', description: '1–2 rečenice na srpskom.',
+   { slug: 'moja-igra', title: 'My Game', description: '1–2 sentences in English.',
+     sr: { title: 'Moja Igra', description: '1–2 rečenice na srpskom.', tags: ['3D', 'Akcija'] },
      cover: 'cover.jpg', hero: 'hero.jpg', accent: ['#hex1', '#hex2'],
-     emoji: '🚀', tags: ['3D', 'Akcija'], isNew: true }
+     emoji: '🚀', tags: ['3D', 'Action'], isNew: true }
    ```
    `accent` boje uzmi iz palete igre (koriste se za glow). `emoji` je samo fallback kad nema slike. Skini `isNew` sa prethodne igre.
 5. Proveri lokalno (vidi dole) — landing kartica vodi na igru, a „Nazad u Gameroom“ u meniju vraća nazad.
 
 ## Landing dizajn
 
-Tamna tema (`#08080d`), fontovi **Unbounded** (naslovi, uppercase) + **Manrope** (tekst), lime akcenat `#c6ff3d`. Hero = split (tekst levo, slika desno sa mask fade-om), ispod grid velikih 4:3 kartica sa naslovom preko slike i glass čipovima. Ne vraćati se na male kartice sa emoji-jem — korisnik je to eksplicitno odbio kao „basic“. Posle izmene landinga napravi screenshot desktop (1440) i mobilni (390) i pogledaj ih.
+Tamna tema (`#08080d`), fontovi **Unbounded** (naslovi, uppercase) + **Manrope** (tekst), lime akcenat `#c6ff3d`. Redosled: plutajuća staklena nav pilula → hero preko celog ekrana sa videom u pozadini (`assets/hero/hero-1600.mp4`, telefon `hero-960.mp4`, poster `hero-poster.jpg`; petlja gameplay-a bez teksta, dugme za pauzu, bez autoplay-a uz reduced motion/save-data) → marquee naslova → bento grid igara (12 kolona, `grid-auto-flow: dense`, prva igra 7×2, raspored računa `spans()` u `index.html` pa grid ostaje bez rupa za bilo koji broj igara) → izjava sa slikama u tekstu + trejler (`trailer-720.mp4`) → veliki CTA. GSAP (cdnjs) je samo dodatak: bez njega stranica je kompletna. Ne vraćati se na male kartice sa emoji-jem — korisnik je to eksplicitno odbio kao „basic“. Posle izmene landinga napravi screenshot desktop (1440) i mobilni (390) i pogledaj ih.
 
 ## Cover slike
 
@@ -85,7 +86,7 @@ Akcije: `click:<sel>`, `key:<taster>:<ms>`, `wait:<ms>`. Uvek otvori dobijenu sl
 ## Konvencije za samu igru
 
 - **Jedan HTML fajl** sa inline `<style>` i `<script>` je default. Veći asseti (slike, zvuk, modeli) idu pored u isti folder, sa relativnim putanjama — nikad apsolutnim `/...`.
-- **Jezik UI-ja: srpski latinica** (`<html lang="sr">`), osim ako korisnik kaže drugačije.
+- **Jezik: engleski podrazumevano, srpski (latinica) kao izbor.** Sav tekst ide kroz `shared/gameroom-i18n.js` (klasičan `<script>` u `<head>`, pre igre): `GameroomI18n.add({ en: {...}, sr: {...} })`, `t(key, vars)`, `data-i18n` / `data-i18n-html` / `data-i18n-attr` u HTML-u + `apply()`, a `picker()` (EN/SR) ide u meni podešavanja. Jezik je zajednički za sajt (`gameroom:lang`), srpski browseri dobijaju srpski, `?lang=en|sr` u URL-u ga forsira (za testove i snimke). `<html lang="en">`, a `<title>` po jeziku. U igri funkciju zovi `tr` (ne `t`, jer igre često imaju lokalne promenljive `t`). Obrazac: `games/monster-lane/index.html` (rečnik na vrhu modula), `games/osvoji-svet/index.html` (klasičan skript), `games/surprizi/index.html` (engleski nazivi figura u `CHAR_EN`). Nova igra mora od starta imati oba jezika.
 - **Three.js** iz zajedničke kopije u `shared/vendor/` preko importmap-a (keš između igara, radi offline na portalima):
   ```html
   <script type="importmap">
