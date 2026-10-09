@@ -145,7 +145,7 @@ Uvek posle izmene: proveri da nema JS grešaka u konzoli (osim mrežnih grešaka
 Fonts ako je sandbox bez interneta — to nije pravi bug), i pogledaj bar jedan screenshot
 kesice (Otvaranje tab) i jedan showroom-a za novu/izmenjenu seriju.
 
-## Poznata ograničenja three.js verzije u ovom fajlu (r128)
+## Poznata ograničenja three.js verzije (r128, `shared/vendor/three-0.128.0/three.min.js`; do 2026-10-10 bila je inline u fajlu)
 
 Ova verzija three.js-a NE podržava `InstancedMesh` per-instance boju kroz
 `material.vertexColors + instanceColor` (šejderi za to su dodati u kasnijim verzijama) —

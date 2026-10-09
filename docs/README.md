@@ -29,7 +29,7 @@ Folder `docs/` ne ide na Vercel (`.vercelignore`).
 | Kamp Tajkun | [games/kamp-tajkun/](games/kamp-tajkun/README.md) | AAA prolaz 1 (2026-10-10): post-obrada, trava i vetar, čestice, reklame za nagradu, 11 testova |
 | Monster Lane | [games/monster-lane/](games/monster-lane/README.md) | AAA prolaz 1 (2026-10-10): GLB modeli, bloom, juice, uvod, reklame za nagradu, 17 testova |
 | Razori Kule | [games/razori-kule/](games/razori-kule/README.md) | AAA prolaz 1 (2026-10-10): eksplozije, nebo, napredak, uvod, reklame za nagradu, 15 testova |
-| Surprizi | — | čeka audit |
+| Surprizi | [games/surprizi/](games/surprizi/README.md) | Three.js keširan (HTML 860 → 257 KB), SDK (kids), kesica dana uz reklamu, 4 testa (2026-10-10) |
 | Osvoji svet | [games/osvoji-svet/](games/osvoji-svet/README.md) | SDK (kids), reklama za nagradu, efekti osvajanja, 4 testa (2026-10-10) |
 
 Za novu igru kopiraj [games/_template/](games/_template/) u `docs/games/<slug>/` i prati skill `game-audit` (`.claude/skills/game-audit/SKILL.md`).

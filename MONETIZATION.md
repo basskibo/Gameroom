@@ -6,7 +6,7 @@
 
 | Faza | Stanje |
 |---|---|
-| Faza 0 — Temelji | 🔨 u toku (Pilana: SDK sloj, analitika, mesto za reklamu za nagradu; engleski za sve igre i landing gotov 2026-10-10) |
+| Faza 0 — Temelji | 🔨 u toku (SDK, analitički događaji i reklame za nagradu u **svih 6 igara** od 2026-10-10; engleski gotov; čeka se PostHog ključ, politika privatnosti i verzija save-a u Pilani) |
 | Faza 1 — Portali | ⏸ |
 | Faza 1A — Google Play (Android), paralelno sa portalima | 🔨 u toku (Pilana: Capacitor + AdMob, test reklame) |
 | Faza 2 — Ulaganje u najbolju igru | ⏸ |
@@ -43,7 +43,10 @@ Igre po narudžbini (tačka 5) su verovatno najbrži pravi prihod. Surprizi se m
 - **Kamp Tajkun:** besplatan radnik na ograničeno vreme, duplo veća nagrada za porudžbinu.
 - **Monster Lane:** oživljavanje posle poraza, start sa jačim oružjem, dodatni pirati.
 - **Surprizi:** jedna besplatna kesica dnevno uz reklamu.
-- **Osvoji svet:** pomoć kod pitanja, dodatni život. Igra ima edukativni ugao (škole, edu portali).
+- **Osvoji svet:** pomoć kod pitanja, dodatni život. Igra ima edukativni ugao (škole, edu portali). Urađeno 2026-10-10: pojačanje +50 % vojske (igra je strategija na mapi, pa „pomoć kod pitanja“ čeka edukativni kviz).
+- **Razori Kule (Smash the Towers):** +5 raketa posle poraza, ×2 poena za osvojen zamak, pune rakete u igri.
+
+Stanje 2026-10-10 — povezana mesta: Pilana `boost_x2`; Monster Lane `revive`, `start_weapon`; Kamp `helper`, `order_x2`; Razori `extra_rockets`, `double_score`, `refill`; Osvoji svet `reinforce`; Surprizi `daily_bag`. Reklama preko celog ekrana samo između partija/nivoa i na nastavku posle pauze (SDK ograničava); u igrama za decu `kids: true`, Surprizi bez reklama preko celog ekrana. Detalji po igri: `docs/games/<slug>/README.md` → „Monetizacija“.
 
 ### Tvrda pravila
 
@@ -56,12 +59,12 @@ Igre po narudžbini (tačka 5) su verovatno najbrži pravi prihod. Surprizi se m
 
 ### Faza 0 — Temelji (oktobar 2026, 2–3 nedelje)
 
-- [x] `shared/gameroom-sdk.js`: jedan sloj iznad svih reklamnih servisa i analitike. (2026-10-09: adapteri none/test/admob/crazygames/poki; GameDistribution i sopstveni sajt kasnije; Pilana povezana, ostale igre čekaju) Igre pozivaju samo njega, nikad SDK portala direktno.
+- [x] `shared/gameroom-sdk.js`: jedan sloj iznad svih reklamnih servisa i analitike. (2026-10-09: adapteri none/test/admob/crazygames/poki; GameDistribution i sopstveni sajt kasnije; 2026-10-10: svih 6 igara povezano) Igre pozivaju samo njega, nikad SDK portala direktno.
   - API: `Gameroom.init()`, `gameplayStart()`, `gameplayStop()`, `showRewarded(placement) → Promise<boolean>`, `showMidgame()`, `track(event, props)`.
   - Adapteri: AdMob (Android aplikacija), CrazyGames, Poki, GameDistribution, sopstveni sajt, test adapter (`?ads=test`, lažna reklama za proveru toka) i prazan adapter (podrazumevani, ne radi ništa). Adapter se bira po okruženju, hostu ili query parametru.
 - [ ] Analitika (Plausible ili PostHog). SDK šalje događaje u PostHog čim se upiše ključ (`shared/gameroom-config.js`); nalog još ne postoji — PostHog ima besplatan nivo. Događaji: `game_start`, `first_minute`, `session_end` (sa trajanjem), `return_d1`, `rewarded_offer`, `rewarded_watched`.
 - [x] Engleski prevod (i18n) za sve igre. Podrazumevani jezik po `navigator.language`, uz izbor u meniju podešavanja. (2026-10-10: `shared/gameroom-i18n.js`; landing, Monster Lane, Kamp, Osvoji svet, Surprizi i Razori Kule imaju EN + SR, engleski je podrazumevani; Pilana je samo na engleskom, srpska opcija za nju je otvorena stavka)
-- [ ] Performanse: izdvojiti i kompresovati slike iz Pilane (~1 MB) i Surprizija (~845 KB), dodati ekran za učitavanje. Cilj: prvo iscrtavanje za manje od 3 s na prosečnom telefonu.
+- [ ] Performanse: izdvojiti i kompresovati slike iz Pilane (~1 MB) i Surprizija (~845 KB), dodati ekran za učitavanje. Cilj: prvo iscrtavanje za manje od 3 s na prosečnom telefonu. (2026-10-10: Surprizijevih „845 KB“ je bio inline Three.js — sada keširan fajl, HTML 257 KB; Monster Lane 2 MB modela → 0,28 MB GLB; sve igre koriste lokalni Three.js umesto CDN-a)
 - [ ] Verzija na `localStorage` save (`version` polje i migracija), da nadogradnje ne brišu napredak.
 - [ ] Politika privatnosti (`/privacy/`) i saglasnost za kolačiće na sopstvenom sajtu.
 - [x] Sređivanje imena: jedno englesko ime koje se može pretraživati i jedno lokalno ime po igri, ujednačeno u `<title>`, `GAMES` nizu i u igri. (2026-10-10: Sawmill Tycoon / Pilana Tajkun, Smash the Towers / Razori Kule, Conquer the World / Osvoji Svet, Camp Tycoon / Kamp Tajkun, Surprise Toys / Male igračke, Monster Lane. „SuperUkis“ ostaje kao brend igračaka na kesicama u igri; slug-ovi foldera se ne menjaju.)
@@ -70,7 +73,7 @@ Igre po narudžbini (tačka 5) su verovatno najbrži pravi prihod. Surprizi se m
 
 - [ ] CrazyGames: sve 4 igre (prvo osnovno lansiranje, pa puno na osnovu metrika). Paralelno GameDistribution.
 - [ ] Prijava za Poki sa 1–2 najjače igre.
-- [ ] Uključivanje reklama za nagradu (mesta navedena gore).
+- [ ] Uključivanje reklama za nagradu (mesta navedena gore). Kod je spreman u svim igrama (2026-10-10), čeka portal/AdMob ID-jeve.
 - [ ] **Odluka na kraju faze:** igra sa najdužim igranjem i najboljim D1 dobija dalji razvoj, a ostale samo održavanje (popravke, bez novih funkcija).
 
 ### Faza 1A — Google Play, paralelno sa portalima (od oktobra 2026)
@@ -128,3 +131,5 @@ Igre po narudžbini (tačka 5) su verovatno najbrži pravi prihod. Surprizi se m
 - **2026-10-09:** `file://` napušten (Three.js i zajednički moduli iz `shared/`). Pilana: faze performansi, izgleda i animacija završene (4G 24 s → 2,9 s, kasna igra 40 → 59 FPS). Korisnik bira vizuelni „wow“ plan V1–V5 (modeli, dan/noć, teren, herojski kadrovi, UI) pre Faze 0; agent upozorio da SDK, analitika i engleski čekaju — predlog da Faza 0 ide posle V1–V2.
 - **2026-10-09:** korisnik menja plan: **Google Play (Android) ide paralelno sa portalima**, počevši od Pilane (Capacitor + AdMob); Apple kasnije, kad budu podaci. Nova Faza 1A, stara Faza 3 postaje Apple + kupovina u aplikaciji. Troškovi: Play nalog 25 $ jednom, AdMob, Capacitor i alati besplatni; vreme za zatvoreno testiranje (12 testera / 14 dana za nove lične naloge), politika privatnosti i formulari su obavezni. Pilana: Kenney CC0 modeli (V1) gotovi, kreće Faza 0 (SDK, analitika, mesto za reklamu za nagradu) i Android projekat.
 - **2026-10-10:** korisnik traži ceo sajt i sve igre na engleskom. Odluka: **engleski je podrazumevani jezik, srpski ostaje kao izbor** (po planu, jezik po browseru + izbor u podešavanjima, zajednički za ceo sajt), i **igre dobijaju engleska imena** (srpsko ime ostaje u srpskom jeziku). Landing je redizajniran (video u hero-u, bento grid igara, trejler).
+- **2026-10-10:** korisnik traži isti „AAA“ prolaz kao za Pilanu za sve ostale igre, sa fokusom na Monster Lane i Razori Kule, bez pitanja („sam biraj best practice“). Urađeno: Monster Lane (GLB modeli umesto 2 MB paketa, bloom, juice, uvod, `revive`/`start_weapon`), Razori Kule (eksplozije, nebo, napredak i zvezdice, kamera na telefonu, tri reklame za nagradu), Kamp (post-obrada, trava i vetar, `helper`/`order_x2`), Osvoji svet (SDK kao igra za decu, `reinforce`), Surprizi (keširan Three.js, `daily_bag`). Odluke donete u ime korisnika: (1) Razori Kule — poraz ponavlja isti zamak umesto povratka na nivo 1 (zadržavanje igrača); (2) Osvoji svet tretiran kao igra za decu (`kids: true`), kako plan kaže; (3) Surprizi bez reklama preko celog ekrana. Upozorenje uz plan: polish svih igara i dalje odlaže Fazu 1 (portali) — sledeći korak treba da bude izlazak na CrazyGames/Play i merenje, ne nove funkcije.
+
