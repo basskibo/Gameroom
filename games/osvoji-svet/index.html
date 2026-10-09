@@ -8,6 +8,8 @@
 <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Conquer the World">
 <script src="../../shared/gameroom-i18n.js"></script>
+<script src="../../shared/gameroom-config.js"></script>
+<script src="../../shared/gameroom-sdk.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=Unbounded:wght@700&display=swap" rel="stylesheet">
@@ -109,6 +111,17 @@
   }
   #go:disabled { opacity: 0.4; cursor: default; }
   #hint { margin: 0; font-size: 12px; color: var(--dim); min-height: 16px; }
+  #reinforce {
+    background: linear-gradient(#ffe066, #f5b800); color: #1b1b2f; border: 0; border-radius: 10px; padding: 7px 12px;
+    font-weight: 800; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+    animation: pop .3s ease;
+  }
+  #reinforce small { font-size: 10px; background: #1b1b2f; color: #ffe066; border-radius: 6px; padding: 1px 6px; }
+  #flashFx { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .5s;
+    background: radial-gradient(circle at 50% 50%, rgba(61,220,151,0) 40%, rgba(61,220,151,0.35)); }
+  #flashFx.on { opacity: 1; transition: none; }
+  #end .card, #start .card, #pause .card { animation: cardIn .3s cubic-bezier(.2, 1.4, .4, 1); }
+  @keyframes cardIn { from { transform: scale(.9) translateY(14px); opacity: 0; } }
   #hint.warn { color: var(--warn); }
 
   #atks {
@@ -301,7 +314,9 @@
       <button type="button" id="go" disabled data-i18n="attack"></button>
     </div>
     <p id="hint"></p>
+    <button type="button" id="reinforce" class="hidden"><span data-i18n="reinforce"></span><small data-i18n="adTag"></small></button>
   </div>
+  <div id="flashFx"></div>
 
   <div id="tip" class="hidden"></div>
   <div id="toasts"></div>
@@ -374,6 +389,7 @@ i18n.add({
     pickHint: 'Pick a country on the map or from the list.', search: 'Search countries', random: 'Random', play: 'PLAY',
     pauseText: 'Your army waits. P or Esc to resume.', resume: 'RESUME', again: 'PLAY AGAIN',
     t0: 'sea', t1: 'plains', t2: 'forest', t3: 'hills', t4: 'mountains', t5: 'desert',
+    reinforce: '⚔ Reinforcements: +50% army', adTag: 'AD', reinforced: 'Reinforcements arrived!',
     best: 'Best: {p}% of the world', underAttack: '{name} is attacking you!', youConquered: 'You conquered {name}',
     theyConquered: '{by} conquered {name}', landingRepelled: 'Your landing was repelled at the shore', landing: 'Landing: {name}', shore: 'shore',
     winTitle: 'The world is yours', loseTitle: 'Your country has fallen',
@@ -399,6 +415,7 @@ i18n.add({
     pickHint: 'Izaberi državu na mapi ili sa liste.', search: 'Traži državu', random: 'Nasumično', play: 'IGRAJ',
     pauseText: 'Vojska čeka. P ili Esc nastavljaju.', resume: 'NASTAVI', again: 'IGRAJ PONOVO',
     t0: 'more', t1: 'ravnica', t2: 'šuma', t3: 'brda', t4: 'planine', t5: 'pustinja',
+    reinforce: '⚔ Pojačanje: +50% vojske', adTag: 'REKLAMA', reinforced: 'Stiglo je pojačanje!',
     best: 'Najbolje: {p}% sveta', underAttack: '{name} te napada!', youConquered: 'Pokorio si: {name}',
     theyConquered: '{by} je pokorila: {name}', landingRepelled: 'Desant je odbijen na obali', landing: 'Iskrcavanje: {name}', shore: 'obala',
     winTitle: 'Svet je tvoj', loseTitle: 'Država je pala',
@@ -1346,7 +1363,12 @@ function onEliminated(d, by) {
   for (const A of attacks) if (A.a === d) A.dead = true;
   for (const B of boats) if (B.a === d) B.dead = true;
   if (SIM || d === player) return;
-  if (by === player) { toast(tr('youConquered', { name: nations[d].name }), 'good'); beep(680, 0.12, 0.05); }
+  if (by === player) {
+    toast(tr('youConquered', { name: nations[d].name }), 'good');
+    chord([587, 740, 880, 1175], 0.07, 0.045);
+    if (!SIM) { const n = nations[d]; ripple(n.ax, n.ay, '#3ddc97'); flashScreen(); }
+    sdk.track('nation_conquered', { name: nations[d].code || nations[d].name });
+  }
   else if (nations[d].home.area > 60) toast(tr('theyConquered', { by: nations[by].name, name: nations[d].name }));
 }
 
@@ -1613,7 +1635,12 @@ function finish(kind, info) {
   $('end-text').textContent = kind === 'win'
     ? tr('winText', { p: info.pct.toFixed(0), time: clock(worldT), troops: fmt(info.troops) })
     : tr('loseText', { p: peakPct.toFixed(1) });
-  if (!SIM) beep(kind === 'win' ? 740 : 110, 0.2, 0.05);
+  if (!SIM) {
+    if (kind === 'win') chord([523, 659, 784, 1046, 1318], 0.1, 0.06);
+    else beep(110, 0.4, 0.05);
+  }
+  sdk.gameplayStop();
+  sdk.track('game_end', { result: kind, pct: +info.pct.toFixed(1), peak: +peakPct.toFixed(1), seconds: Math.round(worldT), attacks: playerAttacks });
 }
 function clock(t) {
   const m = Math.floor(t / 60), s = Math.floor(t % 60);
@@ -1928,6 +1955,19 @@ function draw(now) {
     ctx.lineWidth = 2 / cam.z;
     ctx.stroke();
   }
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    const R = ripples[i];
+    R.t += 1 / 60;
+    if (R.t > 1) { ripples.splice(i, 1); continue; }
+    const e = 1 - Math.pow(1 - R.t, 3);
+    ctx.globalAlpha = 1 - R.t;
+    ctx.beginPath();
+    ctx.arc(R.x, R.y, (8 + e * 60) / cam.z, 0, Math.PI * 2);
+    ctx.strokeStyle = R.color;
+    ctx.lineWidth = (4 * (1 - R.t) + 1) / cam.z;
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
   ctx.restore();
 
   for (let i = 1; i < nations.length; i++) {
@@ -1948,24 +1988,57 @@ function toast(text, kind) {
   while (toastsEl.children.length > 4) toastsEl.firstChild.remove();
   setTimeout(() => el.remove(), 3600);
 }
+// sound: the shared bus (compressor, no clipping when many fronts move at once); loaded as a module
+let bus = null;
+import('../../shared/gameroom-audio.js').then(m => { bus = m.createAudioBus({ storageKey: '' }); }).catch(() => {});
 function unlock() {
-  if (SIM) return;
-  try {
-    if (!audioCtx) audioCtx = new AudioContext();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-  } catch (e) {}
+  if (SIM || !bus) return;
+  bus.ensure();
 }
+
+// ---------- ads + analytics: only through shared/gameroom-sdk.js. A game for kids: kids:true = no personalised ads ----------
+const GAME_VERSION = '1.1.0';
+const sdk = window.Gameroom;
+sdk.init({ game: 'osvoji-svet', version: GAME_VERSION, kids: true });
+let adHeld = false, reinforceUsed = false, reinforceOffered = false, firstMinute = false;
+sdk.on('adStart', () => { if (playing && !over && !paused) { adHeld = true; paused = true; } if (bus) bus.setMuted(true); });
+sdk.on('adEnd', () => { if (adHeld) { adHeld = false; paused = false; } if (bus) bus.setMuted(false); });
+function syncReinforce() {
+  const me = nations[player];
+  const can = playing && !over && !reinforceUsed && worldT > 45 && me && me.tiles > 0 && sdk.rewardedAvailable('reinforce');
+  $('reinforce').classList.toggle('hidden', !can);
+  if (can && !reinforceOffered) { reinforceOffered = true; sdk.track('rewarded_offer', { placement: 'reinforce' }); }
+  if (!firstMinute && playing && worldT >= 60) { firstMinute = true; sdk.track('first_minute', { pct: +(snapshot().pct).toFixed(1) }); }
+}
+async function reinforce() {
+  if (reinforceUsed) return;
+  $('reinforce').classList.add('hidden');
+  unlock();
+  const ok = await sdk.showRewarded('reinforce');
+  sdk.track('rewarded_watched', { placement: 'reinforce', ok });
+  const me = nations[player];
+  if (!ok || !me || over) return;
+  reinforceUsed = true;
+  me.troops += Math.max(50, me.max * 0.5);
+  toast(tr('reinforced'), 'good');
+  chord([523, 659, 784]);
+  flashScreen();
+}
+function flashScreen() {
+  const f = $('flashFx');
+  f.classList.add('on');
+  requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on')));
+}
+// conquest ripples drawn over the map (world coordinates)
+const ripples = [];
+function ripple(x, y, color) { ripples.push({ x, y, t: 0, color }); }
 function beep(freq, dur, vol) {
-  if (muted || !audioCtx || SIM) return;
-  const o = audioCtx.createOscillator(), g = audioCtx.createGain();
-  o.type = 'triangle';
-  o.frequency.value = freq;
-  g.gain.value = vol;
-  o.connect(g);
-  g.connect(audioCtx.destination);
-  o.start();
-  g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-  o.stop(audioCtx.currentTime + dur);
+  if (muted || SIM || !bus) return;
+  bus.tone({ f: freq, d: dur, type: 'triangle', v: vol * 1.4 });
+}
+function chord(notes, gap = 0.08, v = 0.05) {
+  if (muted || SIM || !bus) return;
+  notes.forEach((f, i) => bus.tone({ f, d: 0.22, type: 'triangle', v, delay: i * gap }));
 }
 
 function choose(i) {
@@ -2052,7 +2125,13 @@ function doAttack() {
     if (owner[target.tile] === player) { toast(tr('coastYours')); return; }
     ok = launchBoat(player, target.tile, send);
   }
-  if (ok) { playerAttacks++; beep(target.mode === 'sea' ? 300 : 520, 0.07, 0.04); }
+  if (ok) {
+    playerAttacks++;
+    beep(target.mode === 'sea' ? 300 : 520, 0.07, 0.04);
+    if (bus && !muted && !SIM) bus.noise({ d: 0.35, v: 0.08, f: 400, f2: 2400 });
+    const tx = target.tile % W + 0.5, ty = ((target.tile / W) | 0) + 0.5;
+    if (!SIM) ripple(tx, ty, '#ffd166');
+  }
   else toast(tr('cantAttack'));
 }
 
@@ -2166,6 +2245,8 @@ function begin(i) {
   resize();
   frameNation(i);
   toast(tr('startHint'));
+  reinforceUsed = false; reinforceOffered = false;
+  if (!SIM) { sdk.gameplayStart(); sdk.track('game_start', { country: me.code || me.name }); }
   renderBoard();
   refreshDock();
   if (SIM > 0) runSim();
@@ -2187,8 +2268,11 @@ function runSim() {
 
 function togglePause(force) {
   if (!playing || over) return;
+  const was = paused;
   paused = force === undefined ? !paused : force;
   pauseEl.classList.toggle('hidden', !paused);
+  if (paused && !was) sdk.gameplayStop();
+  if (!paused && was) sdk.gameplayStart();
 }
 function openSettings() {
   settingsEl.classList.remove('hidden');
@@ -2200,17 +2284,20 @@ $('gear').onclick = openSettings;
 $('settings-close').onclick = closeSettings;
 $('mute').onchange = (e) => {
   muted = e.target.checked;
+  if (bus) bus.setMuted(muted);
   try { localStorage.setItem('osvoji-svet:mute', muted ? '1' : '0'); } catch (err) {}
 };
 playBtn.onclick = () => { if (picked) begin(picked); };
 $('random').onclick = () => choose(1 + ((Math.random() * (nations.length - 1)) | 0));
-$('resume').onclick = () => togglePause(false);
+$('resume').onclick = () => { togglePause(false); sdk.showMidgame('resume'); };
+$('reinforce').onclick = reinforce;
 $('pauseBtn').onclick = () => togglePause();
 $('speed').onclick = () => {
   speed = speed === 1 ? 2 : speed === 2 ? 3 : 1;
   $('speed').textContent = speed + '×';
 };
-$('again').onclick = () => {
+$('again').onclick = async () => {
+  await sdk.showMidgame('game_end');   // between two games: a natural break, capped by the SDK
   playing = false;
   player = 0;
   hl = 0;
@@ -2369,12 +2456,23 @@ function loop(now) {
       refreshDock();
       refreshAtks();
       $('hud-time').textContent = clock(worldT);
+      syncReinforce();
     }
     boardClock -= dt;
     if (boardClock <= 0) { boardClock = 0.6; renderBoard(); }
   }
   requestAnimationFrame(loop);
 }
+
+// debug hooks for tests
+window.__os = {
+  ready: () => !!owner,
+  state: () => ({ playing, paused, over, player, worldT, ...(owner && player ? snapshot() : {}) }),
+  begin: (i = 1) => begin(i),
+  finish: (kind) => finish(kind, snapshot()),
+  advance: (sec) => { worldT += sec; syncReinforce(); return worldT; },
+  troops: () => nations[player] ? nations[player].troops : 0,
+};
 
 resize();
 requestAnimationFrame(loop);

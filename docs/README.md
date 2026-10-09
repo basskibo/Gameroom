@@ -30,7 +30,7 @@ Folder `docs/` ne ide na Vercel (`.vercelignore`).
 | Monster Lane | [games/monster-lane/](games/monster-lane/README.md) | AAA prolaz 1 (2026-10-10): GLB modeli, bloom, juice, uvod, reklame za nagradu, 17 testova |
 | Razori Kule | [games/razori-kule/](games/razori-kule/README.md) | AAA prolaz 1 (2026-10-10): eksplozije, nebo, napredak, uvod, reklame za nagradu, 15 testova |
 | Surprizi | — | čeka audit |
-| Osvoji svet | — | čeka audit |
+| Osvoji svet | [games/osvoji-svet/](games/osvoji-svet/README.md) | SDK (kids), reklama za nagradu, efekti osvajanja, 4 testa (2026-10-10) |
 
 Za novu igru kopiraj [games/_template/](games/_template/) u `docs/games/<slug>/` i prati skill `game-audit` (`.claude/skills/game-audit/SKILL.md`).
 
