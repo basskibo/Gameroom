@@ -29,6 +29,7 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 | PT-BUG-021 | S4 | rešen 2026-10-09 | Ime igre: `<title>` „Sawmill Tycoon“, landing „Pilana Tajkun“ |
 | PT-BUG-022 | S4 | otvoren | Na telefonu hint „drag · zoom…“ ide u dva reda preko igre |
 | PT-BUG-023 | S3 | rešen 2026-10-09 | Likovi (radnici, kupci) previše tamni, ne uklapaju se u svetlu scenu |
+| PT-BUG-024 | S2 | rešen 2026-10-09 | Telefon (iPhone): mesta za mašine trepere, šarene „šljokice“ u svetlima noću |
 
 ## Otvoreno
 
@@ -65,6 +66,11 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 - Prijava korisnika 2026-10-09: modeli ljudi deluju mračno i „ne idu uz igru“. Quaternius likovi imaju tamne, zasićene materijale (teget/crna odeća, tamna koža u senci) i metalness/roughness koji pod PMREM-om daju malo odsjaja.
 - **Uzrok:** svi materijali likova imaju `metalness 0.4` i `roughness 0.27` — pod slabim okruženjem metal odražava tamu.
 - **Rešenje:** `toyLook()` u `mountYardModels`: mat materijal, paleta podignuta i toplija (koža ostaje, samo toplija), 12 % sopstvene boje u senci, glava 1,3×.
+
+### PT-BUG-024 · S2 · rešen 2026-10-09 — Treperenje na telefonu
+- Prijava korisnika (snimak sa iPhone-a): šrafirane ploče za nekupljene mašine trepere; noću u krugovima svetla ispod mašina šarene tačkice.
+- **Uzrok:** šrafirana ploča je na istoj visini kao vrh betonske ploče (y 0,16) — z-fighting, vidljiv uz manju preciznost dubine na telefonu. Tačkice: aditivni „svetlosni“ dekali preko HDR cilja na Apple GPU-u.
+- **Rešenje:** `polygonOffset` za svu podnu farbu (`DECAL`: šrafure, brojevi, svetla), svetla ispod mašina uklonjena, svetla lampi i farova sa normalnim mešanjem umesto aditivnog.
 
 ## Rešeno
 

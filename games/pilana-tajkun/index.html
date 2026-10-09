@@ -1300,7 +1300,8 @@ function bayNumTex(n) {
   if (document.fonts && document.fonts.load) document.fonts.load('800 150px "Baloo 2"').then(paint);
   return tex;
 }
-const bayHatchMat = new THREE.MeshStandardMaterial({ map: bayHatchTex(), roughness: 0.94 });
+const DECAL = { polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }; // floor paint: drawn over the slab it lies on, no flicker on phones
+const bayHatchMat = new THREE.MeshStandardMaterial({ map: bayHatchTex(), roughness: 0.94, ...DECAL });
 function wheelStop(parent, len) {
   part(rbox(len, 0.2, 0.32, 0.09, 2), 0x2a2f34, parent, 0, 0.14, 0);
   for (const s of [-1, 1]) part(rbox(0.22, 0.24, 0.38, 0.07, 1), 0xf2c230, parent, s * (len / 2 - 0.16), 0.15, 0);
@@ -1321,7 +1322,7 @@ function bayFloor(parent, w, d) {
 }
 const bayNumMats = new Map();
 function bayNumMat(n) {
-  if (!bayNumMats.has(n)) bayNumMats.set(n, new THREE.MeshBasicMaterial({ map: bayNumTex(n), transparent: true, depthWrite: false, toneMapped: false }));
+  if (!bayNumMats.has(n)) bayNumMats.set(n, new THREE.MeshBasicMaterial({ map: bayNumTex(n), transparent: true, depthWrite: false, toneMapped: false, ...DECAL }));
   return bayNumMats.get(n);
 }
 function bayNumber(parent, n, size, yOff) {
@@ -2636,7 +2637,7 @@ const glowTex = (() => {
   x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
   const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
 })();
-const beamMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffe7b0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, visible: false });
+const beamMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffe7b0, transparent: true, opacity: 0, depthWrite: false, fog: false, visible: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
 const BEAM_GEO = new THREE.PlaneGeometry(3.4, 6.8).rotateX(-Math.PI / 2);
 function buildTruck() {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
@@ -8280,8 +8281,8 @@ const DAY_KEYS = [
   { t: 0.60, el: 17, az: -96, sunC: 0xffa24c, sunI: 3.4, skyC: 0x9eb2e6, groundC: 0x5a4a30, hemiI: 0.5, topC: 0x6a98d0, horizonC: 0xffc98e, fogC: 0xf0be8c, env: 0.18, exp: 1.04, bloom: 0.45, thr: 1.0, sat: 1.16, con: 1.07, vig: 0.2, tintC: 0xfff0e0, night: 0, glow: 1.3 },
   { t: 0.665, el: 5, az: -104, sunC: 0xff6a2c, sunI: 2.1, skyC: 0x8a8cc8, groundC: 0x3a3030, hemiI: 0.45, topC: 0x4a5c9a, horizonC: 0xff9658, fogC: 0xdc906c, env: 0.14, exp: 1.08, bloom: 0.6, thr: 0.95, sat: 1.1, con: 1.05, vig: 0.24, tintC: 0xffe6d4, night: 0.4, glow: 1.6 },
   { t: 0.695, el: 2, az: -106, sunC: 0xd06a5a, sunI: 0.15, skyC: 0x9a8cb4, groundC: 0x2e2c3a, hemiI: 0.5, topC: 0x2c3870, horizonC: 0xc87a78, fogC: 0x7a6488, env: 0.12, exp: 1.1, bloom: 0.8, thr: 0.9, sat: 1.04, con: 1.04, vig: 0.28, tintC: 0xf0e4f4, night: 0.8, glow: 0.8 },
-  { t: 0.73, el: 42, az: 60, sunC: 0x9fb4ff, sunI: 0.5, skyC: 0x5068b0, groundC: 0x1a1e2c, hemiI: 0.38, topC: 0x0e1638, horizonC: 0x4a5488, fogC: 0x1c2850, env: 0.06, exp: 1.0, bloom: 0.95, thr: 0.85, sat: 0.95, con: 1.08, vig: 0.34, tintC: 0xdde6ff, night: 1, glow: 0.3 },
-  { t: 0.90, el: 46, az: 30, sunC: 0x9fb4ff, sunI: 0.5, skyC: 0x5068b0, groundC: 0x1a1e2c, hemiI: 0.38, topC: 0x0a1230, horizonC: 0x44508a, fogC: 0x1c2850, env: 0.06, exp: 1.0, bloom: 0.95, thr: 0.85, sat: 0.95, con: 1.08, vig: 0.34, tintC: 0xdde6ff, night: 1, glow: 0.3 },
+  { t: 0.73, el: 42, az: 60, sunC: 0x9fb4ff, sunI: 0.5, skyC: 0x5068b0, groundC: 0x1a1e2c, hemiI: 0.46, topC: 0x0e1638, horizonC: 0x4a5488, fogC: 0x1c2850, env: 0.06, exp: 1.0, bloom: 0.95, thr: 0.85, sat: 0.95, con: 1.08, vig: 0.34, tintC: 0xdde6ff, night: 1, glow: 0.3 },
+  { t: 0.90, el: 46, az: 30, sunC: 0x9fb4ff, sunI: 0.5, skyC: 0x5068b0, groundC: 0x1a1e2c, hemiI: 0.46, topC: 0x0a1230, horizonC: 0x44508a, fogC: 0x1c2850, env: 0.06, exp: 1.0, bloom: 0.95, thr: 0.85, sat: 0.95, con: 1.08, vig: 0.34, tintC: 0xdde6ff, night: 1, glow: 0.3 },
   { t: 0.935, el: 3, az: 75, sunC: 0xff9a78, sunI: 0.3, skyC: 0xb08cb0, groundC: 0x34303c, hemiI: 0.5, topC: 0x34447e, horizonC: 0xf0a088, fogC: 0x9c8098, env: 0.12, exp: 1.1, bloom: 0.7, thr: 0.9, sat: 1.02, con: 1.04, vig: 0.26, tintC: 0xf6e6ee, night: 0.7, glow: 1.0 },
   { t: 0.97, el: 10, az: 62, sunC: 0xffa070, sunI: 1.4, skyC: 0xe8c0b8, groundC: 0x4a4a3c, hemiI: 0.52, topC: 0x5a7ab8, horizonC: 0xffb48c, fogC: 0xd8b4a4, env: 0.14, exp: 1.06, bloom: 0.5, thr: 0.95, sat: 1.06, con: 1.04, vig: 0.2, tintC: 0xfff0e4, night: 0.3, glow: 1.4 },
 ];
@@ -8289,30 +8290,13 @@ let nightDim = 1;
 const day = {};
 const DEG = Math.PI / 180;
 // light pools under the street lamps (one instanced decal) and fireflies over the grass at night
-const poolMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffd79a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, visible: false });
+const poolMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffd79a, transparent: true, opacity: 0, depthWrite: false, fog: false, visible: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
 const pools = new THREE.InstancedMesh(new THREE.PlaneGeometry(6.4, 6.4).rotateX(-Math.PI / 2), poolMat, LAMP_POOLS.length);
 LAMP_POOLS.forEach((p, i) => pools.setMatrixAt(i, new THREE.Matrix4().makeTranslation(p.x, p.y + 0.06, p.z)));
 pools.renderOrder = 2; pools.frustumCulled = false;
 scene.add(pools);
 glassMat.emissive = new THREE.Color(0xffc670);
-const workPools = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), poolMat, 48);
-workPools.renderOrder = 2; workPools.frustumCulled = false; workPools.count = 0;
-scene.add(workPools);
-let fireflyT = 0, workT = 0;
-const workObj = new THREE.Object3D();
-function syncWorkPools() { // one warm floodlight pool per built machine
-  let k = 0;
-  for (const st of STATIONS) {
-    const s = spotsOf(st)[0];
-    if (!s || k >= 48) continue;
-    workObj.position.set(s.x, 0.12, s.z);
-    workObj.scale.setScalar(clamp(s.r * 1.9, 5, 11));
-    workObj.updateMatrix();
-    workPools.setMatrixAt(k++, workObj.matrix);
-  }
-  workPools.count = k;
-  workPools.instanceMatrix.needsUpdate = true;
-}
+let fireflyT = 0;
 function applyDay(dt) {
   if (dayCycle && !instant && S.running) tod = (tod + dt / DAY_LEN) % 1; // the title screen holds its golden hour
   else if (!dayCycle && !qs.has('tod')) tod += (0.2 - tod) * Math.min(1, dt * 0.8); // ease back to day
@@ -8331,10 +8315,9 @@ function applyDay(dt) {
   lampMat.emissiveIntensity = 0.6 + n * 5;
   headlightMat.emissiveIntensity = 0.5 + n * 6;
   glassMat.emissiveIntensity = n * 0.75;
-  poolMat.opacity = n * 0.55; poolMat.visible = n > 0.02;
-  if (n > 0.02 && (workT -= dt) <= 0) { workT = 0.5; syncWorkPools(); }
+  poolMat.opacity = n * 0.42; poolMat.visible = n > 0.02;
   nightDim = 1 - n * 0.65;
-  beamMat.opacity = n * 0.42; beamMat.visible = n > 0.02;
+  beamMat.opacity = n * 0.32; beamMat.visible = n > 0.02;
   if (n > 0.5 && dt > 0) {
     fireflyT -= dt;
     if (fireflyT <= 0) {
