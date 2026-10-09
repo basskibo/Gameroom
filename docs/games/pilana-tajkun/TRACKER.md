@@ -2,7 +2,7 @@
 
 Plan unapređenja po fazama. Stavke vode na ID-jeve iz [BUGS](BUGS.md), [TECH-DEBT](TECH-DEBT.md) i [IMPROVEMENTS](IMPROVEMENTS.md). Agent na početku zadatka čita ovaj fajl, a na kraju štiklira i upisuje [LEDGER](LEDGER.md).
 
-**Trenutno:** Faze A–D i „wow“ V2–V5 gotove (2026-10-09). V1 gotov (Kenney modeli). Sledi Faza F (monetizacija, Faza 0: SDK, analitika, engleski).
+**Trenutno:** Faze A–D i „wow“ V1–V5 gotove (2026-10-09). Faza F u toku: SDK, reklama za nagradu i Android aplikacija gotovi; čeka nalog na Play-u, AdMob i PostHog (korisnik).
 
 ## Odluke
 
@@ -76,11 +76,13 @@ Cilj: kasna igra ≥ 55 FPS / 1% low ≥ 40 na iGPU, < 300 draw call-ova rano, <
 
 ## Faza F — Plan monetizacije (Faza 0 iz `MONETIZATION.md`)
 
-- [ ] PT-IMP-T02 / PT-TD-014 SDK + analitika
+- [x] PT-IMP-T02 / PT-TD-014 SDK + analitika (događaji idu u PostHog kad se doda ključ)
 - [ ] PT-IMP-T01 / PT-TD-013 srpski + engleski
-- [ ] PT-BUG-021 jedno ime igre
+- [x] PT-BUG-021 jedno ime igre („Sawmill Tycoon · Pilana Tajkun“)
 - [ ] PT-TD-015 / PT-BUG-019 validacija save-a
-- [ ] PT-IMP-G03 mesta za reklamu za nagradu (posle SDK-a)
+- [x] PT-IMP-G03 reklama za nagradu: ×2 zarada 3 min (dugme se vidi samo kad je reklama spremna)
+- [x] Android aplikacija (Capacitor + AdMob test), `mobile/pilana-tajkun/`
+- [ ] Pravi AdMob ID-jevi, ključ za potpisivanje, Play listing (korisnik)
 - [ ] PT-IMP-U06 offline zarada
 
 ## Faza G — Ekonomija i sadržaj

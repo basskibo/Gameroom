@@ -113,8 +113,8 @@
       if (!A || !this.ready) return Promise.resolve(false);
       this.ready = false;
       return new Promise(function (resolve) {
-        var paid = false, subs = [];
-        function done() { subs.forEach(function (h) { h.then ? h.then(function (x) { x.remove(); }) : h.remove && h.remove(); }); resolve(paid); self.preload(); }
+        var paid = false, subs = [], over = false;
+        function done() { if (over) return; over = true; subs.forEach(function (h) { h.then ? h.then(function (x) { x.remove(); }) : h.remove && h.remove(); }); resolve(paid); self.preload(); }
         subs.push(A.addListener('onRewardedVideoAdReward', function () { paid = true; }));
         subs.push(A.addListener('onRewardedVideoAdDismissed', done));
         subs.push(A.addListener('onRewardedVideoAdFailedToShow', done));

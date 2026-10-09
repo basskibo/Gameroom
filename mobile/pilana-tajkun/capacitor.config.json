@@ -1,0 +1,11 @@
+{
+  "appId": "rs.codemeup.sawmilltycoon",
+  "appName": "Sawmill Tycoon",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#5fa843"
+  },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 0 }
+  }
+}

@@ -33,3 +33,8 @@ Folder `docs/` ne ide na Vercel (`.vercelignore`).
 | Osvoji svet | — | čeka audit |
 
 Za novu igru kopiraj [games/_template/](games/_template/) u `docs/games/<slug>/` i prati skill `game-audit` (`.claude/skills/game-audit/SKILL.md`).
+
+## Android i pravno
+
+- [engineering/android.md](engineering/android.md) — Capacitor + AdMob, build, koraci do Google Play objave
+- [legal/privacy-policy-draft.md](legal/privacy-policy-draft.md) — nacrt politike privatnosti (obavezna za Play/AdMob)

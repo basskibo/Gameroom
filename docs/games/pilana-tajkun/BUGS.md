@@ -26,7 +26,7 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 | PT-BUG-018 | S4 | otvoren | Leteći brojevi ne prate svet kad se kamera pomera |
 | PT-BUG-019 | S4 | otvoren | Oštećen save sa pogrešnim tipom (npr. `money: "x"`) prolazi u igru |
 | PT-BUG-020 | S4 | rešen 2026-10-09 | Meni podešavanja se ne zatvara klikom van njega |
-| PT-BUG-021 | S4 | otvoren | Ime igre: `<title>` „Sawmill Tycoon“, landing „Pilana Tajkun“ |
+| PT-BUG-021 | S4 | rešen 2026-10-09 | Ime igre: `<title>` „Sawmill Tycoon“, landing „Pilana Tajkun“ |
 | PT-BUG-022 | S4 | otvoren | Na telefonu hint „drag · zoom…“ ide u dva reda preko igre |
 | PT-BUG-023 | S3 | rešen 2026-10-09 | Likovi (radnici, kupci) previše tamni, ne uklapaju se u svetlu scenu |
 

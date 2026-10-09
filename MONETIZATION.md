@@ -56,10 +56,10 @@ Igre po narudžbini (tačka 5) su verovatno najbrži pravi prihod. Surprizi se m
 
 ### Faza 0 — Temelji (oktobar 2026, 2–3 nedelje)
 
-- [ ] `shared/gameroom-sdk.js`: jedan sloj iznad svih reklamnih servisa i analitike. Igre pozivaju samo njega, nikad SDK portala direktno.
+- [x] `shared/gameroom-sdk.js`: jedan sloj iznad svih reklamnih servisa i analitike. (2026-10-09: adapteri none/test/admob/crazygames/poki; GameDistribution i sopstveni sajt kasnije; Pilana povezana, ostale igre čekaju) Igre pozivaju samo njega, nikad SDK portala direktno.
   - API: `Gameroom.init()`, `gameplayStart()`, `gameplayStop()`, `showRewarded(placement) → Promise<boolean>`, `showMidgame()`, `track(event, props)`.
   - Adapteri: AdMob (Android aplikacija), CrazyGames, Poki, GameDistribution, sopstveni sajt, test adapter (`?ads=test`, lažna reklama za proveru toka) i prazan adapter (podrazumevani, ne radi ništa). Adapter se bira po okruženju, hostu ili query parametru.
-- [ ] Analitika (Plausible ili PostHog). Događaji: `game_start`, `first_minute`, `session_end` (sa trajanjem), `return_d1`, `rewarded_offer`, `rewarded_watched`.
+- [ ] Analitika (Plausible ili PostHog). SDK šalje događaje u PostHog čim se upiše ključ (`shared/gameroom-config.js`); nalog još ne postoji — PostHog ima besplatan nivo. Događaji: `game_start`, `first_minute`, `session_end` (sa trajanjem), `return_d1`, `rewarded_offer`, `rewarded_watched`.
 - [ ] Engleski prevod (i18n) za sve igre. Podrazumevani jezik po `navigator.language`, uz izbor u meniju podešavanja.
 - [ ] Performanse: izdvojiti i kompresovati slike iz Pilane (~1 MB) i Surprizija (~845 KB), dodati ekran za učitavanje. Cilj: prvo iscrtavanje za manje od 3 s na prosečnom telefonu.
 - [ ] Verzija na `localStorage` save (`version` polje i migracija), da nadogradnje ne brišu napredak.
@@ -75,11 +75,11 @@ Igre po narudžbini (tačka 5) su verovatno najbrži pravi prihod. Surprizi se m
 
 ### Faza 1A — Google Play, paralelno sa portalima (od oktobra 2026)
 
-- [ ] Capacitor Android projekat za Pilanu (`mobile/`), igra se kopira iz `games/` + `shared/` skriptom (pakovanje, ne build igre).
-- [ ] AdMob adapter u `shared/gameroom-sdk.js` (reklama za nagradu + reklama preko celog ekrana na prirodnoj pauzi), prvo sa Google test ID-jevima.
+- [x] Capacitor Android projekat za Pilanu (`mobile/pilana-tajkun/`, 2026-10-09; debug APK radi na emulatoru), igra se kopira iz `games/` + `shared/` skriptom (pakovanje, ne build igre).
+- [x] AdMob adapter u `shared/gameroom-sdk.js` (2026-10-09; test reklama za nagradu provereno na emulatoru) (reklama za nagradu + reklama preko celog ekrana na prirodnoj pauzi), prvo sa Google test ID-jevima.
 - [ ] Nalog na Google Play Console (25 $, jednom) i AdMob nalog (besplatno); prava ID-jeva aplikacije i reklama u `mobile/`.
-- [ ] Ključ za potpisivanje (čuva se van repoa), App Bundle (`.aab`).
-- [ ] Politika privatnosti na sajtu (obavezna za Play i AdMob), „Data safety“ formular, ocena sadržaja, `app-ads.txt` na domenu.
+- [ ] Ključ za potpisivanje (čuva se van repoa), App Bundle (`.aab`). Gradle je spreman (`keystore.properties`), ključ pravi korisnik — vidi `docs/engineering/android.md`.
+- [ ] Politika privatnosti na sajtu (obavezna za Play i AdMob; nacrt `docs/legal/privacy-policy-draft.md`), „Data safety“ formular, ocena sadržaja, `app-ads.txt` na domenu.
 - [ ] Zatvoreno testiranje: novi lični nalozi moraju imati ~12 testera tokom 14 dana pre objave u produkciji (Google pravilo; proveriti aktuelno u Play Console).
 - [ ] Objava Pilane, pa merenje (instalacije, D1, gledanje reklama) uporedo sa portalima.
 - [ ] Igre za decu (Surprizi, Osvoji svet) na Play-u samo uz „Families“ pravila: sertifikovani reklamni SDK, bez personalizacije.
