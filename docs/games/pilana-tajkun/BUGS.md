@@ -27,7 +27,7 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 | PT-BUG-019 | S4 | otvoren | Oštećen save sa pogrešnim tipom (npr. `money: "x"`) prolazi u igru |
 | PT-BUG-020 | S4 | rešen 2026-10-09 | Meni podešavanja se ne zatvara klikom van njega |
 | PT-BUG-021 | S4 | rešen 2026-10-09 | Ime igre: `<title>` „Sawmill Tycoon“, landing „Pilana Tajkun“ |
-| PT-BUG-022 | S4 | otvoren | Na telefonu hint „drag · zoom…“ ide u dva reda preko igre |
+| PT-BUG-022 | S4 | rešen 2026-10-09 | Na telefonu hint „drag · zoom…“ ide u dva reda preko igre |
 | PT-BUG-023 | S3 | rešen 2026-10-09 | Likovi (radnici, kupci) previše tamni, ne uklapaju se u svetlu scenu |
 | PT-BUG-024 | S2 | rešen 2026-10-09 | Telefon (iPhone): mesta za mašine trepere, šarene „šljokice“ u svetlima noću |
 
@@ -58,9 +58,9 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 - `<title>Sawmill Tycoon</title>`, landing „Pilana Tajkun“, `apple-mobile-web-app-title` „Pilana“. Već u planu (`MONETIZATION.md`, Faza 0, „Sređivanje imena“).
 - **Test:** `smoke.spec.mjs` › „page title and landing name agree“ (`test.fail`).
 
-### PT-BUG-022 · S4 · otvoren — Hint na telefonu u dva reda
+### PT-BUG-022 · S4 · rešen 2026-10-09 — Hint na telefonu u dva reda
 - `#hint` na 390 px prelama „drag · zoom · tap a machine to upgrade“ u dva reda iznad nav dugmadi i stoji 2,5 s posle prvog dodira.
-- **Predlog:** kraći tekst na telefonu ili ikonice.
+- **Rešenje:** tekst skraćen na „drag · pinch · tap a machine“, `white-space: nowrap`; test u `mobile.spec.mjs`.
 
 ### PT-BUG-023 · S3 · rešen 2026-10-09 — Tamni likovi
 - Prijava korisnika 2026-10-09: modeli ljudi deluju mračno i „ne idu uz igru“. Quaternius likovi imaju tamne, zasićene materijale (teget/crna odeća, tamna koža u senci) i metalness/roughness koji pod PMREM-om daju malo odsjaja.
@@ -174,3 +174,7 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 
 ### PT-BUG-003 · S4 · rešen 2026-10-09 — Spljošteno ✕
 - `#shopClose, #booksClose` u flex zaglavlju bez `flex: none` — dugi opis ga sabija na ~16 px širine. Dodato `flex: none`.
+
+### PT-BUG-024-UI · S3 · rešen 2026-10-09 — Zadaci i ponude se gomilaju i preklapaju na telefonu
+- Prijava korisnika: porudžbina, posao i ponuda kupca zauzimaju trećinu ekrana (265 px od 812), toast je išao preko ponude, a „ptice“ (beli trouglovi) su na telefonu izgledale kao papirni avioni.
+- **Rešenje:** HUD v2 (jedan jezik kartica), porudžbina i posao u jednom redu, ponuda u zbijenom obliku kad je panel otvoren, toast se pozicionira po stvarnoj visini HUD-a, dok umesto 5 dugmadi. Ptice uklonjene iz scene.

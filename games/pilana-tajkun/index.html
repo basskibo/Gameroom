@@ -32,102 +32,143 @@
   #ui { position: fixed; inset: 0; pointer-events: none; color: #fff; }
   #vignette { position: fixed; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 45%, transparent 55%, rgba(18, 32, 22, 0.32) 100%); }
   .stroke { text-shadow: 0 2px 0 #0005, 2px 2px 0 #16232b, -2px -2px 0 #16232b, 2px -2px 0 #16232b, -2px 2px 0 #16232b; }
+  /* HUD v2: one glass "card" language for everything that floats over the world */
+  :root {
+    --ink: #16232b; --gold: #ffd84a; --gold-d: #a87a10; --green: #7dcea0; --green-hi: #b6f5a0; --red: #ff6b5b;
+    --card: linear-gradient(180deg, #2c3c48ea, #1a252dea);
+    --card-edge: 1px solid #ffffff1f;
+    --card-shadow: 0 3px 0 #0004, 0 8px 16px #0003, inset 0 1px 0 #ffffff26;
+  }
   #top {
     position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between;
-    align-items: flex-start; padding: max(10px, env(safe-area-inset-top)) 12px 0; gap: 8px;
+    align-items: flex-start; padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) 0 max(12px, env(safe-area-inset-left)); gap: 8px;
   }
-  .hud-left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .hud-res { display: flex; gap: 8px; align-items: center; flex: none; }
-  .pill {
-    display: inline-flex; align-items: center; gap: 6px; background: #1e2a33b8; border-radius: 16px;
-    padding: 4px 14px 4px 8px; font-size: 20px; font-weight: 800; line-height: 1.2;
-    box-shadow: 0 3px 0 #0003, inset 0 1px 0 #ffffff22; border: 1px solid #ffffff14;
+  .hud-left { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; flex: 1 1 auto; min-width: 0; }
+  .hud-main { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .hud-res {
+    display: flex; flex-wrap: wrap; align-items: center; flex: none; max-width: 100%; padding: 2px 4px;
+    background: var(--card); border: var(--card-edge); border-radius: 16px; box-shadow: var(--card-shadow);
     backdrop-filter: blur(8px) saturate(1.3); -webkit-backdrop-filter: blur(8px) saturate(1.3);
   }
-  .pill.money { background: linear-gradient(180deg, #2a3a46d0, #1a252dd0); border-color: #ffd84a55; }
-  .pill.money { font-size: 28px; color: #ffd84a; pointer-events: auto; cursor: pointer; }
+  .pill {
+    display: inline-flex; align-items: center; gap: 6px; background: var(--card); border-radius: 16px;
+    padding: 4px 14px 4px 8px; font-size: 20px; font-weight: 800; line-height: 1.2;
+    box-shadow: var(--card-shadow); border: var(--card-edge);
+    backdrop-filter: blur(8px) saturate(1.3); -webkit-backdrop-filter: blur(8px) saturate(1.3);
+  }
+  .hud-res .pill { background: none; border: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; padding: 2px 9px 2px 5px; }
+  .hud-res .pill + .pill { border-left: 1px solid #ffffff1c; border-radius: 0; padding-left: 9px; }
+  .pill.money { background: linear-gradient(180deg, #34444fe0, #1a252de0); border-color: #ffd84a66; font-size: 28px; color: var(--gold); pointer-events: auto; cursor: pointer; }
   .coin {
     position: absolute; left: 0; top: 0; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; z-index: 20;
     background: radial-gradient(circle at 35% 30%, #fff8c4, #ffd84a 45%, #c98c14); box-shadow: 0 0 0 2px #8a5a0a55, 0 2px 4px #0005;
   }
-  .pill.rate { font-size: 14px; color: #a8e6ad; }
-  .pill.boost { font-family: inherit; font-size: 15px; color: #1e2a33; background: linear-gradient(180deg, #ffe27a, #f2b52a); border-color: #fff6; cursor: pointer; pointer-events: auto; animation: boostIn .4s cubic-bezier(.2, 1.4, .4, 1); }
-  .pill.boost.on { cursor: default; color: #ffd84a; background: #1e2a33d0; border-color: #ffd84a88; box-shadow: 0 0 0 2px #ffd84a55, 0 3px 0 #0003; }
+  .pill.rate { font-size: 14px; color: #a8e6ad; padding: 3px 10px; }
+  .pill.boost { font-family: inherit; font-size: 15px; color: var(--ink); background: linear-gradient(180deg, #ffe27a, #f2b52a); border-color: #fff6; cursor: pointer; pointer-events: auto; animation: boostIn .4s cubic-bezier(.2, 1.4, .4, 1); }
+  .pill.boost.on { cursor: default; color: var(--gold); background: #1e2a33d0; border-color: #ffd84a88; box-shadow: 0 0 0 2px #ffd84a55, 0 3px 0 #0003; }
   .pill.boost.hidden { display: none; }
   @keyframes boostIn { from { opacity: 0; transform: scale(.6); } to { opacity: 1; transform: none; } }
   .pill.wood { font-size: 16px; color: #f0d2a0; }
   .pill.stock { font-size: 16px; color: #f0a05a; }
   .pill.board { font-size: 16px; color: #f6e7c1; }
-  .ico { width: 26px; height: 26px; display: block; flex: none; }
+  .ico { width: 24px; height: 24px; display: block; flex: none; }
   #furnPill.hidden, #firePill.hidden { display: none; }
-  #orderWrap { flex-basis: 100%; display: flex; }
+  /* task rail: the rush order and the next job share one row, the buyer offer drops in under it */
+  #tasks { display: flex; gap: 6px; align-items: stretch; max-width: 100%; min-width: 0; }
+  #tasks:not(:has(:not(.hidden))) { display: none; }
+  #orderWrap { flex: none; display: flex; min-width: 0; }
   #orderWrap.hidden { display: none; }
-  #orderBar {
-    width: max-content; display: flex; align-items: center; gap: 8px;
-    background: #1e2a33ee; border: 2px solid #ffd84a; border-radius: 14px; padding: 6px 12px;
-    font-weight: 800; font-size: 16px; box-shadow: 0 3px 0 #0003;
+  .task {
+    position: relative; overflow: hidden; display: flex; align-items: center; gap: 7px; min-width: 0;
+    background: var(--card); border: var(--card-edge); border-radius: 14px; padding: 5px 10px 8px 6px;
+    font-weight: 800; font-size: 15px; line-height: 1.1; box-shadow: var(--card-shadow);
+    backdrop-filter: blur(8px) saturate(1.3); -webkit-backdrop-filter: blur(8px) saturate(1.3);
   }
-  #orderBar b { color: #ffd84a; font-weight: 800; }
-  #jobBar {
-    flex: 0 0 auto; width: max-content; max-width: 100%; display: flex; align-items: center; gap: 5px;
-    background: #1e2a33ee; border: 2px solid #7dcea0; border-radius: 12px; padding: 2px 8px;
-    font-weight: 800; font-size: 14px; box-shadow: 0 3px 0 #0003;
-  }
+  .task .tico { flex: none; display: grid; place-items: center; width: 28px; height: 28px; border-radius: 9px; font-size: 16px; }
+  .task .tico .ico { width: 22px; height: 22px; }
+  .task .tname { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .task b { flex: none; font-weight: 800; }
+  .task .tbar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: #0005; }
+  .task .tbar i { display: block; height: 100%; width: 0; transition: width .25s linear; }
+  #orderBar { border-color: #ffd84a99; width: max-content; max-width: 100%; }
+  #orderBar .tico { background: linear-gradient(180deg, #ffe27a, #f2b52a); }
+  #orderBar .tbar i { background: linear-gradient(90deg, #f2b52a, #ffe27a); }
+  #orderBar .cnt { color: #fff; flex: none; }
+  #orderBar b { color: var(--gold); min-width: 2.2em; text-align: right; }
+  #orderBar.late b { color: var(--red); animation: lateBlink .7s steps(2) infinite; }
+  @keyframes lateBlink { 50% { opacity: .45; } }
+  #jobBar { flex: 0 1 auto; border-color: #7dcea099; }
   #jobBar.hidden { display: none; }
-  #jobBar b { color: #b6f5a0; font-weight: 800; }
-  .btns { display: flex; gap: 6px; position: relative; z-index: 60; }
-  .btns button, #nav button, #settingsMenu button, #settingsMenu a {
-    pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800; color: #fff; background: #1e2a33b8;
-    border: 1px solid #ffffff14; border-radius: 12px; min-width: 42px; height: 42px; cursor: pointer;
-    box-shadow: 0 3px 0 #0003, inset 0 1px 0 #ffffff22; backdrop-filter: blur(8px) saturate(1.3); -webkit-backdrop-filter: blur(8px) saturate(1.3);
+  #jobBar .tico { background: linear-gradient(180deg, #4fae78, #2f7d52); }
+  #jobBar b { color: var(--green-hi); background: #2f4a3a; border-radius: 9px; padding: 2px 7px; }
+  .btns { display: flex; gap: 6px; position: relative; z-index: 60; flex: none; }
+  .btns button, #settingsMenu button, #settingsMenu a {
+    pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800; color: #fff; background: var(--card);
+    border: var(--card-edge); border-radius: 14px; min-width: 44px; height: 44px; cursor: pointer;
+    box-shadow: var(--card-shadow); backdrop-filter: blur(8px) saturate(1.3); -webkit-backdrop-filter: blur(8px) saturate(1.3);
   }
   #settingsMenu {
     position: absolute; top: calc(100% + 8px); right: 0; width: min(260px, calc(100vw - 24px));
-    background: #1e2a33f5; border: 3px solid #ffd84a; border-radius: 18px; padding: 8px;
-    display: flex; flex-direction: column; gap: 6px; z-index: 61; pointer-events: auto;
+    background: #1a252df6; border: 2px solid var(--gold); border-radius: 18px; padding: 8px;
+    display: flex; flex-direction: column; gap: 6px; z-index: 61; pointer-events: auto; box-shadow: 0 10px 24px #0006;
   }
   #settingsMenu.hidden { display: none; }
   #settingsMenu button, #settingsMenu a {
-    width: 100%; min-width: 0; height: 40px; font-size: 16px; text-decoration: none;
+    width: 100%; min-width: 0; height: 42px; font-size: 16px; text-decoration: none;
     display: flex; align-items: center; gap: 8px; padding: 0 12px; justify-content: flex-start;
-    background: #2b3842;
+    background: #2b3842; box-shadow: none;
   }
+  /* bottom dock: five places to jump the camera to */
   #nav {
-    position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom));
-    display: flex; gap: 6px;
+    position: absolute; left: 50%; transform: translateX(-50%); bottom: max(12px, env(safe-area-inset-bottom));
+    display: flex; gap: 4px; padding: 4px; width: max-content; max-width: calc(100vw - 16px);
+    background: var(--card); border: var(--card-edge); border-radius: 20px; box-shadow: var(--card-shadow);
+    backdrop-filter: blur(8px) saturate(1.3); -webkit-backdrop-filter: blur(8px) saturate(1.3);
   }
-  #nav button { font-size: 14px; padding: 0 12px; height: 38px; display: flex; align-items: center; gap: 5px; }
-  #nav button span { font-size: 18px; }
+  #nav button {
+    pointer-events: auto; font-family: inherit; font-weight: 800; color: #e8f1f5; background: #ffffff0d; border: none; border-radius: 16px;
+    min-width: 56px; height: 52px; padding: 0 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+    font-size: 11px; line-height: 1;
+  }
+  #nav button span { font-size: 22px; line-height: 1; }
+  #nav button:active { background: #ffd84a33; }
   #toast {
-    position: absolute; top: 18%; left: 50%; transform: translate(-50%, -10px) scale(.8); opacity: 0;
-    background: #1e2a33e6; border: 3px solid #ffd84a; border-radius: 18px; padding: 8px 22px;
-    font-size: 22px; font-weight: 800; text-align: center; transition: opacity .25s, transform .25s; white-space: nowrap; max-width: 90vw;
+    position: absolute; top: 18%; left: 50%; transform: translate(-50%, -10px) scale(.8); opacity: 0; pointer-events: none;
+    background: linear-gradient(180deg, #2c3c48f2, #1a252df2); border: 2px solid var(--gold); border-radius: 16px; padding: 7px 18px;
+    font-size: 20px; font-weight: 800; text-align: center; transition: opacity .25s, transform .25s; width: max-content; max-width: calc(100vw - 24px);
+    box-shadow: 0 6px 18px #0006; z-index: 12;
   }
-  #toast.err { border-color: #ff6b5b; }
+  #toast.err { border-color: var(--red); }
   #loadBar { position: absolute; top: 0; left: 0; right: 0; height: 3px; z-index: 40; transition: opacity .6s .3s; }
   #loadBar i { display: block; height: 100%; background: linear-gradient(90deg, #ffd84a, #ff9f43); transform-origin: left; transform: scaleX(0); transition: transform .3s; }
   #loadBar.done { opacity: 0; }
-  #toast small { display: block; font-size: 14px; color: #ffe8a0; font-weight: 600; }
+  #toast small { display: block; font-size: 13px; color: #ffe8a0; font-weight: 600; font-family: system-ui, sans-serif; }
   #toast.show { opacity: 1; transform: translate(-50%, 0) scale(1); }
+  /* buyer offer: gold card, countdown bar along the top edge */
   #deal {
-    flex: 1 0 100%; width: min(340px, 100%); max-width: 340px; align-self: flex-start;
-    background: #1e2a33f2; border: 2px solid #ffd84a; border-radius: 14px;
-    box-shadow: 0 3px 0 #0003; pointer-events: auto;
-    padding: 8px 10px;
+    position: relative; overflow: hidden; width: min(340px, 100%); align-self: flex-start;
+    background: var(--card); border: 2px solid var(--gold); border-radius: 16px;
+    box-shadow: var(--card-shadow); pointer-events: auto; padding: 10px 12px 10px;
   }
   #deal.hidden { display: none; }
-  #deal b { display: block; font-size: 18px; line-height: 1.15; }
-  #deal small { display: block; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; color: #d5dee4; line-height: 1.35; margin-top: 3px; }
-  #deal .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; }
-  #dealTime { color: #ffd84a; font-size: 20px; white-space: nowrap; }
-  #dealActs { display: flex; gap: 8px; }
+  #deal .dhead { display: flex; align-items: center; gap: 8px; }
+  #deal .dico { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; font-size: 18px; background: linear-gradient(180deg, #ffe27a, #f2b52a); }
+  #deal b { font-size: 17px; line-height: 1.1; }
+  #dealTitle { flex: 1 1 auto; min-width: 0; }
+  #dealTime { color: var(--gold); font-size: 18px; white-space: nowrap; background: #0004; border-radius: 9px; padding: 1px 8px; }
+  #deal small { display: block; font-family: system-ui, sans-serif; font-size: 12.5px; font-weight: 600; color: #d5dee4; line-height: 1.3; margin-top: 6px; }
+  #deal .dbar { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: #0005; }
+  #deal .dbar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #f2b52a, #ffe27a); transition: width .25s linear; }
+  #deal.run { border-color: #ffd84a88; padding-bottom: 12px; }
+  #deal.run small { display: none; }
+  #dealActs { display: flex; gap: 8px; margin-top: 8px; }
   #dealActs.hidden { display: none; }
   #deal button {
-    pointer-events: auto; font-family: inherit; font-weight: 800; font-size: 15px;
-    border: none; border-radius: 12px; padding: 8px 14px; cursor: pointer;
+    pointer-events: auto; font-family: inherit; font-weight: 800; font-size: 16px;
+    border: none; border-radius: 12px; padding: 0 14px; height: 40px; cursor: pointer;
   }
-  #dealYes { background: #ffd84a; color: #1e2a33; }
-  #dealNo { background: #2b3842; color: #fff; }
+  #dealYes { flex: 1 1 auto; background: linear-gradient(180deg, #ffe27a, #f2b52a); color: var(--ink); box-shadow: 0 3px 0 var(--gold-d); }
+  #dealNo { flex: none; background: #34444f; color: #dfe8ed; }
   .float {
     position: absolute; transform: translate(-50%, -50%); font-size: 24px; font-weight: 800; white-space: nowrap;
     animation: floatUp 1.3s ease-out forwards; color: #ffe066;
@@ -138,12 +179,12 @@
     100% { opacity: 0; transform: translate(-50%, -260%) scale(1); }
   }
   #hint {
-    position: absolute; left: 50%; bottom: 70px; transform: translateX(-50%); background: #1e2a33cc; border-radius: 14px;
-    padding: 6px 16px; font-size: 15px; font-weight: 700; color: #e8f1f5; transition: opacity .6s; max-width: 92vw; text-align: center;
+    position: absolute; left: 50%; bottom: 82px; transform: translateX(-50%); background: #1e2a33cc; border-radius: 14px;
+    padding: 6px 16px; font-size: 15px; font-weight: 700; color: #e8f1f5; transition: opacity .6s; max-width: 92vw; text-align: center; white-space: nowrap;
   }
   #hint.gone { opacity: 0; }
   #shop {
-    position: absolute; left: 50%; bottom: max(62px, calc(env(safe-area-inset-bottom) + 52px));
+    position: absolute; left: 50%; bottom: max(80px, calc(env(safe-area-inset-bottom) + 70px));
     transform: translateX(-50%); width: min(440px, calc(100vw - 16px));
     background: #1e2a33f2; border: 3px solid #ffd84a; border-radius: 22px;
     box-shadow: 0 8px 0 #0004; pointer-events: auto; z-index: 6;
@@ -351,17 +392,44 @@
   }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01s !important; transition-duration: .01s !important; } }
   @media (max-width: 600px) {
-    .pill { font-size: 17px; padding: 3px 11px 3px 7px; }
+    #top { padding-top: max(8px, env(safe-area-inset-top)); gap: 6px; }
+    .hud-main { gap: 6px; }
+    .pill { font-size: 16px; padding: 3px 11px 3px 7px; }
     .pill.money { font-size: 22px; }
     .pill.rate { font-size: 12px; }
-    .ico { width: 22px; height: 22px; }
-    #nav button { font-size: 0; padding: 0 10px; }
-    #nav button span { font-size: 20px; }
-    #hint { font-size: 13px; bottom: 64px; }
-    #orderBar { font-size: 14px; padding: 5px 10px; }
-    #jobBar { font-size: 13px; padding: 2px 7px; }
+    .pill.boost { font-size: 13px; padding: 3px 10px 3px 7px; }
+    .hud-res .pill { font-size: 15px; padding: 2px 7px 2px 4px; }
+    .hud-res .pill + .pill { padding-left: 7px; }
+    .ico { width: 20px; height: 20px; }
+    .btns button { min-width: 42px; height: 42px; }
+    .task { font-size: 14px; }
+    #tasks:has(#orderWrap:not(.hidden)) #jobName { display: none; } /* no room for both names; the job card keeps its icon and pay */
+    #hint { font-size: 13px; padding: 5px 12px; }
+    #toast { font-size: 17px; padding: 6px 14px; }
+    #deal { width: 100%; max-width: none; }
     #deal b { font-size: 16px; }
-    #deal small { font-size: 12px; }
+    #nav { gap: 2px; }
+    #nav button { min-width: 0; flex: 1 1 0; padding: 0 6px; }
+    #shop { max-height: min(560px, 58dvh); }
+    .shop-head { padding: 8px 10px 6px; }
+    .shop-head h3 { font-size: 20px; }
+    .shop-head p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 2px; }
+    #shopRows { padding: 6px; gap: 5px; }
+    button.urow { padding: 6px 9px; }
+    /* on a phone the offer is one slim card: title, timer, two buttons (the rule sits in the title tooltip) */
+    #deal small { display: none; }
+    #deal { padding: 6px 10px 9px; }
+    #dealActs { margin-top: 5px; }
+    #dealActs button { height: 36px; }
+  }
+  /* a phone on its side: the shop becomes a side sheet so the world stays visible */
+  @media (max-height: 520px) and (orientation: landscape) {
+    #shop { left: auto; right: max(10px, env(safe-area-inset-right)); top: 60px; bottom: 8px; transform: none; width: min(340px, 46vw); max-height: none; }
+    #shop:not(.hidden) { animation: panelSide .3s cubic-bezier(.2, 1.3, .4, 1); }
+    #books { max-height: calc(100dvh - 16px); top: 50%; }
+    #nav { left: max(10px, env(safe-area-inset-left)); transform: none; bottom: max(8px, env(safe-area-inset-bottom)); }
+    #nav button { height: 44px; min-width: 48px; }
+    #hint { display: none; }
   }
 </style>
 </head>
@@ -370,9 +438,11 @@
 <div id="ui">
   <div id="top">
     <div class="hud-left">
-      <div class="pill money stroke" id="moneyPill" title="Mill books"><span>💰</span><span id="money">0</span></div>
-      <div class="pill rate stroke" id="ratePill">0/s</div>
-      <button class="pill boost stroke hidden" id="boostBtn" type="button" title="Watch a short ad: double income for 3 minutes"><span>📺</span><span id="boostTxt">×2 · 3 min</span></button>
+      <div class="hud-main">
+        <div class="pill money stroke" id="moneyPill" title="Mill books"><span>💰</span><span id="money">0</span></div>
+        <div class="pill rate stroke" id="ratePill">0/s</div>
+        <button class="pill boost stroke hidden" id="boostBtn" type="button" title="Watch a short ad: double income for 3 minutes"><span>📺</span><span id="boostTxt">×2 · 3 min</span></button>
+      </div>
       <div class="hud-res">
         <div class="pill wood stroke" id="woodPill" title="Logs left to cut"><span id="woodIco"></span><span id="wood">0</span></div>
         <div class="pill stock stroke" id="stockPill" title="Cut wood in the bin"><span id="stockIco"></span><span id="stock">0</span></div>
@@ -380,18 +450,18 @@
         <div class="pill board stroke hidden" id="furnPill" title="Furniture waiting at the shop"><span class="ico-slot"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.4" width="11" height="2.2" rx=".3" fill="#f7ebc8"/><rect x="7.4" y="4.6" width="9.2" height="6.4" fill="#e7c98a"/><rect x="5.2" y="11" width="13.6" height="2.1" rx=".3" fill="#f3e0bc"/><rect x="6.4" y="13.1" width="1.7" height="8" fill="#8d5a32"/><rect x="15.9" y="13.1" width="1.7" height="8" fill="#8d5a32"/></svg></span><span id="furnN">0</span></div>
         <div class="pill stock stroke hidden" id="firePill" title="Firewood bundles at the shop"><span class="ico-slot"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="14.2" width="13" height="4" rx="2" fill="#c47a32"/><circle cx="16.2" cy="16.2" r="2.05" fill="#f3d7a0"/><circle cx="16.2" cy="16.2" r=".45" fill="#c4843a"/><rect x="6" y="9.2" width="13" height="4" rx="2" fill="#e8a03a"/><circle cx="6" cy="11.2" r="2.05" fill="#ffe7ad"/><circle cx="6" cy="11.2" r=".45" fill="#c4843a"/><rect x="4" y="4.4" width="12.2" height="3.8" rx="1.9" fill="#d4922e"/><circle cx="16.2" cy="6.3" r="1.95" fill="#f7e2a8"/></svg></span><span id="fireN">0</span></div>
       </div>
-      <div id="orderWrap" class="hidden"><div id="orderBar" class="stroke" title="Rush order from the buyer"><span id="orderIcon"></span><span id="orderLabel">Boards</span><span id="orderCount">0/0</span><b id="orderTime">0s</b></div></div>
-      <div id="jobBar" class="stroke hidden" title="The next job. The mill pays this once."><span>📋</span><span id="jobName">Next job</span><b id="jobPay">+$0</b></div>
+      <div id="tasks">
+        <div id="orderWrap" class="hidden"><div id="orderBar" class="task stroke" title="Rush order from the buyer"><span class="tico" id="orderIcon"></span><span class="tname" id="orderLabel">Boards</span><span class="cnt" id="orderCount">0/0</span><b id="orderTime">0s</b><span class="tbar"><i id="orderFill"></i></span></div></div>
+        <div id="jobBar" class="task stroke hidden" title="The next job. The mill pays this once."><span class="tico">📋</span><span class="tname" id="jobName">Next job</span><b id="jobPay">+$0</b></div>
+      </div>
       <div id="deal" class="hidden">
-        <b id="dealTitle">Buyer offer</b>
+        <div class="dhead"><span class="dico">🏷️</span><b id="dealTitle">Buyer offer</b><b id="dealTime">0s</b></div>
         <small id="dealText"></small>
-        <div class="row">
-          <div id="dealActs">
-            <button id="dealYes" type="button">Take it</button>
-            <button id="dealNo" type="button">Not now</button>
-          </div>
-          <b id="dealTime">0s</b>
+        <div id="dealActs">
+          <button id="dealYes" type="button">Take it</button>
+          <button id="dealNo" type="button">Not now</button>
         </div>
+        <span class="dbar"><i id="dealFill"></i></span>
       </div>
     </div>
     <div class="btns">
@@ -414,7 +484,7 @@
   </div>
   <div id="toast" class="stroke"></div>
   <div id="loadBar" title="Loading 3D models"><i></i></div>
-  <div id="hint">🖐️ drag · 🔍 zoom · tap a machine to upgrade</div>
+  <div id="hint">🖐️ drag · 🔍 pinch · tap a machine</div>
   <div id="shop" class="hidden">
     <div class="shop-head">
       <span id="shopIcon">🪚</span>
@@ -1610,7 +1680,7 @@ function cleared(x, z) {
   for (const m of forestDecor) { m.castShadow = false; m.receiveShadow = false; m.userData.scatter = true; scene.add(m); }
 }
 // =====================================================================
-// LIVING TERRAIN — grass tufts and flowers that sway, rocks, hills that hide the map edge, birds.
+// LIVING TERRAIN — grass tufts and flowers that sway, rocks, hills that hide the map edge.
 // Everything sits only where `cleared()` says nothing will ever be built. One draw call per kind.
 // =====================================================================
 const windTime = { value: 0 };
@@ -1720,39 +1790,6 @@ function clearScatter(x, z, r) {
     }
     if (hit) o.instanceMatrix.needsUpdate = true;
   });
-}
-// birds: a small flock that wheels over whatever the camera is looking at; wings flap by scaling the tips
-const BIRD_N = 9;
-const birdGeo = new THREE.BufferGeometry();
-birdGeo.setAttribute('position', new THREE.Float32BufferAttribute([
-  0, 0, 0.22, 0, 0, -0.18, -0.75, 1, -0.08,
-  0, 0, -0.18, 0, 0, 0.22, 0.75, 1, -0.08,
-], 3));
-birdGeo.computeVertexNormals();
-const birdIM = new THREE.InstancedMesh(birdGeo, new THREE.MeshBasicMaterial({ color: 0xd8dcdc, side: THREE.DoubleSide }), BIRD_N);
-birdIM.frustumCulled = false; birdIM.castShadow = false;
-scene.add(birdIM);
-const birds = Array.from({ length: BIRD_N }, (_, i) => ({ a: rand(0, 6.28), r: rand(9, 18), w: rand(0.22, 0.34) * (i % 3 ? 1 : -1), y: rand(13, 19), ph: rand(0, 6.28), dx: rand(-6, 6), dz: rand(-6, 6) }));
-const flock = V(cam.target.x, 0, cam.target.z), birdObj = new THREE.Object3D();
-let birdT = 0;
-function updateBirds(dt) {
-  birdT += dt;
-  flock.x += (cam.target.x + Math.sin(birdT * 0.05) * 20 - flock.x) * Math.min(1, dt * 0.08);
-  flock.z += (cam.target.z + Math.cos(birdT * 0.04) * 16 - flock.z) * Math.min(1, dt * 0.08);
-  const night = day.night || 0;
-  birdIM.visible = night < 0.6;
-  if (!birdIM.visible) return;
-  birds.forEach((b, i) => {
-    b.a += b.w * dt;
-    const x = flock.x + b.dx + Math.cos(b.a) * b.r, z = flock.z + b.dz + Math.sin(b.a) * b.r;
-    birdObj.position.set(x, b.y + Math.sin(birdT * 0.7 + b.ph) * 0.8, z);
-    birdObj.rotation.set(0, Math.atan2(-Math.sin(b.a) * Math.sign(b.w), Math.cos(b.a) * Math.sign(b.w)) , Math.sin(b.a) * 0.15);
-    const glide = Math.sin(birdT * 0.6 + b.ph) > 0.55;
-    birdObj.scale.set(0.85, glide ? 0.06 : Math.sin(birdT * 9 + b.ph) * 0.3, 0.85);
-    birdObj.updateMatrix();
-    birdIM.setMatrixAt(i, birdObj.matrix);
-  });
-  birdIM.instanceMatrix.needsUpdate = true;
 }
 {
   const west = rightsOf(riverS);
@@ -3504,12 +3541,18 @@ function floatText(text, pos, color) {
   uiRoot.appendChild(el); setTimeout(() => el.remove(), 1300);
 }
 let toastTimer = null;
+// under the HUD cards, never on them; re-run on the HUD tick because the cards change height while a toast is up
+function placeToast() {
+  const t = $('toast');
+  const hud = $('top').querySelector('.hud-left').getBoundingClientRect();
+  t.style.top = Math.round(hud.bottom + 10) + 'px';
+}
 function toast(main, sub = '', err = false) {
   if (instant) return;
   const t = $('toast');
   t.textContent = main; // plain text: names typed by the player end up here too
   if (sub) { const small = document.createElement('small'); small.textContent = sub; t.appendChild(small); }
-  t.style.top = Math.round($('top').getBoundingClientRect().bottom + 10) + 'px'; // under the HUD cards, never on them
+  placeToast();
   t.classList.toggle('err', err); t.classList.add('show');
   clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('show'), 1900);
 }
@@ -7691,6 +7734,7 @@ function rollOrder(slot, force) {
   slot.visT = 0;
   slot.loaded = 0;
   slot.incoming = 0;
+  if (!instant) syncOrderHud();
   if (!instant) toast(`Rush order: ${slot.label}`, `Load ${slot.need} before the van leaves`);
   slot.summon();
 }
@@ -7979,6 +8023,9 @@ function syncOrderHud() {
   $('orderLabel').textContent = job.label;
   $('orderCount').textContent = `${job.have}/${job.need}`;
   $('orderTime').textContent = `${Math.max(0, Math.ceil(job.left))}s`;
+  job.span = Math.max(job.span || 0, job.left);
+  $('orderFill').style.width = Math.round(100 * Math.min(1, job.left / job.span)) + '%';
+  $('orderBar').classList.toggle('late', job.left < 10);
 }
 
 // =====================================================================
@@ -8106,14 +8153,16 @@ function drawDeal() {
   const secs = Math.max(0, Math.ceil(deal.left));
   $('dealTime').textContent = secs + 's';
   const offer = deal.phase === 'offer';
+  el.classList.toggle('run', !offer);
+  $('dealFill').style.width = Math.round(100 * Math.min(1, deal.left / (offer ? DEAL_OFFER : DEAL_RUN))) + '%';
   $('dealActs').classList.toggle('hidden', !offer);
   $('dealTitle').textContent = offer
     ? (logs ? 'Logs at double price?' : 'Boards at double price?')
     : (logs ? 'Logs ×2' : 'Boards ×2');
-  $('dealText').textContent = offer
+  $('dealText').textContent = el.title = offer
     ? (logs
-      ? 'A truck that pulls out before the timer ends sells its logs for double. The yard keeps working.'
-      : 'A truck that pulls out before the timer ends sells its boards for double. The yard keeps working.')
+      ? 'Any truck that pulls out before the timer ends sells its logs for double.'
+      : 'Any truck that pulls out before the timer ends sells its boards for double.')
     : 'Double price until this ends. A truck that pulls out keeps it.';
 }
 function updateDeal(dt) {
@@ -8249,7 +8298,6 @@ function updateVisuals(dt, time) {
   gateViz.lightG.material.emissiveIntensity = gate.arm >= 0.5 ? 1.4 : 0.05;
   waterTex.offset.y += dt * 0.03; waterTex.offset.x = Math.sin(time * 0.3) * 0.02;
   waterTime.value = time; windTime.value = time;
-  updateBirds(dt);
   updateConfetti(dt);
   syncBuilds();
   fx.update(dt);
@@ -8392,6 +8440,7 @@ function render() {
     $('ratePill').textContent = fmt(incomeRate()) + '/s';
     syncBoost();
     syncOrderHud();
+    if ($('toast').classList.contains('show')) placeToast();
     if (rushes.some(s => s.dirty)) drawOrderBoard();
     drawShop();
   }

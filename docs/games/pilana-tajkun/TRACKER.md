@@ -21,6 +21,7 @@ Plan unapređenja po fazama. Stavke vode na ID-jeve iz [BUGS](BUGS.md), [TECH-DE
 - [x] **V2 atmosfera** — dan → zlatni sat → noć, lampe/farovi/prozori noću, bloom + color grading na Srednje/Visoko (PT-IMP-V02, V04)
 - [x] **V3 živ teren** — brda, kamenje, busenje trave, cveće, reka sa odsjajem i penom, ptice (PT-IMP-V05, V10)
 - [x] **V4 herojski trenuci** — prelet kamere do nove zgrade (skela, kran), krupni kadar reza trupca (varnice), kadar mosta (PT-IMP-A08)
+- [x] **V6 UI rework za telefon** — HUD v2: kartice za porudžbinu/posao/ponudu bez preklapanja, dok sa oznakama, toast ispod HUD-a, bez ptica; bočni panel u landscape-u (2026-10-09)
 - [x] **V5 UI + prvih 30 s** — moderan HUD, kartice nadogradnji, kratko vođenje umesto 20 pasusa (PT-IMP-U01, U02; PT-BUG-010)
 
 ## Faza A — Stabilnost i merenje ✅ (2026-10-09)

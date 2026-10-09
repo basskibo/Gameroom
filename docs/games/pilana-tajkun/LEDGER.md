@@ -2,6 +2,12 @@
 
 Hronološki dnevnik promena (najnovije gore). Format: [tracking.md](../../engineering/tracking.md).
 
+## 2026-10-09 — HUD v2 (telefon) i uklanjanje ptica
+
+- **Urađeno:** uklonjene ptice (instancirani trouglovi). HUD preuređen: novac/brzina, traka resursa u jednoj kartici, red zadataka (hitna porudžbina sa trakom vremena + posao), ponuda kupca kao zlatna kartica sa trakom odbrojavanja, dok sa ikonama i oznakama, toast se pozicionira prema stvarnoj visini HUD-a (`placeToast`). Telefon: kad je panel otvoren ponuda je uvek zbijena (naslov, odbrojavanje, dva dugmeta; pravilo u tooltip-u), panel je niži (58 dvh); landscape: panel sa strane.
+- **ID:** PT-BUG-022, PT-BUG-024-UI.
+- **Provereno:** HUD na 375×812 sa porudžbinom + poslom + ponudom: 265 → 221 px visine (merenje preko `getBoundingClientRect`), toast više ne ide preko ponude; novi mobilni testovi (redovi se ne preklapaju, kartice ostaju u ekranu). Testovi: Pilana desktop i mobile prolaze (perf Fast-4G i „guide“ povremeno padaju kad se pokreću uporedo sa drugim testovima, prolaze pojedinačno).
+
 ## 2026-10-09 — V1: Kenney modeli
 
 - **Urađeno:** preuzeti Kenney Car Kit (4,8 MB), Factory Kit (4,5 MB) i City Kit Industrial (5,0 MB), svi CC0, uz odobrenje korisnika. U igri: kola kupaca (sedan, SUV, hečbek, taksi, kombi), kamioni za hitne porudžbine (`delivery-flat`, točkovi se okreću), hala na frame yard-u, vodotoranj, rezervoari, kontejneri, traktor. Drveće i trava se sklanjaju ispod rekvizita (`clearScatter`). Uklonjeno 7 starih modela različitih autora (CC BY više nije potreban za kola i fabriku).
