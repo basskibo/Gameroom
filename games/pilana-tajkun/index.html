@@ -344,6 +344,7 @@
       <div id="settingsMenu" class="hidden">
         <button id="menuSound" type="button">♪ Sound on</button>
         <button id="menuGfx" type="button">🎨 Graphics: Auto</button>
+        <button id="menuCycle" type="button">🌗 Day cycle: On</button>
         <button id="menuPause" type="button">II Pause</button>
         <button id="menuHelp" type="button">? Help</button>
         <button id="menuSave" type="button">💾 Save game</button>
@@ -465,6 +466,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { bakeStatic, bakeViz, dropGroup, createQuality } from '../../shared/gameroom-three.js';
 import { createParticles } from '../../shared/gameroom-fx.js';
 import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
+import { createPost } from '../../shared/gameroom-post.js';
+import { createSky, sampleCycle } from '../../shared/gameroom-sky.js';
 const actors = [];
 let forestDecor = [];
 
@@ -623,7 +626,8 @@ scene.add(fx.points);
 // Soft studio environment: PBR parts (metal, glass, paint) get a real reflection instead of flat colour.
 scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
 scene.environmentIntensity = 0.2;
-scene.add(new THREE.HemisphereLight(0xdcefff, 0x4f7a32, 0.62));
+const hemi = new THREE.HemisphereLight(0xdcefff, 0x4f7a32, 0.62);
+scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xffe4bd, 3.1);
 const SUN_OFF = V(-16, 34, 12);
 sun.castShadow = true;
@@ -661,7 +665,9 @@ addEventListener('resize', resize);
 let needsFrame = true;
 
 // QUALITY (shared/gameroom-three.js): Auto steps the resolution down when frames run long; Low also drops the sun's shadows.
-const gfx = createQuality({ renderer, storageKey: 'pilana-tajkun:gfx', onChange: mode => { sun.castShadow = mode !== 'low'; needsFrame = true; } });
+const post = createPost({ renderer });
+const gfx = createQuality({ renderer, storageKey: 'pilana-tajkun:gfx', onChange: mode => { sun.castShadow = mode !== 'low'; post.enabled = mode !== 'low'; needsFrame = true; } });
+post.enabled = gfx.mode !== 'low';
 
 // =====================================================================
 // MATERIALS / GEOMETRY
@@ -1071,6 +1077,10 @@ function drawRoadSign() {
 
 // street lamps along the road
 const LAMP_S = [];
+// lamp heads and headlights glow harder as night falls (see DAY CYCLE); the pools are ground decals, not lights
+const lampMat = new THREE.MeshStandardMaterial({ color: 0xfff4c8, emissive: 0xffe2a0, emissiveIntensity: 0.6 });
+const headlightMat = new THREE.MeshStandardMaterial({ color: 0xfff5cc, emissive: 0xfff0b0, emissiveIntensity: 0.5 });
+const LAMP_POOLS = [];
 const lampsG = new THREE.Group(); scene.add(lampsG);
 for (let i = ROAD_I0 + 10; i < roadPts.length - 4; i += 26) {
   const p = roadPts[i], r = roadRight[i];
@@ -1082,7 +1092,8 @@ for (let i = ROAD_I0 + 10; i < roadPts.length - 4; i += 26) {
   arm.rotation.y = yawOf(-r.x, -r.z); arm.position.addScaledVector(r, -0.5);
   const head = part(rbox(0.3, 0.12, 0.45, 0.05, 1), 0x3c4146, g, -r.x * 1.0, 3.5, -r.z * 1.0);
   head.rotation.y = arm.rotation.y;
-  part(boxG(0.22, 0.03, 0.34), mat(0xfff4c8, { e: 0xffe9a0, ei: 0.6 }), head, 0, -0.07, 0, 0, 0, 0, false);
+  part(boxG(0.22, 0.03, 0.34), lampMat, head, 0, -0.07, 0, 0, 0, 0, false);
+  LAMP_POOLS.push(base.clone().addScaledVector(r, -1.0));
 }
 bakeStatic(lampsG);
 
@@ -2384,6 +2395,16 @@ function wheel(parent, x, y, z, r, w) {
   const pivot = new THREE.Group(); pivot.position.set(x, y, z); pivot.rotation.z = Math.PI / 2; parent.add(pivot);
   return part(wheelGeo(r, w), wheelMat, pivot);
 }
+// soft light on the ground: one radial texture for lamp pools and headlight beams
+const glowTex = (() => {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.45, 'rgba(255,255,255,0.45)'); gr.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = gr; x.fillRect(0, 0, 64, 64);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const beamMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffe7b0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, visible: false });
+const BEAM_GEO = new THREE.PlaneGeometry(3.4, 6.8).rotateX(-Math.PI / 2);
 function buildTruck() {
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body);
   part(rbox(1.25, 0.28, 4.0, 0.06), DARK, body, 0, 0.66, -0.1);
@@ -2393,7 +2414,7 @@ function buildTruck() {
   for (const s of [-1, 1]) {
     part(rbox(0.08, 0.44, 0.66, 0.04), glassMat, body, s * 0.86, 1.62, 1.55);
     part(rbox(0.1, 0.26, 0.08, 0.03), DARK, body, s * 1.0, 1.62, 1.98);
-    part(rbox(0.26, 0.16, 0.05, 0.03), mat(0xfff5cc, { e: 0xfff0b0, ei: 0.5 }), body, s * 0.6, 1.04, 2.1);
+    part(rbox(0.26, 0.16, 0.05, 0.03), headlightMat, body, s * 0.6, 1.04, 2.1);
     part(rbox(0.38, 0.1, 1.9, 0.04), DARK, body, s * 0.86, 0.98, -1.1);
     part(rbox(0.38, 0.1, 0.95, 0.04), DARK, body, s * 0.86, 1.0, 1.5);
   }
@@ -2420,6 +2441,8 @@ function buildTruck() {
   const brakeMat = new THREE.MeshStandardMaterial({ color: 0x7a1a12, emissive: 0xff2a1a, emissiveIntensity: 0.15, roughness: 0.4 });
   const brake = [-1, 1].map(s => part(rbox(0.26, 0.14, 0.06, 0.02), brakeMat, body, s * 0.62, 0.78, -2.13, 0, 0, 0, false));
   g.traverse(o => { if (o.isMesh) o.castShadow = false; });
+  const beam = new THREE.Mesh(BEAM_GEO, beamMat);
+  beam.position.set(0, 0.07, 5.3); beam.renderOrder = 2; g.add(beam);
   const viz = { g, body, bed, cargo, wheels, angry, brake, brakeMat };
   bakeViz(viz, body, bed);
   return viz;
@@ -6356,7 +6379,7 @@ const tapRings = tapLayer(0.2), tapHot = tapLayer(0.48);
 const tapObj = new THREE.Object3D();
 let hotStation = null;
 function syncTapRings(time) {
-  tapRings.material.opacity = 0.17 + Math.sin(time * 1.25) * 0.035;
+  tapRings.material.opacity = (0.17 + Math.sin(time * 1.25) * 0.035) * nightDim;
   const camN = Math.hypot(CAM_DIR.x, CAM_DIR.z) || 1;
   let n = 0, h = 0;
   for (const st of STATIONS) {
@@ -7880,11 +7903,107 @@ function updateVisuals(dt, time) {
   updateConfetti(dt);
   syncBuilds();
   fx.update(dt);
+  applyDay(dt);
   updatePops(dt);
   syncTapRings(time);
   syncBlobs();
   syncClouds(dt);
 }
+
+// =====================================================================
+// DAY CYCLE — morning → day → golden hour → sunset → night → dawn, one loop every DAY_LEN seconds.
+// Gameplay ignores it; it only drives light, sky, fog, grading and the night lights. ⚙ can lock it to day.
+// =====================================================================
+const DAY_LEN = 420;
+const sky = createSky({ scene, radius: 420 });
+scene.background = null;
+let tod = qs.has('tod') ? +qs.get('tod') : 0.1;
+let dayCycle = true;
+try { dayCycle = localStorage.getItem('pilana-tajkun:cycle') !== 'day'; } catch (e) {}
+if (qs.has('tod')) dayCycle = false; // a fixed time for screenshots and tests
+// el/az = sun elevation / azimuth in degrees (az 0 = +z, 90 = +x); night 0..1 lights the lamps
+const DAY_KEYS = [
+  { t: 0.00, el: 26, az: 40, sunC: 0xffd9a8, sunI: 2.4, skyC: 0xd6e9ff, groundC: 0x4f6a3a, hemiI: 0.58, topC: 0x6aa6dc, horizonC: 0xffe2c4, fogC: 0xc4d8e2, env: 0.18, exp: 1.02, bloom: 0.3, thr: 1.05, sat: 1.04, con: 1.02, vig: 0.16, tintC: 0xfff4ea, night: 0.05, glow: 0.9 },
+  { t: 0.12, el: 59, az: -53, sunC: 0xffe4bd, sunI: 3.1, skyC: 0xdcefff, groundC: 0x4f7a32, hemiI: 0.62, topC: 0x58a6e2, horizonC: 0xc4e6f4, fogC: 0x8cc8e0, env: 0.2, exp: 1.0, bloom: 0.22, thr: 1.15, sat: 1.06, con: 1.03, vig: 0.14, tintC: 0xffffff, night: 0, glow: 0.5 },
+  { t: 0.48, el: 52, az: -70, sunC: 0xffe0b4, sunI: 3.0, skyC: 0xdcefff, groundC: 0x4f7a32, hemiI: 0.62, topC: 0x58a6e2, horizonC: 0xc8e4f0, fogC: 0x94c8de, env: 0.2, exp: 1.0, bloom: 0.22, thr: 1.15, sat: 1.06, con: 1.03, vig: 0.14, tintC: 0xffffff, night: 0, glow: 0.5 },
+  { t: 0.60, el: 17, az: -96, sunC: 0xffa24c, sunI: 3.4, skyC: 0x9eb2e6, groundC: 0x5a4a30, hemiI: 0.5, topC: 0x6a98d0, horizonC: 0xffc98e, fogC: 0xf0be8c, env: 0.18, exp: 1.04, bloom: 0.45, thr: 1.0, sat: 1.16, con: 1.07, vig: 0.2, tintC: 0xfff0e0, night: 0, glow: 1.3 },
+  { t: 0.665, el: 5, az: -104, sunC: 0xff6a2c, sunI: 2.1, skyC: 0x8a8cc8, groundC: 0x3a3030, hemiI: 0.45, topC: 0x4a5c9a, horizonC: 0xff9658, fogC: 0xdc906c, env: 0.14, exp: 1.08, bloom: 0.6, thr: 0.95, sat: 1.1, con: 1.05, vig: 0.24, tintC: 0xffe6d4, night: 0.4, glow: 1.6 },
+  { t: 0.695, el: 2, az: -106, sunC: 0xd06a5a, sunI: 0.15, skyC: 0x9a8cb4, groundC: 0x2e2c3a, hemiI: 0.5, topC: 0x2c3870, horizonC: 0xc87a78, fogC: 0x7a6488, env: 0.12, exp: 1.1, bloom: 0.8, thr: 0.9, sat: 1.04, con: 1.04, vig: 0.28, tintC: 0xf0e4f4, night: 0.8, glow: 0.8 },
+  { t: 0.73, el: 42, az: 60, sunC: 0x9fb4ff, sunI: 0.5, skyC: 0x5068b0, groundC: 0x1a1e2c, hemiI: 0.38, topC: 0x0e1638, horizonC: 0x4a5488, fogC: 0x1c2850, env: 0.06, exp: 1.0, bloom: 0.95, thr: 0.85, sat: 0.95, con: 1.08, vig: 0.34, tintC: 0xdde6ff, night: 1, glow: 0.3 },
+  { t: 0.90, el: 46, az: 30, sunC: 0x9fb4ff, sunI: 0.5, skyC: 0x5068b0, groundC: 0x1a1e2c, hemiI: 0.38, topC: 0x0a1230, horizonC: 0x44508a, fogC: 0x1c2850, env: 0.06, exp: 1.0, bloom: 0.95, thr: 0.85, sat: 0.95, con: 1.08, vig: 0.34, tintC: 0xdde6ff, night: 1, glow: 0.3 },
+  { t: 0.935, el: 3, az: 75, sunC: 0xff9a78, sunI: 0.3, skyC: 0xb08cb0, groundC: 0x34303c, hemiI: 0.5, topC: 0x34447e, horizonC: 0xf0a088, fogC: 0x9c8098, env: 0.12, exp: 1.1, bloom: 0.7, thr: 0.9, sat: 1.02, con: 1.04, vig: 0.26, tintC: 0xf6e6ee, night: 0.7, glow: 1.0 },
+  { t: 0.97, el: 10, az: 62, sunC: 0xffa070, sunI: 1.4, skyC: 0xe8c0b8, groundC: 0x4a4a3c, hemiI: 0.52, topC: 0x5a7ab8, horizonC: 0xffb48c, fogC: 0xd8b4a4, env: 0.14, exp: 1.06, bloom: 0.5, thr: 0.95, sat: 1.06, con: 1.04, vig: 0.2, tintC: 0xfff0e4, night: 0.3, glow: 1.4 },
+];
+let nightDim = 1;
+const day = {};
+const DEG = Math.PI / 180;
+// light pools under the street lamps (one instanced decal) and fireflies over the grass at night
+const poolMat = new THREE.MeshBasicMaterial({ map: glowTex, color: 0xffd79a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false, visible: false });
+const pools = new THREE.InstancedMesh(new THREE.PlaneGeometry(6.4, 6.4).rotateX(-Math.PI / 2), poolMat, LAMP_POOLS.length);
+LAMP_POOLS.forEach((p, i) => pools.setMatrixAt(i, new THREE.Matrix4().makeTranslation(p.x, p.y + 0.06, p.z)));
+pools.renderOrder = 2; pools.frustumCulled = false;
+scene.add(pools);
+glassMat.emissive = new THREE.Color(0xffc670);
+const workPools = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1).rotateX(-Math.PI / 2), poolMat, 48);
+workPools.renderOrder = 2; workPools.frustumCulled = false; workPools.count = 0;
+scene.add(workPools);
+let fireflyT = 0, workT = 0;
+const workObj = new THREE.Object3D();
+function syncWorkPools() { // one warm floodlight pool per built machine
+  let k = 0;
+  for (const st of STATIONS) {
+    const s = spotsOf(st)[0];
+    if (!s || k >= 48) continue;
+    workObj.position.set(s.x, 0.12, s.z);
+    workObj.scale.setScalar(clamp(s.r * 1.9, 5, 11));
+    workObj.updateMatrix();
+    workPools.setMatrixAt(k++, workObj.matrix);
+  }
+  workPools.count = k;
+  workPools.instanceMatrix.needsUpdate = true;
+}
+function applyDay(dt) {
+  if (dayCycle && !instant) tod = (tod + dt / DAY_LEN) % 1;
+  else if (!dayCycle && !qs.has('tod')) tod += (0.2 - tod) * Math.min(1, dt * 0.8); // ease back to day
+  sampleCycle(DAY_KEYS, tod, day);
+  const el = day.el * DEG, az = day.az * DEG, L = 40;
+  SUN_OFF.set(Math.sin(az) * Math.cos(el) * L, Math.sin(el) * L, Math.cos(az) * Math.cos(el) * L);
+  sun.color.copy(day.sunC); sun.intensity = day.sunI;
+  hemi.color.copy(day.skyC); hemi.groundColor.copy(day.groundC); hemi.intensity = day.hemiI;
+  scene.fog.color.copy(day.fogC);
+  scene.environmentIntensity = day.env;
+  sky.set({ top: day.topC, horizon: day.horizonC, ground: day.fogC, sunDir: SUN_OFF, sunColor: day.sunC, glow: day.glow });
+  const pp = post.params;
+  pp.exposure = day.exp; pp.bloom = day.bloom; pp.threshold = day.thr; pp.saturation = day.sat; pp.contrast = day.con;
+  pp.vignette = day.vig; pp.tint.copy(day.tintC);
+  const n = day.night;
+  lampMat.emissiveIntensity = 0.6 + n * 5;
+  headlightMat.emissiveIntensity = 0.5 + n * 6;
+  glassMat.emissiveIntensity = n * 0.75;
+  poolMat.opacity = n * 0.55; poolMat.visible = n > 0.02;
+  if (n > 0.02 && (workT -= dt) <= 0) { workT = 0.5; syncWorkPools(); }
+  nightDim = 1 - n * 0.65;
+  beamMat.opacity = n * 0.42; beamMat.visible = n > 0.02;
+  if (n > 0.5 && dt > 0) {
+    fireflyT -= dt;
+    if (fireflyT <= 0) {
+      fireflyT = 0.12;
+      const a = Math.random() * Math.PI * 2, r = 4 + Math.random() * cam.dist * 0.6;
+      const x = cam.target.x + Math.cos(a) * r, z = cam.target.z + Math.sin(a) * r;
+      fx.emit({ x, y: 0.6 + Math.random() * 1.6, z, vx: (Math.random() - 0.5) * 0.6, vy: 0.15, vz: (Math.random() - 0.5) * 0.6, life: 3.2, size: 0.22, size1: 0.12, color: 0xfff27a, alpha: 1, drag: 0.2 });
+    }
+  }
+  sun.position.copy(cam.target).add(SUN_OFF);
+}
+window.__tod = (t) => { if (t === undefined) return tod; tod = t; dayCycle = false; applyDay(0); needsFrame = true; return tod; };
+function drawCycleButton() { $('menuCycle').textContent = dayCycle ? '🌗 Day cycle: On' : '☀ Day cycle: Off'; }
+$('menuCycle').addEventListener('click', () => {
+  dayCycle = !dayCycle;
+  try { localStorage.setItem('pilana-tajkun:cycle', dayCycle ? 'on' : 'day'); } catch (e) {}
+  drawCycleButton();
+});
+drawCycleButton();
+applyDay(0);
 
 // =====================================================================
 // MAIN LOOP
@@ -7906,7 +8025,7 @@ function render() {
     if (key === frozenKey && !needsFrame) { requestAnimationFrame(render); return; }
     frozenKey = key; needsFrame = false;
     renderer.shadowMap.needsUpdate = true;
-    renderer.render(scene, camera);
+    post.render(scene, camera);
     requestAnimationFrame(render);
     return;
   }
@@ -7940,7 +8059,8 @@ function render() {
     if (rushes.some(s => s.dirty)) drawOrderBoard();
     drawShop();
   }
-  renderer.render(scene, camera);
+  sky.follow(camera);
+  post.render(scene, camera);
   requestAnimationFrame(render);
 }
 
@@ -8305,6 +8425,52 @@ async function mountYardModels() {
       tree.pivot.add(fitWrap(kinds[i % kinds.length].clone(true), { height: 3.3 + (i % 3) * 0.4 }));
     });
   }
+  // The Quaternius characters ship metallic (0.4), glossy and dressed in dark browns and navies; under our
+  // soft daylight they read as dark silhouettes next to the toy-bright yard. Make them matte, lift and warm
+  // their palette texture (skin stays as it is), let a little of their own colour fill the shadow side,
+  // and give them slightly bigger heads so they sit with the chunky machines.
+  const toyRGB = new THREE.Color(), toyHSL = { h: 0, s: 0, l: 0 }, LIN = THREE.LinearSRGBColorSpace;
+  function toyTint(tex, pop) {
+    const img = tex.image, c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const x = c.getContext('2d', { willReadFrequently: true });
+    x.drawImage(img, 0, 0);
+    const id = x.getImageData(0, 0, c.width, c.height), d = id.data;
+    for (let i = 0; i < d.length; i += 4) {
+      toyRGB.setRGB(d[i] / 255, d[i + 1] / 255, d[i + 2] / 255, LIN).getHSL(toyHSL, LIN);
+      let { h, s, l } = toyHSL;
+      const skin = h > 0.02 && h < 0.13 && s > 0.12 && s < 0.8 && l > 0.5;
+      if (skin) { l = Math.min(0.84, l * 1.07); s = Math.max(s, 0.42); h = 0.07; }
+      else {
+        l = Math.min(0.88, 0.1 + 0.9 * Math.pow(l, 0.78));
+        if (s > 0.08) s = Math.min(1, s * pop + 0.12);
+      }
+      toyRGB.setHSL(h, s, l, LIN);
+      d[i] = toyRGB.r * 255; d[i + 1] = toyRGB.g * 255; d[i + 2] = toyRGB.b * 255;
+    }
+    x.putImageData(id, 0, 0);
+    const t = tex.clone();
+    t.image = c; t.needsUpdate = true;
+    return t;
+  }
+  function toyLook(gltf, pop) {
+    const maps = new Map();
+    gltf.scene.traverse(o => {
+      if (o.isBone && /head$/i.test(o.name)) o.scale.multiplyScalar(1.3);
+      if (!o.isMesh) return;
+      for (const m of Array.isArray(o.material) ? o.material : [o.material]) {
+        m.metalness = 0; m.roughness = 0.8;
+        if (m.map) {
+          if (!maps.has(m.map)) maps.set(m.map, toyTint(m.map, pop));
+          m.map = maps.get(m.map);
+          m.emissiveMap = m.map; m.emissive.setScalar(0.12);
+        }
+        m.needsUpdate = true;
+      }
+    });
+    // clips must not pull the head back to its original size
+    for (const clip of gltf.animations) clip.tracks = clip.tracks.filter(t => !/head\.scale$/i.test(t.name));
+  }
   function dressActor(actor, gltf, clone) {
     const saved = [];
     gltf.scene.traverse(o => {
@@ -8428,7 +8594,15 @@ async function mountYardModels() {
     const c = geo.boundingBox.getCenter(new THREE.Vector3());
     geo.translate(-c.x, -geo.boundingBox.min.y, -c.z);
     geo.computeVertexNormals();
-    const im = new THREE.InstancedMesh(geo, material.clone(), PIECE_CAP);
+    // degenerate triangles leave zero-length normals → NaN lighting (black/white dots through the HDR post)
+    const nrm = geo.attributes.normal;
+    for (let i = 0; i < nrm.count; i++) {
+      const x = nrm.getX(i), y = nrm.getY(i), z = nrm.getZ(i), l = Math.hypot(x, y, z);
+      if (!(l > 1e-6)) nrm.setXYZ(i, 0, 1, 0);
+    }
+    const pieceMat = material.clone();
+    pieceMat.metalness = 0; pieceMat.roughness = Math.max(0.6, pieceMat.roughness);
+    const im = new THREE.InstancedMesh(geo, pieceMat, PIECE_CAP);
     im.count = 0; im.castShadow = false; im.receiveShadow = false; im.frustumCulled = true;
     scene.add(im);
     return im;
@@ -8612,6 +8786,8 @@ async function mountYardModels() {
     };
     const nextCrew = deal(crew);
     const nextShop = deal(shoppers);
+    for (const g of crew) toyLook(g, 1.35);
+    for (const g of shoppers) toyLook(g, 1.5);
     for (const a of actors) dressActor(a, a.role === 'buyer' ? nextShop() : nextCrew(), skel.clone);
     const hitch = (owner) => { const w = makeWagon(loaded.wagon); owner.wagon = w; owner.g.add(w); };
     for (const c of cutters) hitch(c);
