@@ -37,9 +37,12 @@
   .hud-left { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .hud-res { display: flex; gap: 8px; align-items: center; flex: none; }
   .pill {
-    display: inline-flex; align-items: center; gap: 6px; background: #1e2a33d9; border-radius: 16px;
-    padding: 4px 14px 4px 8px; font-size: 20px; font-weight: 800; line-height: 1.2; box-shadow: 0 3px 0 #0003;
+    display: inline-flex; align-items: center; gap: 6px; background: #1e2a33b8; border-radius: 16px;
+    padding: 4px 14px 4px 8px; font-size: 20px; font-weight: 800; line-height: 1.2;
+    box-shadow: 0 3px 0 #0003, inset 0 1px 0 #ffffff22; border: 1px solid #ffffff14;
+    backdrop-filter: blur(8px) saturate(1.3); -webkit-backdrop-filter: blur(8px) saturate(1.3);
   }
+  .pill.money { background: linear-gradient(180deg, #2a3a46d0, #1a252dd0); border-color: #ffd84a55; }
   .pill.money { font-size: 28px; color: #ffd84a; pointer-events: auto; cursor: pointer; }
   .coin {
     position: absolute; left: 0; top: 0; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; z-index: 20;
@@ -68,8 +71,9 @@
   #jobBar b { color: #b6f5a0; font-weight: 800; }
   .btns { display: flex; gap: 6px; position: relative; z-index: 60; }
   .btns button, #nav button, #settingsMenu button, #settingsMenu a {
-    pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800; color: #fff; background: #1e2a33d9;
-    border: none; border-radius: 12px; min-width: 42px; height: 42px; cursor: pointer; box-shadow: 0 3px 0 #0003;
+    pointer-events: auto; font-family: inherit; font-size: 18px; font-weight: 800; color: #fff; background: #1e2a33b8;
+    border: 1px solid #ffffff14; border-radius: 12px; min-width: 42px; height: 42px; cursor: pointer;
+    box-shadow: 0 3px 0 #0003, inset 0 1px 0 #ffffff22; backdrop-filter: blur(8px) saturate(1.3); -webkit-backdrop-filter: blur(8px) saturate(1.3);
   }
   #settingsMenu {
     position: absolute; top: calc(100% + 8px); right: 0; width: min(260px, calc(100vw - 24px));
@@ -210,19 +214,20 @@
   button.urow b { display: block; font-size: 16px; line-height: 1.1; }
   button.urow small { display: block; font-family: system-ui, sans-serif; font-size: 12px; font-weight: 600; color: #d5dee4; margin-top: 2px; }
   .ulv { color: #e7fff0; font-size: 13px; }
-  .usteps {
-    display: grid; grid-template-columns: repeat(auto-fit, minmax(16px, 1fr));
-    gap: 3px; margin-top: 5px; min-width: 0;
+  .ubar { display: block; height: 8px; margin-top: 6px; background: #3c4852; border-radius: 6px; overflow: hidden; }
+  .ubar i { display: block; height: 100%; width: 0; border-radius: 6px; background: linear-gradient(90deg, #3d9a55, #6fe08a); transition: width .35s cubic-bezier(.2, 1.3, .4, 1); }
+  button.urow.maxed .ubar i { background: linear-gradient(90deg, #c9a227, #ffd84a); }
+  .uprice-wrap { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .uprice {
+    font-size: 18px; font-weight: 800; white-space: nowrap; text-align: right; padding: 4px 12px 4px 30px; border-radius: 12px; position: relative;
+    color: #1e2a33; background: linear-gradient(180deg, #ffe27a, #f2b52a); box-shadow: 0 3px 0 #a87a10;
   }
-  .usteps i {
-    min-width: 0; height: 16px; display: flex; align-items: center; justify-content: center;
-    font-style: normal; font-size: 11px; line-height: 1; overflow: hidden;
-    background: #3c4852; color: #8b98a2; border-radius: 5px;
-  }
-  .usteps i.on { background: #3d9a55; color: #fff; }
-  .uprice { font-size: 20px; font-weight: 800; color: #ffd84a; white-space: nowrap; text-align: right; }
-  button.urow.maxed .uprice { color: #7fe39a; font-size: 16px; }
-  button.urow:not(.can):not(.maxed) .uprice { color: #9aa6ae; }
+  .uprice::before { content: ''; position: absolute; left: 8px; top: 50%; width: 16px; height: 16px; margin-top: -8px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #fff8c4, #ffd84a 45%, #c98c14); box-shadow: 0 0 0 1.5px #8a5a0a77; }
+  .uneed { font-family: system-ui, sans-serif; font-size: 11px; font-weight: 700; color: #ff9b8a; white-space: nowrap; }
+  button.urow.maxed .uprice { color: #7fe39a; font-size: 15px; background: #2f4a3a; box-shadow: none; padding-left: 12px; }
+  button.urow.maxed .uprice::before { display: none; }
+  button.urow:not(.can):not(.maxed) .uprice { color: #b4bec5; background: #3c4852; box-shadow: 0 3px 0 #252f36; }
   button.urow.act { border-color: #7dcea0; }
   button.urow.act .uprice { color: #b6f5a0; font-size: 16px; }
   .overlay {
@@ -231,14 +236,52 @@
   }
   .overlay.hidden { display: none; }
   body.intro .btns { visibility: hidden; }
+  body.intro #top, body.intro #nav, body.intro #hint { opacity: 0; }
+  #top, #nav { transition: opacity .5s; }
+  #startScreen:not(.help) .modal { overflow: visible; }
+  @media (pointer: coarse) { #startScreen:not(.help) .keys { display: none; } }
   .modal {
     background: #fff9ec; color: #1e2a33; border-radius: 26px; padding: 26px 24px; max-width: 460px; width: 100%;
     text-align: center; box-shadow: 0 10px 0 #0003; max-height: calc(100vh - 32px); overflow: auto;
   }
+  /* title card over the live scene; Help opens the same card with the rules unfolded */
+  #startScreen { background: linear-gradient(180deg, #0d141800 35%, #0d1418aa 100%); align-items: flex-end; padding-bottom: max(7vh, 24px); }
   #startScreen .modal {
-    max-width: min(960px, 94vw); padding: 28px 40px 24px;
+    max-width: 420px; padding: 22px 28px 18px; position: relative;
+    background: #fff9ecf2; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 18px 50px #0006, 0 6px 0 #0002;
   }
-  #startScreen .modal p, #startScreen .modal .steps { text-align: left; }
+  #startScreen .badge {
+    width: 64px; height: 64px; margin: -54px auto 6px; border-radius: 20px; display: grid; place-items: center; font-size: 36px;
+    background: linear-gradient(160deg, #ffb347, #e8641e); box-shadow: 0 6px 0 #a04000, 0 10px 24px #0005;
+  }
+  #startScreen .tag { font-size: 16px; margin: 6px 0 16px; color: #6b5d50; }
+  #startScreen button.play { width: 100%; font-size: 30px; padding: 12px 0; background: linear-gradient(180deg, #ff9a3c, #e8641e); animation: playPulse 2.4s ease-in-out infinite; }
+  @keyframes playPulse { 0%, 100% { box-shadow: 0 5px 0 #a04000, 0 0 0 0 #ff9a3c66; } 50% { box-shadow: 0 5px 0 #a04000, 0 0 0 10px #ff9a3c00; } }
+  #rules { display: none; text-align: left; }
+  #startScreen.help { background: #0d1418cc; align-items: center; padding-bottom: 16px; }
+  #startScreen.help .modal { max-width: min(960px, 94vw); padding: 28px 40px 24px; }
+  #startScreen.help #rules { display: block; }
+  #startScreen.help .tag, #startScreen.help #howBtn, #startScreen.help .badge { display: none; }
+  #startScreen.help button.play { width: auto; font-size: 24px; padding: 10px 40px; animation: none; }
+  #startScreen.help #rules + .keys { margin-top: 4px; }
+  #startScreen.help .modal > button.play { order: 9; }
+  #startScreen .modal { display: flex; flex-direction: column; align-items: stretch; }
+  #startScreen.help .modal { align-items: center; }
+  #startScreen.help #rules { order: 5; }
+  #startScreen.help .keys { order: 10; }
+  /* coach marks for the first minute: an arrow over the thing to tap and a bubble that says why */
+  #coach { position: absolute; left: 0; top: 0; z-index: 25; pointer-events: none; transition: opacity .3s; }
+  #coach.hidden { opacity: 0; }
+  #coachArrow { position: absolute; left: 0; top: 0; font-size: 40px; color: #ffd84a; transform: translate(-50%, -100%);
+    text-shadow: 0 3px 0 #a06a00, 0 0 12px #0008; animation: coachBob .9s ease-in-out infinite; }
+  @keyframes coachBob { 0%, 100% { margin-top: -6px; } 50% { margin-top: 6px; } }
+  #coachBubble { position: absolute; left: 0; top: 0; transform: translate(-50%, calc(-100% - 52px)); width: max-content; max-width: min(300px, 80vw);
+    background: #1e2a33f2; border: 2px solid #ffd84a; border-radius: 16px; padding: 8px 14px; text-align: center; box-shadow: 0 6px 18px #0006; }
+  #coachBubble b { display: block; font-size: 18px; line-height: 1.15; color: #ffd84a; }
+  #coachBubble small { display: block; font-family: system-ui, sans-serif; font-size: 13px; font-weight: 600; color: #e1e9ee; margin-top: 2px; }
+  button.urow.coach { border-color: #ffd84a; animation: coachGlow 1.1s ease-in-out infinite; }
+  @keyframes coachGlow { 0%, 100% { box-shadow: 0 0 0 0 #ffd84a88; } 50% { box-shadow: 0 0 0 6px #ffd84a00; } }
   .modal h1 { font-size: 44px; line-height: .95; color: #d9651e; }
   .modal h2 { font-size: 34px; color: #d9651e; }
   .modal p { font-family: system-ui, sans-serif; font-size: 15px; line-height: 1.5; margin: 12px 0; color: #4a4038; }
@@ -295,6 +338,11 @@
   button:active { transform: scale(.96); }
   button.urow.can:hover, .btns button:hover, #nav button:hover { filter: brightness(1.12); }
   button.play:active { transform: translateY(3px) scale(.98); }
+  @keyframes panelSide { from { opacity: 0; transform: translateX(30px) scale(.97); } to { opacity: 1; transform: none; } }
+  @media (min-width: 900px) and (min-height: 560px) {
+    #shop { left: auto; right: max(16px, env(safe-area-inset-right)); top: 76px; bottom: auto; transform: none; width: 410px; max-height: calc(100vh - 150px); }
+    #shop:not(.hidden) { animation: panelSide .3s cubic-bezier(.2, 1.3, .4, 1); }
+  }
   @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01s !important; transition-duration: .01s !important; } }
   @media (max-width: 600px) {
     .pill { font-size: 17px; padding: 3px 11px 3px 7px; }
@@ -390,9 +438,15 @@
     <button data-go="market"><span>🏭</span>Buyer</button>
   </div>
 
+  <div id="coach" class="hidden"><div id="coachArrow">⬇</div><div id="coachBubble"><b id="coachTitle"></b><small id="coachText"></small></div></div>
   <div id="startScreen" class="overlay">
     <div class="modal">
+      <div class="badge">🪚</div>
       <h1>SAWMILL<br>TYCOON</h1>
+      <p class="tag">Cut logs, load the trucks, grow a timber empire.</p>
+      <button class="play" id="startBtn">PLAY</button>
+      <button class="link" id="howBtn" type="button">How to play</button>
+      <div id="rules">
       <p>Logs ride the belt, the saw cuts them, forklifts load the trucks, and the trucks haul the wood across the river to the buyer. Invest what you earn and grow the whole business.</p>
       <div class="steps">
         <span>🖐️</span><span>Drag to look around the map. Scroll or pinch to zoom.</span>
@@ -416,7 +470,7 @@
         <span>🚧</span><span>There's a toll gate on the bridge. When trucks get stuck and angry, speed it up.</span>
         <span>🛣️</span><span>Widen the road. A wider road gives the trucks more room. The sign by the pad shows the new speed.</span>
       </div>
-      <button class="play" id="startBtn">PLAY</button>
+      </div>
       <div class="keys">WASD / arrows — move · P — pause · ⚙ settings</div>
     </div>
   </div>
@@ -1595,9 +1649,10 @@ function swayMaterial(opts) { // wind bends the top of each instance; height in 
     if (Math.random() < 0.012) rocks.push([px, pz, rand(0.35, 1.0)]);
   }
   // rocks on the river banks too
+  const riverR = rightsOf(riverS);
   for (let k = 0; k < 120; k++) {
     const i = (Math.random() * (riverS.length - 1)) | 0, p = riverS[i], side = Math.random() < 0.5 ? -1 : 1;
-    const r = rightsOf(riverS)[i], off = side * (RIVER_HW + rand(0.8, 3.2));
+    const r = riverR[i], off = side * (RIVER_HW + rand(0.8, 3.2));
     const x = p.x + r.x * off, z = p.z + r.z * off;
     if (distToPts(roadPts, x, z, 5.0) === 0 || distToPts(loopAll, x, z, 4.2) === 0) continue;
     rocks.push([x, z, rand(0.25, 0.7)]);
@@ -6815,14 +6870,12 @@ function buildShopRows(ids) {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.dataset.up = id;
-    btn.innerHTML = `<span class="uico"></span><span><b><span class="uname"></span> <span class="ulv"></span></b><small></small><span class="usteps"></span></span><span class="uprice"></span>`;
+    btn.innerHTML = `<span class="uico"></span><span><b><span class="uname"></span> <span class="ulv"></span></b><small></small><span class="ubar"><i></i></span></span><span class="uprice-wrap"><span class="uprice"></span><span class="uneed"></span></span>`;
     btn.querySelector('.uico').textContent = icon;
     btn.querySelector('.uname').textContent = name;
-    const steps = btn.querySelector('.usteps');
-    for (let i = 0; i < UP[id].costs.length; i++) { const s = document.createElement('i'); s.textContent = icon; steps.appendChild(s); }
     btn.addEventListener('click', () => buy(id, true));
     box.appendChild(btn);
-    shopRowEls.set(id, { btn, lv: btn.querySelector('.ulv'), eff: btn.querySelector('small'), steps: [...steps.children], price: btn.querySelector('.uprice') });
+    shopRowEls.set(id, { btn, lv: btn.querySelector('.ulv'), eff: btn.querySelector('small'), bar: btn.querySelector('.ubar i'), price: btn.querySelector('.uprice'), need: btn.querySelector('.uneed') });
   }
   if (openStation.id === 'forks') {
     const free = document.createElement('button');
@@ -6851,7 +6904,9 @@ function drawShop() {
     setText(row.lv, `${lv}/${max}`);
     setText(row.eff, upEffect(id));
     setText(row.price, needSpot ? 'SPOT' : cost === null ? 'MAX' : fmt(cost));
-    row.steps.forEach((s, i) => s.classList.toggle('on', i < lv));
+    setText(row.need, cost !== null && !can ? 'need ' + fmt(cost - S.money) : '');
+    const w = (lv / max * 100).toFixed(1) + '%';
+    if (row.bar.style.width !== w) row.bar.style.width = w;
   }
 }
 function buy(id, fromUi) {
@@ -8170,6 +8225,7 @@ function updateVisuals(dt, time) {
   syncBuilds();
   fx.update(dt);
   applyDay(dt);
+  updateGuide(dt);
   updatePops(dt);
   updateCrews(dt);
   syncTapRings(time);
@@ -8184,7 +8240,7 @@ function updateVisuals(dt, time) {
 const DAY_LEN = 420;
 const sky = createSky({ scene, radius: 420 });
 scene.background = null;
-let tod = qs.has('tod') ? +qs.get('tod') : 0.1;
+let tod = qs.has('tod') ? +qs.get('tod') : 0.56; // first look is late afternoon: golden hour comes within the first minute
 let dayCycle = true;
 try { dayCycle = localStorage.getItem('pilana-tajkun:cycle') !== 'day'; } catch (e) {}
 if (qs.has('tod')) dayCycle = false; // a fixed time for screenshots and tests
@@ -8230,7 +8286,7 @@ function syncWorkPools() { // one warm floodlight pool per built machine
   workPools.instanceMatrix.needsUpdate = true;
 }
 function applyDay(dt) {
-  if (dayCycle && !instant) tod = (tod + dt / DAY_LEN) % 1;
+  if (dayCycle && !instant && S.running) tod = (tod + dt / DAY_LEN) % 1; // the title screen holds its golden hour
   else if (!dayCycle && !qs.has('tod')) tod += (0.2 - tod) * Math.min(1, dt * 0.8); // ease back to day
   sampleCycle(DAY_KEYS, tod, day);
   const el = day.el * DEG, az = day.az * DEG, L = 40;
@@ -8285,6 +8341,7 @@ function render() {
   let rem = raw;
   while (rem > 1e-6) { const st = Math.min(0.05, rem); update(st); rem -= st; }
   const vdt = Math.min(0.05, raw);
+  if (!S.running && !SIM && !qs.has('nointro')) { cam.target.x += raw * 0.6; cam.target.z -= raw * 0.25; } // title screen: the camera drifts
   if (!S.paused) { updateTour(Math.min(0.1, raw)); updateCamera(Math.min(0.1, raw)); }
   if (S.paused) {
     // paused: the scene holds still, and is only drawn again when the camera moves
@@ -8344,14 +8401,17 @@ function startGame() {
     cam.tween = { from: V(to.x + 18, 0, to.z + 6), to, d0: 92, d1, t: 0, dur: 2.4 };
   }
   $('startScreen').classList.add('hidden');
+  $('startScreen').classList.remove('help');
   $('startBtn').textContent = 'PLAY';
   S.running = true; S.paused = false;
   helpHeld = false;
   sfx.ensure(); clock.getDelta();
   tickJobs();
+  startGuide();
 }
 function closeHelp() {
   $('startScreen').classList.add('hidden');
+  $('startScreen').classList.remove('help');
   $('startBtn').textContent = 'PLAY';
   if (helpHeld) { helpHeld = false; S.paused = false; }
 }
@@ -8359,8 +8419,71 @@ function openHelp() {
   closeSettings();
   if (S.running && !S.paused) { helpHeld = true; S.paused = true; }
   $('startBtn').textContent = S.running ? 'BACK' : 'PLAY';
+  $('startScreen').classList.add('help');
   $('startScreen').classList.remove('hidden');
 }
+$('howBtn').addEventListener('click', () => { sfx.ensure(); $('startScreen').classList.add('help'); });
+
+// GUIDE — the first minute, for a first-time player: tap the saw → buy a faster saw → the job card.
+// Arrows point at the real thing (projected from the 3D scene each frame); nothing blocks input.
+const GUIDE_KEY = 'pilana-tajkun:guide';
+let guide = null;
+function startGuide() {
+  let done = false;
+  try { done = localStorage.getItem(GUIDE_KEY) === '1'; } catch (e) {}
+  if (!qs.has('guide') && (done || AUTO || SIM || qs.has('nointro'))) return;
+  guide = { step: 0, t: 0 };
+  hideHint();
+}
+function endGuide() {
+  guide = null;
+  $('coach').classList.add('hidden');
+  document.querySelectorAll('button.urow.coach').forEach(b => b.classList.remove('coach'));
+  try { localStorage.setItem(GUIDE_KEY, '1'); } catch (e) {}
+}
+function coachAt(x, y, title, text) {
+  const c = $('coach');
+  c.classList.remove('hidden');
+  c.style.transform = `translate(${x.toFixed(0)}px, ${y.toFixed(0)}px)`;
+  setText($('coachTitle'), title); setText($('coachText'), text);
+  const b = $('coachBubble'), half = b.offsetWidth / 2; // the arrow stays on target, the bubble stays on screen
+  b.style.marginLeft = (clamp(x, half + 8, innerWidth - half - 8) - x).toFixed(0) + 'px';
+}
+function updateGuide(dt) {
+  if (!guide || !S.running) return;
+  const now = performance.now() / 1000; // wall time: frame dt is clamped, and slow devices should not stall the guide
+  guide.t += Math.min(0.5, now - (guide.last || now)); guide.last = now;
+  const g = guide;
+  if (g.step === 0) { // wait for the opening fly-in to settle
+    $('coach').classList.add('hidden');
+    if (!cam.tween && g.t > 0.6) { g.step = 1; g.t = 0; }
+  } else if (g.step === 1) {
+    if (openStation && openStation.id === 'saw') { g.step = 2; g.t = 0; return; }
+    const st = STATIONS.find(s => s.id === 'saw'), sp = spotsOf(st)[0];
+    const [x, y, z] = toScreen(V(sp.x, 3.2, sp.z + 2));
+    if (z > 1) return $('coach').classList.add('hidden');
+    coachAt(clamp(x, 160, innerWidth - 160), clamp(y, 150, innerHeight - 40), 'Tap the saw', 'Every machine has upgrades. Start with the saw.');
+  } else if (g.step === 2) {
+    if (S.lv.saw >= 1) { g.step = 3; g.t = 0; document.querySelectorAll('button.urow.coach').forEach(b => b.classList.remove('coach')); return; }
+    if (!openStation) { g.step = 1; return; }
+    const row = document.querySelector('#shopRows button[data-up="saw"]');
+    if (!row) return;
+    row.classList.add('coach');
+    const r = row.querySelector('.uprice').getBoundingClientRect();
+    coachAt(r.left + r.width / 2, r.top - 4, 'Buy “Faster saw”', 'More cuts per minute = more wood to sell.');
+  } else if (g.step === 3) {
+    const job = $('jobBar');
+    if (g.t > 7 || job.classList.contains('hidden')) { g.step = 4; g.t = 0; return; }
+    const r = job.getBoundingClientRect();
+    coachAt(clamp(r.left + r.width / 2, 160, innerWidth - 160), r.bottom + 60, 'Jobs pay a bonus', 'Finish the green card for extra cash. The trucks sell the wood by themselves.');
+    $('coachArrow').textContent = '⬆';
+  } else if (g.step === 4) {
+    $('coachArrow').textContent = '⬇';
+    toast('You run the mill now!', 'tap any machine to grow it 🌲');
+    endGuide();
+  }
+}
+window.__guide = () => guide && { step: guide.step, t: +guide.t.toFixed(2) };
 function setPaused(p) {
   S.paused = p;
   audio.ambienceOn(!p);
@@ -8537,7 +8660,7 @@ window.__cam = (x, z, d) => { cam.tween = null; cam.target.set(x, 0, z); if (d) 
 window.__start = () => startGame();
 window.__scene = () => ({ scene, renderer, camera, fx });
 window.__padScreen = id => { applyCamera(); const st = STATIONS.find(s => s.ups.includes(id)); const spot = st ? spotsOf(st)[0] : { x: 0, z: 0 }; const [x, y] = toScreen(V(spot.x, 0.2, spot.z)); return [x, y]; };
-window.__camInfo = () => [+cam.target.x.toFixed(2), +cam.target.z.toFixed(2), +cam.dist.toFixed(1)];
+window.__camInfo = () => [+cam.target.x.toFixed(2), +cam.target.z.toFixed(2), +cam.dist.toFixed(1), !!cam.tween];
 window.__step = (n, dt = 0.1) => { const was = instant; instant = true; S.running = true; for (let i = 0; i < n; i++) update(dt); instant = was; return window.__debug(); };
 window.__run = (n, dt = 0.1) => { const was = instant; instant = false; S.running = true; S.paused = false; for (let i = 0; i < n; i++) { update(dt); updateVisuals(dt, S.time); } instant = was; return window.__debug(); };
 window.__deal = (kind) => { offerDeal(kind || 'logs'); return { phase: deal.phase, kind: deal.kind, left: deal.left }; };

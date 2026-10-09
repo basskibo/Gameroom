@@ -2,6 +2,21 @@
 
 Hronološki dnevnik promena (najnovije gore). Format: [tracking.md](../../engineering/tracking.md).
 
+## 2026-10-09 — „Wow“ plan: atmosfera, teren, herojski trenuci, UI, likovi
+
+- **Urađeno:**
+  - Likovi (PT-BUG-023): mat materijali umesto metalnih, svetlija i toplija paleta, veće glave.
+  - `shared/gameroom-post.js` (HDR + MSAA, bloom, ACES, grading, vinjeta; isključeno na Low), `shared/gameroom-sky.js` (nebo, uzorkovanje ciklusa).
+  - Ciklus dana (7 min): jutro, dan, zlatni sat, zalazak, noć, zora; noću lampe, farovi, prozori, svetlo ispod mašina, svici. ⚙ → Day cycle.
+  - Teren: fleke trave, ~6 400 busena i ~1 100 cvetova koji se njišu, kamenje, brda na ivici, galebovi, reka sa penom.
+  - Herojski trenuci: gradnja (kamera, skela, kran, prašina, konfete), varnice na testeri, obilazak kamere posle 30 s bez unosa.
+  - UI: naslovna kartica preko žive scene (zlatni sat), pravila iza „How to play“, vođeni prvi minut (3 koraka), kartice nadogradnji sa trakom nivoa i dugmetom-novčićem, panel desno na desktopu, stakleni HUD.
+- **ID:** PT-BUG-010, PT-BUG-023; PT-IMP-V02, V04, V05, V10, A08, U01, U02.
+- **Provereno:**
+  - Testovi: 50 (novi `onboarding.spec.mjs` ×3, PT-BUG-010 više nije `test.fail`).
+  - Benchmark (iGPU, mašina sa drugim aplikacijama, merenja šumna): rano ~58–59 FPS, kasno dan 59,9 / 1% low 47,9, kasno noć 56,6 / p95 19 ms. A/B sa prethodnim commitom: razlika < 1 FPS za teren i herojske trenutke; post-obrada košta ~1–2 ms.
+- **Napomena:** V1 (modeli mašina iz CC0 paketa) traži preuzimanje — čeka odobrenje korisnika. Faza 0 monetizacije i dalje čeka (upozoreno).
+
 ## 2026-10-09 — Faze B–D: performanse, učitavanje, izgled, animacije
 
 - **Urađeno:**

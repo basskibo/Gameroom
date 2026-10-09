@@ -15,7 +15,7 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 | PT-BUG-007 | S2 | rešen 2026-10-09 | Kasna igra trza: 40 FPS, 1% low 18 FPS (iGPU) |
 | PT-BUG-008 | S3 | rešen 2026-10-09 | Modeli „iskaču“ posle starta, bez indikatora učitavanja |
 | PT-BUG-009 | S3 | otvoren | `buy()` ne proverava preduslove: bot kupuje nadogradnje za nesagrađene zgrade |
-| PT-BUG-010 | S2 | otvoren (faza 5) | Na telefonu je PLAY ispod ~20 pasusa pravila |
+| PT-BUG-010 | S2 | rešen 2026-10-09 | Na telefonu je PLAY ispod ~20 pasusa pravila |
 | PT-BUG-011 | S3 | rešen 2026-10-09 | Toast se preklapa sa ponudom kupca i HUD karticama |
 | PT-BUG-012 | S3 | rešen 2026-10-09 | ⚙ preklapa start ekran i meni radi pre početka igre |
 | PT-BUG-013 | S3 | rešen 2026-10-09 | Prvi kadar je prazan parking, testera je odsečena |
@@ -28,7 +28,7 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 | PT-BUG-020 | S4 | rešen 2026-10-09 | Meni podešavanja se ne zatvara klikom van njega |
 | PT-BUG-021 | S4 | otvoren | Ime igre: `<title>` „Sawmill Tycoon“, landing „Pilana Tajkun“ |
 | PT-BUG-022 | S4 | otvoren | Na telefonu hint „drag · zoom…“ ide u dva reda preko igre |
-| PT-BUG-023 | S3 | otvoren (V1) | Likovi (radnici, kupci) previše tamni, ne uklapaju se u svetlu scenu |
+| PT-BUG-023 | S3 | rešen 2026-10-09 | Likovi (radnici, kupci) previše tamni, ne uklapaju se u svetlu scenu |
 
 ## Otvoreno
 
@@ -61,9 +61,10 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 - `#hint` na 390 px prelama „drag · zoom · tap a machine to upgrade“ u dva reda iznad nav dugmadi i stoji 2,5 s posle prvog dodira.
 - **Predlog:** kraći tekst na telefonu ili ikonice.
 
-### PT-BUG-023 · S3 · otvoren — Tamni likovi
+### PT-BUG-023 · S3 · rešen 2026-10-09 — Tamni likovi
 - Prijava korisnika 2026-10-09: modeli ljudi deluju mračno i „ne idu uz igru“. Quaternius likovi imaju tamne, zasićene materijale (teget/crna odeća, tamna koža u senci) i metalness/roughness koji pod PMREM-om daju malo odsjaja.
-- **Predlog:** svetlija paleta odeće po ulozi (radnik narandžasti prsluk + šlem, kupci pastelne boje), `roughness 0.8`, `metalness 0`, blagi emisivni „fill“, kontakt senka ostaje.
+- **Uzrok:** svi materijali likova imaju `metalness 0.4` i `roughness 0.27` — pod slabim okruženjem metal odražava tamu.
+- **Rešenje:** `toyLook()` u `mountYardModels`: mat materijal, paleta podignuta i toplija (koža ostaje, samo toplija), 12 % sopstvene boje u senci, glava 1,3×.
 
 ## Rešeno
 

@@ -8,6 +8,8 @@ Običan JS (ES moduli), bez build koraka. Igre ih uvoze relativno (`../../shared
 | `gameroom-three.js` | `bakeStatic`, `bakeViz`, `dropGroup` (spajanje statične geometrije po materijalu), `createQuality` (Auto/High/Low, adaptivni DPR) |
 | `gameroom-fx.js` | `createParticles` — sve čestice u jednom draw call-u |
 | `gameroom-audio.js` | `createAudioBus` (kompresor, sfx/muzika/ambijent, mute u localStorage), `haptic()` |
+| `gameroom-post.js` | `createPost` — HDR render, bloom, ACES, color grading, vinjeta; `post.render()` umesto `renderer.render()` |
+| `gameroom-sky.js` | `createSky` (nebo sa sjajem sunca), `sampleCycle` (ključni kadrovi dana/noći) |
 | `vendor/three-0.170.0/` | Three.js r170 + korišćeni dodaci (GLTFLoader, meshopt, BufferGeometryUtils, SkeletonUtils, RoomEnvironment) |
 
 Kad dodaješ funkciju koju bi koristila bar još jedna igra, stavi je ovde, ne u igru.

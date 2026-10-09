@@ -13,7 +13,7 @@ node tests/server.mjs          # pa http://127.0.0.1:4173/games/pilana-tajkun/
 python3 -m http.server 8000    # ili http://localhost:8000/games/pilana-tajkun/
 ```
 
-URL parametri: `?auto` (ne učitava save), `?sim=<s>` (bot igra bez crtanja, rezultat u `window.simLog`/`window.simInfo`), `&smart` (pametniji bot), `?nointro` (bez uvodnog preleta kamere — koriste ga testovi).
+URL parametri: `?auto` (ne učitava save), `?sim=<s>` (bot igra bez crtanja, rezultat u `window.simLog`/`window.simInfo`), `&smart` (pametniji bot), `?nointro` (bez uvodnog preleta kamere, vodiča i obilaska — koriste ga testovi), `?tod=0.62` (fiksno doba dana: 0,12 dan, 0,6 zlatni sat, 0,67 zalazak, 0,8 noć), `?guide` (vodič i kad je već viđen).
 
 ## Fajlovi
 
@@ -28,6 +28,8 @@ URL parametri: `?auto` (ne učitava save), `?sim=<s>` (bot igra bez crtanja, rez
 | `shared/gameroom-three.js` | `bakeStatic`/`bakeViz` (spajanje geometrije), `createQuality` (Auto/High/Low) |
 | `shared/gameroom-fx.js` | sistem čestica (jedan draw call) |
 | `shared/gameroom-audio.js` | audio bus (kompresor, sfx/muzika/ambijent), `haptic()` |
+| `shared/gameroom-post.js` | bloom + ACES + color grading (HDR, MSAA); isključeno na Low |
+| `shared/gameroom-sky.js` | nebo (gradijent + sjaj sunca), `sampleCycle` za ključne kadrove dana |
 
 ## Mapa koda (sekcije u `index.html`)
 
@@ -70,6 +72,10 @@ Brojevi linija su približni (2026-10-09). Zaglavlja: `grep -n "^// [A-Z]" games
 
 ### Pravila koja kod sad prati
 
+- Svetlo, magla, nebo i grading menja samo `applyDay()` (DAY CYCLE, ključni kadrovi `DAY_KEYS`). Novo svetlo koje treba da se upali noću: materijal sa `emissive` i jačina iz `day.night`.
+- Crtanje ide kroz `post.render(scene, camera)`, ne `renderer.render`. Čestice sa `glow > 1` svetle (bloom).
+- Novi ukras na terenu ide samo gde `cleared(x, z)` vraća `false` (tamo se nikad ne gradi).
+
 - Statične grupe se posle gradnje spajaju (`bakeStatic(g, keep)` / `bakeViz(viz, ...roots)`). Sve što kod kasnije pomera ili pali/gasi mora biti u `keep` (ili vraćeno iz buildera u viz zapisu). Kad se grupa gradi ponovo: `dropGroup(staro)` pa `bakeStatic(novo)`.
 - Logika u `update(dt)`, prikaz u `updateVisuals`. Na pauzi se `updateVisuals` ne zove i scena se ne crta ponovo dok se kamera ne pomeri.
 - Novi efekat = `fx.emit/burst` (ne nov `THREE.Points`). Nova senka ispod pokretnog objekta = poziv `blob()` u `syncBlobs`.
@@ -88,6 +94,9 @@ Brojevi linija su približni (2026-10-09). Zaglavlja: `grep -n "^// [A-Z]" games
 | `__deal(kind)`, `__rush(kind)` | ponuda kupca, hitna porudžbina |
 | `__scene()` | `{ scene, renderer, camera, fx }` za alate |
 | `window.__yardModels` | `true` kad su modeli učitani |
+| `__buy(id)` | kupovina kao iz panela (sa herojskim trenutkom gradnje) |
+| `__tod(t)` | postavi doba dana (0–1) i zaključa ciklus |
+| `__guide()` | korak vodiča `{ step, t }` ili `null` |
 
 ## Merenja
 

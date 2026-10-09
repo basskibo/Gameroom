@@ -11,8 +11,7 @@ test.describe('Pilana Tajkun · phone @mobile', () => {
     game.expectNoErrors();
   });
 
-  test('PLAY is on screen without scrolling the rules', async ({ game, page }) => {
-    test.fail(true, 'Known UX bug PT-BUG-010: the rules are ~20 paragraphs, PLAY sits far below the fold on a phone');
+  test('PT-BUG-010: PLAY is on screen without scrolling the rules', async ({ game, page }) => {
     await game.open();
     await expect(page.locator('#startBtn')).toBeInViewport();
   });
