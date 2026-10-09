@@ -907,12 +907,20 @@ const S_CROSS = SPOT_X.map(x => nearestS(x, AISLE_RET_Z, IDX_RET0, ROUTE.length)
 // TERRAIN (with river channel), WATER
 // =====================================================================
 const TW = 270, TH = 160, TCX = 12, TCZ = 2;
+// smooth value noise 0..1 (terrain colour patches, scatter density)
+function vnoise(x, z) {
+  const h = (i, j) => { const v = Math.sin(i * 127.1 + j * 311.7) * 43758.5453; return v - Math.floor(v); };
+  const i = Math.floor(x), j = Math.floor(z), fx = x - i, fz = z - j;
+  const u = fx * fx * (3 - 2 * fx), w = fz * fz * (3 - 2 * fz);
+  return (h(i, j) * (1 - u) + h(i + 1, j) * u) * (1 - w) + (h(i, j + 1) * (1 - u) + h(i + 1, j + 1) * u) * w;
+}
 function terrainH(d) { return -1.9 * (1 - smooth(clamp((d - (RIVER_HW - 1.6)) / 3.9, 0, 1))); }
 {
   const geo = new THREE.PlaneGeometry(TW, TH, 270, 160);
   geo.rotateX(-Math.PI / 2);
   const pos = geo.attributes.position, cols = new Float32Array(pos.count * 3);
   const gA = new THREE.Color(0x6cbf47), gB = new THREE.Color(0x58ad3c), sand = new THREE.Color(0xe7d49c), wet = new THREE.Color(0xbfa874);
+  const gDry = new THREE.Color(0xa6c95a), gDark = new THREE.Color(0x3f9436);
   const c = new THREE.Color();
   for (let i = 0; i < pos.count; i++) {
     const x = pos.getX(i) + TCX, z = pos.getZ(i) + TCZ;
@@ -920,6 +928,9 @@ function terrainH(d) { return -1.9 * (1 - smooth(clamp((d - (RIVER_HW - 1.6)) / 
     pos.setY(i, terrainH(d));
     const n = 0.5 + 0.5 * Math.sin(x * 0.11 + Math.sin(z * 0.09) * 2.2) * Math.cos(z * 0.13 + x * 0.03);
     c.copy(gA).lerp(gB, n);
+    const patch = vnoise(x * 0.045, z * 0.045) * 0.65 + vnoise(x * 0.16, z * 0.16) * 0.35;
+    if (patch > 0.58) c.lerp(gDry, smooth(clamp((patch - 0.58) / 0.2, 0, 1)) * 0.55);
+    else if (patch < 0.36) c.lerp(gDark, smooth(clamp((0.36 - patch) / 0.2, 0, 1)) * 0.5);
     const sandT = 1 - smooth(clamp((d - (RIVER_HW + 1.6)) / 1.8, 0, 1));
     c.lerp(sand, sandT);
     if (d < RIVER_HW) c.lerp(wet, 0.6);
@@ -941,6 +952,7 @@ function terrainH(d) { return -1.9 * (1 - smooth(clamp((d - (RIVER_HW - 1.6)) / 
   terrain.position.set(TCX, 0, TCZ); terrain.receiveShadow = true;
   scene.add(terrain);
 }
+const waterTime = { value: 0 };
 const waterTex = canvasTex(128, 128, (c, w, h) => {
   c.fillStyle = '#3aa3dc'; c.fillRect(0, 0, w, h);
   c.strokeStyle = 'rgba(255,255,255,0.28)'; c.lineWidth = 2;
@@ -976,7 +988,19 @@ function dashed(pts, rights, off, y, m, i0, i1, on = 4, offLen = 4, halfW = 0.08
   for (let i = i0; i < i1; i += on + offLen) ribbon(pts, rights, halfW, off, y, m, i, Math.min(i1, i + on), parent);
 }
 {
-  const waterMat = new THREE.MeshStandardMaterial({ map: waterTex, roughness: 0.22, metalness: 0.04, color: 0xffffff });
+  const waterMat = new THREE.MeshStandardMaterial({ map: waterTex, roughness: 0.18, metalness: 0.04, color: 0xffffff });
+  waterMat.onBeforeCompile = (sh) => {
+    sh.uniforms.uTime = waterTime;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vBank;')
+      .replace('#include <uv_vertex>', '#include <uv_vertex>\nvBank = uv;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform float uTime;\nvarying vec2 vBank;')
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        float edge = min(vBank.x, 1.0 - vBank.x);
+        diffuseColor.rgb *= mix(vec3(1.25, 1.35, 1.12), vec3(0.72, 0.8, 0.95), smoothstep(0.04, 0.42, edge));
+        float wob = sin(vBank.y * 9.0 + uTime * 1.6) * 0.018 + sin(vBank.y * 23.0 - uTime * 2.3) * 0.01;
+        float foam = smoothstep(0.085, 0.045, edge + wob) * (0.75 + 0.25 * sin(vBank.y * 40.0 + uTime * 3.0));
+        diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0), foam * 0.85);`);
+  };
   ribbon(riverS, rightsOf(riverS), 6.0, 0, -0.55, waterMat);
 }
 
@@ -1519,6 +1543,136 @@ function cleared(x, z) {
   ];
   forestDecor = scatter(pines, pineParts, [0.6, 1.95, 3.05]).concat(scatter(rounds, roundParts, [0.68, 2.15, 3.15]));
   for (const m of forestDecor) { m.castShadow = false; m.receiveShadow = false; scene.add(m); }
+}
+// =====================================================================
+// LIVING TERRAIN — grass tufts and flowers that sway, rocks, hills that hide the map edge, birds.
+// Everything sits only where `cleared()` says nothing will ever be built. One draw call per kind.
+// =====================================================================
+const windTime = { value: 0 };
+function swayMaterial(opts) { // wind bends the top of each instance; height in the geometry = how far it bends
+  const m = new THREE.MeshStandardMaterial(opts);
+  m.onBeforeCompile = (sh) => {
+    sh.uniforms.uWind = windTime;
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nuniform float uWind;')
+      .replace('#include <begin_vertex>', `#include <begin_vertex>
+        #ifdef USE_INSTANCING
+        float ph = instanceMatrix[3].x * 0.37 + instanceMatrix[3].z * 0.23;
+        float bend = max(position.y, 0.0);
+        transformed.x += (sin(uWind * 1.9 + ph) * 0.6 + sin(uWind * 3.7 + ph * 1.7) * 0.25) * 0.16 * bend;
+        transformed.z += cos(uWind * 1.4 + ph) * 0.07 * bend;
+        #endif`);
+  };
+  return m;
+}
+{
+  // grass tuft: seven blades, dark at the root and light at the tip
+  const blades = [];
+  for (let k = 0; k < 7; k++) {
+    const a = (k / 7) * Math.PI * 2 + rand(-0.3, 0.3), h = rand(0.32, 0.6), w = 0.11, lean = rand(0.1, 0.24);
+    const cx = Math.cos(a) * 0.1, cz = Math.sin(a) * 0.1, tx = Math.cos(a) * lean, tz = Math.sin(a) * lean;
+    const px = -Math.sin(a) * w, pz = Math.cos(a) * w;
+    blades.push(cx - px, 0, cz - pz, cx + px, 0, cz + pz, cx + tx, h, cz + tz);
+  }
+  const tuftGeo = new THREE.BufferGeometry();
+  tuftGeo.setAttribute('position', new THREE.Float32BufferAttribute(blades, 3));
+  const tc = [];
+  for (let i = 0; i < blades.length / 3; i++) { const top = blades[i * 3 + 1] > 0; tc.push(...(top ? [0.42, 0.78, 0.2] : [0.15, 0.38, 0.09])); }
+  tuftGeo.setAttribute('color', new THREE.Float32BufferAttribute(tc, 3));
+  tuftGeo.computeVertexNormals();
+  // flower: a little star on a stem
+  const flowerGeo = mergeGeometries([
+    new THREE.CylinderGeometry(0.015, 0.015, 0.34, 3).translate(0, 0.17, 0),
+    new THREE.OctahedronGeometry(0.14, 0).scale(1, 0.55, 1).translate(0, 0.36, 0),
+  ].map(g => g.index ? g.toNonIndexed() : g), false);
+  const tufts = [], flowers = [], rocks = [];
+  for (let x = -95; x < 120; x += 2.1) for (let z = -72; z < 76; z += 2.1) {
+    const px = x + rand(-0.9, 0.9), pz = z + rand(-0.9, 0.9);
+    if (cleared(px, pz)) continue;
+    const dens = vnoise(px * 0.08, pz * 0.08);
+    if (dens > 0.3) tufts.push([px, pz]);
+    if (dens > 0.5) tufts.push([px + rand(-0.7, 0.7), pz + rand(-0.7, 0.7)]);
+    if (dens > 0.55 && Math.random() < 0.5) flowers.push([px + rand(-0.6, 0.6), pz + rand(-0.6, 0.6)]);
+    if (Math.random() < 0.012) rocks.push([px, pz, rand(0.35, 1.0)]);
+  }
+  // rocks on the river banks too
+  for (let k = 0; k < 120; k++) {
+    const i = (Math.random() * (riverS.length - 1)) | 0, p = riverS[i], side = Math.random() < 0.5 ? -1 : 1;
+    const r = rightsOf(riverS)[i], off = side * (RIVER_HW + rand(0.8, 3.2));
+    const x = p.x + r.x * off, z = p.z + r.z * off;
+    if (distToPts(roadPts, x, z, 5.0) === 0 || distToPts(loopAll, x, z, 4.2) === 0) continue;
+    rocks.push([x, z, rand(0.25, 0.7)]);
+  }
+  const o = new THREE.Object3D(), col = new THREE.Color();
+  const tuftIM = new THREE.InstancedMesh(tuftGeo, swayMaterial({ vertexColors: true, roughness: 1, side: THREE.DoubleSide }), tufts.length);
+  tufts.forEach(([x, z], i) => {
+    o.position.set(x, 0, z); o.rotation.set(0, rand(0, 6.28), 0); o.scale.setScalar(rand(0.8, 1.5)); o.updateMatrix();
+    tuftIM.setMatrixAt(i, o.matrix);
+    const v = rand(0.85, 1.08); tuftIM.setColorAt(i, col.setRGB(v * rand(0.92, 1.05), v, v * 0.95));
+  });
+  const FLOWER_C = [0xffffff, 0xffe14a, 0xff8fb8, 0xb58cff, 0xff6b4a];
+  const flowerIM = new THREE.InstancedMesh(flowerGeo, swayMaterial({ roughness: 0.7, emissive: 0x222222 }), flowers.length);
+  flowers.forEach(([x, z], i) => {
+    o.position.set(x, 0, z); o.rotation.set(0, rand(0, 6.28), 0); o.scale.setScalar(rand(0.9, 1.4)); o.updateMatrix();
+    flowerIM.setMatrixAt(i, o.matrix);
+    flowerIM.setColorAt(i, col.setHex(FLOWER_C[i % FLOWER_C.length]));
+  });
+  const rockIM = new THREE.InstancedMesh(new THREE.DodecahedronGeometry(1, 0), mat(0xffffff, { flat: true, r: 0.9 }), rocks.length);
+  rocks.forEach(([x, z, sz], i) => {
+    o.position.set(x, sz * 0.25 + terrainH(riverDist(x, z)), z); o.rotation.set(rand(0, 3), rand(0, 6.28), rand(0, 3));
+    o.scale.set(sz * rand(0.9, 1.4), sz * rand(0.5, 0.8), sz * rand(0.9, 1.3)); o.updateMatrix();
+    rockIM.setMatrixAt(i, o.matrix);
+    rockIM.setColorAt(i, col.setHex(0x9a9e9c).multiplyScalar(rand(0.78, 1.1)));
+  });
+  for (const im of [tuftIM, flowerIM, rockIM]) { im.castShadow = false; im.receiveShadow = true; scene.add(im); }
+  rockIM.castShadow = true;
+  // hills around the edge of the ground plane, so wide views end in green slopes and haze, not a cliff
+  const hills = [];
+  const X0 = TCX - TW / 2, X1 = TCX + TW / 2, Z0 = TCZ - TH / 2, Z1 = TCZ + TH / 2;
+  for (let x = X0; x <= X1; x += 21) { hills.push([x + rand(-6, 6), Z0 - rand(2, 10)], [x + rand(-6, 6), Z1 + rand(2, 10)]); }
+  for (let z = Z0; z <= Z1; z += 21) { hills.push([X0 - rand(2, 10), z + rand(-6, 6)], [X1 + rand(2, 10), z + rand(-6, 6)]); }
+  const hillGeo = new THREE.IcosahedronGeometry(1, 1);
+  const hillIM = new THREE.InstancedMesh(hillGeo, mat(0xffffff, { flat: true, r: 1 }), hills.length);
+  hills.forEach(([x, z], i) => {
+    const r = rand(16, 30);
+    o.position.set(x, -r * 0.18, z); o.rotation.set(0, rand(0, 6.28), 0); o.scale.set(r, r * rand(0.35, 0.6), r * rand(0.8, 1.2)); o.updateMatrix();
+    hillIM.setMatrixAt(i, o.matrix);
+    hillIM.setColorAt(i, col.setHex([0x4f9a3a, 0x5aa646, 0x468c34, 0x6aae4a][i % 4]));
+  });
+  hillIM.castShadow = false; hillIM.receiveShadow = false; hillIM.frustumCulled = false;
+  scene.add(hillIM);
+}
+// birds: a small flock that wheels over whatever the camera is looking at; wings flap by scaling the tips
+const BIRD_N = 9;
+const birdGeo = new THREE.BufferGeometry();
+birdGeo.setAttribute('position', new THREE.Float32BufferAttribute([
+  0, 0, 0.22, 0, 0, -0.18, -0.75, 1, -0.08,
+  0, 0, -0.18, 0, 0, 0.22, 0.75, 1, -0.08,
+], 3));
+birdGeo.computeVertexNormals();
+const birdIM = new THREE.InstancedMesh(birdGeo, new THREE.MeshBasicMaterial({ color: 0xd8dcdc, side: THREE.DoubleSide }), BIRD_N);
+birdIM.frustumCulled = false; birdIM.castShadow = false;
+scene.add(birdIM);
+const birds = Array.from({ length: BIRD_N }, (_, i) => ({ a: rand(0, 6.28), r: rand(9, 18), w: rand(0.22, 0.34) * (i % 3 ? 1 : -1), y: rand(13, 19), ph: rand(0, 6.28), dx: rand(-6, 6), dz: rand(-6, 6) }));
+const flock = V(cam.target.x, 0, cam.target.z), birdObj = new THREE.Object3D();
+let birdT = 0;
+function updateBirds(dt) {
+  birdT += dt;
+  flock.x += (cam.target.x + Math.sin(birdT * 0.05) * 20 - flock.x) * Math.min(1, dt * 0.08);
+  flock.z += (cam.target.z + Math.cos(birdT * 0.04) * 16 - flock.z) * Math.min(1, dt * 0.08);
+  const night = day.night || 0;
+  birdIM.visible = night < 0.6;
+  if (!birdIM.visible) return;
+  birds.forEach((b, i) => {
+    b.a += b.w * dt;
+    const x = flock.x + b.dx + Math.cos(b.a) * b.r, z = flock.z + b.dz + Math.sin(b.a) * b.r;
+    birdObj.position.set(x, b.y + Math.sin(birdT * 0.7 + b.ph) * 0.8, z);
+    birdObj.rotation.set(0, Math.atan2(-Math.sin(b.a) * Math.sign(b.w), Math.cos(b.a) * Math.sign(b.w)) , Math.sin(b.a) * 0.15);
+    const glide = Math.sin(birdT * 0.6 + b.ph) > 0.55;
+    birdObj.scale.set(0.85, glide ? 0.06 : Math.sin(birdT * 9 + b.ph) * 0.3, 0.85);
+    birdObj.updateMatrix();
+    birdIM.setMatrixAt(i, birdObj.matrix);
+  });
+  birdIM.instanceMatrix.needsUpdate = true;
 }
 {
   const west = rightsOf(riverS);
@@ -6727,6 +6881,7 @@ function buy(id, fromUi) {
   if (id === 'frame') refreshFrame();
   if (id === 'rushN') refreshRush(true);
   if (fromUi) {
+    heroBuyAt = performance.now();
     sfx.buy();
     const st = STATIONS.find(s => s.ups.includes(id)) || openStation;
     const spot = st ? spotsOf(st)[0] : null;
@@ -6764,9 +6919,9 @@ function confetti(at) {
 // Models that replace a placeholder grow in with a small overshoot instead of snapping in.
 // `pivot` (parent space) keeps a group whose origin is far away growing in place.
 const pops = [];
-function popIn(obj, pivot = null, dur = 0.45) {
+function popIn(obj, pivot = null, dur = 0.45, delay = 0) {
   if (instant || pops.some(p => p.obj === obj)) return;
-  pops.push({ obj, to: obj.scale.clone(), from: obj.position.clone(), pivot, dur, t: 0 });
+  pops.push({ obj, to: obj.scale.clone(), from: obj.position.clone(), pivot, dur, t: -delay / dur });
   obj.scale.multiplyScalar(0.01);
   if (pivot) obj.position.copy(pivot).lerp(obj.position, 0.01);
 }
@@ -6774,6 +6929,7 @@ function updatePops(dt) {
   for (let i = pops.length - 1; i >= 0; i--) {
     const p = pops[i];
     p.t = Math.min(1, p.t + dt / p.dur);
+    if (p.t <= 0) continue;
     const k = p.t - 1, e = Math.max(0.01, 1 + 2.70158 * k * k * k + 1.70158 * k * k); // easeOutBack
     p.obj.scale.copy(p.to).multiplyScalar(e);
     if (p.pivot) p.obj.position.copy(p.pivot).lerp(p.from, e);
@@ -6784,11 +6940,86 @@ function updatePops(dt) {
 const buildRoots = [];
 const buildBox = new THREE.Box3(), buildC = V(), buildSize = V();
 function trackBuilds(...objs) { for (const o of objs.flat()) if (o) buildRoots.push({ o, was: o.visible }); }
+let heroBuyAt = -1e9; // set by buy() from the panel: the next building that appears gets the full show
 function syncBuilds() {
+  const hero = performance.now() - heroBuyAt < 1500;
   for (const b of buildRoots) {
     const now = b.o.visible;
-    if (now && !b.was && !instant) growIn(b.o);
+    if (now && !b.was && !instant) { if (hero) { construct(b.o); heroBuyAt = -1e9; } else growIn(b.o); }
     b.was = now;
+  }
+}
+// HERO MOMENT — the camera swoops in, scaffolding and a crane go up, the building rises out of the dust,
+// hammers knock, the scaffolding drops away and confetti flies. ~2.6 s, purely visual.
+const crews = [];
+const scafMat = mat(0xc89a5c), craneMat = mat(0xf5c03a), cableMat = mat(0x30343a);
+const POLE_G = cylG(0.06, 0.06, 1, 5).translate(0, 0.5, 0), RAIL_G = boxG(1, 0.08, 0.08), CRANE_G = boxG(1, 1, 1);
+function construct(o) {
+  o.updateWorldMatrix(true, true);
+  buildBox.setFromObject(o);
+  if (buildBox.isEmpty()) return growIn(o);
+  buildBox.getCenter(buildC); buildBox.getSize(buildSize);
+  const w = Math.min(buildSize.x + 0.9, 11), d = Math.min(buildSize.z + 0.9, 11), h = clamp(buildSize.y * 0.9 + 0.4, 2.2, 5);
+  const kit = new THREE.Group(); kit.position.set(buildC.x, buildBox.min.y, buildC.z); scene.add(kit);
+  const scaf = new THREE.Group(); kit.add(scaf);
+  const pole = (x, z) => { const m = new THREE.Mesh(POLE_G, scafMat); m.position.set(x, 0, z); m.scale.y = h; scaf.add(m); };
+  const nx = clamp(Math.round(w / 2.2), 1, 5), nz = clamp(Math.round(d / 2.2), 1, 5);
+  for (let i = 0; i <= nx; i++) { pole(-w / 2 + w * i / nx, -d / 2); pole(-w / 2 + w * i / nx, d / 2); }
+  for (let i = 1; i < nz; i++) { pole(-w / 2, -d / 2 + d * i / nz); pole(w / 2, -d / 2 + d * i / nz); }
+  for (const y of [h * 0.5, h]) for (const [x, z, len, rot] of [[0, -d / 2, w, 0], [0, d / 2, w, 0], [-w / 2, 0, d, 1], [w / 2, 0, d, 1]]) {
+    const r = new THREE.Mesh(RAIL_G, scafMat); r.position.set(x, y, z); r.scale.x = len; if (rot) r.rotation.y = Math.PI / 2; scaf.add(r);
+  }
+  // crane on the corner nearest the camera's right, jib swinging over the site
+  const crane = new THREE.Group(); crane.position.set(w / 2 + 0.9, 0, -d / 2 - 0.9); kit.add(crane);
+  const ch = h + 3.2, jibL = Math.max(w, d) + 2;
+  const tower = new THREE.Mesh(CRANE_G, craneMat); tower.scale.set(0.42, ch, 0.42); tower.position.y = ch / 2; crane.add(tower);
+  const jib = new THREE.Group(); jib.position.y = ch; crane.add(jib);
+  const arm = new THREE.Mesh(CRANE_G, craneMat); arm.scale.set(jibL, 0.3, 0.3); arm.position.x = -jibL / 2 + 1; jib.add(arm);
+  const back = new THREE.Mesh(CRANE_G, cableMat); back.scale.set(0.9, 0.5, 0.5); back.position.x = 1.3; jib.add(back);
+  const cable = new THREE.Mesh(CRANE_G, cableMat); cable.scale.set(0.04, 2.6, 0.04); cable.position.set(-jibL * 0.7, -1.3, 0); jib.add(cable);
+  const hook = new THREE.Mesh(CRANE_G, craneMat); hook.scale.set(0.5, 0.3, 0.5); hook.position.set(-jibL * 0.7, -2.7, 0); jib.add(hook);
+  jib.rotation.y = 0.5;
+  kit.traverse(m => { if (m.isMesh) { m.castShadow = true; } });
+  scaf.scale.y = 0.01; crane.scale.y = 0.01;
+  // camera: swoop toward the site, a little closer than now
+  if (S.running && !S.paused) {
+    const d1 = clamp(Math.max(w, d, h) * 3.2, cam.minD + 4, Math.max(cam.minD + 4, Math.min(cam.dist, 40)));
+    cam.tween = { from: cam.target.clone(), to: V(buildC.x, 0, buildC.z), d0: cam.dist, d1, t: 0, dur: 0.9 };
+    cam.vel.set(0, 0, 0);
+  }
+  const pivot = V(buildC.x, buildBox.min.y, buildC.z);
+  if (o.parent && o.parent !== scene) o.parent.worldToLocal(pivot);
+  popIn(o, pivot, 1.15, 0.45);
+  crews.push({ kit, scaf, crane, jib, o, t: 0, r: Math.min(4, Math.max(w, d) / 2), knock: 0.4, dusted: 0, done: false });
+}
+function updateCrews(dt) {
+  for (let i = crews.length - 1; i >= 0; i--) {
+    const c = crews[i];
+    c.t += dt;
+    const up = smooth(clamp(c.t / 0.4, 0, 1)), down = smooth(clamp((c.t - 1.85) / 0.55, 0, 1));
+    c.scaf.scale.y = Math.max(0.01, up * (1 - down));
+    c.crane.scale.y = Math.max(0.01, up * (1 - down));
+    c.jib.rotation.y = 0.5 + Math.sin(clamp(c.t - 0.3, 0, 1.6) * 1.9) * 1.1;
+    if (c.t > c.knock && c.t < 1.6) { // hammer knocks
+      c.knock += 0.17 + Math.random() * 0.08;
+      audio.tone({ f: rand(140, 200), d: 0.05, type: 'triangle', v: 0.035 });
+      fx.burst(3, { x: c.kit.position.x, y: 0.4, z: c.kit.position.z, vy: 0.8, life: 0.8, size: 0.4, size1: 1.2, color: 0xd8ccb4, alpha: 0.45, gravity: -0.1, drag: 1.4 }, { x: c.r, z: c.r, vx: 1, vz: 1 });
+    }
+    if (c.dusted === 0 && c.t > 0.45) {
+      c.dusted = 1;
+      fx.burst(Math.round(18 + c.r * 7), { x: c.kit.position.x, y: 0.25, z: c.kit.position.z, vy: 0.7, life: 1.5, size: 0.8, size1: 2.6, color: 0xd8ccb4, alpha: 0.5, gravity: -0.15, drag: 1.5 },
+        { x: c.r, z: c.r, vx: 2.4, vy: 0.4, vz: 2.4 });
+    }
+    if (!c.done && c.t > 1.7) {
+      c.done = true;
+      confetti(V(c.kit.position.x, 1.2, c.kit.position.z));
+      audio.tone({ f: 1568, d: 0.3, type: 'sine', v: 0.03 }); audio.tone({ f: 2093, d: 0.35, type: 'sine', v: 0.02, delay: 0.08 });
+      haptic(20);
+    }
+    if (c.t > 2.5) {
+      scene.remove(c.kit);
+      crews.splice(i, 1);
+    }
   }
 }
 function growIn(o) {
@@ -6950,6 +7181,34 @@ document.querySelectorAll('#nav button').forEach(b => b.addEventListener('click'
 let hintHidden = false;
 function hideHint() { if (hintHidden) return; hintHidden = true; setTimeout(() => $('hint').classList.add('gone'), 2500); }
 const camFwd = V(), camRight = V(), camMove = V();
+// IDLE TOUR — after 30 s without input the camera drifts between the liveliest spots, like a screensaver
+// for an idle game. Any input hands control straight back. Off for tests (?nointro) and the bot.
+let lastInput = performance.now(), tour = null;
+function noteInput() { lastInput = performance.now(); if (tour) { tour = null; cam.tween = null; } }
+for (const ev of ['pointerdown', 'wheel', 'keydown']) addEventListener(ev, noteInput, { passive: true, capture: true });
+function tourSpots() {
+  const list = [
+    { x: -36.6, z: -22, d: 26 },          // saws and the bin
+    { x: 33, z: 11, d: 30 },              // bridge over the river
+    { x: -18, z: 0, d: 44 },              // truck lot and forklifts
+    { x: CAMP.x, z: CAMP.z, d: 30 },      // logging camp
+  ];
+  if (S.lv.shop) list.push({ x: -9, z: -36, d: 30 });
+  if (S.lv.planer) list.push({ x: -26, z: -18, d: 24 });
+  if (S.lv.export) list.push({ x: 70, z: 6, d: 36 });
+  return list;
+}
+function updateTour(dt) {
+  if (!S.running || SIM || qs.has('nointro') || !$('shop').classList.contains('hidden')) return;
+  if (performance.now() - lastInput < 30000) return;
+  if (!tour) tour = { i: (Math.random() * 4) | 0, hold: 0 };
+  if (cam.tween) return;
+  tour.hold -= dt;
+  if (tour.hold > 0) { cam.target.x += dt * 0.45; cam.target.z -= dt * 0.25; return; } // slow drift on each stop
+  const spots = tourSpots(), p = spots[tour.i++ % spots.length];
+  cam.tween = { from: cam.target.clone(), to: V(p.x, 0, p.z), d0: cam.dist, d1: p.d, t: 0, dur: 5 };
+  tour.hold = 8;
+}
 function updateCamera(dt) {
   if (cam.tween) {
     const tw = cam.tween; tw.t = Math.min(1, tw.t + dt / (tw.dur || 0.8)); const k = smooth(tw.t);
@@ -7664,7 +7923,12 @@ function doCut(lane) {
   S.stockpile += n;
   bookMade('pieces', n);
   fillSawdust();
-  if (!instant) { cutLogPiece(lane); spawnCutPieces(n, lane.x); sfx.saw(); }
+  if (!instant) {
+    cutLogPiece(lane); spawnCutPieces(n, lane.x); sfx.saw();
+    const close = cam.dist < 30 && Math.hypot(cam.target.x - lane.x, cam.target.z - BLADE_Z) < 18;
+    fx.burst(close ? 22 : 9, { x: lane.x, y: lane.carriage.position.y - BLADE_R + 0.25, z: BLADE_Z + 0.2, vy: 2.6, vz: 2.2, life: 0.5, size: 0.11, size1: 0.03, color: 0xffa940, glow: 6, alpha: 1, gravity: 9, drag: 0.6 },
+      { x: 0.25, vx: 3.2, vy: 1.8, vz: 1.8 });
+  }
 }
 function fillSawdust() {
   if (!S.lv.dust) return;
@@ -7900,11 +8164,14 @@ function updateVisuals(dt, time) {
   gateViz.lightR.material.emissiveIntensity = gate.arm < 0.5 ? 1.4 : 0.05;
   gateViz.lightG.material.emissiveIntensity = gate.arm >= 0.5 ? 1.4 : 0.05;
   waterTex.offset.y += dt * 0.03; waterTex.offset.x = Math.sin(time * 0.3) * 0.02;
+  waterTime.value = time; windTime.value = time;
+  updateBirds(dt);
   updateConfetti(dt);
   syncBuilds();
   fx.update(dt);
   applyDay(dt);
   updatePops(dt);
+  updateCrews(dt);
   syncTapRings(time);
   syncBlobs();
   syncClouds(dt);
@@ -8018,7 +8285,7 @@ function render() {
   let rem = raw;
   while (rem > 1e-6) { const st = Math.min(0.05, rem); update(st); rem -= st; }
   const vdt = Math.min(0.05, raw);
-  if (!S.paused) updateCamera(Math.min(0.1, raw));
+  if (!S.paused) { updateTour(Math.min(0.1, raw)); updateCamera(Math.min(0.1, raw)); }
   if (S.paused) {
     // paused: the scene holds still, and is only drawn again when the camera moves
     const key = cam.target.x.toFixed(2) + ':' + cam.target.z.toFixed(2) + ':' + cam.dist.toFixed(2);
@@ -8265,6 +8532,7 @@ try { if (localStorage.getItem(HELP_KEY) === '1' && !SIM) startGame(); } catch (
 window.__debug = () => ({ time: S.time, money: S.money, stock: S.stockpile, timber: S.timber, grove: +S.grove.toFixed(1), boards: S.boards, frameTrip: +frameTrip.toFixed(2), boardLim: boardLimit(), slots: boardSlots(), pallets: boardPallets.map(p => p.g.visible), shopWood: pallets.slice(), ships: beltShip.length, custs: customers.filter(c => c.state !== 'pool').map(c => [c.state, c.stand, c.want, c.got, +c.x.toFixed(1), +c.z.toFixed(1)]), lv: { ...S.lv }, planers: { n: planerCount(), vis: planers.map(u => u.g.visible), ghost: planers.map(u => u.ghost.visible) }, order: rushes.map(s => ({ on: s.on, kind: s.kind, phase: s.phase, bay: s.bayI, have: s.have, need: s.need, left: +s.left.toFixed(1), x: +s.x.toFixed(1), z: +s.z.toFixed(1), yaw: +s.yaw.toFixed(2), loaded: s.loaded })), porters: porters.map(p => [p.state, +p.x.toFixed(1), +p.z.toFixed(1), +p.yaw.toFixed(2), p.n]), forksVan: forks.map(f => f.vanJob), pit: forks.map(f => [f.i, f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), f.dockX || 0, f.n, f.hold || 0]), jacks: cutters.filter(c => c.g.visible).map(c => [c.state, +c.g.position.x.toFixed(1), +c.g.position.z.toFixed(1), !!c.carrying]), hands: hands.map(h => [h.i, h.state, +h.x.toFixed(1), +h.z.toFixed(1), h.carry]), feeds: planers.map(u => [u.infeed, u.out, +u.t.toFixed(1)]), trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.v.toFixed(2)]), forks: forks.map(f => [f.state, +f.pos.x.toFixed(1), +f.pos.z.toFixed(1), +f.blockT.toFixed(1)]), cutters: cutters.filter(c => c.g.visible).map(c => [+c.g.position.x.toFixed(2), +c.g.position.z.toFixed(2)]), pieces: pieces.length, settled: pieces.filter(p => p.settled).length, west: pieces.filter(p => p.settled && p.p.x < (TUB.x0 + TUB.x1) / 2).length, gate: [gate.truck?.i, gate.passing?.i, +gate.arm.toFixed(2)], shop: { on: S.lv.shop, haul: S.lv.haul, pallets: pallets.slice(0, palletCount()), buyers: customers.filter(c => c.state !== 'pool').length, carry: hauler.carry, furn: furnPile.length, fire: firePile, pending: firePending, ship: fireShip.length, joiner: joiner.state, splitter: splitter.state, kit: fitter.state, kitX: +fitter.x.toFixed(1), kitZ: +fitter.z.toFixed(1), kitShip: kitShip.length, kits: kitPile.length, furnShip: furnShip.length, joinX: +joiner.x.toFixed(1), joinZ: +joiner.z.toFixed(1), joinBelt: joinBeltMesh.visible, kitBelt: kitBeltMesh.visible, joinIn: joinIn.length, joinInU: joinIn[0] ? +joinIn[0].u.toFixed(2) : -1, joinInBelt: joinInMesh.visible, kitIn: kitIn.length, kitInU: kitIn[0] ? +kitIn[0].u.toFixed(2) : -1, kitInBelt: kitInMesh.visible, veneer: veneerViz.phase, veneerStack: veneerViz.stackN }, cars: shopCars.filter(c => c.phase !== 'idle').map(c => [c.phase, +c.x.toFixed(1), +c.z.toFixed(1), +c.s.toFixed(1), c.slot]), people: customers.filter(c => c.state !== 'pool').map(c => [c.state, +c.x.toFixed(1), +c.z.toFixed(1)]), road: { band: roadBand(), lv: S.lv.road, junc: [+JUNC_OUT.toFixed(1), +JUNC_RET.toFixed(1)], enter: +CAR_ENTER.toFixed(1), exit: +CAR_EXIT.toFixed(1), z: [+OUT_Z.toFixed(1), +RET_Z.toFixed(1)] }, jam: trucks.filter(t => t.state === 'route').map(t => { const j = shopJam(t.s); return [t.i, +t.s.toFixed(1), +t.v.toFixed(2), j ? (j.stop != null ? 'stop' : 'creep') : 'free']; }), jobs: { ...S.jobs }, dustN: S.dustN | 0, tipN: S.tipN | 0, booksIn: { dust: S.books.in.dust | 0, tips: S.books.in.tips | 0, jobs: S.books.in.jobs | 0 } });
 window.__cheat = (id, n = 1) => { for (let i = 0; i < n; i++) { const c = upCost(id); if (c === null) break; S.money += c; buy(id); } drawShop(); };
 window.__addMoney = v => { S.money += v; };
+window.__buy = (id) => buy(id, true); // like a tap on the panel's buy button (hero moments included)
 window.__cam = (x, z, d) => { cam.tween = null; cam.target.set(x, 0, z); if (d) cam.dist = d; applyCamera(); };
 window.__start = () => startGame();
 window.__scene = () => ({ scene, renderer, camera, fx });

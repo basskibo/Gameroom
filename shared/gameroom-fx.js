@@ -3,7 +3,7 @@
 //
 //   import { createParticles } from '../../shared/gameroom-fx.js';
 //   const fx = createParticles({ renderer, camera, max: 1200 });  scene.add(fx.points);
-//   fx.emit({ x, y, z, vx, vy, vz, life: 0.8, size: 0.2, size1: 0.4, color: 0xf0d59a, alpha: 0.9, gravity: 6, drag: 1 });
+//   fx.emit({ x, y, z, vx, vy, vz, life: 0.8, size: 0.2, size1: 0.4, color: 0xf0d59a, alpha: 0.9, gravity: 6, drag: 1, glow: 1 });
 //   fx.burst(n, base, spread)  — n particles around `base` with random velocity in ±spread
 //   fx.update(dt) once per frame.
 import * as THREE from 'three';
@@ -57,6 +57,7 @@ export function createParticles({ renderer, camera = null, max = 1000 } = {}) {
     pos[i * 3] = p.x; pos[i * 3 + 1] = p.y; pos[i * 3 + 2] = p.z;
     vel[i * 3] = p.vx || 0; vel[i * 3 + 1] = p.vy || 0; vel[i * 3 + 2] = p.vz || 0;
     c.set(p.color ?? 0xffffff);
+    if (p.glow) c.multiplyScalar(p.glow); // > 1 makes it hot: it blooms when the game renders through gameroom-post
     col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
     life[i] = p.life || 1; age[i] = 0;
     s0[i] = p.size ?? 0.2; s1[i] = p.size1 ?? s0[i];
