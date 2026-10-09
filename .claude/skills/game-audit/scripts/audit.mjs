@@ -54,7 +54,8 @@ const startGame = page => page.evaluate(() => {
   if (b && b.offsetParent) b.click(); else if (typeof window.__start === 'function') window.__start();
 });
 const ready = page => page.waitForFunction(() => !!document.querySelector('canvas') && (typeof window.__start === 'function' || !!document.querySelector('#startBtn')), null, { timeout: 120_000 });
-const models = page => page.waitForFunction(() => window.__yardModels !== undefined, null, { timeout: 120_000 }).then(() => page.evaluate(() => window.__yardModels)).catch(() => 'n/a');
+// games report their async models on window.__models (Pilana: __yardModels); games without one don't wait long
+const models = page => page.waitForFunction(() => (window.__models ?? window.__yardModels) !== undefined, null, { timeout: 30_000 }).then(() => page.evaluate(() => window.__models ?? window.__yardModels)).catch(() => 'n/a');
 
 // bytes from Resource Timing (same-origin, so sizes are exposed): page + every resource it fetched
 const downloadedMB = () => {
@@ -112,7 +113,7 @@ if (throttle) result.load4g = await load(true);
   await ctx.close();
 }
 
-for (const [name, vp] of [['phone', { width: 390, height: 844 }], ['landscape', { width: 844, height: 390 }]]) {
+for (const [name, vp] of [['phone', { width: 390, height: 844 }], ['landscape', { width: 844, height: 390 }]]) try {
   const ctx = await browser.newContext({ viewport: vp, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   const page = await ctx.newPage();
   await page.goto(URL);
@@ -124,7 +125,7 @@ for (const [name, vp] of [['phone', { width: 390, height: 844 }], ['landscape', 
   await page.waitForTimeout(2500);
   await page.screenshot({ path: `${out}/${name}-play.png` });
   await ctx.close();
-}
+} catch (e) { (result.errors ||= []).push(`${name}: ${e.message}`.slice(0, 200)); }
 
 result.screenshots = out;
 console.log(JSON.stringify(result, null, 1));

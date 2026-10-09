@@ -1,0 +1,94 @@
+{
+ "palm-straight": {
+  "src": "kenney_pirate-kit/Models/GLB format/palm-straight.glb",
+  "texture": 256
+ },
+ "palm-bend": {
+  "src": "kenney_pirate-kit/Models/GLB format/palm-bend.glb",
+  "texture": 256
+ },
+ "palm-detailed-straight": {
+  "src": "kenney_pirate-kit/Models/GLB format/palm-detailed-straight.glb",
+  "texture": 256
+ },
+ "palm-detailed-bend": {
+  "src": "kenney_pirate-kit/Models/GLB format/palm-detailed-bend.glb",
+  "texture": 256
+ },
+ "rocks-sand-a": {
+  "src": "kenney_pirate-kit/Models/GLB format/rocks-sand-a.glb",
+  "texture": 256
+ },
+ "rocks-a": {
+  "src": "kenney_pirate-kit/Models/GLB format/rocks-a.glb",
+  "texture": 256
+ },
+ "grass-patch": {
+  "src": "kenney_pirate-kit/Models/GLB format/grass-patch.glb",
+  "texture": 256
+ },
+ "barrel": {
+  "src": "kenney_pirate-kit/Models/GLB format/barrel.glb",
+  "texture": 256
+ },
+ "crate": {
+  "src": "kenney_pirate-kit/Models/GLB format/crate.glb",
+  "texture": 256
+ },
+ "flag-pirate": {
+  "src": "kenney_pirate-kit/Models/GLB format/flag-pirate.glb",
+  "texture": 256
+ },
+ "castle-wall": {
+  "src": "kenney_pirate-kit/Models/GLB format/castle-wall.glb",
+  "texture": 256
+ },
+ "castle-gate": {
+  "src": "kenney_pirate-kit/Models/GLB format/castle-gate.glb",
+  "texture": 256
+ },
+ "structure-platform-dock": {
+  "src": "kenney_pirate-kit/Models/GLB format/structure-platform-dock.glb",
+  "texture": 256
+ },
+ "platform-planks": {
+  "src": "kenney_pirate-kit/Models/GLB format/platform-planks.glb",
+  "texture": 256
+ },
+ "cannon": {
+  "src": "kenney_pirate-kit/Models/GLB format/cannon.glb",
+  "texture": 256
+ },
+ "tower-complete-small": {
+  "src": "kenney_pirate-kit/Models/GLB format/tower-complete-small.glb",
+  "texture": 256
+ },
+ "tower-complete-large": {
+  "src": "kenney_pirate-kit/Models/GLB format/tower-complete-large.glb",
+  "texture": 256
+ },
+ "ship-pirate-large": {
+  "src": "kenney_pirate-kit/Models/GLB format/ship-pirate-large.glb",
+  "texture": 256
+ },
+ "ship-wreck": {
+  "src": "kenney_pirate-kit/Models/GLB format/ship-wreck.glb",
+  "texture": 256
+ },
+ "ship-pirate-small": {
+  "src": "kenney_pirate-kit/Models/GLB format/ship-pirate-small.glb",
+  "texture": 256
+ },
+ "ship-ghost": {
+  "src": "kenney_pirate-kit/Models/GLB format/ship-ghost.glb",
+  "texture": 256
+ },
+ "boat-row-small": {
+  "src": "kenney_pirate-kit/Models/GLB format/boat-row-small.glb",
+  "texture": 256
+ },
+ "boat-row-large": {
+  "src": "kenney_pirate-kit/Models/GLB format/boat-row-large.glb",
+  "texture": 256
+ }
+}
