@@ -28,7 +28,7 @@ Folder `docs/` ne ide na Vercel (`.vercelignore`).
 | Pilana Tajkun | [games/pilana-tajkun/](games/pilana-tajkun/README.md) | Audit 2026-10-09, S1 rešeni, testovi postoje |
 | Kamp Tajkun | — | čeka audit |
 | Monster Lane | [games/monster-lane/](games/monster-lane/README.md) | AAA prolaz 1 (2026-10-10): GLB modeli, bloom, juice, uvod, reklame za nagradu, 17 testova |
-| Razori Kule | — | čeka audit |
+| Razori Kule | [games/razori-kule/](games/razori-kule/README.md) | AAA prolaz 1 (2026-10-10): eksplozije, nebo, napredak, uvod, reklame za nagradu, 15 testova |
 | Surprizi | — | čeka audit |
 | Osvoji svet | — | čeka audit |
 

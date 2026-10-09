@@ -6,6 +6,7 @@
 //   const bus = createAudioBus({ storageKey: 'my-game:audio' });
 //   button.onclick = () => bus.ensure();
 //   bus.tone({ f: 440, d: 0.1 })  — a short synth blip on the sfx bus
+//   bus.noise({ d: 0.5, f: 900, v: 0.2 })  — a filtered noise burst (explosions, splashes, impacts)
 //   bus.ambience({ wind: 0.5, birds: 0.6 })  /  bus.ambienceOn(false) on pause  /  bus.toggleMute()
 export function createAudioBus({ storageKey = '' } = {}) {
   let ctx = null, master, comp, buses = {}, windSrc = null, windGain = null, birdTimer = 0;
@@ -43,6 +44,27 @@ export function createAudioBus({ storageKey = '' } = {}) {
     if (pan && ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan)); g.connect(p); out = p; }
     o.connect(g); out.connect(buses[bus] || buses.sfx);
     o.start(t); o.stop(t + d + 0.03);
+  }
+
+  /** Filtered white-noise burst: f = low-pass start, f2 = where it sweeps to (booms fall, whooshes rise). */
+  let noiseBuf = null;
+  function noise({ d = 0.4, v = 0.15, f = 1200, f2 = 120, q = 0.7, delay = 0, pan = 0, bus = 'sfx' }) {
+    if (!ctx || state.muted || v <= 0.001) return;
+    if (!noiseBuf) {
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * 2, ctx.sampleRate);
+      const data = noiseBuf.getChannelData(0);
+      for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+    }
+    const t = ctx.currentTime + delay, src = ctx.createBufferSource(), lp = ctx.createBiquadFilter(), g = ctx.createGain();
+    src.buffer = noiseBuf;
+    lp.type = 'lowpass'; lp.Q.value = q;
+    lp.frequency.setValueAtTime(f, t); lp.frequency.exponentialRampToValueAtTime(Math.max(30, f2), t + d);
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(v, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
+    let out = g;
+    if (pan && ctx.createStereoPanner) { const p = ctx.createStereoPanner(); p.pan.value = Math.max(-1, Math.min(1, pan)); g.connect(p); out = p; }
+    src.connect(lp).connect(g); out.connect(buses[bus] || buses.sfx);
+    src.start(t, Math.random() * 1.5); src.stop(t + d + 0.05);
   }
 
   /** Soft looping wind plus occasional bird chirps. Levels 0..1. */
@@ -83,7 +105,7 @@ export function createAudioBus({ storageKey = '' } = {}) {
     return m;
   }
   return {
-    ensure, tone, ambience, ambienceOn, setMuted,
+    ensure, tone, noise, ambience, ambienceOn, setMuted,
     toggleMute: () => setMuted(!state.muted),
     get muted() { return state.muted; },
     get ctx() { return ctx; },

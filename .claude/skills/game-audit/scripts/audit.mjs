@@ -50,10 +50,10 @@ const perFrame = page => page.evaluate(() => new Promise(res => requestAnimation
   requestAnimationFrame(t);
 })));
 const startGame = page => page.evaluate(() => {
-  const b = document.querySelector('#startBtn');
+  const b = document.querySelector('#startBtn') || document.querySelector('#play');
   if (b && b.offsetParent) b.click(); else if (typeof window.__start === 'function') window.__start();
 });
-const ready = page => page.waitForFunction(() => !!document.querySelector('canvas') && (typeof window.__start === 'function' || !!document.querySelector('#startBtn')), null, { timeout: 120_000 });
+const ready = page => page.waitForFunction(() => !!document.querySelector('canvas') && (typeof window.__start === 'function' || !!document.querySelector('#startBtn, #play')), null, { timeout: 120_000 });
 // games report their async models on window.__models (Pilana: __yardModels); games without one don't wait long
 const models = page => page.waitForFunction(() => (window.__models ?? window.__yardModels) !== undefined, null, { timeout: 30_000 }).then(() => page.evaluate(() => window.__models ?? window.__yardModels)).catch(() => 'n/a');
 

@@ -1899,7 +1899,7 @@ const sfx = (() => {
     shoot() { if (ok('shoot', 75)) tone(880, 0.05, 'square', 0.012, 300, 0, px(state.playerX)); },
     pop(x = 0) { if (ok('pop', 45)) tone(rand(260, 380), 0.08, 'triangle', 0.05, 80, 0, px(x)); },
     hit() { if (ok('hit', 60)) tone(1400, 0.03, 'square', 0.008); },
-    boom(x = 0) { if (ok('boom', 90)) { tone(140, 0.3, 'sawtooth', 0.06, 40, 0, px(x)); tone(70, 0.45, 'sine', 0.12, 30); } },
+    boom(x = 0) { if (ok('boom', 90)) { audio.noise({ d: 0.5, v: 0.22, f: 1600, f2: 60, pan: px(x) }); tone(70, 0.45, 'sine', 0.12, 30); } },
     upgrade() { [523, 659, 784].forEach((f, i) => tone(f, 0.12, 'triangle', 0.08, null, i * 0.07)); },
     weapon() { [392, 523, 659, 1046].forEach((f, i) => tone(f, 0.18, 'square', 0.05, null, i * 0.09)); },
     boss() { tone(110, 0.9, 'sawtooth', 0.09, 50); tone(55, 1.1, 'sine', 0.14, 40); },
