@@ -81,22 +81,6 @@
  "pallet": {
   "src": "Pallet by Quaternius - cUAsYHDqfD.glb"
  },
- "rush-truck": {
-  "src": "Truck by Quaternius - cXw6oiFtZ8.glb",
-  "join": false
- },
- "factory": {
-  "src": "Factory by Poly by Google - fCiJW5Qdgbf.glb"
- },
- "red-car": {
-  "src": "Red Car by J-Toastie - dVLJ5CjB0h.glb"
- },
- "poly-car": {
-  "src": "Car by Poly by Google - 75h3mi6uHuC.glb"
- },
- "pickup": {
-  "src": "Pickup Truck by Quaternius - qn4grQgHm8.glb"
- },
  "shed": {
   "src": "Storage shed by Quaternius - TvXpjtD2nk.glb"
  },
@@ -115,10 +99,66 @@
  "fence": {
   "src": "Fence by Tomáš Bayer - aKD_ayzKYHw.glb"
  },
- "car": {
-  "src": "Car by Quaternius - unqqkULtRU.glb"
+ "k-sedan": {
+  "src": "kenney-car/sedan.glb",
+  "texture": 256
  },
- "suv": {
-  "src": "SUV by Quaternius - xsMtZhBkxL.glb"
+ "k-suv": {
+  "src": "kenney-car/suv.glb",
+  "texture": 256
+ },
+ "k-hatchback-sports": {
+  "src": "kenney-car/hatchback-sports.glb",
+  "texture": 256
+ },
+ "k-taxi": {
+  "src": "kenney-car/taxi.glb",
+  "texture": 256
+ },
+ "k-van": {
+  "src": "kenney-car/van.glb",
+  "texture": 256
+ },
+ "k-delivery": {
+  "src": "kenney-car/delivery.glb",
+  "texture": 256
+ },
+ "k-tractor": {
+  "src": "kenney-car/tractor.glb",
+  "texture": 256
+ },
+ "k-building-k": {
+  "src": "kenney-industrial/building-k.glb",
+  "texture": 256
+ },
+ "k-water-tower": {
+  "src": "kenney-industrial/water-tower.glb",
+  "texture": 256
+ },
+ "k-detail-tank-large": {
+  "src": "kenney-industrial/detail-tank-large.glb",
+  "texture": 256
+ },
+ "k-detail-tank": {
+  "src": "kenney-industrial/detail-tank.glb",
+  "texture": 256
+ },
+ "k-shipping-container-a": {
+  "src": "kenney-industrial/shipping-container-a.glb",
+  "texture": 256
+ },
+ "k-shipping-container-b": {
+  "src": "kenney-industrial/shipping-container-b.glb",
+  "texture": 256
+ },
+ "k-shipping-container-c": {
+  "src": "kenney-industrial/shipping-container-c.glb",
+  "texture": 256
+ },
+ "k-delivery-flat": {
+  "src": "kenney-car/delivery-flat.glb",
+  "texture": 256,
+  "join": false,
+  "flatten": false
  }
 }

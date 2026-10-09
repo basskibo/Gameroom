@@ -78,10 +78,9 @@ test.describe('Pilana Tajkun · camera', () => {
   test('WASD pans the camera', async ({ game, page }) => {
     const [x0, z0] = await game.camInfo();
     await page.keyboard.down('d');
-    await page.waitForTimeout(500);
+    // frame-rate independent: software WebGL under load may only draw a few frames a second
+    await expect.poll(async () => { const [x1, z1] = await game.camInfo(); return Math.hypot(x1 - x0, z1 - z0); }, { timeout: 10_000 }).toBeGreaterThan(2);
     await page.keyboard.up('d');
-    const [x1, z1] = await game.camInfo();
-    expect(Math.hypot(x1 - x0, z1 - z0)).toBeGreaterThan(2);
   });
 
   test('dragging the map pans it', async ({ game, page }) => {

@@ -2,7 +2,7 @@
 
 Plan unapređenja po fazama. Stavke vode na ID-jeve iz [BUGS](BUGS.md), [TECH-DEBT](TECH-DEBT.md) i [IMPROVEMENTS](IMPROVEMENTS.md). Agent na početku zadatka čita ovaj fajl, a na kraju štiklira i upisuje [LEDGER](LEDGER.md).
 
-**Trenutno:** Faze A–D i „wow“ V2–V5 gotove (2026-10-09). V1 (modeli mašina) čeka odobrenje za preuzimanje CC0 paketa. Sledi Faza F (monetizacija, Faza 0: SDK, analitika, engleski).
+**Trenutno:** Faze A–D i „wow“ V2–V5 gotove (2026-10-09). V1 gotov (Kenney modeli). Sledi Faza F (monetizacija, Faza 0: SDK, analitika, engleski).
 
 ## Odluke
 
@@ -16,7 +16,7 @@ Plan unapređenja po fazama. Stavke vode na ID-jeve iz [BUGS](BUGS.md), [TECH-DE
 ## „Wow“ plan (V1–V5)
 
 - [x] **V0 probni kadar** — zlatni sat (bez novih modela mašina; videti V1)
-- [ ] **V1 modeli** — glavne mašine i vozila kao low-poly modeli jednog stila (čeka odobrenje za preuzimanje)
+- [x] **V1 modeli** — vozila i rekviziti iz Kenney CC0 paketa (Car Kit, City Kit Industrial); kiper i viljuškar ostaju proceduralni (animacije)
   - [x] svetliji, topliji likovi (PT-BUG-023)
 - [x] **V2 atmosfera** — dan → zlatni sat → noć, lampe/farovi/prozori noću, bloom + color grading na Srednje/Visoko (PT-IMP-V02, V04)
 - [x] **V3 živ teren** — brda, kamenje, busenje trave, cveće, reka sa odsjajem i penom, ptice (PT-IMP-V05, V10)

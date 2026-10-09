@@ -488,12 +488,13 @@
       <h2>CREDITS</h2>
       <p>3D models from poly.pizza. CC BY 3.0 models are used with attribution (creativecommons.org/licenses/by/3.0).</p>
       <table>
-        <tr><td>Bakery, Factory, Wagon, Car</td><td>Poly by Google</td><td>CC BY 3.0</td></tr>
-        <tr><td>Red Car, Log</td><td>J-Toastie</td><td>CC BY 3.0</td></tr>
+        <tr><td>Bakery, Wagon</td><td>Poly by Google</td><td>CC BY 3.0</td></tr>
+        <tr><td>Log</td><td>J-Toastie</td><td>CC BY 3.0</td></tr>
         <tr><td>Chopped Log</td><td>Davemane42</td><td>CC BY 3.0</td></tr>
         <tr><td>Fence</td><td>Tomáš Bayer</td><td>CC BY 3.0</td></tr>
         <tr><td>Path</td><td>Kay Lousberg</td><td>CC0</td></tr>
-        <tr><td>Characters, Pallet, Truck, Pickup, Shed, Car, SUV</td><td>Quaternius</td><td>CC0</td></tr>
+        <tr><td>Characters, Pallet, Shed</td><td>Quaternius</td><td>CC0</td></tr>
+        <tr><td>Cars, Delivery truck, Tractor, Factory hall, Water tower, Tanks, Containers</td><td>Kenney</td><td>CC0</td></tr>
         <tr><td>3D engine</td><td>three.js</td><td>MIT</td></tr>
         <tr><td>Font Baloo 2</td><td>Ek Type</td><td>OFL</td></tr>
       </table>
@@ -1596,7 +1597,7 @@ function cleared(x, z) {
     { geo: new THREE.SphereGeometry(0.72, 6, 5), mat: mat(0xffffff, { flat: true, r: 0.9 }), colors: roundGreen },
   ];
   forestDecor = scatter(pines, pineParts, [0.6, 1.95, 3.05]).concat(scatter(rounds, roundParts, [0.68, 2.15, 3.15]));
-  for (const m of forestDecor) { m.castShadow = false; m.receiveShadow = false; scene.add(m); }
+  for (const m of forestDecor) { m.castShadow = false; m.receiveShadow = false; m.userData.scatter = true; scene.add(m); }
 }
 // =====================================================================
 // LIVING TERRAIN — grass tufts and flowers that sway, rocks, hills that hide the map edge, birds.
@@ -1678,7 +1679,7 @@ function swayMaterial(opts) { // wind bends the top of each instance; height in 
     rockIM.setMatrixAt(i, o.matrix);
     rockIM.setColorAt(i, col.setHex(0x9a9e9c).multiplyScalar(rand(0.78, 1.1)));
   });
-  for (const im of [tuftIM, flowerIM, rockIM]) { im.castShadow = false; im.receiveShadow = true; scene.add(im); }
+  for (const im of [tuftIM, flowerIM, rockIM]) { im.castShadow = false; im.receiveShadow = true; im.userData.scatter = true; scene.add(im); }
   rockIM.castShadow = true;
   // hills around the edge of the ground plane, so wide views end in green slopes and haze, not a cliff
   const hills = [];
@@ -1695,6 +1696,20 @@ function swayMaterial(opts) { // wind bends the top of each instance; height in 
   });
   hillIM.castShadow = false; hillIM.receiveShadow = false; hillIM.frustumCulled = false;
   scene.add(hillIM);
+}
+// Hide scattered trees, tufts, flowers and rocks inside a circle (a prop or building goes there).
+function clearScatter(x, z, r) {
+  const m4 = new THREE.Matrix4(), zero = new THREE.Matrix4().makeScale(0, 0, 0);
+  scene.traverse(o => {
+    if (!o.isInstancedMesh || !o.userData.scatter) return;
+    let hit = false;
+    for (let i = 0; i < o.count; i++) {
+      o.getMatrixAt(i, m4);
+      const dx = m4.elements[12] - x, dz = m4.elements[14] - z;
+      if (dx * dx + dz * dz < r * r) { o.setMatrixAt(i, zero); hit = true; }
+    }
+    if (hit) o.instanceMatrix.needsUpdate = true;
+  });
 }
 // birds: a small flock that wheels over whatever the camera is looking at; wings flap by scaling the tips
 const BIRD_N = 9;
@@ -8954,7 +8969,7 @@ async function mountYardModels() {
       cargo.position.set(0, 0.42, 0.1);
     }
     const wheels = [];
-    wrap.traverse(o => { if (o.name && o.name.indexOf('Wheel') >= 0) wheels.push(o); });
+    wrap.traverse(o => { if (o.name && /wheel/i.test(o.name) && !o.children.some(c => /wheel/i.test(c.name))) wheels.push(o); });
     hideExcept(slot.g, [wrap]);
     slot.wheels = wheels;
   }
@@ -9112,6 +9127,26 @@ async function mountYardModels() {
     };
     layoutYardFence();
   }
+  // yard props: a water tower over the mill, tanks by the fuel yard, containers by the export desk,
+  // a tractor at the logging camp. Static, merged, placed just outside the areas that get built on.
+  function dressProps(L) {
+    const g = new THREE.Group(); scene.add(g);
+    const put = (gltf, x, z, yaw, opts) => {
+      clearScatter(x, z, opts.clear || (opts.length || opts.height * 0.5) * 0.75 + 1);
+      const w = fitWrap(gltf.scene.clone(true), { ...opts, receive: true });
+      w.position.set(x, 0, z); w.rotation.y = yaw; g.add(w);
+    };
+    put(L.tower, -47.5, 12.5, 0.4, { height: 8.5, clear: 6 });
+    put(L.tankL, 8.6, 21.4, 0, { height: 2.6 });
+    put(L.tank, 9.0, 25.4, 0.8, { height: 2.0 });
+    put(L.boxA, 86.2, 4.0, Math.PI / 2, { length: 5.2 });
+    put(L.boxC, 86.2, 7.0, Math.PI / 2, { length: 5.2 });
+    put(L.boxB, 86.4, 5.5, Math.PI / 2 + 0.05, { length: 5.2 });
+    g.children[g.children.length - 1].position.y = 2.25; // stacked on the other two
+    put(L.tractor, -56.5, 9.5, -0.9, { length: 3.0 });
+    bakeStatic(g);
+    popIn(g);
+  }
   function dressBuyer(slot, gltf, length) {
     const wrap = fitWrap(gltf.scene.clone(true), { length, cast: false, receive: false });
     slot.g.add(wrap);
@@ -9134,8 +9169,10 @@ async function mountYardModels() {
     loader.setMeshoptDecoder(meshopt.MeshoptDecoder);
     const files = {
       workerA: 'worker-a', workerB: 'worker-b', hoodie: 'hoodie', punk: 'punk', suit: 'business-man', man: 'man',
-      womanA: 'woman-a', womanB: 'woman-b', wagon: 'wagon', pallet: 'pallet', rushTruck: 'rush-truck', factoryB: 'factory',
-      redCar: 'red-car', polyCar: 'poly-car', car: 'car', suv: 'suv', pickup: 'pickup', shed: 'shed', bakery: 'bakery',
+      womanA: 'woman-a', womanB: 'woman-b', wagon: 'wagon', pallet: 'pallet', rushTruck: 'k-delivery-flat', factoryB: 'k-building-k',
+      // one family of vehicles and yard props (Kenney, CC0), so the cars match the toy-like machines
+      redCar: 'k-sedan', polyCar: 'k-taxi', car: 'k-hatchback-sports', suv: 'k-suv', pickup: 'k-van', shed: 'shed', bakery: 'bakery',
+      tower: 'k-water-tower', tankL: 'k-detail-tank-large', tank: 'k-detail-tank', boxA: 'k-shipping-container-a', boxB: 'k-shipping-container-b', boxC: 'k-shipping-container-c', tractor: 'k-tractor',
       choppedLog: 'chopped-log', toastieLog: 'log', pathTile: 'path-tile', fence: 'fence',
     };
     const loaded = {};
@@ -9162,7 +9199,7 @@ async function mountYardModels() {
     piecesDirty = true;
     updatePieces(0);
     const fleet = [loaded.redCar, loaded.car, loaded.suv, loaded.polyCar, loaded.pickup];
-    const fleetLen = [2.15, 2.25, 2.45, 2.25, 2.55];
+    const fleetLen = [2.2, 2.4, 2.25, 2.3, 2.5];
     shopCars.forEach((car, i) => dressBuyer(car.mesh, fleet[i % fleet.length], fleetLen[i % fleet.length]));
     const crew = [loaded.workerA, loaded.workerB];
     const shoppers = [loaded.hoodie, loaded.punk, loaded.suit, loaded.man, loaded.womanA, loaded.womanB];
@@ -9186,6 +9223,7 @@ async function mountYardModels() {
     yardViz.fire.wagon = makeWagon(loaded.wagon);
     yardViz.fire.walker.g.add(yardViz.fire.wagon);
     for (const h of hands) hitch(h);
+    dressProps(loaded);
     trimShadowCasters();
     showLoad(1);
     window.__yardModels = true;
