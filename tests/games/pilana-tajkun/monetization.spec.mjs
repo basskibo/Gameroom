@@ -38,8 +38,7 @@ test.describe('Pilana Tajkun · ads and analytics', () => {
     await page.locator('#gameroomFakeAd button').click();
     await expect(page.locator('#boostBtn')).not.toHaveClass(/on/);
     const t0 = (await game.debug()).time;
-    await page.waitForTimeout(800);
-    expect((await game.debug()).time).toBeGreaterThan(t0);
+    await expect.poll(async () => (await game.debug()).time, { timeout: 10_000 }).toBeGreaterThan(t0); // not left paused
     game.expectNoErrors();
   });
 });
