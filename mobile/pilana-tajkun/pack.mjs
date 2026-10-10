@@ -13,7 +13,7 @@ mkdirSync(www, { recursive: true });
 const copy = (from, to = from, filter) => cpSync(resolve(repo, from), resolve(www, to), { recursive: true, filter });
 copy(`games/${slug}`, `games/${slug}`, src => !src.endsWith('.md'));
 for (const f of ['gameroom-sdk.js', 'gameroom-three.js', 'gameroom-fx.js', 'gameroom-audio.js', 'gameroom-post.js', 'gameroom-sky.js']) copy(`shared/${f}`);
-copy('shared/vendor');
+copy('shared/vendor/three-0.170.0');   // only the three.js build this game uses (r128 is Surprizi's)
 cpSync(resolve(here, 'config/gameroom-config.js'), resolve(www, 'shared/gameroom-config.js'));
 // the app opens www/index.html: go straight to the game
 // (replace, not a refresh: Android's back button must not land on this page again)
