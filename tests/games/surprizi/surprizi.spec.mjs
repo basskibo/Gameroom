@@ -51,3 +51,16 @@ test.describe('Surprizi · smoke and ads', () => {
     await expect(page.locator('#daily-btn')).toBeHidden();   // used today
   });
 });
+
+test('SU-BUG-004: sound can be switched off in settings and stays off', async ({ page }) => {
+  await page.goto(URL);
+  await ready(page);
+  await page.locator('#settings-btn').click();
+  await expect(page.locator('#sound-btn')).toContainText(/on|uključen/i);
+  await page.locator('#sound-btn').click();
+  await expect(page.locator('#sound-btn')).toContainText(/off|isključen/i);
+  await page.reload();
+  await ready(page);
+  await page.locator('#settings-btn').click();
+  await expect(page.locator('#sound-btn')).toContainText(/off|isključen/i);
+});

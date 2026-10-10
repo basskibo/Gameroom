@@ -151,6 +151,7 @@
         <button id="menuSound" type="button" data-i18n="soundOn"></button>
         <button id="menuPause" type="button" data-i18n="pauseBtn"></button>
         <button id="menuGfx" type="button"></button>
+        <button id="menuMusic" type="button"></button>
         <div id="langRow"></div>
         <!-- gameroom:back -->
         <a href="../../" id="gameroom-back" data-i18n="back" data-i18n-attr="title:backPlain;aria-label:backPlain">⌂ Back to Gameroom</a>
@@ -202,6 +203,7 @@ import { createPost } from '../../shared/gameroom-post.js';
 import { createParticles } from '../../shared/gameroom-fx.js';
 import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
 import { createQuality } from '../../shared/gameroom-three.js';
+import { createMusic, SONGS } from '../../shared/gameroom-music.js';
 
 // =====================================================================
 // I18N (shared/gameroom-i18n.js): engleski podrazumevano, srpski po izboru u podešavanjima
@@ -233,7 +235,7 @@ i18n.add({
     baseEstate: 'The camp is a real estate now! 🎉', baseUp: 'More customers and higher prices', level: 'Level {n}', unlocked: 'Unlocked',
     how: 'How to play ▾', gfx: '🎨 Graphics: {q}', adTag: 'AD', helperOffer: '👷 Free helper · 2 min', helperOn: '👷 Helper · {t}',
     helperIn: '👷 A helper joined!', helperInSub: 'He chops and sells logs for 2 minutes', helperOut: '👷 The helper went home',
-    orderX2: '🚚 ×2 order reward', orderDoubled: '🚚 Order reward doubled!',
+    musicOn: '♫ Music on', musicOff: '♫ Music off', orderX2: '🚚 ×2 order reward', orderDoubled: '🚚 Order reward doubled!',
   },
   sr: {
     settings: 'Podešavanja', soundOn: '♪ Zvuk uključen', soundOff: '🔇 Zvuk isključen', pauseBtn: 'II Pauza', resumeBtn: '▶ Nastavi',
@@ -259,7 +261,7 @@ i18n.add({
     baseEstate: 'Kamp je postao pravo imanje! 🎉', baseUp: 'Više mušterija i veće cene', level: 'Nivo {n}', unlocked: 'Otključano',
     how: 'Kako se igra ▾', gfx: '🎨 Grafika: {q}', adTag: 'REKLAMA', helperOffer: '👷 Besplatan pomoćnik · 2 min', helperOn: '👷 Pomoćnik · {t}',
     helperIn: '👷 Stigao je pomoćnik!', helperInSub: 'Seče i prodaje drva 2 minuta', helperOut: '👷 Pomoćnik je otišao kući',
-    orderX2: '🚚 ×2 nagrada za porudžbinu', orderDoubled: '🚚 Nagrada za porudžbinu duplirana!',
+    musicOn: '♫ Muzika uključena', musicOff: '♫ Muzika isključena', orderX2: '🚚 ×2 nagrada za porudžbinu', orderDoubled: '🚚 Nagrada za porudžbinu duplirana!',
   },
 });
 document.title = tr('title');
@@ -874,6 +876,7 @@ const hasStand = item => stands.some(s => s.item === item);
 // shared bus with a compressor; forest ambience (wind + birds) under the game
 const audio = createAudioBus({ storageKey: 'kamp-tajkun:audio' });
 audio.ambience({ wind: 0.6, birds: 0.9 });
+const music = createMusic(audio, SONGS.camp, { storageKey: 'kamp-tajkun:music', volume: 0.45 });
 const sfx = (() => {
   const last = {};
   const ok = (k, ms) => { const n = performance.now(); if (n - (last[k] || 0) < ms) return false; last[k] = n; return true; };
@@ -1961,10 +1964,12 @@ let adHeld = false, soundWasMuted = false, firstMinute = false, helper = null, h
 sdk.on('adStart', () => {
   if (S.running && !S.paused) { adHeld = true; S.paused = true; }
   audio.setMuted(true);
+  music.stop();
 });
 sdk.on('adEnd', () => {
   if (adHeld) { adHeld = false; S.paused = false; clock.getDelta(); }
   audio.setMuted(soundWasMuted);
+  if (S.running && !S.paused) music.play();
 });
 async function watch(placement) {
   sfx.ensure();
@@ -2078,6 +2083,7 @@ function startGame() {
   S.running = true;
   $('startScreen').classList.add('hidden');
   sdk.gameplayStart();
+  music.play();
   sdk.track('game_start', { saved: !!saved, unlocked: S.unlocked.size, base: S.lv.base });
 }
 window.__start = startGame;
@@ -2090,6 +2096,7 @@ function setPaused(p) {
   if (!S.running) return;
   if (p) sdk.gameplayStop(); else sdk.gameplayStart();
   audio.ambienceOn(!p);
+  if (p) music.stop(); else music.play();
   S.paused = p;
   $('pauseScreen').classList.toggle('hidden', !p);
   $('menuPause').textContent = tr(p ? 'resumeBtn' : 'pauseBtn');
@@ -2107,6 +2114,9 @@ const gfx = createQuality({ renderer, storageKey: 'kamp-tajkun:gfx', maxDpr: 2, 
 const drawGfx = () => { $('menuGfx').textContent = tr('gfx', { q: gfx.label() }); };
 $('menuGfx').addEventListener('click', e => { e.stopPropagation(); gfx.cycle(); drawGfx(); });
 gfx.apply(); drawGfx();
+const drawMusic = () => { $('menuMusic').textContent = tr(music.on ? 'musicOn' : 'musicOff'); };
+$('menuMusic').addEventListener('click', e => { e.stopPropagation(); sfx.ensure(); if (music.toggle() && S.running && !S.paused) music.play(); drawMusic(); });
+drawMusic();
 $('resetBtn').addEventListener('click', () => { if (confirm(tr('confirmReset'))) resetGame(); });
 $('settingsBtn').addEventListener('click', e => {
   e.stopPropagation();

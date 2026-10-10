@@ -14,3 +14,4 @@
 | KT-IMP-V03 | P2 | M | otvoren | Kenney modeli (Survival/Nature kit) umesto proceduralnih zgrada |
 | KT-IMP-G03 | P2 | M | otvoren | Offline zarada (radnici rade dok igrača nema) + reklama ×2 za nju |
 | KT-IMP-V04 | P3 | M | otvoren | Ciklus dana (`sampleCycle`) sa lampama noću |
+| KT-IMP-S02 | P3 | S | ✔ 2026-10-10 | Tiha muzika (`SONGS.camp`), isključiva u ⚙ |

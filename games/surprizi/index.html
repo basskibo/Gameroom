@@ -433,6 +433,7 @@ body.reveal-open #gameroom-back{ display:none !important; }
       </div>
       <!-- gameroom:back — link nazad na landing (ne brisati) -->
       <div id="langRow"></div>
+      <button id="sound-btn" type="button" class="sound-toggle"></button>
       <a href="../../" id="gameroom-back" data-i18n="back">⌂ Back to Gameroom</a>
     </div>
   </div>
@@ -481,7 +482,7 @@ i18n.add({
     details: 'Details', infoBack: 'Back', super: 'Awesome!',
     r_common: 'Common', r_rare: 'Rare', r_legendary: 'Legendary', popLegendary: '★ LEGENDARY! ★', popRare: 'RARE!',
     owned: 'You own: x{n}', waitToken: 'Waiting for a new token… ({s}s)', newToken: 'You got a new token! 💎',
-    dailyBag: '🎁 Free bag of the day', adTag: 'AD', dailyGot: 'Free bag! Open it 🎁',
+    soundOn: '🔊 Sound on', soundOff: '🔇 Sound off', dailyBag: '🎁 Free bag of the day', adTag: 'AD', dailyGot: 'Free bag! Open it 🎁',
     newInCollection: 'NEW IN YOUR COLLECTION! 🎉', dupBonus: 'Duplicate: +1 bonus token 💎', dup: 'Duplicate',
     exported: 'Progress saved to a file! 💾', imported: 'Progress loaded! 📂', badFile: 'File not recognized.', loadError: 'Error loading the file.',
     oneBagOn: 'At least one bag has to stay on.', saveFile: 'surprise-toys-save.json',
@@ -500,7 +501,7 @@ i18n.add({
     details: 'Detalji', infoBack: 'Nazad', super: 'Super!',
     r_common: 'Obično', r_rare: 'Retko', r_legendary: 'Legendarno', popLegendary: '★ LEGENDARNO! ★', popRare: 'RETKO!',
     owned: 'Poseduješ: x{n}', waitToken: 'Čekaj novi token… ({s}s)', newToken: 'Dobio si novi token! 💎',
-    dailyBag: '🎁 Besplatna kesica dana', adTag: 'REKLAMA', dailyGot: 'Besplatna kesica! Otvori je 🎁',
+    soundOn: '🔊 Zvuk uključen', soundOff: '🔇 Zvuk isključen', dailyBag: '🎁 Besplatna kesica dana', adTag: 'REKLAMA', dailyGot: 'Besplatna kesica! Otvori je 🎁',
     newInCollection: 'NOVO U KOLEKCIJI! 🎉', dupBonus: 'Duplikat — +1 token na poklon 💎', dup: 'Duplikat',
     exported: 'Napredak izvezen u fajl! 💾', imported: 'Napredak učitan! 📂', badFile: 'Fajl nije prepoznat.', loadError: 'Greška pri učitavanju fajla.',
     oneBagOn: 'Bar jedna kesica mora da ostane uključena.', saveFile: 'surprizi-sacuvano.json',
@@ -3836,8 +3837,14 @@ sdk.init({ game: 'surprizi', version: GAME_VERSION, kids: true });
 const DAILY_KEY = 'surprizi:dailyBag';
 const today = () => { const d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); };
 let dailyOffered = false, opened = 0;
+// zvuk: dugme u podešavanjima, izbor se pamti
+const SOUND_KEY = 'surprizi:sound';
+let soundOff = false;
+try{ soundOff = localStorage.getItem(SOUND_KEY)==='off'; }catch(e){}
+sfx.setMuted(soundOff);
+function drawSoundBtn(){ const b = document.getElementById('sound-btn'); if(b) b.textContent = tr(soundOff ? 'soundOff' : 'soundOn'); }
 sdk.on('adStart', ()=> sfx.setMuted(true));
-sdk.on('adEnd', ()=> sfx.setMuted(false));
+sdk.on('adEnd', ()=> sfx.setMuted(soundOff));
 function dailyUsed(){ try{ return localStorage.getItem(DAILY_KEY)===today(); }catch(e){ return false; } }
 function syncDaily(){
   const btn = document.getElementById('daily-btn');
@@ -5151,6 +5158,12 @@ function init(){
   }));
   document.getElementById('open-btn').addEventListener('click', startOpen);
   document.getElementById('daily-btn').addEventListener('click', watchDaily);
+  drawSoundBtn();
+  document.getElementById('sound-btn').addEventListener('click', ()=>{
+    soundOff = !soundOff;
+    try{ localStorage.setItem(SOUND_KEY, soundOff ? 'off' : 'on'); }catch(e){}
+    sfx.ensure(); sfx.setMuted(soundOff); drawSoundBtn();
+  });
   document.getElementById('reveal-close').addEventListener('click', ()=>{ hideResultCardInstant(); enterPhase('idle'); });
   document.getElementById('info-back').addEventListener('click', hideInfoPanel);
   document.addEventListener('visibilitychange', ()=>{ if(document.hidden) saveLocal(); });
@@ -5209,6 +5222,7 @@ init();
 #gameroom-back{display:flex;align-items:center;justify-content:center;margin-top:12px;font-family:'Lilita One',cursive;font-size:16px;text-decoration:none;color:#2a1450;background:#fff4c8;border:3px solid #2a1450;border-radius:14px;padding:10px 12px;box-shadow:3px 3px 0 #8a5cff}
 #gameroom-back:hover,#gameroom-back:focus-visible{transform:translateY(-2px)}
 #langRow{display:flex;justify-content:center;margin-top:12px}
+.sound-toggle{display:flex;align-items:center;justify-content:center;width:100%;margin-top:12px;font-family:'Lilita One',cursive;font-size:16px;color:#2a1450;background:#fff;border:3px solid #2a1450;border-radius:14px;padding:8px 12px;box-shadow:3px 3px 0 #8a5cff;cursor:pointer}
 #langRow .gr-lang{background:#fff4c8!important;border:3px solid #2a1450;font-family:'Lilita One',cursive}
 #langRow .gr-lang button{color:#2a1450!important;font-size:15px!important;padding:6px 16px!important}
 #langRow .gr-lang button[aria-pressed="true"]{background:#2a1450!important;color:#fff4c8!important}

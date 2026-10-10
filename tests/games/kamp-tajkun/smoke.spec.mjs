@@ -44,6 +44,15 @@ test.describe('Kamp Tajkun · smoke', () => {
     await expect(page.locator('#steps')).toBeVisible();
   });
 
+  test('music can be switched off and the choice is remembered', async ({ game, page }) => {
+    await game.openAndPlay();
+    await page.locator('#settingsBtn').click();
+    await expect(page.locator('#menuMusic')).toContainText(/on|uključena/i);
+    await page.locator('#menuMusic').click();
+    await expect(page.locator('#menuMusic')).toContainText(/off|isključena/i);
+    expect(await page.evaluate(() => localStorage.getItem('kamp-tajkun:music'))).toBe('off');
+  });
+
   test('graphics setting cycles Auto → High → Low', async ({ game, page }) => {
     await game.openAndPlay();
     await page.locator('#settingsBtn').click();
