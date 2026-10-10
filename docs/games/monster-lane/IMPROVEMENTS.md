@@ -14,10 +14,11 @@ Prioritet **P1–P3**, procena **S/M/L**. Oblasti: P performanse, V vizuelno, A 
 | ML-IMP-G01 | P1 | S | ✔ 2026-10-10 | Reklama za nagradu: oživljavanje (jednom po partiji) |
 | ML-IMP-G02 | P1 | S | ✔ 2026-10-10 | Reklama za nagradu: start sa Minigunom + 1 cev |
 | ML-IMP-S01 | P2 | S | ✔ 2026-10-10 | Audio bus sa kompresorom, ambijent mora, stereo po poziciji |
-| ML-IMP-G03 | P2 | M | otvoren | Trajni napredak između partija (zlatnici → trajne nadogradnje baze/oružja), dnevni izazov |
+| ML-IMP-G03 | P2 | M | ✔ 2026-10-10 | Trajni napredak: dukati po partiji → oružarnica (zidine, barut, brze ruke, po 5 nivoa); reklama ×2 dukata. Dnevni izazov ostaje otvoren |
 | ML-IMP-G04 | P2 | M | otvoren | Treća reklama iz plana: „dodatni pirati“ (saveznici na molu na 30 s) |
-| ML-IMP-V03 | P2 | M | otvoren | Smrt gusara: ragdoll „let“ preko ograde u more umesto kocki |
+| ML-IMP-V03 | P2 | M | ✔ 2026-10-10 | Oboreni gusari (svi grmalji + ~22 % ostalih) odleću i prevrću se, prskanje kad padnu u more |
 | ML-IMP-V04 | P3 | M | otvoren | Zalazak sunca u kasnijim talasima (ključni kadrovi kao u Pilani, `sampleCycle`) |
-| ML-IMP-S02 | P2 | M | otvoren | Muzika (bubnjevi/harmonika petlja) na muzičkom busu |
-| ML-IMP-U03 | P3 | S | otvoren | Brojanje poena (count-up) i „combo“ brojač ubistava |
+| ML-IMP-S02 | P2 | M | ✔ 2026-10-10 | Muzika: proceduralni „shanty“ (`shared/gameroom-music.js`), isključiv u ⚙ |
+| ML-IMP-U03 | P3 | S | ✔ 2026-10-10 | Poeni se broje (count-up), kombo brojač (ubistva < 0,7 s razmaka, +50 na svakih 50) |
 | ML-IMP-T01 | P1 | M | otvoren | Android paket (Capacitor) kao za Pilanu, posle merenja na portalima |
+| ML-IMP-U04 | P2 | S | ✔ 2026-10-10 | Pravila na start kartici iza „Kako se igra“ (savete daje vodič u igri) |

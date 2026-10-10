@@ -1,6 +1,6 @@
 # Monster Lane — tracker
 
-**Trenutno:** AAA prolaz 1 gotov (2026-10-10): modeli, post-obrada, juice, uvod, reklame za nagradu, testovi. Sledeće: trajni napredak (G03), treća reklama (G04), muzika.
+**Trenutno:** AAA prolaz 2 gotov (2026-10-10): + oružarnica, kombo, muzika, gusari lete. Sledeće: treća reklama iz plana (G04 „dodatni pirati“), dnevni izazov, Android paket.
 
 ## Odluke potrebne od korisnika
 
@@ -25,12 +25,12 @@
 
 ## Faza D — Animacije i „juice“
 - [x] Muzzle flash, hit-stop, punch kamere, vibracija
-- [ ] Gusari lete u more (V03), combo brojač
+- [x] Gusari lete u more (V03), kombo brojač
 
 ## Faza E — UX, onboarding, zvuk
 - [x] Uvodni saveti, rekord na startu
 - [x] Audio bus, ambijent
-- [ ] Muzika
+- [x] Muzika
 
 ## Faza F — Plan monetizacije
 - [x] SDK sloj, analitički događaji

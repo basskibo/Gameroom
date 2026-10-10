@@ -35,7 +35,7 @@ Zaglavlja: `grep -n "^// [A-Z]" games/monster-lane/index.html`.
 | shared instanced meshes | mobovi (instancirani + kontura), meci, kocke-krhotine, `fx` (svetleće čestice), kontakt senke |
 | GAME STATE / AUDIO | `state`, `sfx` preko `createAudioBus` (kompresor, ambijent mora) |
 | SPAWNING / COMBAT / UPDATE | redovi gusara, kapije, kovčezi, boss, meci (z-binovi), eksplozije, hit-stop i „punch“ kamere |
-| FLOW | `resetGame`, statistika (`monster-lane:stats`), SDK (oživljavanje, start sa minigunom), uvodni saveti, pauza |
+| FLOW | `resetGame`, statistika (`monster-lane:stats`: rekord, dukati, `armory`), oružarnica (`ARMORY`, `drawArmory`, `buyArmory`), SDK (oživljavanje, start sa minigunom, ×2 dukata), muzika, uvodni saveti, pauza |
 | LOOP | kvalitet LQ/MQ/HQ (auto spuštanje), `post.render` |
 
 ## Debug kuke (`window`)
@@ -48,10 +48,11 @@ Zaglavlja: `grep -n "^// [A-Z]" games/monster-lane/index.html`.
 |---|---|---|
 | `revive` | nagrada | kartica „Baza je pala“, jednom po partiji: baza 60 %, prvi redovi oduvani, boss vraćen nazad |
 | `start_weapon` | nagrada | start kartica i kartica poraza: sledeća partija kreće sa Minigunom + 1 cev |
+| `double_coins` | nagrada | kartica poraza: ×2 dukata te partije (jednom) |
 | `game_over` | preko celog ekrana | klik na „Ponovo“ (prirodna pauza; SDK ograničava učestalost) |
 | `resume` | preko celog ekrana | nastavak posle ručne pauze (isto ograničenje) |
 
-Događaji: `game_start`, `first_minute`, `wave_cleared`, `game_over`, `revive`, `guide_done`, `rewarded_offer`, `rewarded_watched` (+ `return_d1`, `session_end` iz SDK-a).
+Događaji: `armory_buy`, `game_start`, `first_minute`, `wave_cleared`, `game_over`, `revive`, `guide_done`, `rewarded_offer`, `rewarded_watched` (+ `return_d1`, `session_end` iz SDK-a).
 
 ## Merenja
 

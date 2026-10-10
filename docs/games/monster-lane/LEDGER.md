@@ -2,6 +2,11 @@
 
 Najnovije gore. Format: [tracking.md](../../engineering/tracking.md).
 
+## 2026-10-10 — AAA prolaz 2: napredak, kombo, muzika
+- **Urađeno:** oružarnica (trajne nadogradnje za dukate; `stats.coins`, `stats.armory`, stari save radi), reklama `double_coins`; kombo brojač; poeni se broje; oboreni gusari odleću (instancirano, bez novih draw call-ova); muzika (`shared/gameroom-music.js`, novi zajednički modul); pravila iza „Kako se igra“; kartica poraza: oživljavanje i „Ponovo“ prvi.
+- **ID:** ML-IMP-G03, V03, S02, U03, U04.
+- **Provereno:** `npx playwright test games/monster-lane` 20/20 (novi `armory.spec.mjs`).
+
 ## 2026-10-10 — AAA prolaz 1: učitavanje, izgled, juice, monetizacija
 - **Urađeno:** Kenney modeli kao 23 GLB fajla (meshopt + WebP, 0,28 MB) umesto 2 MB `kit-bundle.js`; Three.js iz `shared/vendor`; HDR post-obrada (bloom 0,8, ACES, grading); svetleće varnice i dim; muzzle flash radi; hit-stop i punch kamere; audio bus; statistika sa verzijom; uvodni saveti; SDK: `revive`, `start_weapon`, midgame između partija; analitika.
 - **ID:** ML-BUG-001…004, ML-IMP-P01, P02, V01, V02, A01, U01, U02, G01, G02, S01.

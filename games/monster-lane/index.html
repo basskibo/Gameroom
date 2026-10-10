@@ -191,6 +191,10 @@
   button.play:active { transform: translateY(3px); box-shadow: 0 2px 0 #9d0208; }
   .keys { font-family: system-ui, sans-serif; font-size: 12px; color: #777; margin-top: 12px; }
   .best { font-size: 16px; color: #8a5a2b; margin: -4px 0 10px; }
+  .legend.hidden { display: none; }
+  .howBtn { background: none; border: 0; font-family: system-ui, sans-serif; font-size: 13px; color: #8a7f96; text-decoration: underline; cursor: pointer; margin-bottom: 4px; }
+  .howBtn.hidden { display: none; }
+  .stats { font-size: 18px; line-height: 1.45; }
   .best:empty { display: none; }
   /* rewarded-ad offers: the player picks them, they never pop up by themselves */
   button.ad {
@@ -202,6 +206,31 @@
   button.ad small { font-family: system-ui, sans-serif; font-size: 11px; background: #1b1b2f; color: #ffe066; border-radius: 6px; padding: 2px 6px; }
   button.ad.hidden, button.ad.taken { display: none; }
   .gunOn { margin-top: 10px; font-size: 15px; color: #2f9e44; }
+  /* armory: permanent upgrades bought with doubloons between runs */
+  .armory { margin: 12px 0 4px; padding: 10px; border-radius: 16px; background: #f3e6cf; border: 2px solid #e2cba3; }
+  .armory h3 { font-size: 16px; color: #8a5a2b; display: flex; justify-content: space-between; align-items: center; }
+  .armory h3 b { color: #b07d00; }
+  .arm-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 8px; }
+  .arm-row button {
+    font-family: inherit; border: 0; border-radius: 12px; padding: 6px 4px; cursor: pointer; color: #1b1b2f;
+    background: #fff8ec; box-shadow: 0 3px 0 #c9b18a; display: flex; flex-direction: column; align-items: center; gap: 1px; font-size: 13px;
+  }
+  .arm-row button i { font-style: normal; font-size: 20px; }
+  .arm-row button small { font-family: system-ui, sans-serif; font-size: 10px; color: #6b5a44; }
+  .arm-row button.can { background: linear-gradient(#ffe066, #f5b800); box-shadow: 0 3px 0 #b07d00; }
+  .arm-row button:disabled { opacity: .55; cursor: default; }
+  .arm-row button.bought { animation: armPop .4s cubic-bezier(.2, 1.6, .4, 1); }
+  @keyframes armPop { 50% { transform: scale(1.15); } }
+  .coinsGot { font-size: 20px; color: #b07d00; margin-top: 4px; }
+  #combo {
+    position: absolute; right: 16px; top: 42%; text-align: right; font-size: 30px; color: #ffe066; opacity: 0;
+    transition: opacity .2s; pointer-events: none;
+  }
+  #combo small { display: block; font-size: 14px; color: #fff; }
+  #combo.on { opacity: 1; }
+  #combo.pulse { animation: comboPulse .18s; }
+  @keyframes comboPulse { 50% { transform: scale(1.18); } }
+  @media (max-width: 600px) { #combo { top: 34%; right: 8px; font-size: 22px; } }
   .gunOn.hidden { display: none; }
   /* first-game hints: a bubble that points at the gate / chest in the world */
   #coach {
@@ -235,6 +264,7 @@
         <div id="settingsMenu" class="hidden">
           <button id="menuSound" type="button" data-i18n="soundOn"></button>
           <button id="menuQuality" type="button"></button>
+          <button id="menuMusic" type="button"></button>
           <button id="menuPause" type="button" data-i18n="pauseBtn"></button>
           <div id="langRow"></div>
           <!-- gameroom:back -->
@@ -261,18 +291,21 @@
 
   <div id="banner" class="stroke"><span id="bannerMain"></span><span id="bannerSub"></span></div>
   <div id="hurt"></div>
+  <div id="combo" class="stroke"><span id="comboN"></span><small data-i18n="combo"></small></div>
   <div id="coach" class="hidden"><span id="coachMain"></span><small id="coachSub"></small></div>
 
   <div id="startScreen" class="overlay">
     <div class="card">
       <h1>MONSTER<br>LANE</h1>
       <p data-i18n="intro"></p>
-      <div class="legend">
+      <button class="howBtn" id="howBtn" type="button" data-i18n="how"></button>
+      <div class="legend hidden" id="legend">
         <div class="sw" style="background:#4aa3ff"></div><div data-i18n-html="legendL"></div>
         <div class="sw" style="background:#f4c95d"></div><div data-i18n-html="legendR"></div>
         <div class="sw" style="background:#e63946"></div><div data-i18n-html="legendM"></div>
       </div>
       <div class="best" id="bestLine"></div>
+      <div class="armory" id="armory1"></div>
       <button class="play" id="startBtn" data-i18n="play"></button>
       <button class="ad hidden" id="gunBtn" type="button"><span data-i18n="gunOffer"></span><small data-i18n="adTag"></small></button>
       <div class="gunOn hidden" id="gunOn" data-i18n="gunReady"></div>
@@ -286,6 +319,9 @@
       <div class="stats" id="overStats"></div>
       <button class="ad hidden" id="reviveBtn" type="button"><span data-i18n="reviveOffer"></span><small data-i18n="adTag"></small></button>
       <button class="play" id="restartBtn" data-i18n="again" style="margin-top:12px"></button>
+      <div class="coinsGot" id="coinsGot"></div>
+      <button class="ad hidden" id="coinsBtn" type="button"><span data-i18n="coinsOffer"></span><small data-i18n="adTag"></small></button>
+      <div class="armory" id="armory2"></div>
       <button class="ad hidden" id="gunBtn2" type="button"><span data-i18n="gunOffer"></span><small data-i18n="adTag"></small></button>
       <div class="gunOn hidden" id="gunOn2" data-i18n="gunReady"></div>
     </div>
@@ -310,6 +346,7 @@ import { floatGeo } from '../../shared/gameroom-three.js';
 import { createPost } from '../../shared/gameroom-post.js';
 import { createParticles } from '../../shared/gameroom-fx.js';
 import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
+import { createMusic, SONGS } from '../../shared/gameroom-music.js';
 
 // =====================================================================
 // I18N (shared/gameroom-i18n.js): engleski podrazumevano, srpski po izboru u podešavanjima
@@ -342,6 +379,10 @@ i18n.add({
     coachMove: 'Drag to move', coachMoveMouse: 'Move the mouse', coachMoveSub: 'your pirate shoots by himself',
     coachGate: 'Shoot the gates!', coachGateSub: 'more barrels, damage and fire rate',
     coachChest: 'Break the chest!', coachChestSub: 'it holds a stronger gun',
+    how: 'How to play ▾', armory: 'ARMORY', a_walls: 'Walls', a_powder: 'Powder', a_hands: 'Quick hands', a_max: 'MAX',
+    a_wallsDesc: '+15 base HP', a_powderDesc: '+6% damage', a_handsDesc: '+5% fire rate',
+    coinsGot: '+{n} 🪙 doubloons', coinsOffer: '▶ ×2 doubloons', coinsDoubled: 'Doubled! +{n} 🪙',
+    combo: 'COMBO', comboBig: 'COMBO ×{n}!', musicOn: '♫ Music on', musicOff: '♫ Music off',
   },
   sr: {
     score: 'Poeni', base: 'BAZA', settings: 'Podešavanja', soundOn: '♪ Zvuk uključen', soundOff: '🔇 Zvuk isključen',
@@ -368,6 +409,10 @@ i18n.add({
     coachMove: 'Prevuci da se pomeriš', coachMoveMouse: 'Pomeraj miš', coachMoveSub: 'pirat sam puca',
     coachGate: 'Gađaj kapije!', coachGateSub: 'više cevi, štete i brža paljba',
     coachChest: 'Razbij kovčeg!', coachChestSub: 'u njemu je jače oružje',
+    how: 'Kako se igra ▾', armory: 'ORUŽARNICA', a_walls: 'Zidine', a_powder: 'Barut', a_hands: 'Brze ruke', a_max: 'MAKS',
+    a_wallsDesc: '+15 HP baze', a_powderDesc: '+6% štete', a_handsDesc: '+5% paljbe',
+    coinsGot: '+{n} 🪙 dukata', coinsOffer: '▶ ×2 dukata', coinsDoubled: 'Duplirano! +{n} 🪙',
+    combo: 'KOMBO', comboBig: 'KOMBO ×{n}!', musicOn: '♫ Muzika uključena', musicOff: '♫ Muzika isključena',
   },
 });
 i18n.apply();
@@ -402,6 +447,14 @@ const CLEAVE_R = 0.72, CLEAVE_N = 3;                  // a shot into the pack cl
 const MAX_BARRELS = 6, MAX_DMG_LVL = 15, MAX_RATE_LVL = 10;
 const MAX_MOBS = 1600, MAX_BULLETS = 2500, MAX_PARTS = 900;
 const BASE_HP = 100;
+// permanent upgrades (armory); levels live in the stats save, effects apply at the start of every run
+const ARMORY = [
+  { id: 'walls', icon: '🧱', costs: [120, 300, 700, 1500, 3200] },
+  { id: 'powder', icon: '💥', costs: [150, 380, 850, 1800, 3800] },
+  { id: 'hands', icon: '✋', costs: [150, 380, 850, 1800, 3800] },
+];
+const armLv = id => (stats && stats.armory && stats.armory[id]) || 0;
+const baseMax = () => BASE_HP + 15 * armLv('walls');
 
 const BOSS_HP = [4000, 15000, 45000, 80000, 120000, 165000, 215000, 270000, 330000];
 const bossHpFor = w => w <= BOSS_HP.length
@@ -1867,17 +1920,18 @@ const monsters = [], bullets = [], parts = [], gates = [], pedestals = [], bosse
 const freshState = () => ({
   running: false, paused: false, over: false, time: 0,
   wave: 1, waveTime: 0, bossSpawned: false, betweenWaves: 0,
-  baseHp: BASE_HP, score: 0, kills: 0,
+  baseHp: baseMax(), score: 0, kills: 0, combo: 0, comboT: 0, bestCombo: 0,
   weaponTier: 0, skippedWeapons: new Set(), barrels: 0, dmgLvl: 0, rateLvl: 0, upgradesTaken: 0,
   playerX: 0, targetX: 0, fireTimer: 0,
   gateTimer: 1, pedTimer: 5, rowTimer: 0.6, pressAcc: 0,
   shake: 0, hurt: 0, muzzle: 0,
 });
+var stats = null;   // filled by readStats() in FLOW (declared early: freshState() reads the armory)
 let state = freshState();
 
 const curWeapon = () => WEAPONS[state.weaponTier];
-const curDmg = () => curWeapon().dmg * (1 + 0.1 * state.dmgLvl);
-const curRate = () => curWeapon().rate * (1 + 0.08 * state.rateLvl);
+const curDmg = () => curWeapon().dmg * (1 + 0.1 * state.dmgLvl) * (1 + 0.06 * armLv('powder'));
+const curRate = () => curWeapon().rate * (1 + 0.08 * state.rateLvl) * (1 + 0.05 * armLv('hands'));
 const curShots = () => curWeapon().pellets + state.barrels;
 const curDps = () => curDmg() * curShots() * curRate();
 
@@ -1972,11 +2026,20 @@ function placeBossBar() {
 }
 addEventListener('resize', placeBossBar);
 
+let shownScore = 0;
 function updateHud() {
   setT('wave', tr('wave', { n: state.wave }));
-  setT('score', String(state.score));
+  // score counts up instead of jumping
+  shownScore = state.score < shownScore ? state.score : shownScore + Math.ceil((state.score - shownScore) * 0.2);
+  setT('score', String(shownScore));
+  const c = state.combo >= 10 ? '×' + state.combo : '';
+  if (hudCache.combo !== c) {
+    hudCache.combo = c;
+    $('combo').classList.toggle('on', !!c);
+    if (c) { $('comboN').textContent = c; const el = $('combo'); el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse'); }
+  }
   setT('baseTxt', String(Math.max(0, Math.ceil(state.baseHp))));
-  setW('basefill', state.baseHp / BASE_HP);
+  setW('basefill', state.baseHp / baseMax());
 }
 
 // =====================================================================
@@ -2312,6 +2375,9 @@ function onKill(t) {
     case 'mob':
       state.kills++;
       state.score += t.score;
+      addCombo();
+      // some of the crew get blown off the pier and tumble away (always the brutes)
+      if (t.brute || Math.random() < 0.22) launchFlier(t);
       burst(t.x, 0.8 * t.s, t.z, t.brute ? 0x7a4a21 : t.variant ? 0xc1121f : 0x1f4e9c, t.brute ? 16 : 4, 5, t.brute ? 1.3 : 0.9);
       if (t.brute) { sparks(t.x, 1.2, t.z, 0xffd23f, 10, 6, 3); smoke(t.x, 1, t.z, 2); }
       sfx.pop(t.x);
@@ -2483,6 +2549,40 @@ function updateBullets(dt) {
 // =====================================================================
 const flashColor = new THREE.Color(3, 3, 3), plainColor = new THREE.Color(1, 1, 1);
 const kindCounts = [0, 0, 0];
+// knocked-out pirates: drawn with the same instanced meshes (after the living ones), arcing away and tumbling
+const fliers = [], MAX_FLIERS = 140;
+function launchFlier(m) {
+  if (fliers.length >= MAX_FLIERS) fliers.shift();
+  const side = m.x === 0 ? (Math.random() < 0.5 ? -1 : 1) : Math.sign(m.x);
+  const k = m.brute ? 0.7 : 1;
+  fliers.push({ v: m.variant, x: m.x, y: groundY(m.z) + 0.3, z: m.z, s: m.s,
+    vx: side * rand(2, 7) * k, vy: rand(6, 10) * k, vz: rand(-5, -1), rx: rand(-9, 9), rz: rand(-9, 9), a: 0, life: 1.3 });
+}
+function updateFliers(dt) {
+  for (let i = fliers.length - 1; i >= 0; i--) {
+    const f = fliers[i];
+    f.life -= dt;
+    f.vy -= 22 * dt;
+    f.x += f.vx * dt; f.y += f.vy * dt; f.z += f.vz * dt;
+    f.a += dt;
+    if (f.life <= 0 || f.y < WATER_Y - 1) {
+      if (f.y < 0.3 && Math.abs(f.x) > FENCE_OUT) sparks(f.x, WATER_Y + 0.2, f.z, 0xdff6ff, 4, 3, 1.4, 0.25);   // splash
+      fliers.splice(i, 1);
+    }
+  }
+}
+// combo: kills less than a second apart chain up; every 50 pays a bonus
+function addCombo() {
+  state.combo++;
+  state.comboT = 0.7;
+  state.bestCombo = Math.max(state.bestCombo, state.combo);
+  if (state.combo % 50 === 0) {
+    const bonus = 50;
+    state.score += bonus;
+    floatText(tr('comboBig', { n: state.combo }) + ` +${bonus}`, state.playerX, 4, PLAYER_Z - 6, 'big');
+    sfx.upgrade();
+  }
+}
 
 function hurtBase(amount, x, z) {
   state.baseHp -= amount;
@@ -2495,6 +2595,7 @@ function hurtBase(amount, x, z) {
 }
 
 function updateMonsters(dt) {
+  updateFliers(dt);
   for (const m of monsters) {
     if (m.dead) continue;
     m._pz = m.z;
@@ -2527,6 +2628,18 @@ function updateMonsters(dt) {
     kind.mesh.setMatrixAt(i, dummy.matrix);
     kind.mesh.setColorAt(i, m.flash > 0 ? flashColor : plainColor);
     kind.walk.array[i] = m.walk;
+  }
+  for (const f of fliers) {
+    const kind = MOB_KINDS[f.v], i = kindCounts[f.v];
+    if (i >= MAX_MOBS) continue;
+    kindCounts[f.v]++;
+    dummy.position.set(f.x, f.y, f.z);
+    dummy.rotation.set(f.rx * f.a, 0, f.rz * f.a);
+    dummy.scale.setScalar(f.s * Math.min(1, f.life * 3));
+    dummy.updateMatrix();
+    kind.mesh.setMatrixAt(i, dummy.matrix);
+    kind.mesh.setColorAt(i, plainColor);
+    kind.walk.array[i] = 1.2;
   }
   blobMesh.count = n;
   blobMesh.instanceMatrix.needsUpdate = true;
@@ -2732,6 +2845,7 @@ function update(dt) {
   sweepList(pedestals, true);
 
   state.hurt = Math.max(0, state.hurt - dt * 1.5);
+  if (state.comboT > 0) { state.comboT -= dt; if (state.comboT <= 0) state.combo = 0; }
   if (!firstMinute && state.time >= 60) { firstMinute = true; sdk.track('first_minute', { wave: state.wave }); }
   updateGuide();
   updateHud();
@@ -2743,7 +2857,8 @@ function update(dt) {
 // =====================================================================
 function resetGame() {
   for (const list of [bosses, gates, pedestals]) { for (const o of list) removeObj(o); list.length = 0; }
-  monsters.length = 0; bullets.length = 0; parts.length = 0;
+  monsters.length = 0; bullets.length = 0; parts.length = 0; fliers.length = 0;
+  shownScore = 0;
   blobMesh.count = bulletMesh.count = partMesh.count = 0;
   for (const k of MOB_KINDS) k.mesh.count = k.ol.count = 0;
   state = freshState();
@@ -2764,14 +2879,58 @@ function readStats() {
     try { old = Number(localStorage.getItem('monsterLaneBest') || 0) || 0; } catch (e) {}
     st = { v: 1, best: old, bestWave: 0, games: 0, kills: 0 };
   }
+  st.coins = st.coins | 0;
+  st.armory = Object.assign({ walls: 0, powder: 0, hands: 0 }, st.armory || {});
   return st;
 }
-let stats = readStats();
+stats = readStats();
 function writeStats() { try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch (e) {} }
 function drawBest() {
   $('bestLine').textContent = stats.best > 0 ? tr('bestLine', { best: stats.best, wave: stats.bestWave || '–' }) : '';
 }
 drawBest();
+
+function drawArmory() {
+  for (const id of ['armory1', 'armory2']) {
+    const box = $(id);
+    box.innerHTML = '';
+    const h = document.createElement('h3');
+    h.innerHTML = `<span></span><b></b>`;
+    h.firstChild.textContent = tr('armory');
+    h.lastChild.textContent = `🪙 ${stats.coins}`;
+    box.appendChild(h);
+    const row = document.createElement('div');
+    row.className = 'arm-row';
+    for (const a of ARMORY) {
+      const lv = armLv(a.id), cost = a.costs[lv], b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.id = a.id;
+      const maxed = cost == null;
+      b.disabled = maxed || stats.coins < cost;
+      b.classList.toggle('can', !b.disabled);
+      b.innerHTML = '<i></i><span></span><small></small>';
+      b.children[0].textContent = a.icon;
+      b.children[1].textContent = `${tr('a_' + a.id)} ${lv}/${a.costs.length}`;
+      b.children[2].textContent = maxed ? tr('a_max') : `${tr('a_' + a.id + 'Desc')} · 🪙${cost}`;
+      b.addEventListener('click', () => buyArmory(a.id));
+      row.appendChild(b);
+    }
+    box.appendChild(row);
+  }
+}
+function buyArmory(id) {
+  const a = ARMORY.find(x => x.id === id), lv = armLv(id), cost = a.costs[lv];
+  if (cost == null || stats.coins < cost) return;
+  sfx.ensure();
+  stats.coins -= cost;
+  stats.armory[id] = lv + 1;
+  writeStats();
+  drawArmory();
+  for (const b of document.querySelectorAll(`.arm-row button[data-id="${id}"]`)) b.classList.add('bought');
+  sfx.upgrade();
+  sdk.track('armory_buy', { id, lv: lv + 1 });
+  if (!state.running) { state.baseHp = baseMax(); updateHud(); updateWeaponHud(); }
+}
 
 // ---------------------------------------------------------------------
 // ADS + ANALYTICS — only through shared/gameroom-sdk.js (MONETIZATION.md). Without an ad network the
@@ -2782,14 +2941,34 @@ const sdk = window.Gameroom;
 const offerStartGun = () => { if (!state.running && !state.over && !startGun) offer('gunBtn', 'start_weapon'); };
 sdk.init({ game: 'monster-lane', version: GAME_VERSION }).then(offerStartGun);
 setTimeout(offerStartGun, 5000);   // the app's ad network may need a few seconds to load the first ad
+drawArmory();
+// music: a quiet procedural shanty on the music bus (off switch in ⚙, remembered)
+const music = createMusic(audio, SONGS.shanty, { storageKey: 'monster-lane:music' });
+const drawMusic = () => { $('menuMusic').textContent = tr(music.on ? 'musicOn' : 'musicOff'); };
+$('menuMusic').addEventListener('click', e => { e.stopPropagation(); sfx.ensure(); if (music.toggle() && state.running && !state.paused) music.play(); drawMusic(); });
+drawMusic();
+let coinsRun = 0, coinsDoubled = false;
+$('coinsBtn').addEventListener('click', async () => {
+  if (coinsDoubled || !state.over) return;
+  $('coinsBtn').classList.add('hidden');
+  if (await watch('double_coins')) {
+    coinsDoubled = true;
+    stats.coins += coinsRun;
+    writeStats();
+    $('coinsGot').textContent = tr('coinsDoubled', { n: coinsRun });
+    drawArmory();
+    sfx.weapon();
+  }
+});
 let adHeld = false, startGun = false, firstMinute = false;
 sdk.on('adStart', () => {
   if (state.running && !state.paused) { adHeld = true; state.paused = true; }
   audio.setMuted(true);
+  if (typeof music !== 'undefined') music.stop();
 });
 let soundWasMuted = audio.muted;
 sdk.on('adEnd', () => {
-  if (adHeld) { adHeld = false; state.paused = false; clock.getDelta(); }
+  if (adHeld) { adHeld = false; state.paused = false; clock.getDelta(); music.play(); }
   audio.setMuted(soundWasMuted);
 });
 function offer(btnId, placement) {
@@ -2824,7 +3003,7 @@ function revive() {
   state.revived = true;
   state.over = false;
   state.running = true;
-  state.baseHp = BASE_HP * 0.6;
+  state.baseHp = Math.round(baseMax() * 0.6);
   // blow the front ranks away and push the captain back, so the player gets a real second chance
   for (const m of monsters) if (!m.dead && m.z > DEFENSE_Z - 16) { m.dead = true; if (Math.random() < 0.15) burst(m.x, 0.8, m.z, 0xc1121f, 2, 6, 0.9); }
   for (const b of bosses) { b.z = Math.min(b.z, DEFENSE_Z - 18); b.struck = false; }
@@ -2833,6 +3012,7 @@ function revive() {
   $('overScreen').classList.add('hidden');
   banner(tr('revived'), tr('revivedSub'), 2200);
   sfx.revive();
+  music.play();
   state.shake = 0.5;
   clock.getDelta();
   sdk.gameplayStart();
@@ -2854,8 +3034,9 @@ function startGame() {
   $('startScreen').classList.add('hidden');
   $('overScreen').classList.add('hidden');
   startWave();
+  music.play();
   sdk.gameplayStart();
-  sdk.track('game_start', { games: stats.games, weapon: curWeapon().id });
+  sdk.track('game_start', { games: stats.games, weapon: curWeapon().id, armory: ARMORY.map(a => armLv(a.id)).join('') });
   startGuide();
 }
 
@@ -2867,7 +3048,13 @@ function gameOver() {
   stats.bestWave = Math.max(stats.bestWave || 0, state.wave);
   stats.games++;
   stats.kills += state.kills;
+  coinsRun = Math.round(state.score / 25) + state.wave * 10;
+  coinsDoubled = false;
+  stats.coins += coinsRun;
   writeStats();
+  $('coinsGot').textContent = tr('coinsGot', { n: coinsRun });
+  drawArmory();
+  music.stop();
   drawBest();
   $('overStats').innerHTML =
     tr('overStats', { wave: state.wave, score: state.score, kills: state.kills, weapon: curWeapon().name, best: stats.best }) +
@@ -2880,6 +3067,7 @@ function gameOver() {
   sdk.track('game_over', { wave: state.wave, score: state.score, kills: state.kills, weapon: curWeapon().id, revived: !!state.revived });
   if (!state.revived) offer('reviveBtn', 'revive'); else $('reviveBtn').classList.add('hidden');
   if (!startGun) offer('gunBtn2', 'start_weapon');
+  offer('coinsBtn', 'double_coins');
   syncGunOffer();
 }
 
@@ -2947,7 +3135,7 @@ window.__run = (n = 60, dt = 1 / 60) => { for (let i = 0; i < n && state.running
 function closeSettings() { $('settingsMenu').classList.add('hidden'); }
 function setPaused(p) {
   if (!state.running) return;
-  if (p) sdk.gameplayStop(); else sdk.gameplayStart();
+  if (p) { sdk.gameplayStop(); music.stop(); } else { sdk.gameplayStart(); music.play(); }
   state.paused = p;
   $('pauseScreen').classList.toggle('hidden', !p);
   $('menuPause').textContent = tr(p ? 'resumeBtn' : 'pauseBtn');
@@ -2956,6 +3144,7 @@ function setPaused(p) {
 }
 
 $('startBtn').addEventListener('click', startGame);
+$('howBtn').addEventListener('click', () => { $('legend').classList.remove('hidden'); $('howBtn').classList.add('hidden'); });
 $('restartBtn').addEventListener('click', async () => {
   // between two runs is a natural break; the SDK caps how often a full-screen ad may show
   soundWasMuted = audio.muted;
