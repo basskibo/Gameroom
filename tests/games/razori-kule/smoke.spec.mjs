@@ -71,3 +71,20 @@ test.describe('Razori Kule · smoke', () => {
     await expect(page).toHaveTitle(/Smash the Towers|Razori Kule/);
   });
 });
+
+test.describe('Razori Kule · worlds', () => {
+  test('every 5 castles the world changes and the 5th is a boss fortress', async ({ game, page }) => {
+    await game.open();
+    const at = async n => page.evaluate(k => { window.__razori.setLevel(k); return [window.__razori.theme(), window.__razori.boss()]; }, n);
+    expect(await at(1)).toEqual(['meadow', false]);
+    expect(await at(5)).toEqual(['meadow', true]);
+    expect(await at(6)).toEqual(['desert', false]);
+    expect(await at(11)).toEqual(['snow', false]);
+    expect(await at(16)).toEqual(['night', false]);
+    expect(await at(21)).toEqual(['meadow', false]);
+    await expect(page.locator('#ehp-label')).not.toContainText('☠');
+    await at(10);
+    await expect(page.locator('#ehp-label')).toContainText('☠');
+    game.expectNoErrors();
+  });
+});

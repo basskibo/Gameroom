@@ -150,6 +150,7 @@
     <div class="card">
       <h1 id="set-title" style="font-size:30px">Settings</h1>
       <button class="btn" id="mute" type="button"></button>
+      <button class="btn ghost" id="music" type="button"></button>
       <button class="btn ghost" id="lang" type="button"></button>
       <!-- gameroom:back — link nazad na landing (ne brisati) -->
       <a href="../../" id="gameroom-back">⌂ Back to Gameroom</a>
@@ -163,6 +164,7 @@
 <script src="../../shared/gameroom-sdk.js"></script>
 <script type="module">
 import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
+import { createMusic, SONGS } from '../../shared/gameroom-music.js';
 (function () {
   const WORLD_W = 1600, WORLD_H = 900, CELL = 10;
   const COLS = WORLD_W / CELL, ROWS = WORLD_H / CELL;
@@ -199,6 +201,8 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
       cont: 'NASTAVI · nivo {n}', newGame: 'Nova igra od nivoa 1', retryLevel: 'Probaj ponovo',
       ad: 'REKLAMA', doubleScore: '×2 poena za ovaj zamak', doubled: 'Poeni duplirani!', refill: 'Pune rakete',
       tutorial: 'Povuci unazad i pusti', levelUp: 'Nivo {n}',
+      bossCastle: '☠ BOSS TVRĐAVA! Jača je i puca dvostruko', world_meadow: '🌿 Svet 1: Livade', world_desert: '🏜 Svet 2: Pustinja',
+      world_snow: '❄ Svet 3: Snežne planine', world_night: '🌙 Svet 4: Noć', musicOn: 'Muzika: uključena', musicOff: 'Muzika: isključena',
     },
     en: {
       title: 'Smash the Towers', blurb: 'Pull back and release. The castle grows every level. A barrel shows up sometimes, in a random spot. A crate grants a spell: quake, ice, meteor, mend, or a volley.',
@@ -223,6 +227,8 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
       cont: 'CONTINUE · level {n}', newGame: 'New game from level 1', retryLevel: 'Try again',
       ad: 'AD', doubleScore: '×2 points for this castle', doubled: 'Points doubled!', refill: 'Full rockets',
       tutorial: 'Pull back and let go', levelUp: 'Level {n}',
+      bossCastle: '☠ BOSS FORTRESS! Tougher, and it fires twice', world_meadow: '🌿 World 1: Meadows', world_desert: '🏜 World 2: Desert',
+      world_snow: '❄ World 3: Snowy peaks', world_night: '🌙 World 4: Night', musicOn: 'Music: on', musicOff: 'Music: off',
     },
   };
 
@@ -246,6 +252,7 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
   const bus = createAudioBus({ storageKey: 'razori-kule:audio' });
   if (load('razori-kule:audio', null) == null && load('razori-kule:mute', '0') === '1') bus.setMuted(true);
   bus.ambience({ wind: 0.8, birds: 0.6 });
+  const music = createMusic(bus, SONGS.march, { storageKey: 'razori-kule:music', volume: 0.5 });
 
   // progress (versioned): the highest castle reached, stars per castle. A lost castle is retried, not reset to 1.
   const PROGRESS_KEY = 'razori-kule:progress';
@@ -264,10 +271,12 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
   sdk.on('adStart', () => {
     if (playing && !over && !paused) { adHeld = true; paused = true; }
     bus.setMuted(true);
+    music.stop();
   });
   sdk.on('adEnd', () => {
     if (adHeld) { adHeld = false; paused = false; }
     bus.setMuted(soundWasMuted);
+    if (playing) music.play();
   });
 
   const canvas = document.getElementById('c');
@@ -341,9 +350,33 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     return solid[i] === 1;
   }
 
+  // worlds: every 5 castles the land changes (meadow → desert → snow → night, then again)
+  const THEMES = [
+    { id: 'meadow', sky: ['#4f9be0', '#9fd2f3', '#fbe9cf'], halo: '255,246,214', sun: '#fffbe8',
+      ranges: [['#c7d8e8', '#dde9f2'], ['#9fbacb', '#c3d5e1'], ['#6f9a86', '#9bbcaa']], snowCaps: true,
+      soil: [192, 118, 76], rock: [150, 138, 122], skin: [54, 148, 68], snowTop: true, tree: 'pine',
+      water: ['64,190,214', '18,92,132'], cloud: 'rgba(255,255,255,0.96)', cloudShade: 'rgba(176,196,222,0.55)' },
+    { id: 'desert', sky: ['#3f8fd8', '#a8d6ee', '#ffe2b0'], halo: '255,236,190', sun: '#fff6d8',
+      ranges: [['#e9cfa6', '#f4e2c4'], ['#d9ad78', '#e8c99c'], ['#c08a52', '#d6a873']], snowCaps: false,
+      soil: [214, 160, 96], rock: [196, 150, 104], skin: [222, 186, 120], snowTop: false, tree: 'cactus',
+      water: ['70,200,200', '20,110,130'], cloud: 'rgba(255,255,255,0.9)', cloudShade: 'rgba(222,196,160,0.5)' },
+    { id: 'snow', sky: ['#7fa8d0', '#c6dcec', '#eef4f8'], halo: '240,248,255', sun: '#ffffff',
+      ranges: [['#dfe9f2', '#eef4f9'], ['#b9cddd', '#d6e3ee'], ['#8fa9bd', '#b3c7d6']], snowCaps: true,
+      soil: [150, 110, 86], rock: [170, 176, 186], skin: [236, 244, 250], snowTop: true, tree: 'snowpine',
+      water: ['110,170,200', '30,70,110'], cloud: 'rgba(255,255,255,0.95)', cloudShade: 'rgba(170,186,206,0.55)' },
+    { id: 'night', sky: ['#0b1636', '#1d2f5e', '#41466e'], halo: '200,220,255', sun: '#eef3ff', moon: true,
+      ranges: [['#2a3a64', '#34466f'], ['#1f2d50', '#2a3a5f'], ['#18263e', '#22334c']], snowCaps: false,
+      soil: [120, 80, 64], rock: [96, 96, 110], skin: [40, 96, 60], snowTop: false, tree: 'pine',
+      water: ['30,70,120', '8,24,52'], cloud: 'rgba(120,136,180,0.45)', cloudShade: 'rgba(40,50,90,0.4)', dark: true },
+  ];
+  const theme = () => THEMES[Math.floor((Math.max(1, level) - 1) / 5) % THEMES.length];
+  const isBoss = () => level % 5 === 0;
+  const STARS = Array.from({ length: 90 }, (_, i) => [(i * 733) % 1000 / 1000, (i * 397) % 1000 / 1000 * 0.6, 0.5 + (i % 5) * 0.3]);
+
   function paintTerrain() {
     const img = tctx.createImageData(WORLD_W, WORLD_H);
     const d = img.data;
+    const TH = theme();
     solid.fill(0);
     for (let x = 0; x < WORLD_W; x++) {
       const gy = groundY(x) | 0;
@@ -356,12 +389,13 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
         let r, g, b;
         if (rocky && depth < 46) {
           const f = depth / 46;   // weathered rock fading into the soil below
-          r = 150 + (j % 16) + f * 30; g = 138 + (j % 12) - f * 18; b = 122 - f * 44;
+          const R = TH.rock, S = TH.soil;
+          r = R[0] + (j % 16) + f * (S[0] - R[0]); g = R[1] + (j % 12) + f * (S[1] - R[1]); b = R[2] + f * (S[2] - R[2]);
         } else {
           const dark = Math.min(60, (depth / 6) | 0);
           const band = Math.sin(y * 0.09 + Math.sin(x * 0.011) * 2.6 + (j % 3) * 0.1) > 0.82 ? 9 : 0;   // soil strata
           const pebble = j > 96 ? 26 : 0;
-          r = 192 - dark - band + (j % 8) + pebble; g = 118 - (dark >> 1) - band + pebble; b = 76 - (dark >> 2) + pebble;
+          r = TH.soil[0] - dark - band + (j % 8) + pebble; g = TH.soil[1] - (dark >> 1) - band + pebble; b = TH.soil[2] - (dark >> 2) + pebble;
         }
         const i = (y * WORLD_W + x) * 4;
         d[i] = Math.min(255, r * light);
@@ -383,7 +417,8 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
   function paintSkin() {
     const img = tctx.getImageData(0, 0, WORLD_W, WORLD_H);
     const d = img.data;
-    const snowLine = peakY() + 34;
+    const TH = theme();
+    const snowLine = TH.snowTop ? peakY() + 34 : -1;
     for (let x = 0; x < WORLD_W; x++) {
       let top = -1;
       for (let y = 0; y < WATER_Y; y += 2) {
@@ -397,7 +432,7 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
         const i = (y * WORLD_W + x) * 4;
         if (d[i + 3] < 40) break;
         if (snow && k < 8) { d[i] = 238; d[i + 1] = 247; d[i + 2] = 252; }
-        else { d[i] = 54 + (k % 3) * 6; d[i + 1] = 148; d[i + 2] = 68; }
+        else { d[i] = TH.skin[0] + (k % 3) * 6; d[i + 1] = TH.skin[1]; d[i + 2] = TH.skin[2]; }
       }
     }
     tctx.putImageData(img, 0, 0);
@@ -698,7 +733,7 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     const width = cols * (stoneW + 2) + 12;
     const baseX = 1544 - width;
     const gR = groundY(baseX + width * 0.5);
-    const mul = 1 + (lv - 1) * 0.14;
+    const mul = (1 + (lv - 1) * 0.14) * (lv % 5 === 0 ? 1.35 : 1);   // every 5th castle is a boss fortress
     const hp = (n) => Math.max(14, Math.round(n * mul));
     addBlock('enemy', baseX, gR - 32, width, 36, 'base', hp(78 + lv * 9));
     let coreSet = false;
@@ -1472,7 +1507,7 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     enemyAng = best.ang;
     const kind = spell === 'meteor' ? 'meteor' : 'normal';
     let shots = spell === 'fan' ? 3 : 1;
-    if (level >= 6 && shots === 1) shots = 2;
+    if ((level >= 6 || isBoss()) && shots === 1) shots = 2;
     const j = (Math.random() - 0.5) * Math.max(14, 96 - level * 6);
     const sp = Math.hypot(best.vx, best.vy);
     for (let i = 0; i < shots; i++) {
@@ -1614,7 +1649,11 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     try { sdk.gameplayStart(); } catch (e) {}
     try { sdk.track('game_start', { level }); } catch (e) {}
     sessionSent = false;
-    if (won) toast(t('levelUp', { n: level }));
+    if (won) {
+      const w = theme(), prevW = THEMES[Math.floor((level - 2) / 5) % THEMES.length];
+      toast(isBoss() ? t('bossCastle') : w !== prevW ? t('world_' + w.id) : t('levelUp', { n: level }));
+      if (isBoss()) { shake = Math.max(shake, 10); bus.tone({ f: 70, f2: 40, d: 0.8, type: 'sawtooth', v: 0.12 }); }
+    }
     refreshHud();
     refreshSpecials();
     refreshMagics();
@@ -1736,7 +1775,7 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     const multi = salvo > 1 ? '  ·  ×' + salvo : '';
     document.getElementById('ammo').textContent = t('ammo') + ' ' + ammo + multi + tag;
     document.getElementById('php-label').textContent = t('you');
-    document.getElementById('ehp-label').textContent = t('foe') + ' · ' + t('level') + ' ' + level;
+    document.getElementById('ehp-label').textContent = (isBoss() ? '☠ ' : '') + t('foe') + ' · ' + t('level') + ' ' + level;
     document.getElementById('php-bar').style.width = Math.round(hpOf('player') * 100) + '%';
     document.getElementById('ehp-bar').style.width = Math.round(hpOf('enemy') * 100) + '%';
     const refill = document.getElementById('refill');
@@ -1764,6 +1803,7 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     document.getElementById('set-title').textContent = t('settings');
     document.getElementById('gear').setAttribute('aria-label', t('settings'));
     document.getElementById('mute').textContent = bus.muted ? t('soundOff') : t('soundOn');
+    document.getElementById('music').textContent = music.on ? t('musicOn') : t('musicOff');
     document.getElementById('lang').textContent = lang === 'sr' ? 'English' : 'Srpski';
     document.getElementById('gameroom-back').textContent = t('back');
     document.getElementById('set-close').textContent = t('close');
@@ -1778,6 +1818,7 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     if (level !== progress.level) { level = progress.level; placeWorld(); }
     score = levelStartScore = 0;
     veil.hidden = true;
+    setTimeout(() => music.play(), 50);
     playing = true;
     paused = false;
     over = null;
@@ -1936,6 +1977,27 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     ctx.fill();
   }
 
+  function drawTree(x, y, s) {
+    const kind = theme().tree;
+    if (kind === 'cactus') return drawCactus(x, y, s);
+    drawPine(x, y, s);
+    if (kind === 'snowpine') {
+      ctx.fillStyle = 'rgba(248,252,255,0.92)';
+      for (const [ty, w] of [[-80, 10], [-58, 16], [-36, 20]]) {
+        ctx.beginPath(); ctx.moveTo(x, y + ty * s); ctx.lineTo(x - w * s, y + (ty + 14) * s); ctx.lineTo(x + w * 0.8 * s, y + (ty + 14) * s); ctx.fill();
+      }
+    }
+  }
+  function drawCactus(x, y, s) {
+    const g = '#3f9a52', d = '#2c7340';
+    roundRect(x - 7 * s, y - 62 * s, 14 * s, 62 * s, 7 * s, g);
+    roundRect(x - 22 * s, y - 44 * s, 9 * s, 22 * s, 4.5 * s, g);
+    roundRect(x - 22 * s, y - 28 * s, 20 * s, 8 * s, 4 * s, g);
+    roundRect(x + 13 * s, y - 52 * s, 9 * s, 26 * s, 4.5 * s, g);
+    roundRect(x + 2 * s, y - 32 * s, 20 * s, 8 * s, 4 * s, g);
+    ctx.fillStyle = d;
+    ctx.fillRect(x - 1 * s, y - 58 * s, 2 * s, 54 * s);
+  }
   function drawPine(x, y, s) {
     ctx.fillStyle = '#4a2e1c';
     ctx.fillRect(x - 3 * s, y - 28 * s, 5 * s, 28 * s);
@@ -1962,13 +2024,14 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
   }
 
   function drawCloud(x, y, s) {
-    ctx.fillStyle = 'rgba(176,196,222,0.55)';     // soft shaded underside
+    const TH = theme();
+    ctx.fillStyle = TH.cloudShade;     // soft shaded underside
     ctx.beginPath();
     ctx.arc(x + 2, y + 7, 17 * s, 0, 7);
     ctx.arc(x + 24 * s, y + 10, 13 * s, 0, 7);
     ctx.arc(x - 20 * s, y + 11, 11 * s, 0, 7);
     ctx.fill();
-    ctx.fillStyle = 'rgba(255,255,255,0.96)';
+    ctx.fillStyle = TH.cloud;
     ctx.beginPath();
     ctx.arc(x, y, 18 * s, 0, 7);
     ctx.arc(x + 22 * s, y + 4, 14 * s, 0, 7);
@@ -2447,12 +2510,13 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     { k: 0.7, top: '#6f9a86', bot: '#9bbcaa', base: 760, pts: [[0, 620], [180, 575], [380, 610], [600, 560], [820, 605], [1040, 570], [1260, 612], [1480, 580], [1700, 600]] },
   ];
   function drawFar() {
+    const TH = theme();
     for (let li = 0; li < RANGES.length; li++) {
-      const R = RANGES[li], shift = camX * (1 - R.k);
+      const R = RANGES[li], shift = camX * (1 - R.k), col = TH.ranges[li];
       ctx.save();
       ctx.translate(shift, 0);
       const g = ctx.createLinearGradient(0, 400, 0, R.base);
-      g.addColorStop(0, R.top); g.addColorStop(1, R.bot);
+      g.addColorStop(0, col[0]); g.addColorStop(1, col[1]);
       ctx.fillStyle = g;
       ctx.beginPath();
       ctx.moveTo(-200, R.base);
@@ -2460,7 +2524,7 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
       for (const p of R.pts) ctx.lineTo(p[0], p[1]);
       ctx.lineTo(1900, R.base);
       ctx.fill();
-      if (R.snow) {
+      if (R.snow && TH.snowCaps) {
         ctx.fillStyle = 'rgba(255,255,255,0.75)';
         for (const p of R.pts) {
           if (p[1] > 440) continue;
@@ -2475,8 +2539,9 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
 
   function drawWater() {
     const g = ctx.createLinearGradient(0, WATER_Y, 0, WORLD_H + 200);
-    g.addColorStop(0, 'rgba(64, 190, 214, 0.86)');
-    g.addColorStop(1, 'rgba(18, 92, 132, 0.96)');
+    const TW = theme().water;
+    g.addColorStop(0, `rgba(${TW[0]},0.86)`);
+    g.addColorStop(1, `rgba(${TW[1]},0.96)`);
     ctx.beginPath();
     ctx.moveTo(-400, WATER_Y);
     for (let x = -400; x <= WORLD_W + 400; x += 20) {
@@ -2594,20 +2659,30 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const horizon = offsetY + (600 - camY) * zoom;
     const sky = ctx.createLinearGradient(0, 0, 0, Math.max(viewH * 0.4, horizon));
-    sky.addColorStop(0, '#4f9be0');
-    sky.addColorStop(0.6, '#9fd2f3');
-    sky.addColorStop(1, '#fbe9cf');
+    const TH = theme();
+    sky.addColorStop(0, TH.sky[0]);
+    sky.addColorStop(0.6, TH.sky[1]);
+    sky.addColorStop(1, TH.sky[2]);
     ctx.fillStyle = sky;
     ctx.fillRect(0, 0, viewW, viewH);
+    if (TH.dark) {
+      for (const [sx0, sy0, r] of STARS) {
+        ctx.globalAlpha = 0.5 + 0.5 * Math.sin(time * 2 + sx0 * 40);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(sx0 * viewW, sy0 * viewH, r, r);
+      }
+      ctx.globalAlpha = 1;
+    }
     const sunX = viewW * 0.18, sunY = Math.min(viewH * 0.14, horizon - 120) + 10;
     const halo = ctx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 150);
-    halo.addColorStop(0, 'rgba(255,246,214,0.75)'); halo.addColorStop(1, 'rgba(255,246,214,0)');
+    halo.addColorStop(0, `rgba(${TH.halo},0.75)`); halo.addColorStop(1, `rgba(${TH.halo},0)`);
     ctx.fillStyle = halo;
     ctx.fillRect(sunX - 150, sunY - 150, 300, 300);
-    ctx.fillStyle = '#fffbe8';
+    ctx.fillStyle = TH.sun;
     ctx.beginPath();
-    ctx.arc(sunX, sunY, 26, 0, 7);
+    ctx.arc(sunX, sunY, TH.moon ? 22 : 26, 0, 7);
     ctx.fill();
+    if (TH.moon) { ctx.fillStyle = TH.sky[0]; ctx.beginPath(); ctx.arc(sunX + 9, sunY - 6, 19, 0, 7); ctx.fill(); }
 
     ctx.setTransform(dpr * zoom, 0, 0, dpr * zoom, dpr * (offsetX - camX * zoom + sx), dpr * (offsetY - camY * zoom + sy));
     drawFar();
@@ -2620,7 +2695,7 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     for (let i = 0; i < trees.length; i++) {
       const tree = trees[i];
       if (tree.dead || !solidAt(tree.x, tree.y + 6)) continue;
-      drawPine(tree.x, tree.y + 8, tree.s);
+      drawTree(tree.x, tree.y + 8, tree.s);
     }
     for (let i = 0; i < chunks.length; i++) {
       const c = chunks[i];
@@ -2635,6 +2710,14 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     drawSmoke();
     drawWater();
     for (let i = 0; i < orbs.length; i++) drawOrb(orbs[i]);
+    if (TH.dark) {   // night: everything drawn so far goes moonlit blue; fire and sparks come after, so they glow
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.fillStyle = '#7d8cc4';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.restore();
+    }
     drawGlow();
     for (let i = 0; i < rockets.length; i++) drawRocket(rockets[i]);
     for (let i = 0; i < particles.length; i++) {
@@ -2733,8 +2816,8 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     if (p === paused) { pauseEl.hidden = !(p && showCard); return; }
     paused = p;
     pauseEl.hidden = !(p && showCard);
-    if (p) { try { sdk.gameplayStop(); } catch (e) {} bus.ambienceOn(false); }
-    else { hiddenPause = false; try { sdk.gameplayStart(); } catch (e) {} bus.ambienceOn(true); }
+    if (p) { try { sdk.gameplayStop(); } catch (e) {} bus.ambienceOn(false); music.stop(); }
+    else { hiddenPause = false; try { sdk.gameplayStart(); } catch (e) {} bus.ambienceOn(true); music.play(); }
     refreshHud();
   }
   window.addEventListener('keydown', (e) => {
@@ -2775,6 +2858,11 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     soundWasMuted = bus.muted;
     try { sdk.showMidgame('resume'); } catch (e) {}
   });
+  document.getElementById('music').addEventListener('click', () => {
+    bus.ensure();
+    music.toggle();
+    applyLang();
+  });
   document.getElementById('mute').addEventListener('click', () => {
     bus.ensure();
     bus.toggleMute();
@@ -2812,6 +2900,8 @@ import { createAudioBus, haptic } from '../../shared/gameroom-audio.js';
     finish, get progress() { return JSON.parse(JSON.stringify(progress)); },
     setAmmo(n) { ammo = n; ammoT = 0; refreshHud(); return ammo; },
     view() { return { w: viewW / zoom, zoom }; },
+    theme() { return theme().id; },
+    boss() { return isBoss(); },
     winNow() { const c = enemyCore(); if (c) { c.hp = 0; killBlock(c); } },
     loseNow() { const c = playerCore(); if (c) { c.hp = 0; killBlock(c); } },
     get rockets() { return rockets; },

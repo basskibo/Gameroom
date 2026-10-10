@@ -1,6 +1,6 @@
 # Razori Kule — tracker
 
-**Trenutno:** AAA prolaz 1 gotov (2026-10-10). Sledeće: mapa nivoa i svetovi (G02), boss zamkovi (G03).
+**Trenutno:** AAA prolaz 2 gotov (2026-10-10): svetovi, boss tvrđave, muzika. Sledeće: mapa nivoa sa zvezdicama, Android paket.
 
 ## Odluke potrebne od korisnika
 
@@ -15,7 +15,7 @@
 
 ## Faza C — Izgled
 - [x] Eksplozije, nebo, planine, more, teren, vinjeta
-- [ ] Svetovi / doba dana
+- [x] Svetovi / noć
 
 ## Faza D — Juice
 - [x] Plamen, trzaj, trag dima, usporenje, vibracija, zvezdice
@@ -23,7 +23,7 @@
 ## Faza E — UX, zvuk
 - [x] Uvodni gest, nastavak, kamera na telefonu
 - [x] Audio bus, eksplozije od šuma
-- [ ] Muzika
+- [x] Muzika
 
 ## Faza F — Monetizacija
 - [x] SDK, ponude samo kad postoje, midgame između zamkova
