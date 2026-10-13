@@ -17,6 +17,8 @@ export const SONGS = {
   camp: { bpm: 96, chords: [[48, ''], [55, ''], [57, 'm'], [53, '']], bass: [0, 0, 7, 0], arp: [0, 4, 7, 4, 12, 7, 4, 7], drums: 'soft' },
   // march for the castle siege: D minor, steady
   march: { bpm: 112, chords: [[50, 'm'], [46, ''], [48, ''], [45, '']], bass: [0, 0, 7, 0], arp: [0, 7, 12, 7, 3, 7, 12, 15], drums: 'march' },
+  // café lounge for a card table: Dm G C Am, soft triangle arpeggio
+  cafe: { bpm: 84, chords: [[50, 'm'], [55, ''], [48, ''], [57, 'm']], bass: [0, 7, 0, 7], arp: [0, 3, 7, 12, 15, 12, 7, 3], arpType: 'triangle', drums: 'soft', lead: [12, 0, 15, 0, 14, 0, 12, 0] },
 };
 
 export function createMusic(bus, song, { storageKey = '', volume = 0.55 } = {}) {
@@ -37,7 +39,7 @@ export function createMusic(bus, song, { storageKey = '', volume = 0.55 } = {}) 
       if (e % 2 === 0) bus.tone({ f: NOTE(root - 12 + song.bass[(e / 2) | 0]), d: spb * 1.7, type: 'triangle', v: 0.09 * v, delay, bus: 'music' });
       // arpeggio: chord tones mapped from the pattern (3 = third of this chord)
       const a = song.arp[e], semi = a === 3 || a === 15 ? a - 3 + third(chord) : a === 4 ? third(chord) : a;
-      bus.tone({ f: NOTE(root + 12 + semi), d: spb * 0.9, type: 'square', v: 0.018 * v, delay, bus: 'music' });
+      bus.tone({ f: NOTE(root + 12 + semi), d: spb * 0.9, type: song.arpType || 'square', v: (song.arpType ? 0.04 : 0.018) * v, delay, bus: 'music' });
       // a simple lead every other bar
       if (song.lead && bar % 2 === 1 && e % 2 === 0) {
         const l = song.lead[e], s2 = l === 15 ? 12 + third(chord) : l;

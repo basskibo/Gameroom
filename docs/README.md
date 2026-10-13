@@ -31,6 +31,7 @@ Folder `docs/` ne ide na Vercel (`.vercelignore`).
 | Razori Kule | [games/razori-kule/](games/razori-kule/README.md) | AAA prolaz 1 (2026-10-10): eksplozije, nebo, napredak, uvod, reklame za nagradu, 15 testova |
 | Surprizi | [games/surprizi/](games/surprizi/README.md) | Three.js keširan (HTML 860 → 257 KB), SDK (kids), kesica dana uz reklamu, 4 testa (2026-10-10) |
 | Osvoji svet | [games/osvoji-svet/](games/osvoji-svet/README.md) | SDK (kids), reklama za nagradu, efekti osvajanja, 4 testa (2026-10-10) |
+| Remi Vita | [games/remi-vita/](games/remi-vita/README.md) | Nova (2026-10-14): tabla za remi, 3D sto, glas, SDK, 17 testova |
 
 Za novu igru kopiraj [games/_template/](games/_template/) u `docs/games/<slug>/` i prati skill `game-audit` (`.claude/skills/game-audit/SKILL.md`).
 

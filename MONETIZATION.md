@@ -6,7 +6,7 @@
 
 | Faza | Stanje |
 |---|---|
-| Faza 0 — Temelji | 🔨 u toku (SDK, analitički događaji i reklame za nagradu u **svih 6 igara** od 2026-10-10; engleski gotov; čeka se PostHog ključ, politika privatnosti i verzija save-a u Pilani) |
+| Faza 0 — Temelji | 🔨 u toku (SDK, analitički događaji i reklame za nagradu u **svih 6 igara** od 2026-10-10, i u novoj Remi Viti od 2026-10-14; engleski gotov; čeka se PostHog ključ, politika privatnosti i verzija save-a u Pilani) |
 | Faza 1 — Portali | ⏸ |
 | Faza 1A — Google Play (Android), paralelno sa portalima | 🔨 u toku (Pilana: Capacitor + AdMob, test reklame) |
 | Faza 2 — Ulaganje u najbolju igru | ⏸ |
@@ -45,6 +45,7 @@ Igre po narudžbini (tačka 5) su verovatno najbrži pravi prihod. Surprizi se m
 - **Surprizi:** jedna besplatna kesica dnevno uz reklamu.
 - **Osvoji svet:** pomoć kod pitanja, dodatni život. Igra ima edukativni ugao (škole, edu portali). Urađeno 2026-10-10: pojačanje +50 % vojske (igra je strategija na mapi, pa „pomoć kod pitanja“ čeka edukativni kviz).
 - **Razori Kule (Smash the Towers):** +5 raketa posle poraza, ×2 poena za osvojen zamak, pune rakete u igri.
+- **Remi Vita (tabla za remi):** premium stolovi (Bordo, Noar) uz reklamu za nagradu (`theme`); reklama preko celog ekrana samo posle kraja igre. Kad reklame nisu dostupne, svi stolovi su slobodni.
 
 Stanje 2026-10-10 — povezana mesta: Pilana `boost_x2`; Monster Lane `revive`, `start_weapon`; Kamp `helper`, `order_x2`; Razori `extra_rockets`, `double_score`, `refill`; Osvoji svet `reinforce`; Surprizi `daily_bag`. Reklama preko celog ekrana samo između partija/nivoa i na nastavku posle pauze (SDK ograničava); u igrama za decu `kids: true`, Surprizi bez reklama preko celog ekrana. Detalji po igri: `docs/games/<slug>/README.md` → „Monetizacija“.
 
@@ -132,4 +133,4 @@ Stanje 2026-10-10 — povezana mesta: Pilana `boost_x2`; Monster Lane `revive`, 
 - **2026-10-09:** korisnik menja plan: **Google Play (Android) ide paralelno sa portalima**, počevši od Pilane (Capacitor + AdMob); Apple kasnije, kad budu podaci. Nova Faza 1A, stara Faza 3 postaje Apple + kupovina u aplikaciji. Troškovi: Play nalog 25 $ jednom, AdMob, Capacitor i alati besplatni; vreme za zatvoreno testiranje (12 testera / 14 dana za nove lične naloge), politika privatnosti i formulari su obavezni. Pilana: Kenney CC0 modeli (V1) gotovi, kreće Faza 0 (SDK, analitika, mesto za reklamu za nagradu) i Android projekat.
 - **2026-10-10:** korisnik traži ceo sajt i sve igre na engleskom. Odluka: **engleski je podrazumevani jezik, srpski ostaje kao izbor** (po planu, jezik po browseru + izbor u podešavanjima, zajednički za ceo sajt), i **igre dobijaju engleska imena** (srpsko ime ostaje u srpskom jeziku). Landing je redizajniran (video u hero-u, bento grid igara, trejler).
 - **2026-10-10:** korisnik traži isti „AAA“ prolaz kao za Pilanu za sve ostale igre, sa fokusom na Monster Lane i Razori Kule, bez pitanja („sam biraj best practice“). Urađeno: Monster Lane (GLB modeli umesto 2 MB paketa, bloom, juice, uvod, `revive`/`start_weapon`), Razori Kule (eksplozije, nebo, napredak i zvezdice, kamera na telefonu, tri reklame za nagradu), Kamp (post-obrada, trava i vetar, `helper`/`order_x2`), Osvoji svet (SDK kao igra za decu, `reinforce`), Surprizi (keširan Three.js, `daily_bag`). Odluke donete u ime korisnika: (1) Razori Kule — poraz ponavlja isti zamak umesto povratka na nivo 1 (zadržavanje igrača); (2) Osvoji svet tretiran kao igra za decu (`kids: true`), kako plan kaže; (3) Surprizi bez reklama preko celog ekrana. Upozorenje uz plan: polish svih igara i dalje odlaže Fazu 1 (portali) — sledeći korak treba da bude izlazak na CrazyGames/Play i merenje, ne nove funkcije.
-
+- **2026-10-14:** korisnik traži novu igru **Remi Vita** — tabla za remi (kartaška igra uživo): igrači, dealer koji se najavljuje, automatsko bodovanje (zatvaranje −20, ruka −40 i ostalima duplo), „wow“ dizajn i logo (karte + kafa). Urađeno po pravilima za nove igre (EN/SR, SDK, događaji, mesto za reklamu za nagradu `theme`). Upozorenje uz plan: Faza 0/1 i dalje čekaju (PostHog, portali); Remi Vita je alat za igranje uživo, pa je manje pogodna za portale sa igrama, a bolja za Google Play kao besplatna aplikacija sa reklamama.
