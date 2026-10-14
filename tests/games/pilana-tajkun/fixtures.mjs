@@ -24,6 +24,8 @@ class Game {
     // ?nointro skips the first-run camera fly-in, so camera tests start from a still camera
     await this.page.goto(URL + (query ? query + '&nointro' : '?nointro'));
     await this.page.waitForFunction(() => typeof window.__start === 'function' && typeof window.__debug === 'function');
+    // the boot loader covers the page (and takes the input) until the first frame and the models are in
+    await this.page.waitForFunction(() => !document.getElementById('boot'), null, { timeout: 90_000 });
   }
   async play() {
     await this.page.locator('#startBtn').click();

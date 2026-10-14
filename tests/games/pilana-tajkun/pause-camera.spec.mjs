@@ -67,6 +67,7 @@ test.describe('Pilana Tajkun · camera', () => {
   });
 
   test('wheel zoom stays inside its limits', async ({ game, page }) => {
+    test.slow(); // ten wheel steps, each waits for a frame: ~1 s a frame with software GL, plus the boot loader
     const box = await page.locator('canvas').boundingBox();
     await page.mouse.move(box.width / 2, box.height / 2);
     for (let i = 0; i < 4; i++) await page.mouse.wheel(0, 1500);

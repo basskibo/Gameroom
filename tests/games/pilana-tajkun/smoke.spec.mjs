@@ -10,6 +10,17 @@ test.describe('Pilana Tajkun · smoke', () => {
     game.expectNoErrors();
   });
 
+  test('boot loader covers the title card until the first frame and the models are in, then leaves', async ({ page }) => {
+    await page.goto(URL + '?nointro');
+    // the title card must not be tappable while the page is still building: the loader is on top of it
+    expect(await page.evaluate(() => !!document.getElementById('boot'))).toBe(true);
+    await page.waitForFunction(() => !document.getElementById('boot'), null, { timeout: 90_000 });
+    expect(await page.evaluate(() => window.__yardModels)).toBeTruthy();
+    await expect(page.locator('#startBtn')).toBeVisible();
+    await page.locator('#startBtn').click();
+    await expect(page.locator('#startScreen')).toBeHidden();
+  });
+
   test('PT-BUG-001: does not block on the 25 MB models-bundle.js over http', async ({ page, game }) => {
     const hits = [];
     page.on('request', r => { if (r.url().includes('models-bundle')) hits.push(r.url()); });

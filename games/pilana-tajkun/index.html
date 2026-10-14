@@ -35,6 +35,22 @@
 </script>
 <link rel="modulepreload" href="../../shared/vendor/three-0.170.0/build/three.module.min.js">
 <link rel="modulepreload" href="../../shared/vendor/three-0.170.0/examples/jsm/utils/BufferGeometryUtils.js">
+<script>
+// boot loader: covers the page until the yard is built, its shaders are compiled, the first frame is drawn and
+// the models are in; then it fades. The title card used to show at once while the page was still frozen.
+window.__boot = (() => {
+  let frame = false, models = false, mk = 0, done = false;
+  const set = () => { const f = document.getElementById('bootFill'); if (f) f.style.width = Math.round(((frame ? 0.5 : 0.22) + mk * 0.5) * 100) + '%'; };
+  const finish = () => {
+    if (done) return; done = true;
+    const el = document.getElementById('boot'); if (!el) return;
+    // two frames so the work queued by the models mounting is done before the title card can be tapped
+    requestAnimationFrame(() => requestAnimationFrame(() => { el.classList.add('out'); setTimeout(() => el.remove(), 650); }));
+  };
+  setTimeout(finish, 14000); // a slow phone or network still gets the game; the models pop in when they arrive
+  return { set, finish, get hold() { return frame && !done; }, frame() { frame = true; set(); if (models) finish(); }, models(k) { mk = Math.max(mk, k); set(); if (k >= 1) { models = true; if (frame) finish(); } } };
+})();
+</script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body {
@@ -293,6 +309,26 @@
   button.urow:not(.can):not(.maxed) .uprice { color: #b4bec5; background: #3c4852; box-shadow: 0 3px 0 #252f36; }
   button.urow.act { border-color: #7dcea0; }
   button.urow.act .uprice { color: #b6f5a0; font-size: 16px; }
+  /* ---- boot loader: a saw blade spins while a log slides through it */
+  #boot { position: fixed; inset: 0; z-index: 100; display: grid; place-content: center; justify-items: center; gap: 18px;
+    background: radial-gradient(80% 60% at 50% 40%, #4f8f3a 0%, #2f5e26 55%, #1b3a17 100%); transition: opacity .6s ease; font-family: inherit; }
+  #boot.out { opacity: 0; pointer-events: none; }
+  .bt-stage { position: relative; width: 220px; height: 170px; }
+  .bt-badge { position: absolute; left: 50%; top: 0; width: 120px; height: 120px; margin-left: -60px; border-radius: 34px; display: grid; place-items: center;
+    background: linear-gradient(160deg, #ffb347, #e8641e); box-shadow: 0 8px 0 #a04000, 0 18px 34px #0006; }
+  .bt-blade { width: 92px; height: 92px; animation: btSpin .7s linear infinite; }
+  @keyframes btSpin { to { transform: rotate(360deg); } }
+  .bt-log { position: absolute; left: 0; top: 126px; width: 96px; height: 30px; border-radius: 15px; background: linear-gradient(180deg, #b0763f, #7a4a22);
+    box-shadow: inset -10px 0 0 #d8a96b, inset -12px 0 0 #9b6533, 0 6px 10px #0004; animation: btLog 2.2s ease-in-out infinite; }
+  @keyframes btLog { 0% { transform: translateX(-30px); opacity: 0; } 15% { opacity: 1; } 85% { opacity: 1; } 100% { transform: translateX(160px); opacity: 0; } }
+  .bt-dust { position: absolute; left: 106px; top: 116px; width: 8px; height: 8px; border-radius: 50%; background: #f3d39a; opacity: 0; animation: btDust 1.1s ease-out infinite; }
+  .bt-dust:nth-of-type(2) { animation-delay: .35s; left: 112px; } .bt-dust:nth-of-type(3) { animation-delay: .7s; left: 100px; }
+  @keyframes btDust { 0% { transform: translate(0, 0) scale(.6); opacity: .9; } 100% { transform: translate(-26px, -46px) scale(1.4); opacity: 0; } }
+  .bt-title { color: #fff9ec; font-weight: 900; font-size: 30px; letter-spacing: .02em; text-shadow: 0 3px 0 #0003; }
+  .bt-bar { width: 200px; height: 8px; border-radius: 8px; background: #0003; overflow: hidden; box-shadow: inset 0 1px 0 #0003; }
+  .bt-bar i { display: block; height: 100%; width: 8%; border-radius: 8px; background: linear-gradient(90deg, #ffd84a, #ff9f43); transition: width .35s ease; }
+  .bt-text { color: #e9f3dd; font-size: 14px; font-weight: 700; opacity: .85; }
+  @media (prefers-reduced-motion: reduce) { .bt-blade, .bt-log, .bt-dust { animation: none; } .bt-log { opacity: 1; transform: translateX(62px); } }
   .overlay {
     position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
     background: #0d1418bb; pointer-events: auto; padding: 16px; z-index: 30;
@@ -450,6 +486,15 @@
 </style>
 </head>
 <body>
+<div id="boot" role="status" aria-live="polite">
+  <div class="bt-stage" aria-hidden="true">
+    <div class="bt-badge"><svg class="bt-blade" viewBox="0 0 100 100" aria-hidden="true"><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(0.0 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(22.5 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(45.0 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(67.5 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(90.0 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(112.5 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(135.0 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(157.5 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(180.0 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(202.5 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(225.0 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(247.5 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(270.0 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(292.5 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(315.0 50 50)"/><path d="M50 4 L58 16 L50 18 Z" fill="#e9eef2" transform="rotate(337.5 50 50)"/><circle cx="50" cy="50" r="33" fill="#d6dde3"/><circle cx="50" cy="50" r="33" fill="none" stroke="#9aa6af" stroke-width="2"/><circle cx="50" cy="50" r="22" fill="none" stroke="#b7c1c8" stroke-width="3" stroke-dasharray="6 5"/><circle cx="50" cy="50" r="9" fill="#e8641e" stroke="#a04000" stroke-width="3"/></svg></div>
+    <div class="bt-log"></div><span class="bt-dust"></span><span class="bt-dust"></span><span class="bt-dust"></span>
+  </div>
+  <div class="bt-title">SAWMILL TYCOON</div>
+  <div class="bt-bar"><i id="bootFill"></i></div>
+  <div class="bt-text">Firing up the sawmill…</div>
+</div>
 <div id="vignette"></div>
 <div id="ui">
   <div id="top">
@@ -7179,6 +7224,7 @@ function showLoad(f) {
   const bar = $('loadBar');
   bar.firstElementChild.style.transform = `scaleX(${clamp(f, 0, 1)})`;
   bar.classList.toggle('done', f >= 1);
+  window.__boot.models(clamp(f, 0, 1));
 }
 function updateConfetti(dt) {
   for (let i = confettiParts.length - 1; i >= 0; i--) {
@@ -8410,6 +8456,9 @@ const clock = new THREE.Clock();
 let time = 0, hudT = 0, shadowTick = 0, shadowCam = '';
 let frozenKey = '', moneyShown = null, moneyShownTxt = '';
 function render() {
+  // behind the boot loader there is nothing to see: after the first frame (which compiles the shaders) skip drawing
+  // until the loader is gone, so the models and the loader get the whole device
+  if (window.__boot.hold) { clock.getDelta(); requestAnimationFrame(render); return; }
   const raw = Math.min(clock.getDelta(), 1.5);
   if (!S.paused) gfx.tick(raw * 1000); // paused frames skip drawing, so they say nothing about the GPU
   // logic in small fixed steps so vehicles never tunnel through stops
@@ -9338,6 +9387,7 @@ async function mountYardModels() {
   } catch (err) {
     console.warn('Pilana models', err);
     window.__yardModels = String(err && err.message || err);
+    window.__boot.models(1); // play with the built-in models
   }
 }
 mountYardModels();
@@ -9448,12 +9498,13 @@ if (SIM > 0) {
   window.simLog = log;
   window.simInfo = { money: S.money, earned: S.earned, rate: incomeRate(), allMaxMin: allMaxT && +(allMaxT / 60).toFixed(1), firstBuy, lv: S.lv, stock: S.stockpile, boards: S.boards, trucks: trucks.map(t => [t.state, t.bay, t.loaded, +t.s.toFixed(1), +t.waitT.toFixed(1)]), forks: forks.map(f => [f.state, +f.blockT.toFixed(1), +f.pos.x.toFixed(1), +f.pos.z.toFixed(1)]) };
   document.title = 'SIMDONE';
+  window.__boot.finish();
   window.__simDone = true;
 } else {
   // the title card is plain HTML and shows at once; shaders compile off the main thread where the
   // browser can (KHR_parallel_shader_compile), and the first frame is drawn when they are ready
   applyCamera();
-  renderer.compileAsync(scene, camera).catch(() => {}).finally(() => requestAnimationFrame(render));
+  renderer.compileAsync(scene, camera).catch(() => {}).finally(() => requestAnimationFrame(() => { render(); window.__boot.frame(); }));
 }
 
 </script>

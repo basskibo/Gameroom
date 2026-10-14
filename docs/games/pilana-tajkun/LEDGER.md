@@ -2,6 +2,16 @@
 
 Hronološki dnevnik promena (najnovije gore). Format: [tracking.md](../../engineering/tracking.md).
 
+
+## 2026-10-14 — Loader do kraja učitavanja (PLAY više ne „zabode“)
+- **Problem:** kartica sa PLAY se pojavljivala odmah (običan HTML), a iza nje se još gradila scena (~9.000 linija sinhronog koda), kompajlirali shaderi i učitavali modeli; dodir na PLAY nije reagovao sekundama.
+- **Urađeno:** `#boot` loader u HTML-u (testera koja se vrti, trupac prolazi, piljevina, traka napretka). Otkriva igru tek kad su prvi frejm i modeli spremni (`window.__boot.frame()` / `.models(k)`), najkasnije posle 14 s. `modulepreload` za GLTFLoader, meshopt, SkeletonUtils, RoomEnvironment i zajedničke module.
+- Iza loadera se posle prvog frejma ne crta (`__boot.hold`): niko ne gleda, a telefon dobija ceo GPU za modele.
+- `modulepreload` za GLTFLoader/meshopt/zajedničke module probao i vratio: na Fast-4G su otimali protok glavnom modulu (vreme do `__start` 7 s → 30 s sa softverskim GL-om). Ostala su samo dva postojeća.
+- Testovi: fixture `open()` čeka da loader nestane; zoom točkićem dobio `test.slow()` (10 koraka × ~1 s po frejmu sa softverskim GL-om); novi test za loader.
+- **Napomena:** dva testa padaju i na staroj verziji na ovoj mašini (opterećenje 18–20): `onboarding` „guide … hands over“ (ključ vodiča ne stigne za 20 s) i `perf` „playable in under 6 s“ (stara 7,2–16,8 s sa softverskim GL-om; sa pravim GPU-om stara 2,3–2,4 s, nova 2,1–3,5 s).
+- **Merenja (Pixel 7 emulacija, CPU 4×, Iris Xe):** pre: kartica vidljiva od ~3 s, a stranica blokirana do ~8 s (najduži blok 2,8 s), dodir posle učitavanja ~1,5 s po Playwrightu. Posle: loader do 6,8–9,9 s; pravi dodir (CDP touch) do nestanka kartice 431 ms; `startGame()` 73 ms; naslovni ekran 30–60 fps.
+
 ## 2026-10-09 — HUD v2 (telefon) i uklanjanje ptica
 
 - **Urađeno:** uklonjene ptice (instancirani trouglovi). HUD preuređen: novac/brzina, traka resursa u jednoj kartici, red zadataka (hitna porudžbina sa trakom vremena + posao), ponuda kupca kao zlatna kartica sa trakom odbrojavanja, dok sa ikonama i oznakama, toast se pozicionira prema stvarnoj visini HUD-a (`placeToast`). Telefon: kad je panel otvoren ponuda je uvek zbijena (naslov, odbrojavanje, dva dugmeta; pravilo u tooltip-u), panel je niži (58 dvh); landscape: panel sa strane.

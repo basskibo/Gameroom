@@ -94,6 +94,7 @@ Brojevi linija su približni (2026-10-09). Zaglavlja: `grep -n "^// [A-Z]" games
 | `__deal(kind)`, `__rush(kind)` | ponuda kupca, hitna porudžbina |
 | `__scene()` | `{ scene, renderer, camera, fx }` za alate |
 | `window.__yardModels` | `true` kad su modeli učitani |
+| `window.__boot` | loader: `.frame()` (prvi frejm), `.models(k)` (napredak modela), `.finish()`; `#boot` nestaje kad su oba gotova ili posle 14 s |
 | `__buy(id)` | kupovina kao iz panela (sa herojskim trenutkom gradnje) |
 | `__tod(t)` | postavi doba dana (0–1) i zaključa ciklus |
 | `__guide()` | korak vodiča `{ step, t }` ili `null` |
