@@ -162,6 +162,25 @@
     width: 60vw; height: 60vw; max-width: 900px; max-height: 900px; border-radius: 50%;
   }
 
+  /* ---------- Android aplikacije: traka sa preuzimanjem APK-a ---------- */
+  .apps { padding: 0 0 clamp(64px, 8vw, 112px); }
+  .app-band {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: clamp(16px, 3vw, 36px);
+    padding: clamp(16px, 2.4vw, 28px); border-radius: var(--radius); background: var(--surface); box-shadow: 0 0 0 1px var(--line);
+  }
+  .app-band + .app-band { margin-top: 16px; }
+  .app-band img { width: clamp(72px, 9vw, 112px); aspect-ratio: 1; border-radius: 22px; object-fit: cover; }
+  .app-band .kicker { color: var(--accent); font: 800 12px 'Manrope', sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+  .app-band h3 { margin-top: 6px; font: 900 clamp(20px, 2.4vw, 32px)/1.05 'Unbounded', sans-serif; letter-spacing: -.02em; text-transform: uppercase; }
+  .app-band p { margin-top: 8px; color: var(--text-dim); font-weight: 600; line-height: 1.5; }
+  .app-band .actions { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+  .app-band small { color: var(--text-faint); font-weight: 600; font-size: 13px; }
+  @media (max-width: 760px) {
+    .app-band { grid-template-columns: auto minmax(0, 1fr); }
+    .app-band .actions { grid-column: 1 / -1; align-items: stretch; }
+    .app-band small { text-align: center; }
+  }
+
   /* ---------- bento igara (12 kolona, dense, bez rupa) ---------- */
   .bento {
     display: grid; gap: 16px;
@@ -347,6 +366,10 @@
     </div>
   </section>
 
+  <section class="apps" id="android" data-i18n-attr="aria-label:appsTitle">
+    <div class="wrap" id="apps"></div>
+  </section>
+
   <section class="chapter" id="trejler" data-i18n-attr="aria-label:navTrailer">
     <div class="glow" style="background:#c6ff3d; right:-25vw; top:30%; opacity:.1"></div>
     <div class="wrap">
@@ -468,6 +491,8 @@
       accent: ['#f5a623', '#4fa0d8'],
       emoji: '🪚',
       tags: ['3D', 'Tycoon', 'Idle'],
+      // Android app (GitHub Actions "Sawmill Tycoon (Android)" keeps this file at the newest build)
+      android: 'https://github.com/basskibo/Gameroom/releases/download/sawmill-android/Sawmill-Tycoon.apk',
     },
     {
       slug: 'kamp-tajkun',
@@ -520,6 +545,8 @@
       f2t: 'Nothing to download', f2p: 'No store, no install, no account. Tap a game and it loads.',
       f3t: 'Progress stays', f3p: 'Your sawmill, camp and collection are saved on your device, so you pick up where you left off.',
       ctaA: 'One click', ctaB: 'to play.', ctaSub: 'Nothing to install. Works on your phone and computer.',
+      appsTitle: 'Android apps', appKicker: 'Android app', appSub: 'The whole game on your phone, also offline.',
+      appDownload: 'Download for Android', appHint: 'APK · Android 7+ · allow the install when asked',
       random: 'Random game', toTop: 'Back to top', worksOn: 'Works on phone and computer', isNew: 'NEW',
       count: ({ n }) => `${n} ${n === 1 ? 'game' : 'games'}`,
       heroCount: ({ n }) => `${['Zero', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve'][n] || n} ${n === 1 ? 'game' : 'games'}.`,
@@ -536,6 +563,8 @@
       f2t: 'Bez preuzimanja', f2p: 'Nema prodavnice, instalacije ni naloga. Klikneš na igru i ona se učita.',
       f3t: 'Napredak ostaje', f3p: 'Pilana, kamp i kolekcija se čuvaju na tvom uređaju, pa nastavljaš gde si stao.',
       ctaA: 'Jedan klik', ctaB: 'do igre.', ctaSub: 'Bez instalacije. Radi na telefonu i računaru.',
+      appsTitle: 'Android aplikacije', appKicker: 'Android aplikacija', appSub: 'Cela igra na telefonu, radi i bez interneta.',
+      appDownload: 'Preuzmi za Android', appHint: 'APK · Android 7+ · dozvoli instalaciju kad pita',
       random: 'Nasumična igra', toTop: 'Na vrh', worksOn: 'Radi na telefonu i računaru', isNew: 'NOVO',
       count: ({ n }) => `${n} ${I.plural(n, 'igra', 'igre', 'igara')}`,
       heroCount: ({ n }) => `${['Nula', 'Jedna', 'Dve', 'Tri', 'Četiri', 'Pet', 'Šest', 'Sedam', 'Osam', 'Devet', 'Deset', 'Jedanaest', 'Dvanaest'][n] || n} ${I.plural(n, 'igra', 'igre', 'igara')}.`,
@@ -554,6 +583,7 @@
   const img = (g, which) => `games/${g.slug}/${esc(which === 'hero' && g.hero ? g.hero : g.cover)}`;
   const ICON_PLAY = '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>';
   const ICON_ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17 17 7M8 7h9v9"/></svg>';
+  const ICON_DOWNLOAD = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>';
   const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const store = {
     get(k) { try { return localStorage.getItem('gameroom:' + k); } catch (e) { return null; } },
@@ -609,6 +639,23 @@
       </div>
     </a>`;
   }).join('');
+
+  // ---- Android aplikacije: igre sa `android` linkom (APK iz GitHub release-a)
+  const apps = GAMES.filter(g => g.android);
+  document.getElementById('android').hidden = !apps.length;
+  document.getElementById('apps').innerHTML = apps.map(g => `
+    <div class="app-band">
+      ${g.cover ? `<img src="${img(g, 'cover')}" alt="" loading="lazy" decoding="async">` : ''}
+      <div>
+        <span class="kicker">${esc(I.t('appKicker'))}</span>
+        <h3>${esc(L(g, 'title'))}</h3>
+        <p>${esc(I.t('appSub'))}</p>
+      </div>
+      <div class="actions">
+        <a class="btn btn-lime" href="${esc(g.android)}" download data-app="${esc(g.slug)}">${ICON_DOWNLOAD} ${esc(I.t('appDownload'))}</a>
+        <small>${esc(I.t('appHint'))}</small>
+      </div>
+    </div>`).join('');
 
   // ---- marquee: naslovi igara sa malim slikama, duplirano za beskonačnu petlju
   const group = `<div class="marquee-group">${GAMES.map(g => `

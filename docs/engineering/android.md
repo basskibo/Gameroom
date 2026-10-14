@@ -21,6 +21,14 @@ Prva aplikacija: **Sawmill Tycoon** (Pilana Tajkun), `mobile/pilana-tajkun/`, `a
 
 Reklame idu kroz `shared/gameroom-sdk.js`: u aplikaciji se sam bira AdMob adapter (`@capacitor-community/admob`). Igra ne zna ništa o AdMob-u.
 
+## Automatski build i preuzimanje sa sajta
+
+- Workflow **Sawmill Tycoon (Android)** (`.github/workflows/android-sawmill.yml`) radi na svaki push na `main` koji menja `games/pilana-tajkun/`, `shared/` ili `mobile/pilana-tajkun/` (i ručno: Actions → Run workflow).
+- Verzija: `1.<broj builda>`, `versionCode` raste sam.
+- Rezultat ide u GitHub release `sawmill-android` (uvek isti link). Landing dugme „Download for Android“ vodi na
+  `https://github.com/basskibo/Gameroom/releases/download/sawmill-android/Sawmill-Tycoon.apk`. Igra dobija dugme dodavanjem `android: '<link>'` u `GAMES` u `index.html`.
+- **Ključ, jednom:** `mobile/pilana-tajkun/release-key.sh` pravi ključ u `~/.config/gameroom/`, lokalni `keystore.properties` i GitHub secrets `SAWMILL_*`. Bez ključa workflow pravi debug APK (svaki build drugačije potpisan → pre ažuriranja treba obrisati igru). **Napraviti rezervnu kopiju foldera** — bez ključa nema ažuriranja.
+
 ## Komande
 
 ```bash
@@ -49,7 +57,7 @@ Debug build dozvoljava `chrome://inspect` (WebView) — tako je provereno da AdM
    - ID-jevi jedinica (`ca-app-pub-…/…`) → `config/gameroom-config.js`, `testing: false`.
    - Dok aplikacija nije objavljena i povezana u AdMob-u, prave reklame mogu da ne dolaze — to je normalno.
    - `app-ads.txt` na domenu sajta (AdMob daje sadržaj).
-3. **Ključ za potpisivanje** (čuvati van repoa, i rezervnu kopiju — bez njega nema ažuriranja):
+3. **Ključ za potpisivanje** — najlakše `mobile/pilana-tajkun/release-key.sh` (gore). Ručno (čuvati van repoa, i rezervnu kopiju — bez njega nema ažuriranja):
    ```bash
    keytool -genkeypair -v -keystore ~/keys/sawmill-upload.jks -alias upload -keyalg RSA -keysize 2048 -validity 10000
    ```
