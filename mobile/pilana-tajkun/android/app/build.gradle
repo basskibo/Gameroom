@@ -1,10 +1,17 @@
 apply plugin: 'com.android.application'
 
-// Release signing: the upload key lives outside git. Create mobile/pilana-tajkun/keystore.properties with
-// storeFile, storePassword, keyAlias, keyPassword (see docs/engineering/android.md). Without it only debug builds work.
+// Release signing: the upload key lives outside git — mobile/pilana-tajkun/keystore.properties locally
+// (storeFile, storePassword, keyAlias, keyPassword), or ANDROID_KEYSTORE_* env vars in CI
+// (see docs/engineering/android.md). Without either only debug builds work.
 def keyProps = new Properties()
 def keyFile = rootProject.file('../keystore.properties')
 if (keyFile.exists()) keyFile.withInputStream { keyProps.load(it) }
+def keyValue = { String key, String env -> keyProps.getProperty(key) ?: System.getenv(env) }
+def keyStore = keyValue('storeFile', 'ANDROID_KEYSTORE_FILE')
+
+// Version: VERSION_CODE / VERSION_NAME from CI (each build a higher code), else 1 / "1.0".
+def versionCodeFromEnv = (System.getenv('VERSION_CODE') ?: '1') as int
+def versionNameFromEnv = System.getenv('VERSION_NAME') ?: '1.0'
 
 android {
     namespace = "rs.codemeup.sawmilltycoon"
@@ -13,8 +20,8 @@ android {
         applicationId "rs.codemeup.sawmilltycoon"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode versionCodeFromEnv
+        versionName versionNameFromEnv
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -24,17 +31,17 @@ android {
     }
     signingConfigs {
         release {
-            if (keyFile.exists()) {
-                storeFile file(keyProps['storeFile'])
-                storePassword keyProps['storePassword']
-                keyAlias keyProps['keyAlias']
-                keyPassword keyProps['keyPassword']
+            if (keyStore) {
+                storeFile file(keyStore)
+                storePassword keyValue('storePassword', 'ANDROID_KEYSTORE_PASSWORD')
+                keyAlias keyValue('keyAlias', 'ANDROID_KEY_ALIAS')
+                keyPassword keyValue('keyPassword', 'ANDROID_KEY_PASSWORD')
             }
         }
     }
     buildTypes {
         release {
-            if (keyFile.exists()) signingConfig signingConfigs.release
+            if (keyStore) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
