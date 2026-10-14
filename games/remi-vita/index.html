@@ -88,7 +88,7 @@
   #home .top { width: 100%; display: flex; justify-content: flex-end; }
   .hero { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: -24px; }
   .logo-wrap { width: 96px; height: 96px; position: relative; animation: logoIn 1.2s var(--spring) .1s both; }
-  .logo-wrap img { width: 100%; height: 100%; filter: drop-shadow(0 18px 40px rgba(0,0,0,.6)); border-radius: 34px; }
+  .logo-wrap img { width: 100%; height: 100%; filter: drop-shadow(0 18px 40px rgba(0,0,0,.6)); border-radius: 50%; }
   .logo-wrap::before { content: ''; position: absolute; inset: -30px; border-radius: 50%;
     background: radial-gradient(circle, rgba(231,184,102,.35), transparent 65%); animation: pulse 4s ease-in-out infinite; }
   @keyframes logoIn { from { opacity: 0; transform: translateY(30px) scale(.6); } to { opacity: 1; transform: none; } }
@@ -163,7 +163,7 @@
   #board { padding-left: 10px; padding-right: 10px; gap: 10px; }
   .board-top { display: flex; align-items: center; gap: 8px; }
   .board-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; }
-  .board-title img { width: 38px; height: 38px; border-radius: 11px; }
+  .board-title img { width: 40px; height: 40px; border-radius: 50%; }
   .board-title b { font-family: Fraunces, Georgia, serif; font-style: italic; font-weight: 800; font-size: 20px; display: block; line-height: 1; }
   .board-title small { color: var(--muted); font-size: 12px; font-weight: 700; }
   .dealer-banner { display: flex; align-items: center; gap: 12px; padding: 10px 14px; overflow: hidden; position: relative; }
@@ -416,7 +416,7 @@
 <section id="home" class="screen">
   <div class="top"><button class="icon-btn" data-open="settings" aria-label="Settings" data-i18n-attr="aria-label:settings"><svg class="ic"><use href="#i-gear"/></svg></button></div>
   <div class="hero">
-    <div class="logo-wrap"><img src="logo.svg" alt="Remi Vita"></div>
+    <div class="logo-wrap"><img src="logo.png" alt="Remi Vita"></div>
     <h1 class="title" id="titleWord">Remi Vita</h1>
     <p class="tagline" data-i18n="tagline">The rummy table, beautifully kept. Add players, the app tracks the dealer and counts every round.</p>
   </div>
@@ -462,7 +462,7 @@
 <!-- BOARD -->
 <section id="board" class="screen" hidden>
   <div class="board-top">
-    <div class="board-title"><img src="logo.svg" alt=""><div><b>Remi Vita</b><small id="roundInfo"></small></div></div>
+    <div class="board-title"><img src="logo.png" alt=""><div><b>Remi Vita</b><small id="roundInfo"></small></div></div>
     <button class="icon-btn" id="statsBtn" aria-label="Stats"><svg class="ic"><use href="#i-chart"/></svg></button>
     <button class="icon-btn" id="menuBtn" aria-label="Menu"><svg class="ic"><use href="#i-menu"/></svg></button>
   </div>

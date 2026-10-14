@@ -1,58 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-label="Remi Vita">
+  <!-- round café badge: lettering around the ring, a cup with steam in the middle, suit pips at the sides -->
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#3a2418"/><stop offset="1" stop-color="#140c08"/>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#f7e0a3"/><stop offset=".55" stop-color="#e2b65c"/><stop offset="1" stop-color="#c99a45"/>
     </linearGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fbe3a6"/><stop offset=".5" stop-color="#e7b866"/><stop offset="1" stop-color="#b9823a"/>
-    </linearGradient>
-    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fffaf0"/><stop offset="1" stop-color="#efe2c8"/>
-    </linearGradient>
-    <linearGradient id="cup" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#e9dcc6"/><stop offset=".35" stop-color="#fffdf8"/><stop offset="1" stop-color="#cdbb9f"/>
-    </linearGradient>
-    <radialGradient id="coffee" cx=".5" cy=".5" r=".6">
-      <stop offset="0" stop-color="#c98d55"/><stop offset=".55" stop-color="#7a4424"/><stop offset="1" stop-color="#3b1d0e"/>
+    <radialGradient id="felt" cx=".5" cy=".42" r=".62">
+      <stop offset="0" stop-color="#174a35"/><stop offset="1" stop-color="#0a2419"/>
     </radialGradient>
-    <filter id="sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000" flood-opacity=".45"/></filter>
+    <path id="top" d="M 44 128 A 84 84 0 0 1 212 128"/>
+    <path id="bottom" d="M 37 128 A 91 91 0 0 0 219 128"/>
   </defs>
-  <rect width="256" height="256" rx="58" fill="url(#bg)"/>
-  <rect x="6" y="6" width="244" height="244" rx="52" fill="none" stroke="url(#gold)" stroke-opacity=".55" stroke-width="3"/>
-  <!-- two fanned cards -->
-  <g filter="url(#sh)">
-    <g transform="rotate(-16 92 120)">
-      <rect x="44" y="44" width="92" height="128" rx="12" fill="url(#card)" stroke="#d8c39a" stroke-width="2"/>
-      <text x="56" y="72" font-family="Georgia,serif" font-weight="700" font-size="24" fill="#1d1a1a">A</text>
-      <path d="M90 92 C90 92 70 108 76 122 C80 131 90 129 92 122 C94 129 104 131 108 122 C114 108 94 92 92 92 Z" fill="#1d1a1a" transform="translate(-2 6) scale(1)"/>
-      <path d="M90 128 l-6 14 h16 z" fill="#1d1a1a" transform="translate(0 2)"/>
-    </g>
-    <g transform="rotate(14 168 120)">
-      <rect x="120" y="44" width="92" height="128" rx="12" fill="url(#card)" stroke="#d8c39a" stroke-width="2"/>
-      <text x="132" y="72" font-family="Georgia,serif" font-weight="700" font-size="24" fill="#c8302b">K</text>
-      <path d="M166 132 C150 118 140 108 146 98 C151 90 162 92 166 101 C170 92 181 90 186 98 C192 108 182 118 166 132 Z" fill="#c8302b"/>
-    </g>
+  <circle cx="128" cy="128" r="124" fill="url(#felt)"/>
+  <circle cx="128" cy="128" r="116" fill="none" stroke="url(#gold)" stroke-width="7"/>
+  <circle cx="128" cy="128" r="70" fill="none" stroke="url(#gold)" stroke-width="5"/>
+  <g fill="url(#gold)" font-family="'Fredoka', 'Nunito', 'Quicksand', 'Varela Round', 'Arial Rounded MT Bold', 'Manrope', sans-serif" font-weight="700" text-anchor="middle">
+    <text font-size="34" letter-spacing="1.5"><textPath href="#top" startOffset="50%">remi vita</textPath></text>
+    <text font-size="21" letter-spacing="1.2"><textPath href="#bottom" startOffset="50%">cards &amp; coffee</textPath></text>
   </g>
-  <!-- saucer + cup -->
-  <g filter="url(#sh)">
-    <ellipse cx="128" cy="214" rx="78" ry="16" fill="#d9c8ab"/>
-    <ellipse cx="128" cy="210" rx="78" ry="14" fill="#fbf4e6"/>
-    <ellipse cx="128" cy="210" rx="46" ry="7" fill="#e6d7bc"/>
-    <path d="M182 160 c26 -2 30 30 2 34" fill="none" stroke="#efe3cf" stroke-width="11" stroke-linecap="round"/>
-    <path d="M182 160 c26 -2 30 30 2 34" fill="none" stroke="url(#gold)" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>
-    <path d="M70 146 h116 c0 34 -22 64 -58 64 s-58 -30 -58 -64 z" fill="url(#cup)"/>
-    <ellipse cx="128" cy="146" rx="58" ry="13" fill="url(#gold)"/>
-    <ellipse cx="128" cy="146" rx="54" ry="11" fill="url(#coffee)"/>
-    <!-- latte-art heart -->
-    <path d="M128 154 C118 147 114 143 117 139 C119 136 125 137 128 141 C131 137 137 136 139 139 C142 143 138 147 128 154 Z" fill="#f3dcb4" opacity=".92"/>
+  <!-- pips where the ring text breaks -->
+  <path fill="url(#gold)" d="M30 120c-5 6-9 9-9 13a4.5 4.5 0 0 0 7.5 3.2L27 141h6l-1.5-4.8A4.5 4.5 0 0 0 39 133c0-4-4-7-9-13z"/>
+  <path fill="#d1453a" d="M226 141c-6-5-11-8.5-11-13a5 5 0 0 1 11-1.5 5 5 0 0 1 11 1.5c0 4.5-5 8-11 13z"/>
+  <!-- cup, saucer, steam -->
+  <g fill="url(#gold)">
+    <path d="M90 118h64v18c0 17-13 28-32 28s-32-11-32-28z"/>
+    <path d="M154 122h5a12 12 0 0 1 0 24h-7l2-6h5a6 6 0 0 0 0-12h-5z"/>
+    <rect x="84" y="167" width="76" height="6" rx="3"/>
   </g>
-  <!-- steam -->
-  <g fill="none" stroke-linecap="round">
-    <g stroke="#3a2418" stroke-width="9" opacity=".35">
-      <path d="M110 132 c-10 -12 10 -20 0 -34"/><path d="M130 128 c-10 -14 12 -22 0 -40"/><path d="M150 132 c-10 -12 10 -20 0 -34"/>
-    </g>
-    <g stroke="url(#gold)" stroke-width="5.5">
-      <path d="M108 128 c-10 -12 10 -20 0 -34"/><path d="M128 124 c-10 -14 12 -22 0 -40"/><path d="M148 128 c-10 -12 10 -20 0 -34"/>
-    </g>
+  <g fill="none" stroke="url(#gold)" stroke-width="5" stroke-linecap="round">
+    <path d="M108 110c-6-7 6-11 0-19s6-11 0-18"/>
+    <path d="M122 110c-6-7 6-11 0-19s6-11 0-18"/>
+    <path d="M136 110c-6-7 6-11 0-19s6-11 0-18"/>
   </g>
 </svg>
