@@ -44,19 +44,19 @@ const floorCanvas = () => canvas(256, 256, (g) => {
 function facadeCanvases() {
   const lit = [];
   const map = canvas(512, 512, (g) => {
-    g.fillStyle = '#4a2a1d'; g.fillRect(0, 0, 512, 512);
+    g.fillStyle = '#9c8a62'; g.fillRect(0, 0, 512, 512); // mortar
     for (let y = 0; y < 512; y += 8) for (let x = (y / 8) % 2 ? -12 : 0; x < 512; x += 24) {
-      g.fillStyle = `hsl(${rnd(10, 22)},${rnd(30, 45)}%,${rnd(20, 30)}%)`; g.fillRect(x + 1, y + 1, 22, 6);
+      g.fillStyle = `hsl(${rnd(40, 47)},${rnd(38, 52)}%,${rnd(58, 68)}%)`; g.fillRect(x + 1, y + 1, 22, 6); // yellow facade brick
     }
     for (let f = 0; f < 2; f++) {
       const y0 = f * 256;
-      g.fillStyle = '#7d7366'; g.fillRect(0, y0 + 236, 512, 20); // concrete floor band
+      g.fillStyle = '#c9c2b2'; g.fillRect(0, y0 + 236, 512, 20); // concrete floor band
       for (let w = 0; w < 3; w++) {
         const x = 40 + w * 165, y = y0 + 70;
-        g.fillStyle = '#9c9384'; g.fillRect(x - 8, y - 8, 116, 146);
+        g.fillStyle = '#e8e4dc'; g.fillRect(x - 8, y - 8, 116, 146);
         const on = Math.random() < 0.3; lit.push([x, y, on]);
         g.fillStyle = on ? '#e9b56c' : '#141a26'; g.fillRect(x, y, 100, 130);
-        g.fillStyle = '#9c9384'; g.fillRect(x + 47, y, 6, 130); g.fillRect(x, y + 58, 100, 6);
+        g.fillStyle = '#e8e4dc'; g.fillRect(x + 47, y, 6, 130); g.fillRect(x, y + 58, 100, 6);
         if (on) { g.fillStyle = 'rgba(120,60,20,.35)'; g.fillRect(x, y, 22, 130); g.fillRect(x + 78, y, 22, 130); } // curtains
       }
     }
@@ -234,26 +234,57 @@ export function buildCafe({ tex, reduced = false }) {
   sign.position.set(1.4, slopeY(2.1) + 0.5, 2.1);
   for (const dx of [-1.2, 1.2]) box(0.05, 0.6, 0.05, M.metal, 1.4 + dx, slopeY(2.05) + 0.15, 2.05);
 
-  // back wall: the way in, a glazed double door into the lit café inside the building, a sign above it, a TV beside
-  const frameMat = new THREE.MeshStandardMaterial({ color: 0xe9e4da, roughness: 0.6 });
-  const DX = -0.6, DW = 1.7, DH = 2.25, DZ = Z0 + 0.04;
-  const doorGlow = add(new THREE.Mesh(new THREE.PlaneGeometry(DW, DH), new THREE.MeshBasicMaterial({ color: 0xc98a4a })));
-  doorGlow.position.set(DX, YF + DH / 2, DZ);
-  box(0.09, DH + 0.09, 0.08, frameMat, DX - DW / 2, YF + DH / 2, DZ + 0.02); box(0.09, DH + 0.09, 0.08, frameMat, DX + DW / 2, YF + DH / 2, DZ + 0.02);
-  box(DW + 0.18, 0.09, 0.08, frameMat, DX, YF + DH, DZ + 0.02); box(0.06, DH, 0.06, frameMat, DX, YF + DH / 2, DZ + 0.03);
-  for (const sx of [-1, 1]) { // door panes with a kick plate, and handles
-    box(DW / 2 - 0.12, 0.35, 0.03, frameMat, DX + sx * DW / 4, YF + 0.2, DZ + 0.03);
-    box(0.03, 0.4, 0.04, M.metal, DX + sx * 0.12, YF + 1.05, DZ + 0.07);
+  // back wall: the way in, like the real one: a wide grey aluminium glass door standing open onto a lit stairwell,
+  // a brown glass transom with the name above it
+  const alu = new THREE.MeshStandardMaterial({ color: 0xbfc3c6, metalness: 0.55, roughness: 0.35 });
+  const glassDoor = new THREE.MeshStandardMaterial({ color: 0xcfe0e6, metalness: 0.1, roughness: 0.05, transparent: true, opacity: 0.22, depthWrite: false, side: THREE.DoubleSide });
+  const DX = -0.6, DW = 2.3, DH = 1.98, DZ = Z0 + 0.04, TH = 0.6; // door opening, transom height above it
+  const inside = tex(canvas(512, 512, (g, w, h) => { // what you see through the open door: tiles, a stair rail, warm light
+    const wall = g.createLinearGradient(0, 0, 0, h); wall.addColorStop(0, '#e9c9a0'); wall.addColorStop(1, '#b98a62');
+    g.fillStyle = wall; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#3a4e6a'; g.fillRect(300, 300, 180, 70); g.fillRect(300, 260, 180, 44); // blue bench at the back
+    g.fillStyle = '#7c7f84'; g.beginPath(); g.moveTo(0, h); g.lineTo(w, h); g.lineTo(w * 0.78, 380); g.lineTo(w * 0.22, 380); g.closePath(); g.fill(); // floor
+    g.strokeStyle = 'rgba(40,40,44,.6)'; g.lineWidth = 3;
+    for (let i = 0; i <= 8; i++) { const t = i / 8; g.beginPath(); g.moveTo(w * 0.22 + t * w * 0.56, 380); g.lineTo(t * w, h); g.stroke(); }
+    for (const y of [400, 430, 470, 512]) { const k = (y - 380) / (h - 380); g.beginPath(); g.moveTo(w * 0.22 * (1 - k), y); g.lineTo(w - w * 0.22 * (1 - k), y); g.stroke(); }
+    g.fillStyle = '#6d6f73'; for (let i = 0; i < 6; i++) g.fillRect(20, 380 - i * 38, 120 - i * 10, 38); // stairs going up on the left
+    g.strokeStyle = '#1d1d20'; g.lineWidth = 6; g.beginPath(); g.moveTo(150, 380); g.lineTo(260, 150); g.lineTo(512, 150); g.stroke();
+    g.lineWidth = 3; for (let x = 270; x < 512; x += 18) { g.beginPath(); g.moveTo(x, 150); g.lineTo(x, 250); g.stroke(); }
+    const lamp = g.createRadialGradient(256, 60, 0, 256, 60, 260); lamp.addColorStop(0, 'rgba(255,230,180,.55)'); lamp.addColorStop(1, 'rgba(255,230,180,0)');
+    g.fillStyle = lamp; g.fillRect(0, 0, w, h);
+  }));
+  const doorway = add(new THREE.Mesh(new THREE.PlaneGeometry(DW, DH), new THREE.MeshBasicMaterial({ map: inside })));
+  doorway.position.set(DX, YF + DH / 2, DZ);
+  // frame: jambs, head, and the transom with the brown glass sign
+  box(0.1, DH + TH, 0.12, alu, DX - DW / 2 - 0.05, YF + (DH + TH) / 2, DZ + 0.04); box(0.1, DH + TH, 0.12, alu, DX + DW / 2 + 0.05, YF + (DH + TH) / 2, DZ + 0.04);
+  box(DW + 0.2, 0.1, 0.12, alu, DX, YF + DH, DZ + 0.04); box(DW + 0.2, 0.1, 0.12, alu, DX, YF + DH + TH, DZ + 0.04);
+  const signTex2 = tex(canvas(768, 256, (g, w, h) => {
+    g.fillStyle = '#3a2a22'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#ece6dc'; g.font = '800 64px Manrope, "Arial Rounded MT Bold", Arial, sans-serif'; g.textBaseline = 'alphabetic';
+    g.fillText('Remi', 150, 92); g.fillText('Vita', 150, 150);
+    g.font = '900 122px Manrope, "Arial Rounded MT Bold", Arial, sans-serif'; g.fillText('Cafe', 150, 240);
+  }));
+  const sign2 = add(new THREE.Mesh(new THREE.PlaneGeometry(DW, TH - 0.1), new THREE.MeshStandardMaterial({ map: signTex2, emissiveMap: signTex2, emissive: 0xffffff, emissiveIntensity: 0.18, roughness: 0.2 })));
+  sign2.position.set(DX, YF + DH + TH / 2, DZ + 0.03);
+  // two door leaves standing open outwards, hinged at the jambs
+  const leafW = DW / 2 - 0.04;
+  for (const sx of [-1, 1]) {
+    const hinge = add(new THREE.Group()); hinge.position.set(DX + sx * DW / 2, YF, DZ + 0.06); hinge.rotation.y = sx * 1.25;
+    const leaf = new THREE.Group(); leaf.position.x = -sx * leafW / 2; hinge.add(leaf);
+    const part = (w, h, d, m, x, y) => { const k = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); k.position.set(x, y, 0); leaf.add(k); };
+    part(0.08, DH - 0.04, 0.05, alu, -leafW / 2 + 0.04, DH / 2); part(0.08, DH - 0.04, 0.05, alu, leafW / 2 - 0.04, DH / 2);
+    part(leafW, 0.08, 0.05, alu, 0, 0.04); part(leafW, 0.08, 0.05, alu, 0, DH - 0.06); part(leafW, 0.06, 0.05, alu, 0, 1.05);
+    const pane = new THREE.Mesh(new THREE.PlaneGeometry(leafW - 0.14, DH - 0.18), glassDoor); pane.position.set(0, DH / 2, 0); pane.renderOrder = 2; leaf.add(pane);
+    part(0.03, 0.35, 0.06, M.metal, -sx * (leafW / 2 - 0.12), 1.1);
   }
-  const doorSignTex = tex(canvas(512, 128, (g, w, h) => { g.fillStyle = '#141210'; g.fillRect(0, 0, w, h); g.fillStyle = '#f3ead6'; g.font = 'italic 800 74px Fraunces, Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('caffe', w / 2, h / 2 + 4); }));
-  box(1.5, 0.38, 0.05, new THREE.MeshStandardMaterial({ map: doorSignTex, emissiveMap: doorSignTex, emissive: 0xffffff, emissiveIntensity: 0.25 }), DX, YF + DH + 0.32, DZ + 0.03);
-  for (const wx of [-3.3, 1.75]) { // dark shop windows either side of the door
-    box(1.3, 1.25, 0.04, new THREE.MeshStandardMaterial({ color: 0x1a1f26, roughness: 0.15, metalness: 0.3 }), wx, 1.55, DZ);
-    box(1.4, 0.07, 0.07, frameMat, wx, 0.9, DZ + 0.02); box(1.4, 0.07, 0.07, frameMat, wx, 2.2, DZ + 0.02);
+  // shop windows either side, the same grey frames
+  for (const wx of [-3.4, 2.25]) {
+    box(1.25, 1.9, 0.04, new THREE.MeshStandardMaterial({ color: 0x24282d, roughness: 0.12, metalness: 0.35 }), wx, YF + 1.2, DZ);
+    box(1.35, 0.08, 0.08, alu, wx, YF + 0.25, DZ + 0.03); box(1.35, 0.08, 0.08, alu, wx, YF + 2.15, DZ + 0.03);
   }
-  const tv = box(0.9, 0.52, 0.05, M.metal, 3.4, 2.05, Z0 + 0.1);
+  const tv = box(0.9, 0.52, 0.05, M.metal, 3.6, 2.45, Z0 + 0.1);
   const tvScreen = add(new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.45), new THREE.MeshBasicMaterial({ color: 0x3f9a4a })));
-  tvScreen.position.set(3.4, 2.05, Z0 + 0.13);
+  tvScreen.position.set(3.6, 2.45, Z0 + 0.13);
 
   const tableGeo = mergeGeometries([
     new THREE.CylinderGeometry(0.36, 0.36, 0.03, 24).translate(0, 0.745, 0),
