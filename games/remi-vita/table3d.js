@@ -318,6 +318,12 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
   const FOG_IN = new THREE.Color(0x140c08), FOG_OUT = new THREE.Color(0x26324c);
   const HEMI_IN = new THREE.Color(0xffe2b8), HEMI_IN_G = new THREE.Color(0x2a1408), HEMI_OUT = new THREE.Color(0x5d6f98), HEMI_OUT_G = new THREE.Color(0x231a14);
 
+  // home sits behind a CSS blur (index.html, body.on-home #bg), so it renders at half resolution: a quarter of
+  // the pixels, and the blur hides the difference. The table screens get full resolution back.
+  function applyDpr() {
+    const base = level >= 1 ? 1 : maxDpr, want = mode === 'home' ? base * 0.5 : base;
+    if (renderer.getPixelRatio() !== want) { renderer.setPixelRatio(want); renderer.setSize(innerWidth, innerHeight, false); }
+  }
   function resize() {
     const w = innerWidth, h = innerHeight;
     renderer.setSize(w, h, false);
@@ -336,7 +342,7 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
     slowT = dt > 0.026 ? slowT + dt : Math.max(0, slowT - dt * 0.5);
     if (slowT > 2 && level < 2) {
       level++; slowT = 0;
-      if (level === 1) renderer.setPixelRatio(1);
+      if (level === 1) applyDpr();
       if (level === 2) { renderer.shadowMap.enabled = false; scene.traverse(o => { if (o.material) [].concat(o.material).forEach(m => { m.needsUpdate = true; }); }); }
     }
   }
@@ -456,6 +462,7 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
     // snap: jump straight there (opening the app on the board should not fly in from the plaza)
     setMode(m, snap = false) {
       mode = m in RIGS ? m : 'home';
+      applyDpr();
       if (snap) { camLook.copy(rigTarget(RIGS[mode], camPos)); homeK = mode === 'home' ? 1 : 0; }
     },
     setFelt(hex) { feltMat.color.set(hex); },

@@ -52,6 +52,9 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   #vignette { position: fixed; inset: 0; pointer-events: none; transition: background .8s;
     background: linear-gradient(180deg, rgba(5,12,20,.72) 0%, rgba(5,12,20,.35) 30%, transparent 48%, transparent 70%, rgba(4,10,8,.7) 100%); }
+  /* home: the café sits slightly out of focus behind the title, like a shallow depth of field.
+     A plain static filter, switched off (not animated) when you leave home: no filter animations (BUG-001) */
+  body.on-home #bg { filter: blur(2.5px); }
   body.on-board #vignette { background: radial-gradient(120% 90% at 50% 40%, rgba(10,6,4,.35) 30%, rgba(0,0,0,.75) 100%); }
 
   .screen { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden;
@@ -195,7 +198,7 @@
   .ph .av { margin: 0 auto 6px; }
   .ph .pn { font-weight: 800; font-size: 13px; max-width: 92px; margin: 0 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ph .crown { position: absolute; top: 1px; left: 50%; margin-left: -9px; width: 18px; height: 18px; color: var(--gold2); filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); animation: fadeOnly .6s both; }
-  .ph .dtag { position: absolute; top: 4px; left: calc(50% + 9px); /* sits on the dealer's card corner, like a chip */ width: 20px; height: 20px; border-radius: 50%; font-family: Fraunces, Georgia, serif; font-weight: 900; font-size: 11px;
+  .ph .dtag { position: absolute; z-index: 2; top: 3px; left: calc(50% + 11px); /* on top of the dealer's card corner, like a chip */ width: 20px; height: 20px; border-radius: 50%; font-family: Fraunces, Georgia, serif; font-weight: 900; font-size: 11px;
     background: var(--ivory); color: var(--card-ink); display: grid; place-items: center; box-shadow: 0 0 0 2px var(--gold), 0 0 14px rgba(231,184,102,.8); animation: dPulse 2s ease-in-out infinite; }
   @keyframes dPulse { 50% { box-shadow: 0 0 0 2px var(--gold), 0 0 26px rgba(231,184,102,1); } }
   .ph.out, td.out { opacity: .38; }
@@ -670,6 +673,7 @@ function show(name) {
   for (const s of ['home', 'setup', 'board']) { const el = $('#' + s); el.hidden = s !== name; if (s === name) { el.classList.remove('enter'); void el.offsetWidth; el.classList.add('enter'); } }
   screen = name;
   document.body.classList.toggle('on-board', name === 'board');
+  document.body.classList.toggle('on-home', name === 'home');
   scene && scene.setMode(name);
   if (name === 'board') { sdk.gameplayStart(); setWake(true); } else { sdk.gameplayStop(); setWake(false); }
   if (name === 'home') renderHome();
