@@ -252,7 +252,7 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
 
   // loose cards on the felt (deal / rain)
   const loose = [];
-  const MAX_LOOSE = 46;
+  const MAX_LOOSE = 6; // a few cards on the felt, not a pile under the score sheet
   let faceN = 0;
   function takeCard() {
     let c;
@@ -261,7 +261,7 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
     return c;
   }
   function deal(color = '#e7b866') {
-    const n = 5;
+    const n = 2;
     for (let i = 0; i < n; i++) {
       const c = takeCard();
       const a = rnd(0, Math.PI * 2), r = rnd(2.3, 4.6);
@@ -271,6 +271,7 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
     sparkle(color, 50);
   }
   function rain(color = '#e7b866', n = 40) {
+    n = Math.min(n, MAX_LOOSE);
     for (let i = 0; i < n; i++) {
       const c = takeCard();
       let x, z;

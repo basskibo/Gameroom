@@ -127,7 +127,58 @@ test.describe('Remi Vita · score sheet', () => {
     await page.waitForFunction(() => !!window.__remi.scene, null, { timeout: 30_000 });
     await game.start();
     await game.round('p1', 'hand', { p0: 2, p2: 2 });
-    expect(await page.evaluate(() => window.__remi.scene.looseCount)).toBeGreaterThan(10);
+    // a few cards land on the felt, never a pile (capped at 6)
+    const n = await page.evaluate(() => window.__remi.scene.looseCount);
+    expect(n).toBeGreaterThan(2); expect(n).toBeLessThanOrEqual(6);
+    game.expectNoErrors();
+  });
+
+  test('crown sits on the leader, the D chip on the dealer (also with non-sticky Firefox cells)', async ({ game, page }) => {
+    await game.open();
+    await game.start(['Lela', 'Gobla', 'Bojan']);
+    await game.round('p0', 'close', { p1: 24, p2: 12 });
+    await game.round('p2', 'close', { p0: 52, p1: 15 });   // Bojan leads with −8 and deals the third round
+    const check = async () => page.evaluate(() => {
+      const inside = (el, th) => { const a = el.getBoundingClientRect(), b = th.getBoundingClientRect(); return a.left >= b.left - 1 && a.right <= b.right + 1; };
+      const crown = document.querySelector('.ph .crown'), d = document.querySelector('.ph .dtag');
+      return { crown: inside(crown, document.querySelector('.ph[data-pid=p2]')), dealer: inside(d, document.querySelector(`.ph[data-pid=${window.__remi.state.dealer}]`)) };
+    });
+    expect(await check()).toEqual({ crown: true, dealer: true });
+    // what Firefox gets (BUG-001 workaround): cells must stay positioned so the badges stay in their column
+    await page.addStyleTag({ content: '.score thead th, .score tfoot td, .score .rn { position: relative !important; }' });
+    expect(await check()).toEqual({ crown: true, dealer: true });
+    const ffRule = await page.evaluate(() => [...document.styleSheets].flatMap(sh => { try { return [...sh.cssRules]; } catch (e) { return []; } })
+      .filter(r => r instanceof CSSSupportsRule).flatMap(r => [...r.cssRules]).filter(r => /thead th/.test(r.selectorText)).map(r => r.style.position));
+    expect(ffRule).toEqual(['relative']);
+  });
+
+  test('a gold rule after every full turn of the deal (every n rounds for n players)', async ({ game, page }) => {
+    await game.open();
+    await game.start(['Lela', 'Gobla', 'Bojan']);
+    for (let i = 0; i < 7; i++) await game.round('p' + (i % 3), 'close', { p0: 3, p1: 3, p2: 3 });
+    const cycles = await page.locator('#score tbody tr').evaluateAll(trs => trs.map((tr, i) => tr.classList.contains('cycle') ? i + 1 : 0).filter(Boolean));
+    expect(cycles).toEqual([3, 6]);
+  });
+
+  test('a player who is out: whole column dark, a tag on the round; the buy-back dialog can finish the game', async ({ game, page }) => {
+    await game.open();
+    await game.start(['Lela', 'Gobla', 'Bojan'], { limit: 301, rebuy: 1 });
+    await game.round('p0', 'close', { p1: 320, p2: 40 });
+    await expect(page.locator('#rbEnd')).toBeVisible();
+    await page.locator('#rbN').click();
+    await game.round('p0', 'close', { p2: 10 });
+    await expect(page.locator('td.out-now .outtag')).toHaveText('Out');
+    await expect(page.locator('#score td.col-out')).toHaveCount(3); // the out round, the empty round after it, the total
+    await expect(page.locator('#score [data-out]')).toHaveCount(0); // the old stamp overlay is gone
+  });
+
+  test('buy-back dialog: "Finish the game" ends it on the spot', async ({ game, page }) => {
+    await game.open();
+    await game.start(['Lela', 'Gobla', 'Bojan'], { limit: 301, rebuy: 1 });
+    await game.round('p0', 'close', { p1: 320, p2: 40 });
+    await page.locator('#rbEnd').click();
+    await expect(page.locator('#eAgain')).toBeVisible();
+    expect((await game.state()).over || !!(await page.evaluate(() => window.__remi.match.ended))).toBe(true);
     game.expectNoErrors();
   });
 

@@ -2,6 +2,17 @@
 
 Najnovije gore. Format: [tracking.md](../../engineering/tracking.md).
 
+## 2026-10-14 — Ispravke posle testiranja na produkciji
+- **Krunica/„D“ na pogrešnoj koloni u Firefoxu:** zakrpa za BUG-001 je ćelijama zaglavlja dala `position: static`, pa su se oznake pozicionirale prema tabeli. Sad je `relative`; test proverava geometriju i samo pravilo.
+- Zlatna linija posle svakog kruga deljenja (na svakih n partija za n igrača).
+- Igrač koji je ispao: cela kolona se zatamni od te partije, crvena oznaka „Ispao“ umesto pečata preko broja; karta u zaglavlju postaje siva.
+- Prozor za kupovinu ima i „Završi igru“.
+- Poeni partije (+24, −20) krupniji (11 → 13 px).
+- „D“ žeton je uz kartu onoga ko deli.
+- 3D sto: najviše 6 razbacanih karata (bilo 46), deljenje baca 2.
+- Podnaslov na početnoj je na karti od slonovače (♠/♥ u uglovima), da se čita preko kafića.
+- Testovi 22/22.
+
 ## 2026-10-14 — Firefox pad (BUG-001), jednostavniji unos, kafić, novi izgled, bez zvuka
 - **BUG-001 (S1):** Firefox se rušio posle čuvanja partije (WebRender panic). Pre: 4/4 pada u pravom Firefoxu. Posle: 3/3 prolaza. Regresioni test + `tests/tools/firefox-rounds.py`.
 - **Unos partije u dva koraka:** 1) „Ko je zatvorio?“, gde je svaki igrač veliko dugme i svi se vide i na telefonu; 2) „Poeni u ruci“, sa pobednikom i izborom zatvorio/ruka gore, poljem u koje kucaš (karta boje slonovače) i tastaturom 3×4. Izbačeni +10/+20 i „Nije otvorio“ sa tastature (ostao u redu igrača).

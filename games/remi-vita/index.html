@@ -99,7 +99,14 @@
     background: linear-gradient(180deg, #fff6e2 0%, var(--gold2) 40%, var(--gold) 70%, var(--gold3) 100%);
     -webkit-background-clip: text; background-clip: text; color: transparent; }
   @keyframes letterIn { from { opacity: 0; transform: translateY(40px) scaleY(.2); } to { opacity: 1; transform: none; } }
-  .tagline { color: #d9e2d6; text-shadow: 0 2px 12px rgba(0,0,0,.9); font-size: 15px; max-width: 340px; margin: 6px auto 0; line-height: 1.5; animation: fadeUp .9s var(--ease) .9s both; }
+  /* the tagline is printed on a card: ivory stock, gold frame, a pip in two corners. Readable over any part of the café */
+  .tagline { position: relative; color: var(--card-ink); font-size: 14px; font-weight: 600; max-width: 330px; margin: 12px auto 0; line-height: 1.45;
+    padding: 12px 26px; border-radius: 12px; background: var(--ivory); text-shadow: none;
+    box-shadow: 0 16px 34px -14px rgba(0,0,0,.85), inset 0 0 0 4px var(--ivory), inset 0 0 0 5px rgba(169,120,47,.55);
+    animation: fadeUp .9s var(--ease) .9s both; }
+  .tagline::before, .tagline::after { position: absolute; font-size: 13px; line-height: 1; font-family: Georgia, serif; }
+  .tagline::before { content: '♠'; left: 9px; top: 8px; color: var(--card-ink); }
+  .tagline::after { content: '♥'; right: 9px; bottom: 8px; color: #b8322a; }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
   .home-actions { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 360px; margin: auto auto 6px; animation: fadeUp .9s var(--ease) 1.1s both; }
   .resume-card { text-align: left; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
@@ -188,16 +195,22 @@
   .ph .av { margin: 0 auto 6px; }
   .ph .pn { font-weight: 800; font-size: 13px; max-width: 92px; margin: 0 auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .ph .crown { position: absolute; top: 1px; left: 50%; margin-left: -9px; width: 18px; height: 18px; color: var(--gold2); filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); animation: fadeOnly .6s both; }
-  .ph .dtag { position: absolute; top: 6px; right: 8px; width: 20px; height: 20px; border-radius: 50%; font-family: Fraunces, Georgia, serif; font-weight: 900; font-size: 11px;
+  .ph .dtag { position: absolute; top: 4px; left: calc(50% + 9px); /* sits on the dealer's card corner, like a chip */ width: 20px; height: 20px; border-radius: 50%; font-family: Fraunces, Georgia, serif; font-weight: 900; font-size: 11px;
     background: var(--ivory); color: var(--card-ink); display: grid; place-items: center; box-shadow: 0 0 0 2px var(--gold), 0 0 14px rgba(231,184,102,.8); animation: dPulse 2s ease-in-out infinite; }
   @keyframes dPulse { 50% { box-shadow: 0 0 0 2px var(--gold), 0 0 26px rgba(231,184,102,1); } }
   .ph.out, td.out { opacity: .38; }
+  /* a player who is out: the whole column goes dark, from the round they dropped out on */
+  .score td.col-out { background: rgba(2,10,6,.5) !important; }
+  .score td.col-out .cell { opacity: .4; }
+  .score td.out-now .cell { opacity: 1; }
+  .score .ph.out .av { filter: grayscale(1); }
   .ph .rb { font-size: 11px; color: var(--gold); font-weight: 700; }
   .score tbody td { border-bottom: 1px solid rgba(231,184,102,.07); height: 50px; }
   .score tbody tr:nth-child(even) td:not(.rn) { background: rgba(243,234,214,.025); }
+  .score tbody tr.cycle td { border-bottom: 2px solid var(--line2); }
   .cell { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; position: relative; }
   .cell .tot { font-weight: 800; font-size: 17px; }
-  .cell .dl { font-size: 11px; font-weight: 800; color: var(--muted); }
+  .cell .dl { font-size: 13px; font-weight: 800; color: var(--muted); margin-top: 1px; }
   .cell.win .dl { color: var(--green); }
   .cell.win .tot { color: var(--gold2); }
   .cell.hand { }
@@ -214,9 +227,10 @@
   @keyframes rowIn { from { opacity: 0; background-color: rgba(247,224,163,.22); } }
   @keyframes fadeOnly { from { opacity: 0; } }
   /* and Firefox gets a plain (non-sticky) table: sticky cells are the other half of the crash */
-  @supports (-moz-appearance: none) { .score thead th, .score tfoot td, .score .rn { position: static; } }
-  tr.elim td.out-now .cell::after { content: attr(data-out); position: absolute; inset: 6px; display: grid; place-items: center; font-size: 10px; font-weight: 900; letter-spacing: .1em;
-    color: var(--red); border: 2px solid var(--red); border-radius: 8px; background: rgba(7,26,18,.8); }
+  /* relative, not static: the crown and the dealer tag are positioned inside the header cells */
+  @supports (-moz-appearance: none) { .score thead th, .score tfoot td, .score .rn { position: relative; } }
+  /* the round someone dropped out on: a quiet red tag under their number, no stamp over it */
+  .cell .outtag { margin-top: 3px; padding: 1px 7px; border-radius: 6px; font-size: 10px; font-weight: 800; color: #fff; background: var(--red); }
   .rn button { width: 100%; height: 100%; min-height: 50px; color: inherit; font-weight: 800; }
   .tf { padding: 10px 4px !important; }
   .tf .big { font-family: Fraunces, Georgia, serif; font-weight: 900; font-size: 24px; line-height: 1; }
@@ -504,7 +518,7 @@ I.add({
     enterRound: 'Enter the round', who: 'Who went out?', whoS: 'Tap the player who got rid of all their cards.', pts: 'Points in hand', ptsS: 'Enter what everyone else has left. Tap a row to fix it.', change: 'Change', closeS: 'normal', handS: 'others ×2',
     close: 'Closed', hand: 'In one hand', save: 'Save round', editRound: 'Edit round {n}', del: 'Delete',
     winnerTag: 'went out', fillAll: 'Enter points for everyone', noOpen: 'Not opened', next: 'Next ›',
-    doubled: '×2', cardsInHand: 'in hand', out: 'OUT',
+    doubled: '×2', cardsInHand: 'in hand', out: 'Out',
     emptyT: 'A fresh table', emptyS: 'Play the first round, then tap “Enter the round”.',
     undoDone: 'Last entry removed', nothingUndo: 'Nothing to undo',
     leader: 'Leader', place: '#{n}',
@@ -536,7 +550,7 @@ I.add({
     enterRound: 'Upiši partiju', who: 'Ko je zatvorio?', whoS: 'Dodirni igrača koji je izbacio sve karte.', pts: 'Poeni u ruci', ptsS: 'Upiši koliko je ostalima ostalo. Dodirni red da ispraviš.', change: 'Promeni', closeS: 'obično', handS: 'ostalima ×2',
     close: 'Zatvorio', hand: 'Ruka', save: 'Sačuvaj partiju', editRound: 'Izmena {n}. partije', del: 'Obriši',
     winnerTag: 'zatvorio', fillAll: 'Upiši poene za sve', noOpen: 'Nije otvorio', next: 'Dalje ›',
-    doubled: '×2', cardsInHand: 'u ruci', out: 'ISPAO',
+    doubled: '×2', cardsInHand: 'u ruci', out: 'Ispao',
     emptyT: 'Čist sto', emptyS: 'Odigrajte prvu partiju, pa dodirni „Upiši partiju“.',
     undoDone: 'Poslednji unos obrisan', nothingUndo: 'Nema šta da se vrati',
     leader: 'Vodi', place: '{n}.',
@@ -762,17 +776,20 @@ function renderBoard({ fresh = false, newRow = false, prevTotals = null } = {}) 
   if (!D.rows.length) h += `<tr><td colspan="${ps.length + 1}"><div class="empty"><div class="serif">${tr('emptyT')}</div>${tr('emptyS')}</div></td></tr>`;
   D.rows.forEach((r, i) => {
     const isNew = newRow && i === D.rows.length - 1;
-    h += `<tr class="${isNew ? 'enter' : ''} ${r.newlyOut.length ? 'elim' : ''}"><td class="rn"><button data-edit="${i}" aria-label="Edit">${r.n}</button></td>`;
+    // a gold rule after every full turn of the deal (as many rounds as there are players)
+    const cycle = (i + 1) % match.players.length === 0 && i < D.rows.length - 1;
+    h += `<tr class="${isNew ? 'enter' : ''} ${r.newlyOut.length ? 'elim' : ''} ${cycle ? 'cycle' : ''}"><td class="rn"><button data-edit="${i}" aria-label="Edit">${r.n}</button></td>`;
     for (const p of ps) {
       const s = r.e.scores[p.id];
-      if (s == null) { h += `<td class="${D.out[p.id] ? 'out' : ''}"><div class="cell"><span class="dl">·</span></div></td>`; continue; }
+      if (s == null) { h += `<td class="${D.out[p.id] ? 'col-out' : ''}"><div class="cell"><span class="dl">·</span></div></td>`; continue; }
       const win = r.e.winner === p.id, hand = win && r.e.type === 'hand';
       const dbl = !win && ((r.e.type === 'hand' && match.rules.dblHand) || (r.e.type === 'close' && match.rules.dblClose));
       const no = r.e.no && r.e.no[p.id];
       const rb = r.rebuy && r.rebuy[p.id] != null;
       const cls = ['cell', win && 'win', hand && 'hand', dbl && 'dbl', no && 'no'].filter(Boolean).join(' ');
       const tag = hand ? `${fmt(s)} ★` : no ? `${fmtD(s)} ✗` : dbl ? `${fmtD(s)} ×2` : fmtD(s);
-      h += `<td class="${r.newlyOut.includes(p.id) ? 'out-now' : ''}"><div class="cell ${cls}" data-out="${tr('out')}">${r.e.dealer === p.id ? '<span class="dmark">D</span>' : ''}<span class="tot num">${fmt(r.after[p.id])}${rb ? ` → ${fmt(r.rebuy[p.id])}` : ''}</span><span class="dl num">${tag}</span></div></td>`;
+      const outNow = r.newlyOut.includes(p.id);
+      h += `<td class="${outNow ? 'out-now col-out' : ''}"><div class="cell ${cls}">${r.e.dealer === p.id ? '<span class="dmark">D</span>' : ''}<span class="tot num">${fmt(r.after[p.id])}${rb ? ` → ${fmt(r.rebuy[p.id])}` : ''}</span><span class="dl num">${tag}</span>${outNow ? `<span class="outtag">${tr('out')}</span>` : ''}</div></td>`;
     }
     h += '</tr>';
   });
@@ -780,7 +797,7 @@ function renderBoard({ fresh = false, newRow = false, prevTotals = null } = {}) 
   for (const p of ps) {
     const rank = D.ranked.indexOf(p.id) + 1;
     const pct = match.rules.limit > 0 ? Math.min(100, Math.max(0, D.totals[p.id] / match.rules.limit * 100)) : Math.abs(D.totals[p.id]) / maxT * 100;
-    h += `<td class="tf ${lead === p.id ? 'lead' : ''} ${D.out[p.id] ? 'out' : ''}"><div class="big num" data-tot="${p.id}">${fmt(D.totals[p.id])}</div><div class="rank">${D.out[p.id] ? tr('out') : D.rows.length ? tr('place', { n: rank }) : '&nbsp;'}</div><div class="bar"><i style="width:${pct}%"></i></div></td>`;
+    h += `<td class="tf ${lead === p.id ? 'lead' : ''} ${D.out[p.id] ? 'out col-out' : ''}"><div class="big num" data-tot="${p.id}">${fmt(D.totals[p.id])}</div><div class="rank">${D.out[p.id] ? tr('out') : D.rows.length ? tr('place', { n: rank }) : '&nbsp;'}</div><div class="bar"><i style="width:${pct}%"></i></div></td>`;
   }
   h += '</tr></tfoot>';
   $('#score').innerHTML = h;
@@ -996,9 +1013,10 @@ function askRebuy(pid) {
  
   const m = modal(`<div style="display:flex;justify-content:center;margin-bottom:10px">${avatar(p, 64)}</div>
     <h3 style="text-align:center">${esc(tr('rebuyT', { name: p.name, limit: match.rules.limit }))}</h3><p style="text-align:center">${tr('rebuyS', { v: fmt(v) })}</p>
-    <div class="stack"><button class="btn gold" id="rbY">${tr('rebuyYes', { v: fmt(v) })}</button><button class="btn ghost" id="rbN">${tr('rebuyNo')}</button></div>`);
+    <div class="stack"><button class="btn gold" id="rbY">${tr('rebuyYes', { v: fmt(v) })}</button><button class="btn ghost" id="rbN">${tr('rebuyNo')}</button><button class="btn ghost" id="rbEnd">${ic('flag')} ${tr('finish')}</button></div>`);
   m.querySelector('#rbY').onclick = () => { match.events.push({ k: 'rebuy', pid, value: v }); closeSheet(); renderBoard(); afterRound(); };
   m.querySelector('#rbN').onclick = () => { match.events.push({ k: 'out', pid }); closeSheet(); renderBoard(); afterRound(); };
+  m.querySelector('#rbEnd').onclick = () => { match.events.push({ k: 'out', pid }); closeSheet(); endMatch(true); };
 }
 function endMatch(manual = false) {
   if (manual) match.ended = Date.now();
