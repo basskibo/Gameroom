@@ -1,4 +1,5 @@
 // Remi Vita — the 3D card table behind the score sheet (ES module, three r170 from the importmap).
+// The table stands inside a café pavilion (cafe3d.js): home shows the café from the plaza at dusk.
 // Purely decorative: the app works without it. index.html loads it lazily and calls:
 //   const t = await createTable(canvas, { reduced, felt })
 //   t.setMode('home'|'setup'|'board') · t.setFelt(hex) · t.setDealer(seatIndex, seats, color)
@@ -6,6 +7,7 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { createParticles } from '../../shared/gameroom-fx.js';
+import { buildCafe, makeSky, cafePoint } from './cafe3d.js';
 
 const CARD_W = 0.9, CARD_H = 1.26;
 const rnd = (a, b) => a + Math.random() * (b - a);
@@ -148,10 +150,12 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
   scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environmentIntensity = 0.45;
 
-  const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 60);
+  const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.2, 2600);
 
   // lights: warm pendant lamp over the table + cool rim
-  scene.add(new THREE.HemisphereLight(0xffe2b8, 0x2a1408, 0.55));
+  const hemi = new THREE.HemisphereLight(0xffe2b8, 0x2a1408, 0.55); scene.add(hemi);
+  // dusk sky light for the café exterior; fades out once the camera is at the table
+  const dusk = new THREE.DirectionalLight(0xb7c4e6, 0); dusk.position.set(-300, 420, 600); scene.add(dusk);
   const lamp = new THREE.SpotLight(0xffd9a0, 340, 30, 0.62, 0.7, 1.6);
   lamp.position.set(1.2, 9, 2.2); lamp.target.position.set(0, 0, 0);
   lamp.castShadow = true; lamp.shadow.mapSize.set(1024, 1024); lamp.shadow.bias = -0.0004; lamp.shadow.normalBias = 0.03;
@@ -166,8 +170,11 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
   table.rotation.x = -Math.PI / 2; table.receiveShadow = true; scene.add(table);
   const rail = new THREE.Mesh(new THREE.TorusGeometry(9.2, 0.55, 24, 120), new THREE.MeshPhysicalMaterial({ color: 0x3b1f12, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.15 }));
   rail.rotation.x = -Math.PI / 2; rail.position.y = 0.2; rail.receiveShadow = true; scene.add(rail);
-  const floor = new THREE.Mesh(new THREE.CircleGeometry(40, 48), new THREE.MeshStandardMaterial({ color: 0x0c0705, roughness: 1 }));
-  floor.rotation.x = -Math.PI / 2; floor.position.y = -0.4; scene.add(floor);
+
+  // the café around the table, and the sky
+  const cafe = buildCafe({ tex, reduced });
+  scene.add(cafe.root, ...cafe.lights);
+  const sky = makeSky(); scene.add(sky);
 
   // coffee cup + saucer (lathe), gold rim, latte art
   const cup = new THREE.Group(); cup.position.set(0, 0, 0); scene.add(cup);
@@ -291,13 +298,24 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
 
   // camera rigs per screen
   const RIGS = {
-    home: { pos: new THREE.Vector3(0, 3.3, 4.9), look: new THREE.Vector3(0, 0.55, 0.2) },
-    setup: { pos: new THREE.Vector3(3.0, 2.8, 3.8), look: new THREE.Vector3(0, 0.6, 0) },
-    board: { pos: new THREE.Vector3(0, 10.5, 4.2), look: new THREE.Vector3(0, 0, 0.3) },
+    home: { pos: cafePoint(0.7, 1.45, 11.5), look: cafePoint(0, 3.3, 0.4), sway: 9, far: 1.3,
+      // phone: closer and lower, the café fills the band between the title and the buttons
+      portraitPos: cafePoint(0.3, 1.2, 12.5), portraitLook: cafePoint(0, 2.2, 0.4) },
+    setup: { pos: new THREE.Vector3(3.0, 2.8, 3.8), look: new THREE.Vector3(0, 0.6, 0), sway: 1, far: 1.55 },
+    board: { pos: new THREE.Vector3(0, 10.5, 4.2), look: new THREE.Vector3(0, 0, 0.3), sway: 1, far: 1.55 },
   };
   let mode = 'home', portrait = false;
-  const camPos = RIGS.home.pos.clone().add(new THREE.Vector3(0, 3, 6)), camLook = RIGS.home.look.clone();
+  const camPos = RIGS.home.pos.clone().add(new THREE.Vector3(0, 40, 90)), camLook = RIGS.home.look.clone();
+  // where the camera wants to be for a rig (portrait screens get their own framing); returns the look-at point
+  function rigTarget(rig, out) {
+    if (portrait && rig.portraitPos) { out.copy(rig.portraitPos); return rig.portraitLook; }
+    out.copy(rig.pos); if (portrait) out.sub(rig.look).multiplyScalar(rig.far).add(rig.look);
+    return rig.look;
+  }
+  let homeK = 1; // 1 = out on the plaza, 0 = at the table; drives fog, sky light and the café glow
   const tmpV = new THREE.Vector3();
+  const FOG_IN = new THREE.Color(0x140c08), FOG_OUT = new THREE.Color(0x26324c);
+  const HEMI_IN = new THREE.Color(0xffe2b8), HEMI_IN_G = new THREE.Color(0x2a1408), HEMI_OUT = new THREE.Color(0x5d6f98), HEMI_OUT_G = new THREE.Color(0x231a14);
 
   function resize() {
     const w = innerWidth, h = innerHeight;
@@ -334,14 +352,24 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
 
     // camera
     const rig = RIGS[mode] || RIGS.home;
-    const sway = reduced ? 0 : 1;
-    tmpV.copy(rig.pos);
-    if (portrait) tmpV.sub(rig.look).multiplyScalar(1.55).add(rig.look);
+    const sway = reduced ? 0 : rig.sway;
+    const look = rigTarget(rig, tmpV);
     tmpV.x += (Math.sin(time * 0.15) * 0.6 + pointerX * 0.8) * sway;
     tmpV.y += Math.sin(time * 0.21) * 0.15 * sway - pointerY * 0.4 * sway;
     camPos.lerp(tmpV, 1 - Math.exp(-dt * 1.6));
-    camLook.lerp(rig.look, 1 - Math.exp(-dt * 2));
+    camLook.lerp(look, 1 - Math.exp(-dt * 2));
     camera.position.copy(camPos); camera.lookAt(camLook);
+
+    // outside ↔ inside: follows how far the camera is from the table
+    const out = Math.min(1, Math.max(0, (camPos.length() - 40) / 120));
+    homeK += (out - homeK) * (1 - Math.exp(-dt * 6));
+    scene.fog.color.copy(FOG_IN).lerp(FOG_OUT, homeK);
+    scene.fog.near = 16 + homeK * 160; scene.fog.far = 75 + homeK * 900;
+    hemi.color.copy(HEMI_IN).lerp(HEMI_OUT, homeK); hemi.groundColor.copy(HEMI_IN_G).lerp(HEMI_OUT_G, homeK);
+    hemi.intensity = 0.55 - homeK * 0.1; dusk.intensity = homeK * 0.45;
+    sky.material.uniforms.uTime.value = time;
+    renderer.toneMappingExposure = 1.05 - homeK * 0.2;
+    cafe.update(dt, time, homeK);
 
     // steam
     if (!reduced) {
@@ -424,7 +452,11 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
   requestAnimationFrame(frame);
 
   return {
-    setMode(m) { mode = m in RIGS ? m : 'home'; },
+    // snap: jump straight there (opening the app on the board should not fly in from the plaza)
+    setMode(m, snap = false) {
+      mode = m in RIGS ? m : 'home';
+      if (snap) { camLook.copy(rigTarget(RIGS[mode], camPos)); homeK = mode === 'home' ? 1 : 0; }
+    },
     setFelt(hex) { feltMat.color.set(hex); },
     setDealer(idx, n, color) {
       if (idx < 0 || !n) return;

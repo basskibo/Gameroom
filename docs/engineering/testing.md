@@ -71,3 +71,12 @@ tests/
 1. Iskopiraj `tests/games/pilana-tajkun/fixtures.mjs` i prilagodi `URL`, `SPOTS` i nazive kuka.
 2. Igra mora imati bar `window.__debug()` i `window.__start()`. Preporuka: i `__run`, `__cheat`, `__cam`.
 3. Napiši bar smoke, glavnu petlju, save i mobile.
+
+## Pravi Firefox (padovi u WebRenderu)
+
+Playwright ovde vozi Chrome. Ako bag postoji samo u Firefoxu (npr. Remi Vita BUG-001: ceo browser pada), proveri u instaliranom Firefoxu preko Marionette:
+
+- `python3 -m http.server 4180` iz korena, pa `python3 tests/tools/firefox-rounds.py` (Remi Vita; `--runs`, `--rounds`, `--url`).
+- Jedan Firefox u isto vreme, profil u `$HOME` (snap ne čita `/tmp` ni skrivene foldere), uvek se gasi i briše na kraju. URL dobija `?v=` da keš ne vrati stari fajl.
+- Izveštaji o padu: `~/snap/firefox/common/.mozilla/firefox/Crash Reports/pending/*.extra` (`MozCrashReason`, `StackTraces`). Stek se simbolizuje na `symbolication.services.mozilla.com` (šalju se samo ID modula i ofseti).
+- CSS koji obara WebRender (rotacije, 3D, `perspective`, `scale(0)`, `backdrop-filter`, `transform` animacije u sticky tabeli) čuva se Playwright testom koji čita stilove; primer: `tests/games/remi-vita/firefox-safe.spec.mjs`.

@@ -66,7 +66,8 @@ test.describe('Remi Vita · score sheet', () => {
     await page.locator('#keypad [data-k="1"]').click();
     await page.locator('#keypad [data-k="4"]').click();
     await page.locator('#keypad [data-k="next"]').click();
-    await page.locator('#keypad [data-k="no"]').click();
+    await page.locator('.entry[data-pid=p2] [data-no]').click();
+    await expect(page.locator('#keypad [data-k="10"]')).toHaveCount(0);
     await expect(page.locator('#saveRound')).toBeEnabled();
     await page.locator('#saveRound').click();
     await expect(page.locator('tfoot [data-tot=p0]')).toHaveText('14');
@@ -81,6 +82,7 @@ test.describe('Remi Vita · score sheet', () => {
     await game.round('p0', 'close', { p1: 10, p2: 10 });
     await game.round('p1', 'close', { p0: 5, p2: 5 });
     await page.locator('[data-edit="0"]').click();
+    await page.locator('#changeWinner').click();
     await page.locator('.wbtn[data-pid=p0]').click();
     await page.locator('#wtype [data-type=hand]').click();
     await page.locator('#saveRound').click();

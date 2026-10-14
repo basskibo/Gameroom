@@ -1,6 +1,6 @@
 # Remi Vita — tracker
 
-**Trenutno:** v1 gotova (2026-10-14): tabla, bodovanje, dealer + glas, kupovina, statistika, istorija, 3D sto, EN/SR, SDK, 17 testova.
+**Trenutno:** v1.1 (2026-10-14): BUG-001 (Firefox pad) rešen, unos partije u dva koraka, kafić kao 3D scena, novi izgled (čoja + zlato, igrači kao karte, SVG ikonice), bez zvuka. 18 testova.
 
 ## Odluke potrebne od korisnika
 
@@ -11,7 +11,8 @@
 ## Faza A — Stabilnost i merenje
 
 - [x] Testovi (bodovanje, dealer, undo, izmena, kupovina/kraj, reload, 3D, mobilni, reklame)
-- [ ] FPS na pravom telefonu (benchmark skripta)
+- [x] Regresija za Firefox pad (BUG-001): `firefox-safe.spec.mjs` + `tests/tools/firefox-rounds.py`
+- [ ] FPS na pravom telefonu (benchmark skripta; desktop Iris Xe: 59 fps sa kafićem)
 
 ## Faza B — Dalje
 

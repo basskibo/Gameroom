@@ -1,6 +1,6 @@
 # Remi Vita — tehnička mapa
 
-Tabla za remi (kartaška igra uživo, za stolom): igrači sa imenima, dealer se sam pomera i najavljuje glasom, aplikacija računa svaku partiju (zatvaranje −20, ruka −40 i ostalima duplo, „nije otvorio“ 100), granica sa kupovinom, statistika, istorija. Iza table je dekorativni 3D sto (šolja kafe, karte, čipovi, dealer žeton). Fajlovi: `games/remi-vita/index.html` (UI i logika), `games/remi-vita/table3d.js` (3D sto, učitava se lenjo), `logo.svg` (logo: karte + kafa).
+Tabla za remi (kartaška igra uživo, za stolom): igrači sa imenima, dealer se sam pomera, aplikacija računa svaku partiju (zatvaranje −20, ruka −40 i ostalima duplo, „nije otvorio“ 100), granica sa kupovinom, statistika, istorija. Iza table je dekorativni 3D sto (šolja kafe, karte, čipovi, dealer žeton) u kafiću u sumrak (stakleni paviljon sa crepom, lampicama i cvećem; početna ga gleda sa trga, a igra ulazi kamerom do stola). Igra nema zvuk. Fajlovi: `games/remi-vita/index.html` (UI i logika), `games/remi-vita/table3d.js` (3D sto, kamera, učitava se lenjo), `games/remi-vita/cafe3d.js` (kafić; gradi se u metrima, `S = 13` jedinica scene po metru), `logo.svg` (logo: karte + kafa).
 
 Povezano: [BUGS](BUGS.md) · [TECH-DEBT](TECH-DEBT.md) · [IMPROVEMENTS](IMPROVEMENTS.md) · [TRACKER](TRACKER.md) · [LEDGER](LEDGER.md) · testovi u `tests/games/remi-vita/`.
 
@@ -15,16 +15,16 @@ Povezano: [BUGS](BUGS.md) · [TECH-DEBT](TECH-DEBT.md) · [IMPROVEMENTS](IMPROVE
 
 | Sekcija | Šta radi |
 |---|---|
-| `i18n` | EN + SR rečnik, uključujući glasovne rečenice (`say*`) |
+| `i18n` | EN + SR rečnik |
 | `storage` | ključevi `remi-vita:current / history / names / rules / prefs`, `DEFAULT_RULES` |
-| `audio`, `voice`, `wake lock` | zvukovi (karte, čip, fanfara), muzika `SONGS.cafe`, `speechSynthesis` (sr-RS/hr/bs ili en), ekran ostaje upaljen |
+| `wake lock` | ekran ostaje upaljen (zvuka nema od 2026-10-14) |
 | `scoring (pure)` | `scoreRound(round, rules, active)` i `derive(match)` — sve se računa ponovnim prolazom kroz događaje |
 | `setup` | igrači (redosled = redosled deljenja), pravila |
 | `board` | tabela (`renderBoard`), banner dealera, `commitRound`, undo |
-| `round sheet` | izbor pobednika, zatvorio/ruka, tastatura za poene, „nije otvorio“, živi pregled, izmena/brisanje partije |
+| `round sheet` | dva koraka: 1) ko je zatvorio (`.wbtn`, tastatura 1–9 bira), 2) poeni (`#changeWinner`, `#wtype`, `.entry` + „Nije otvorio“, `#keypad` 0–9/⌫/Dalje), živi pregled, izmena/brisanje partije |
 | `rebuy / end` | kupovina posle granice, kraj igre (podijum, deljenje rezultata, istorija), `showMidgame` pri revanšu/povratku |
-| `menus` | statistika (SVG grafik), istorija, podešavanja (zvuk, muzika, glas, ekran, sto, jezik, `gameroom:back`) |
-| `3D table` | `import('./table3d.js')` posle prvog iscrtavanja; bez WebGL-a ostaje CSS pozadina |
+| `menus` | statistika (SVG grafik), istorija, podešavanja (ekran, sto, jezik, `gameroom:back`) |
+| `3D table` | `import('./table3d.js')` posle prvog iscrtavanja; bez WebGL-a ostaje CSS pozadina. `setMode(screen, snap)`: otvaranje direktno na tabli ne leti sa trga |
 
 ### Tok podataka
 
@@ -56,3 +56,10 @@ Povezano: [BUGS](BUGS.md) · [TECH-DEBT](TECH-DEBT.md) · [IMPROVEMENTS](IMPROVE
 | Draw call-ovi | ~60 (sto, šolja, čipovi) + do 46 karata × 2 | < 300 |
 | Greške u konzoli | 0 (Playwright) | 0 |
 | FPS | nije mereno na pravom uređaju; adaptivno: DPR 1 pa bez senki ako je spor, tabla u mirovanju ~30 fps | 60 |
+
+### Firefox (BUG-001)
+
+Firefoxov WebRender pada (ceo browser) kad se na tabli animira `transform` u tabeli koja skroluje i ima sticky ćelije. Pravila za ovaj fajl:
+- na tabli samo opacity/boja animacije; nigde rotacije, 3D, `perspective`, `scale(0)`, `backdrop-filter` ni `filter` u animacijama (čuva `tests/games/remi-vita/firefox-safe.spec.mjs`);
+- Firefox dobija tabelu bez sticky ćelija (`@supports (-moz-appearance: none)`);
+- provera u pravom Firefoxu: `python3 -m http.server 4180` iz korena, pa `python3 tests/tools/firefox-rounds.py` (jedan Firefox u isto vreme, sam se gasi).
