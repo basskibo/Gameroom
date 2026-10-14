@@ -183,7 +183,8 @@ test.describe('Remi Vita · score sheet', () => {
   });
 
   test('loader: the home screen shows only after the 3D café is ready, then the loader is removed', async ({ game, page }) => {
-    await game.open('?lang=en');
+    await page.goto('/games/remi-vita/?lang=en');   // not game.open(): that waits for the loader to finish
+    await page.waitForFunction(() => !!window.__remi);
     // while the scene is building the screens are hidden behind the loader
     const early = await page.evaluate(() => ({ loader: !!document.getElementById('loader'), scene: !!window.__remi.scene, homeShown: getComputedStyle(document.getElementById('home')).display !== 'none' }));
     if (!early.scene) expect(early).toEqual({ loader: true, scene: false, homeShown: false });

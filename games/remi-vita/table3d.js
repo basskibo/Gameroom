@@ -328,15 +328,47 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d', o
   const FOG_IN = new THREE.Color(0x140c08), FOG_OUT = new THREE.Color(0x26324c);
   const HEMI_IN = new THREE.Color(0xffe2b8), HEMI_IN_G = new THREE.Color(0x2a1408), HEMI_OUT = new THREE.Color(0x5d6f98), HEMI_OUT_G = new THREE.Color(0x231a14);
 
-  // home sits behind a CSS blur (index.html, body.on-home #bg), so it renders at half resolution: a quarter of
-  // the pixels, and the blur hides the difference. The table screens get full resolution back.
+  // home is a soft backdrop behind the title: it renders at ~40% resolution and the browser's smooth upscale gives
+  // the out-of-focus look (no CSS blur pass over the whole screen). The table screens get full resolution back.
+  // The table's shadow only matters up close, so it is not recomputed on home.
+  // the soft home backdrop: the scene goes into a small render target, one 9-tap blur pass at that same small size
+  // writes it to the canvas, and the browser's upscale of an already blurred image is smooth (no jaggies, no CSS filter)
+  const blurRT = new THREE.WebGLRenderTarget(2, 2, { type: THREE.HalfFloatType, depthBuffer: true });
+  const blurMat = new THREE.ShaderMaterial({
+    uniforms: { tMap: { value: blurRT.texture }, texel: { value: new THREE.Vector2(0.5, 0.5) } },
+    vertexShader: 'varying vec2 vUv; void main(){ vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }',
+    fragmentShader: `uniform sampler2D tMap; uniform vec2 texel; varying vec2 vUv;
+      void main(){
+        vec2 o = texel * 1.6;
+        vec4 c = texture2D(tMap, vUv) * 0.2;
+        c += (texture2D(tMap, vUv + vec2(o.x, 0.0)) + texture2D(tMap, vUv - vec2(o.x, 0.0)) + texture2D(tMap, vUv + vec2(0.0, o.y)) + texture2D(tMap, vUv - vec2(0.0, o.y))) * 0.12;
+        c += (texture2D(tMap, vUv + o) + texture2D(tMap, vUv - o) + texture2D(tMap, vUv + vec2(o.x, -o.y)) + texture2D(tMap, vUv + vec2(-o.x, o.y))) * 0.08;
+        gl_FragColor = c;
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
+      }`,
+    depthTest: false, depthWrite: false, toneMapped: true,
+  });
+  const blurScene = new THREE.Scene(), blurCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  { const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute([-1, -1, 0, 3, -1, 0, -1, 3, 0], 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute([0, 0, 2, 0, 0, 2], 2));
+    const tri = new THREE.Mesh(g, blurMat); tri.frustumCulled = false; blurScene.add(tri); }
+  const dbs = new THREE.Vector2();
+  function sizeBlur() { renderer.getDrawingBufferSize(dbs); blurRT.setSize(Math.max(2, dbs.x), Math.max(2, dbs.y)); blurMat.uniforms.texel.value.set(1 / Math.max(2, dbs.x), 1 / Math.max(2, dbs.y)); }
+  function draw() {
+    if (mode === 'home') { renderer.setRenderTarget(blurRT); renderer.render(scene, camera); renderer.setRenderTarget(null); renderer.render(blurScene, blurCam); }
+    else renderer.render(scene, camera);
+  }
   function applyDpr() {
-    const base = level >= 1 ? 1 : maxDpr, want = mode === 'home' ? base * 0.5 : base;
+    const base = level >= 1 ? 1 : maxDpr, want = mode === 'home' ? Math.max(0.35, base * 0.4) : base;
     if (renderer.getPixelRatio() !== want) { renderer.setPixelRatio(want); renderer.setSize(innerWidth, innerHeight, false); }
+    renderer.shadowMap.autoUpdate = mode !== 'home';
+    renderer.shadowMap.needsUpdate = true;
+    sizeBlur();
   }
   function resize() {
     const w = innerWidth, h = innerHeight;
     renderer.setSize(w, h, false);
+    sizeBlur();
     camera.aspect = w / h;
     // portrait: widen the field of view a little instead of pulling the camera far away
     camera.fov = w < h ? 54 : 38;
@@ -345,6 +377,8 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d', o
   }
   addEventListener('resize', resize); resize();
 
+  let inputUntil = 0, camGap = 1e9;
+  addEventListener('pointerdown', () => { inputUntil = performance.now() + 50; }, { passive: true, capture: true });
   let paused = false, last = performance.now(), time = 0, steamAcc = 0, pointerX = 0, pointerY = 0;
   // adaptive quality: a slow device drops to DPR 1, then loses shadows; a quiet board renders at half rate
   let slowT = 0, frameN = 0, level = 0;
@@ -362,8 +396,13 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d', o
     requestAnimationFrame(frame);
     if (paused) { last = now; return; }
     const dtRaw = (now - last) / 1000;
-    const busy = mode !== 'board' || dealerAnim.t < 1 || loose.some(l => l.kind !== 'rest');
-    if (!busy && (frameN++ & 1)) return; // quiet board: ~30 fps is plenty for drifting steam
+    // a touch gets the main thread first: skip a frame so the tap is handled at once even on a weak GPU
+    if (now < inputUntil) { last = now; return; }
+    // ~30 fps when nothing moves fast: the quiet board (drifting steam) and home once the camera has arrived
+    // (twinkling lights, swaying baskets); full rate while the camera flies, cards move or the dealer hops
+    const settledHome = mode === 'home' && camGap < 3;
+    const busy = (mode !== 'board' && !settledHome) || dealerAnim.t < 1 || loose.some(l => l.kind !== 'rest');
+    if (!busy && (frameN++ & 1)) return;
     const dt = Math.min(0.05, dtRaw); last = now; time += dt;
     adapt(busy ? dtRaw : dtRaw / 2);
 
@@ -376,6 +415,7 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d', o
     camPos.lerp(tmpV, 1 - Math.exp(-dt * 1.6));
     camLook.lerp(look, 1 - Math.exp(-dt * 2));
     camera.position.copy(camPos); camera.lookAt(camLook);
+    camGap = camPos.distanceTo(tmpV);
 
     // outside ↔ inside: follows how far the camera is from the table
     const out = Math.min(1, Math.max(0, (camPos.length() - 40) / 120));
@@ -464,7 +504,7 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d', o
 
     // lamp flicker, very subtle
     lamp.intensity = 340 + Math.sin(time * 1.3) * 8;
-    renderer.render(scene, camera);
+    draw();
   }
   // compile every shader before the first frame (in parallel where the driver allows), so the first frame does not hitch
   applyDpr();
@@ -472,7 +512,8 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d', o
   await step('built', 0.78);
   try { if (renderer.compileAsync) await renderer.compileAsync(scene, camera); else renderer.compile(scene, camera); } catch (e) {}
   await step('compiled', 0.94);
-  renderer.render(scene, camera);
+  try { renderer.compile(blurScene, blurCam); } catch (e) {}
+  draw();
   await step('first frame', 1);
   requestAnimationFrame(frame);
 
@@ -501,5 +542,6 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d', o
     pause(p) { paused = p; },
     get looseCount() { return loose.length; },
     get programs() { return renderer.info.programs.length; }, // for load profiling
+    get stats() { return { renders: renderer.info.render.frame, dpr: renderer.getPixelRatio(), camGap: +camGap.toFixed(2), shadowAuto: renderer.shadowMap.autoUpdate }; },
   };
 }

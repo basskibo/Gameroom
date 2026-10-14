@@ -14,6 +14,8 @@ class Game {
   async open(query = '?no3d&lang=en') {
     await this.page.goto(URL + query);
     await this.page.waitForFunction(() => !!window.__remi);
+    // with the 3D café the screens stay behind the loader until the scene is ready (software GL in CI is slow)
+    if (!query.includes('no3d')) await this.page.waitForFunction(() => !document.getElementById('loader'), null, { timeout: 90_000 });
   }
   async start(names = ['Ana', 'Marko', 'Jovana'], rules = {}) {
     await this.page.evaluate(([n, r]) => window.__remi.start(n, r), [names, rules]);

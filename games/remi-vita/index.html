@@ -77,9 +77,6 @@
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
   #vignette { position: fixed; inset: 0; pointer-events: none; transition: background .8s;
     background: linear-gradient(180deg, rgba(5,12,20,.72) 0%, rgba(5,12,20,.35) 30%, transparent 48%, transparent 70%, rgba(4,10,8,.7) 100%); }
-  /* home: the café sits slightly out of focus behind the title, like a shallow depth of field.
-     A plain static filter, switched off (not animated) when you leave home: no filter animations (BUG-001) */
-  body.on-home #bg { filter: blur(2.5px); }
   body.on-board #vignette { background: radial-gradient(120% 90% at 50% 40%, rgba(10,6,4,.35) 30%, rgba(0,0,0,.75) 100%); }
 
   .screen { position: fixed; inset: 0; display: flex; flex-direction: column; overflow: hidden;

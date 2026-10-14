@@ -2,6 +2,12 @@
 
 Najnovije gore. Format: [tracking.md](../../engineering/tracking.md).
 
+## 2026-10-14 — Lakša početna (dodir odmah reaguje)
+- Korisnik: na telefonu „kliknem start i ništa“. Na desktopu (Chrome, Firefox) dodir radi; uzrok na telefonu je GPU koji ne stiže (puna scena + CSS blur preko celog ekrana), pa kasni i obrada dodira.
+- Početna: scena u 40% rezolucije u render target, jedan 9-tap blur prolaz u istoj maloj rezoluciji, pa razvlačenje (umesto CSS `filter: blur` preko celog ekrana); 30 fps kad kamera stigne; senka stola se ne preračunava; dodir preskače jedan frejm da se obradi odmah.
+- Merenje (Pixel 7 emulacija, Iris Xe): početna 30 frejmova/s × 2 prolaza u 0,4 DPR; dodir „Nova igra“ → ekran igrača 120–150 ms.
+- Test fixture za 3D varijante čeka da loader nestane. Testovi 25/25.
+
 ## 2026-10-14 — Loader i brže prvo učitavanje, izvoz/uvoz istorije, OG pregled
 - **Loader:** logo + četiri karte koje se dele (2D, kompozitor, glatko i kad je glavna nit zauzeta), zlatna traka prati stvarni napredak; igra se pokazuje tek kad su kafić izgrađen, shaderi kompajlirani i prvi frejm nacrtan, pa kamera uleti.
 - **Učitavanje:** `modulepreload` za three i module (posle importmap-a), gradnja scene u koracima sa `yieldToPaint`, `compileAsync` pre prvog frejma, jedno svetlo u kafiću umesto dva, početna u pola rezolucije ispod blura.
