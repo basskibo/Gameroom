@@ -184,8 +184,8 @@ export function buildCafe({ tex, reduced = false }) {
   const fac = facadeCanvases();
   const brickMat = (w, h) => new THREE.MeshStandardMaterial({ map: tex(fac.map), emissiveMap: tex(fac.emissive), emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.9 });
   const block = (w, h, d, x, z) => { const m = new THREE.Mesh(tiledBox(w, h, d, 6), brickMat()); m.material.map.wrapS = m.material.map.wrapT = m.material.emissiveMap.wrapS = m.material.emissiveMap.wrapT = THREE.RepeatWrapping; m.position.set(x, h / 2, z); return add(m); };
-  block(26, 7.5, 12, -6, -9.1);  // behind the café; its wall is the café's back wall
-  block(12, 12, 9, -12.2, 0.6);  // the taller corner block on the left
+  block(26, 18, 12, -6, -9.1);   // behind the café, tall enough to fill the sky above the title; its wall is the café's back wall
+  block(12, 18, 9, -12.2, 0.6);  // the corner block on the left
   const sky = [0x141a28, 0x182032, 0x111724];
   for (let i = 0; i < 9; i++) {
     const h = rnd(10, 26), m = new THREE.Mesh(new THREE.BoxGeometry(rnd(8, 16), h, 8), new THREE.MeshStandardMaterial({ color: pick(sky), roughness: 1 }));
