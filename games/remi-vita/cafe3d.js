@@ -161,6 +161,7 @@ export function buildCafe({ tex, reduced = false }) {
 
   const M = {
     metal: new THREE.MeshStandardMaterial({ color: 0x2a221c, metalness: 0.6, roughness: 0.45 }),
+    green: new THREE.MeshStandardMaterial({ color: 0x1e8a4a, roughness: 0.5, metalness: 0.15 }), // the café's painted green frame, like the photo
     wood: new THREE.MeshStandardMaterial({ color: 0x6a3d22, roughness: 0.7 }),
     darkWood: new THREE.MeshStandardMaterial({ color: 0x3a2116, roughness: 0.55 }),
     glass: new THREE.MeshStandardMaterial({ color: 0xa9c0cc, metalness: 0.1, roughness: 0.04, transparent: true, opacity: 0.1, depthWrite: false, envMapIntensity: 1.4 }),
@@ -196,17 +197,17 @@ export function buildCafe({ tex, reduced = false }) {
   const frontX = [-4.6, -2.76, -0.92, 0.92, 2.76, 4.6], sideZ = [Z0, -1, 1.1, Z1];
   const postGeo = new THREE.BoxGeometry(0.1, YE - YF, 0.1);
   const posts = [...frontX.map(x => [x, Z1]), ...sideZ.slice(0, -1).flatMap(z => [[X0, z], [X1, z]])];
-  const postsMesh = new THREE.InstancedMesh(postGeo, M.metal, posts.length);
+  const postsMesh = new THREE.InstancedMesh(postGeo, M.green, posts.length);
   posts.forEach(([x, z], i) => postsMesh.setMatrixAt(i, new THREE.Matrix4().makeTranslation(x, (YE + YF) / 2, z)));
   add(postsMesh);
-  box(X1 - X0 + 0.12, 0.2, 0.12, M.metal, 0, YE, Z1); box(0.12, 0.2, Z1 - Z0, M.metal, X0, YE, (Z0 + Z1) / 2); box(0.12, 0.2, Z1 - Z0, M.metal, X1, YE, (Z0 + Z1) / 2);
+  box(X1 - X0 + 0.12, 0.2, 0.12, M.green, 0, YE, Z1); box(0.12, 0.2, Z1 - Z0, M.green, X0, YE, (Z0 + Z1) / 2); box(0.12, 0.2, Z1 - Z0, M.green, X1, YE, (Z0 + Z1) / 2);
   box(X1 - X0, 0.06, 0.06, M.metal, 0, 0.9, Z1).visible = false;
   const glassPanels = [];
   for (let i = 0; i < frontX.length - 1; i++) if (i !== 2) glassPanels.push([(frontX[i] + frontX[i + 1]) / 2, Z1, frontX[i + 1] - frontX[i] - 0.1, 0]); // the middle bay is the open door
   for (let i = 0; i < sideZ.length - 1; i++) for (const x of [X0, X1]) glassPanels.push([x, (sideZ[i] + sideZ[i + 1]) / 2, sideZ[i + 1] - sideZ[i] - 0.1, Math.PI / 2]);
   for (const [x, z, w, ry] of glassPanels) {
     const g = add(new THREE.Mesh(new THREE.PlaneGeometry(w, YE - YF - 0.12), M.glass)); g.position.set(x, (YE + YF) / 2 - 0.04, z); g.rotation.y = ry; g.renderOrder = 2;
-    const mull = box(w, 0.04, 0.05, M.metal, x, 0.95, z); mull.rotation.y = ry; // a thin transom bar like the photo's
+    const mull = box(w, 0.04, 0.05, M.green, x, 0.95, z); mull.rotation.y = ry; // a thin transom bar like the photo's
   }
   const ceil = add(new THREE.Mesh(new THREE.PlaneGeometry(X1 - X0, Z1 - Z0), new THREE.MeshStandardMaterial({ color: 0x5b3420, roughness: 0.75 })));
   ceil.rotation.x = Math.PI / 2; ceil.position.set(0, YE + 0.09, (Z0 + Z1) / 2);
@@ -233,21 +234,26 @@ export function buildCafe({ tex, reduced = false }) {
   sign.position.set(1.4, slopeY(2.1) + 0.5, 2.1);
   for (const dx of [-1.2, 1.2]) box(0.05, 0.6, 0.05, M.metal, 1.4 + dx, slopeY(2.05) + 0.15, 2.05);
 
-  // inside: bar counter with bottles, bistro tables and chairs, a TV, chairs around our table
-  box(4.2, 1.05, 0.6, M.darkWood, -1.2, YF + 0.52, Z0 + 0.42);
-  box(4.4, 0.05, 0.7, M.wood, -1.2, YF + 1.07, Z0 + 0.42);
-  const shelfGlow = add(new THREE.Mesh(new THREE.PlaneGeometry(4, 0.9), new THREE.MeshBasicMaterial({ color: 0x8a5426 })));
-  shelfGlow.position.set(-1.2, 1.95, Z0 + 0.06);
-  const bottleGeo = new THREE.CylinderGeometry(0.035, 0.04, 0.26, 8);
-  const bottles = new THREE.InstancedMesh(bottleGeo, new THREE.MeshStandardMaterial({ roughness: 0.2, metalness: 0.1 }), 36);
-  for (let i = 0; i < 36; i++) {
-    bottles.setMatrixAt(i, new THREE.Matrix4().makeTranslation(-3.1 + (i % 18) * 0.22 + rnd(-0.03, 0.03), 1.7 + Math.floor(i / 18) * 0.42, Z0 + 0.12));
-    bottles.setColorAt(i, new THREE.Color(pick(['#2d5a2a', '#6b2a1c', '#c99a3a', '#284a6b', '#d8d0c0'])));
+  // back wall: the way in, a glazed double door into the lit café inside the building, a sign above it, a TV beside
+  const frameMat = new THREE.MeshStandardMaterial({ color: 0xe9e4da, roughness: 0.6 });
+  const DX = -0.6, DW = 1.7, DH = 2.25, DZ = Z0 + 0.04;
+  const doorGlow = add(new THREE.Mesh(new THREE.PlaneGeometry(DW, DH), new THREE.MeshBasicMaterial({ color: 0xc98a4a })));
+  doorGlow.position.set(DX, YF + DH / 2, DZ);
+  box(0.09, DH + 0.09, 0.08, frameMat, DX - DW / 2, YF + DH / 2, DZ + 0.02); box(0.09, DH + 0.09, 0.08, frameMat, DX + DW / 2, YF + DH / 2, DZ + 0.02);
+  box(DW + 0.18, 0.09, 0.08, frameMat, DX, YF + DH, DZ + 0.02); box(0.06, DH, 0.06, frameMat, DX, YF + DH / 2, DZ + 0.03);
+  for (const sx of [-1, 1]) { // door panes with a kick plate, and handles
+    box(DW / 2 - 0.12, 0.35, 0.03, frameMat, DX + sx * DW / 4, YF + 0.2, DZ + 0.03);
+    box(0.03, 0.4, 0.04, M.metal, DX + sx * 0.12, YF + 1.05, DZ + 0.07);
   }
-  add(bottles);
-  const tv = box(0.9, 0.52, 0.05, M.metal, 3.2, 2.05, Z0 + 0.1);
+  const doorSignTex = tex(canvas(512, 128, (g, w, h) => { g.fillStyle = '#141210'; g.fillRect(0, 0, w, h); g.fillStyle = '#f3ead6'; g.font = 'italic 800 74px Fraunces, Georgia, serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('caffe', w / 2, h / 2 + 4); }));
+  box(1.5, 0.38, 0.05, new THREE.MeshStandardMaterial({ map: doorSignTex, emissiveMap: doorSignTex, emissive: 0xffffff, emissiveIntensity: 0.25 }), DX, YF + DH + 0.32, DZ + 0.03);
+  for (const wx of [-3.3, 1.75]) { // dark shop windows either side of the door
+    box(1.3, 1.25, 0.04, new THREE.MeshStandardMaterial({ color: 0x1a1f26, roughness: 0.15, metalness: 0.3 }), wx, 1.55, DZ);
+    box(1.4, 0.07, 0.07, frameMat, wx, 0.9, DZ + 0.02); box(1.4, 0.07, 0.07, frameMat, wx, 2.2, DZ + 0.02);
+  }
+  const tv = box(0.9, 0.52, 0.05, M.metal, 3.4, 2.05, Z0 + 0.1);
   const tvScreen = add(new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.45), new THREE.MeshBasicMaterial({ color: 0x3f9a4a })));
-  tvScreen.position.set(3.2, 2.05, Z0 + 0.13);
+  tvScreen.position.set(3.4, 2.05, Z0 + 0.13);
 
   const tableGeo = mergeGeometries([
     new THREE.CylinderGeometry(0.36, 0.36, 0.03, 24).translate(0, 0.745, 0),
@@ -289,7 +295,6 @@ export function buildCafe({ tex, reduced = false }) {
   }
   for (let i = 0; i < frontX.length - 1; i++) strand([frontX[i], YE - 0.08, Z1 + 0.08], [frontX[i + 1], YE - 0.08, Z1 + 0.08], 0.22);
   for (let i = 0; i < sideZ.length - 1; i++) for (const x of [X0 - 0.08, X1 + 0.08]) strand([x, YE - 0.08, sideZ[i]], [x, YE - 0.08, sideZ[i + 1]], 0.2);
-  for (const z of [-1.8, -0.4, 1.0, 2.4]) strand([X0, YE + 0.02, z], [X1, YE + 0.02, z], 0.32, 0.36);
   add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(wire), new THREE.LineBasicMaterial({ color: 0x1a120c })));
   const bulbMesh = new THREE.InstancedMesh(new THREE.SphereGeometry(0.038, 8, 6), new THREE.MeshBasicMaterial({ color: 0xffffff, toneMapped: false }), bulbs.length);
   const warm = new THREE.Color(0xffc56e), tmpC = new THREE.Color();
