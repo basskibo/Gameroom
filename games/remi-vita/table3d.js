@@ -131,7 +131,14 @@ function chipTexture(color, label = '') {
 }
 
 // ---------------------------------------------------------------- scene
-export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } = {}) {
+// let the browser paint (the loader keeps animating) before the next chunk of work
+const yieldToPaint = () => new Promise(r => { let done = false; const go = () => { if (!done) { done = true; r(); } }; requestAnimationFrame(() => setTimeout(go, 0)); setTimeout(go, 60); });
+
+// onProgress(0..1) follows the build; the promise resolves once shaders are compiled and the first frame is drawn
+export async function createTable(canvas, { reduced = false, felt = '#1f5a3d', onProgress = () => {} } = {}) {
+  const t0 = performance.now(), timings = [];
+  let progress = 0;
+  const step = async (name, k) => { timings.push([name, Math.round(performance.now() - t0)]); progress = Math.max(progress, k); onProgress(progress); await yieldToPaint(); };
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance', alpha: false });
   const maxDpr = Math.min(1.75, devicePixelRatio || 1);
   renderer.setPixelRatio(maxDpr);
@@ -149,6 +156,7 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
   const pm = new THREE.PMREMGenerator(renderer);
   scene.environment = pm.fromScene(new RoomEnvironment(), 0.04).texture;
   scene.environmentIntensity = 0.45;
+  await step('environment', 0.12);
 
   const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.2, 2600);
 
@@ -172,7 +180,8 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
   rail.rotation.x = -Math.PI / 2; rail.position.y = 0.2; rail.receiveShadow = true; scene.add(rail);
 
   // the café around the table, and the sky
-  const cafe = buildCafe({ tex, reduced });
+  let cafeK = 0.15;
+  const cafe = await buildCafe({ tex, reduced, step: name => step('cafe ' + name, cafeK += 0.075) });
   scene.add(cafe.root, ...cafe.lights);
   const sky = makeSky(); scene.add(sky);
 
@@ -196,6 +205,7 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
   const sp2 = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 10), spoonMat); sp2.scale.set(1.3, 0.25, 1); sp2.position.x = -0.62; spoon.add(sp2);
   spoon.position.set(0.25, 0.14, 0.95); spoon.rotation.y = 0.35; spoon.traverse(o => { o.castShadow = true; }); cup.add(spoon);
 
+  await step('cup', 0.72);
   // cards
   const faces = [['A', '♠'], ['K', '♥'], ['Q', '♦'], ['J', '♣'], ['A', '♥'], ['10', '♠'], ['7', '♦'], ['K', '♣'], ['Q', '♥'], ['JOKER', '★'], ['A', '♦'], ['9', '♣']]
     .map(([r, s]) => new THREE.MeshStandardMaterial({ map: tex(cardFace(r, s)), roughness: 0.42, alphaTest: 0.5 }));
@@ -456,9 +466,20 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
     lamp.intensity = 340 + Math.sin(time * 1.3) * 8;
     renderer.render(scene, camera);
   }
+  // compile every shader before the first frame (in parallel where the driver allows), so the first frame does not hitch
+  applyDpr();
+  camera.position.copy(camPos); camera.lookAt(camLook);
+  await step('built', 0.78);
+  try { if (renderer.compileAsync) await renderer.compileAsync(scene, camera); else renderer.compile(scene, camera); } catch (e) {}
+  await step('compiled', 0.94);
+  renderer.render(scene, camera);
+  await step('first frame', 1);
   requestAnimationFrame(frame);
 
   return {
+    timings,
+    // the loader is gone: start the fly-in to the café from up the street
+    intro() { if (mode === 'home' && !reduced) { const look = rigTarget(RIGS.home, tmpV); camPos.copy(tmpV).add(new THREE.Vector3(0, 40, 90)); camLook.copy(look); homeK = 1; } },
     // snap: jump straight there (opening the app on the board should not fly in from the plaza)
     setMode(m, snap = false) {
       mode = m in RIGS ? m : 'home';
@@ -479,5 +500,6 @@ export async function createTable(canvas, { reduced = false, felt = '#1f5a3d' } 
     deal, rain, shuffle,
     pause(p) { paused = p; },
     get looseCount() { return loose.length; },
+    get programs() { return renderer.info.programs.length; }, // for load profiling
   };
 }

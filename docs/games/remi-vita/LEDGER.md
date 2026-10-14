@@ -2,6 +2,14 @@
 
 Najnovije gore. Format: [tracking.md](../../engineering/tracking.md).
 
+## 2026-10-14 — Loader i brže prvo učitavanje, izvoz/uvoz istorije, OG pregled
+- **Loader:** logo + četiri karte koje se dele (2D, kompozitor, glatko i kad je glavna nit zauzeta), zlatna traka prati stvarni napredak; igra se pokazuje tek kad su kafić izgrađen, shaderi kompajlirani i prvi frejm nacrtan, pa kamera uleti.
+- **Učitavanje:** `modulepreload` za three i module (posle importmap-a), gradnja scene u koracima sa `yieldToPaint`, `compileAsync` pre prvog frejma, jedno svetlo u kafiću umesto dva, početna u pola rezolucije ispod blura.
+- **Merenja (390×844, CPU 4× usporen, Intel Iris Xe):** najduži blok glavne niti hladno 4,3 s → 2,4 s, toplo 0,9 s → 0,4 s; ono što ostane je iza loadera. 29 shader programa.
+- **Istorija:** „Izvezi u fajl“ (`remi-vita-istorija-<datum>.json`) i „Uvezi iz fajla“ (spaja bez duplikata, odbija tuđe fajlove), istorija čuva do 200 igara.
+- **OG:** `og.jpg` 1200×630 (logo + render kafića), `og:*`/`twitter:*` sa punim adresama na `gameroom.jageticbojan.com`; isto za landing (`/og.jpg`, kolaž 7 igara).
+- Testovi 25/25.
+
 ## 2026-10-14 — Ispravke posle testiranja na produkciji
 - **Krunica/„D“ na pogrešnoj koloni u Firefoxu:** zakrpa za BUG-001 je ćelijama zaglavlja dala `position: static`, pa su se oznake pozicionirale prema tabeli. Sad je `relative`; test proverava geometriju i samo pravilo.
 - Zlatna linija posle svakog kruga deljenja (na svakih n partija za n igrača).

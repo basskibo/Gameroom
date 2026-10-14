@@ -182,6 +182,51 @@ test.describe('Remi Vita · score sheet', () => {
     game.expectNoErrors();
   });
 
+  test('loader: the home screen shows only after the 3D café is ready, then the loader is removed', async ({ game, page }) => {
+    await game.open('?lang=en');
+    // while the scene is building the screens are hidden behind the loader
+    const early = await page.evaluate(() => ({ loader: !!document.getElementById('loader'), scene: !!window.__remi.scene, homeShown: getComputedStyle(document.getElementById('home')).display !== 'none' }));
+    if (!early.scene) expect(early).toEqual({ loader: true, scene: false, homeShown: false });
+    await page.waitForFunction(() => !!window.__remi.scene, null, { timeout: 60_000 });
+    await expect(page.locator('#loader')).toHaveCount(0, { timeout: 5_000 });
+    await expect(page.locator('#newBtn')).toBeVisible();
+    expect(await page.evaluate(() => document.body.classList.contains('booting'))).toBe(false);
+    game.expectNoErrors();
+  });
+
+  test('loader: without 3D (?no3d) it gets out of the way at once', async ({ game, page }) => {
+    await game.open();
+    await expect(page.locator('#loader')).toHaveCount(0, { timeout: 2_000 });
+    await expect(page.locator('#newBtn')).toBeVisible();
+  });
+
+  test('history: export to a file, import it on a clean device, no duplicates, a foreign file is refused', async ({ game, page }) => {
+    await game.open();
+    await game.start(['Lela', 'Gobla', 'Bojan'], { limit: 301, rebuy: 0 });
+    await game.round('p0', 'close', { p1: 320, p2: 10 });           // Gobla goes over, no buy-back
+    await game.round('p0', 'close', { p2: 400 });                    // Bojan goes over: Lela wins, the game lands in history
+    await expect(page.locator('#eHome')).toBeVisible();
+    await page.locator('#eHome').click();
+    await page.locator('[data-open=history]').click();
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.locator('#hExport').click()]);
+    expect(dl.suggestedFilename()).toMatch(/^remi-vita-history-\d{4}-\d{2}-\d{2}\.json$/);
+    const file = await dl.path();
+    // another phone: empty history
+    await page.evaluate(() => localStorage.setItem('remi-vita:history', '[]'));
+    await page.locator('[data-close]').first().click();
+    await page.locator('[data-open=history]').click();
+    await page.locator('#hFile').setInputFiles(file);
+    await expect(page.locator('#toast')).toHaveText('Imported 1 games');
+    await expect(page.locator('.hist-item')).toHaveCount(1);
+    await expect(page.locator('.hist-item b')).toHaveText('Winner: Lela');
+    await page.locator('#hFile').setInputFiles(file);                // same file again
+    await expect(page.locator('#toast')).toHaveText('No new games in that file');
+    await page.locator('#hFile').setInputFiles({ name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"hello":1}') });
+    await expect(page.locator('#toast')).toHaveText('That file is not a Remi Vita history');
+    expect(await page.evaluate(() => JSON.parse(localStorage.getItem('remi-vita:history')).length)).toBe(1);
+    game.expectNoErrors();
+  });
+
   test('Serbian strings', async ({ game, page }) => {
     await game.open('?no3d&lang=sr');
     await expect(page.locator('#newBtn')).toContainText('Nova igra');

@@ -152,7 +152,8 @@ function tiledBox(w, h, d, tile) {
 }
 
 // ---------------------------------------------------------------- the café
-export function buildCafe({ tex, reduced = false }) {
+// `step` is awaited between sections so a phone can paint the loader while the café is built
+export async function buildCafe({ tex, reduced = false, step = async () => {} }) {
   const root = new THREE.Group();
   root.scale.setScalar(S); root.position.copy(cafePoint(0, 0, 0));
   const add = (m, parent = root) => { parent.add(m); return m; };
@@ -180,6 +181,7 @@ export function buildCafe({ tex, reduced = false }) {
   bed.rotation.x = -Math.PI / 2; bed.position.set(9.6, 0.02, 1.2);
   box(0.14, 0.18, 10, new THREE.MeshStandardMaterial({ color: 0x9a948a, roughness: 0.8 }), 5.15, 0.09, 1.2); // curb
 
+  await step('buildings');
   // the brick block the café leans on (behind and to the left) and a far skyline
   const fac = facadeCanvases();
   const brickMat = (w, h) => new THREE.MeshStandardMaterial({ map: tex(fac.map), emissiveMap: tex(fac.emissive), emissive: 0xffffff, emissiveIntensity: 0.55, roughness: 0.9 });
@@ -192,6 +194,7 @@ export function buildCafe({ tex, reduced = false }) {
     m.position.set(-50 + i * 13 + rnd(-3, 3), h / 2, rnd(-60, -45)); add(m);
   }
 
+  await step('pavilion');
   // pavilion frame: posts, eave beams, glass, wooden ceiling
   const X0 = -4.6, X1 = 4.6, Z0 = -3, Z1 = 3.2, YF = 0.15, YE = 2.75;
   const frontX = [-4.6, -2.76, -0.92, 0.92, 2.76, 4.6], sideZ = [Z0, -1, 1.1, Z1];
@@ -234,6 +237,7 @@ export function buildCafe({ tex, reduced = false }) {
   sign.position.set(1.4, slopeY(2.1) + 0.5, 2.1);
   for (const dx of [-1.2, 1.2]) box(0.05, 0.6, 0.05, M.metal, 1.4 + dx, slopeY(2.05) + 0.15, 2.05);
 
+  await step('entrance');
   // back wall: the way in, like the real one: a wide grey aluminium glass door standing open onto a lit stairwell,
   // a brown glass transom with the name above it
   const alu = new THREE.MeshStandardMaterial({ color: 0xbfc3c6, metalness: 0.55, roughness: 0.35 });
@@ -312,6 +316,7 @@ export function buildCafe({ tex, reduced = false }) {
   add(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, TABLE.y - YF - 0.04, 12), M.darkWood)).position.set(TABLE.x, (TABLE.y + YF) / 2 - 0.02, TABLE.z);
   add(new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 0.04, 24), M.darkWood)).position.set(TABLE.x, YF + 0.02, TABLE.z);
 
+  await step('lights');
   // string lights: one strand under the front eave, three across the ceiling
   const bulbs = [], wire = [];
   function strand(a, b, sag, step = 0.3) {
@@ -338,6 +343,7 @@ export function buildCafe({ tex, reduced = false }) {
   halos.renderOrder = 5;
   const phase = bulbs.map(() => [rnd(0, 6.28), rnd(0.6, 2.2), Math.random() < 0.08]);
 
+  await step('flowers');
   // flowers: pots along the front, hanging baskets on the eave, a garden bed on the right
   const reds = ['#d62b3a', '#ff4a5c', '#b8162a'], pinks = ['#ff6fa8', '#ff9cc4', '#e0428a', '#fff1f5'], purples = ['#8a5cd6', '#b18cf0', '#6a3fb0', '#f3eefc'], yellows = ['#ffc23a', '#ffda6b', '#ff8f2a'];
   const variants = [
@@ -361,6 +367,7 @@ export function buildCafe({ tex, reduced = false }) {
     const fl = new THREE.Mesh(baskets.length % 2 ? basketGeo2 : basketGeo, M.plants); fl.position.y = -0.48; fl.rotation.y = rnd(0, 6); pivot.add(fl);
     baskets.push({ pivot, ph: rnd(0, 6.28), sp: rnd(0.7, 1.1) });
   }
+  await step('garden');
   // garden bed on the right: shrubs, lavender, daisies, hostas
   const bedParts = [];
   const bedBlooms = [purples, yellows, ['#d62b3a', '#ff8f2a'], ['#f3eefc', '#ffda6b'], pinks];
@@ -373,6 +380,7 @@ export function buildCafe({ tex, reduced = false }) {
   }
   add(new THREE.Mesh(mergeGeometries(bedParts), M.plants));
 
+  await step('trees');
   // trees behind the right side, swaying a touch
   const trees = [];
   const crowns = [treeCrownGeo(2.6), treeCrownGeo(3.2), treeCrownGeo(2.2)];
@@ -399,8 +407,7 @@ export function buildCafe({ tex, reduced = false }) {
   // lights (in the scene, world units): warm glow inside, a lamp over the flowers, the street lamp
   const lights = [];
   const point = (x, y, z, color, intensity, dist) => { const l = new THREE.PointLight(color, intensity, dist * S, 2); l.position.copy(cafePoint(x, y, z)); l.userData.base = intensity; lights.push(l); return l; };
-  point(-2.4, 2.4, -0.4, 0xffaa55, 26000, 10);
-  point(2.4, 2.4, -0.4, 0xffaa55, 26000, 10);
+  point(0, 2.45, -0.4, 0xffaa55, 46000, 12); // one warm light for the room: every light costs every pixel on a phone
   point(0.5, 2.3, 4.1, 0xffb86a, 15000, 6);
   point(-6.2, 4.0, 7.5, 0xffd09a, 7000, 7);
 
