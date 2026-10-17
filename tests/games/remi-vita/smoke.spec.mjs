@@ -217,7 +217,8 @@ test.describe('Remi Vita · score sheet', () => {
     await page.locator('[data-close]').first().click();
     await page.locator('[data-open=history]').click();
     await page.locator('#hFile').setInputFiles(file);
-    await expect(page.locator('#toast')).toHaveText('Imported 1 games');
+    await expect(page.locator('#toast')).toHaveText('Imported 1 game');
+    await page.locator('[data-tab=games]').click();
     await expect(page.locator('.hist-item')).toHaveCount(1);
     await expect(page.locator('.hist-item b')).toHaveText('Winner: Lela');
     await page.locator('#hFile').setInputFiles(file);                // same file again

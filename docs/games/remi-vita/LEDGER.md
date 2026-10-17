@@ -2,6 +2,15 @@
 
 Najnovije gore. Format: [tracking.md](../../engineering/tracking.md).
 
+## 2026-10-17 — Istorija sa rang listom, cela tabela prošlih igara, jasniji red Σ
+- Korisnik (posle izvoza istorije sa 4 igre): hoće rang listu igrača i da se kasnije vidi cela istorija; posle prve partije tabla „izgleda kao da ima dva ista reda“ (BUG-002).
+- **Tabla:** u redu partije krupno stoje poeni te partije (+35, −20, −40 ★), a zbir posle nje je sitan red ispod (`Σ 35`). Poslednja odigrana partija ima zlatnu podlogu. Red Σ ima zlatnu liniju, svoju podlogu i natpis „Ukupno“.
+- **Istorija:** dve kartice. *Rang lista* svih igrača kroz sve igre (pobede, procenat, prosečno mesto, najbolji rezultat, koliko puta je ispao); dodir na igrača filtrira igre. *Igre*: svaka igra sa celim poretkom (1. Lela −163 · 2. Gobla 470 · 3. Bojan 619). Dodir otvara igru: poredak, grafik i cela tabela partiju po partiju, „Igraj ponovo“ i „Obriši ovu igru“.
+- **Format istorije:** nove igre čuvaju `place`, `rebuys`, `limit` i `rows` (poeni i zbir po partiji). Stare igre i stari fajlovi rade kao pre, samo bez tabele. Izvoz/uvoz čuva tabelu, a pokvarena tabela se odbacuje, dok se konačan rezultat i dalje uvozi.
+- Brisanje cele istorije i jedne igre sad traži potvrdu (pre se cela istorija brisala jednim dodirom). Poruka „Imported 1 games“ ima pravilnu množinu.
+- Događaj `history_open` (jednom po učitavanju).
+- Testovi: 25 → 29 (`history.spec.mjs`: rang lista, tabela prošle igre i izvoz/uvoz sa njom, potvrda brisanja, regresija za BUG-002).
+
 ## 2026-10-14 — Lakša početna (dodir odmah reaguje)
 - Korisnik: na telefonu „kliknem start i ništa“. Na desktopu (Chrome, Firefox) dodir radi; uzrok na telefonu je GPU koji ne stiže (puna scena + CSS blur preko celog ekrana), pa kasni i obrada dodira.
 - Početna: scena u 40% rezolucije u render target, jedan 9-tap blur prolaz u istoj maloj rezoluciji, pa razvlačenje (umesto CSS `filter: blur` preko celog ekrana); 30 fps kad kamera stigne; senka stola se ne preračunava; dodir preskače jedan frejm da se obradi odmah.

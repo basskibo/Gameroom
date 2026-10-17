@@ -1,6 +1,6 @@
 # Remi Vita — tracker
 
-**Trenutno:** v1.1 (2026-10-14): BUG-001 (Firefox pad) rešen, unos partije u dva koraka, kafić kao 3D scena, novi izgled (čoja + zlato, igrači kao karte, SVG ikonice), bez zvuka. 18 testova.
+**Trenutno:** v1.2 (2026-10-17): istorija sa rang listom igrača i celom tabelom prošlih igara, jasniji red Σ (BUG-002). v1.1: BUG-001 (Firefox pad) rešen, unos partije u dva koraka, kafić kao 3D scena, novi izgled. 29 testova.
 
 ## Odluke potrebne od korisnika
 
@@ -16,5 +16,6 @@
 
 ## Faza B — Dalje
 
+- [x] Istorija: rang lista igrača, cela tabela svake igre, filter po igraču, brisanje jedne igre (2026-10-17)
 - [ ] PWA (manifest + offline keš) — aplikacija se koristi za stolom, često bez dobrog signala
 - [ ] Deljenje tabele kao slike

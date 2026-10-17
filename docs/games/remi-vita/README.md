@@ -23,10 +23,13 @@ Povezano: [BUGS](BUGS.md) · [TECH-DEBT](TECH-DEBT.md) · [IMPROVEMENTS](IMPROVE
 | `board` | tabela (`renderBoard`), banner dealera, `commitRound`, undo |
 | `round sheet` | dva koraka: 1) ko je zatvorio (`.wbtn`, tastatura 1–9 bira), 2) poeni (`#changeWinner`, `#wtype`, `.entry` + „Nije otvorio“, `#keypad` 0–9/⌫/Dalje), živi pregled, izmena/brisanje partije |
 | `rebuy / end` | kupovina posle granice, kraj igre (podijum, deljenje rezultata, istorija), `showMidgame` pri revanšu/povratku |
-| `menus` | statistika (SVG grafik), istorija, podešavanja (ekran, sto, jezik, `gameroom:back`) |
+| `menus` | statistika (`lineChart`, SVG grafik), podešavanja (ekran, sto, jezik, `gameroom:back`) |
+| `history` | `historyEntry(match, D)` pri kraju igre; `openHistory(tab, who)`: kartice *Rang lista* (`leaderboard`, igrači po imenu bez obzira na velika/mala slova) i *Igre* (filter po igraču); `openGame(i)`: poredak, grafik, tabela partiju po partiju; izvoz/uvoz (`importHistory`, `cleanRows`) |
 | `3D table` | `import('./table3d.js')` posle prvog iscrtavanja; bez WebGL-a ostaje CSS pozadina. `setMode(screen, snap)`: otvaranje direktno na tabli ne leti sa trga |
 
 ### Tok podataka
+
+Unos u istoriji (`remi-vita:history`, najviše 200): `{ id, ended, rounds, winner, limit, players: [{ name, color, suit, total, out, place, rebuys }], rows: [{ w, t: 'c'|'h', s: [poeni po mestu], a: [zbir posle], r?: { mesto: kupovina } }] }`. Igre pre 2026-10-17 nemaju `place`/`rows`; poredak se tada računa (pobednik, pa ko nije ispao po zbiru, pa ispali).
 
 `match = { v: 1, players, rules, events: [round | rebuy | out], ended }`. Partija čuva izračunate `scores` (promena pravila ne menja istoriju). `derive()` vraća zbirove, ko je ispao/čeka odluku o kupovini, ko deli sledeći (sledeće aktivno mesto posle prošlog dealera; prvu deli prvi igrač), rang i `over`. Undo/izmena = izmena niza događaja + ponovni `derive`. Čuva se posle svake promene.
 
@@ -45,7 +48,7 @@ Povezano: [BUGS](BUGS.md) · [TECH-DEBT](TECH-DEBT.md) · [IMPROVEMENTS](IMPROVE
 - SDK: `Gameroom.init({ game: 'remi-vita', kids: false })`; `gameplayStart` dok je tabla otvorena.
 - Reklama za nagradu `theme`: premium stolovi (Bordo, Noar). Kad reklame nisu dostupne (običan web), svi stolovi su slobodni — ništa se ne zaključava bez ponude.
 - Reklama preko celog ekrana samo posle kraja igre (revanš / početna), SDK ograničava učestalost.
-- Događaji: `game_start`, `round_saved`, `first_minute`, `level_end` (kraj igre), `rewarded_offer`, `rewarded_watched`.
+- Događaji: `game_start`, `round_saved`, `first_minute`, `level_end` (kraj igre), `rewarded_offer`, `rewarded_watched`, `history_open`, `history_export`, `history_import`.
 
 ## Merenja (baseline 2026-10-14)
 

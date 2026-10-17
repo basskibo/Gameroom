@@ -7,12 +7,23 @@ Format i ozbiljnost: [docs/engineering/tracking.md](../../engineering/tracking.m
 | ID | S | Status | Naslov |
 |---|---|---|---|
 | BUG-001 | S1 | rešeno 2026-10-14 | Firefox pada (ceo browser) posle „Sačuvaj partiju“ |
+| BUG-002 | S3 | rešeno 2026-10-17 | Posle prve partije red partije i red Σ pokazuju isti broj, pa izgleda kao dupli red |
+| BUG-003 | S3 | rešeno 2026-10-17 | „Obriši istoriju“ briše sve igre jednim dodirom, bez potvrde |
 
 ## Otvoreno
 
 (nema)
 
 ## Rešeno
+
+### BUG-002 · S3 · Red partije izgleda kao kopija reda Σ
+- **Simptom:** posle prve partije tabla ima dva reda sa istim brojevima (zbir posle 1. partije i Σ), pa nije jasno šta je trenutni rezultat.
+- **Uzrok:** ćelija partije je krupno pokazivala zbir posle te partije, a poene partije sitno.
+- **Popravka:** krupno idu poeni partije, a zbir je sitan red `Σ n`. Poslednja partija ima zlatnu podlogu, red Σ zlatnu liniju i natpis „Ukupno“.
+- **Provera:** `history.spec.mjs` › board (pada na staroj verziji, jer nema `.pts`/`.run` ni `tr.last`).
+
+### BUG-003 · S3 · Brisanje istorije bez potvrde
+- **Popravka:** `confirm` pre brisanja cele istorije i pre brisanja jedne igre. Test u `history.spec.mjs`.
 
 ### BUG-001 · S1 · Firefox pada posle „Sačuvaj partiju“
 - **Simptom:** u Firefoxu (157, Linux, deployovana verzija) ceo browser se sruši odmah posle čuvanja partije. Logova nema jer pada glavni proces.

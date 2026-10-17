@@ -261,14 +261,20 @@
   .score tbody tr:nth-child(even) td:not(.rn) { background: rgba(243,234,214,.025); }
   .score tbody tr.cycle td { border-bottom: 2px solid var(--line2); }
   .cell { display: flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.05; position: relative; }
-  .cell .tot { font-weight: 800; font-size: 17px; }
-  .cell .dl { font-size: 13px; font-weight: 800; color: var(--muted); margin-top: 1px; }
-  .cell.win .dl { color: var(--green); }
-  .cell.win .tot { color: var(--gold2); }
-  .cell.hand { }
-  .cell.hand .dl { color: var(--card-ink); background: linear-gradient(135deg, var(--gold2), var(--gold)); padding: 1px 6px; border-radius: 6px; }
-  .cell.dbl .dl { color: var(--red); }
-  .cell.no .dl { color: var(--red); }
+  /* a row is one round: its points lead, the running total after it is the quiet line under them */
+  .cell .pts { font-weight: 800; font-size: 17px; }
+  .cell .run { font-size: 11px; font-weight: 700; color: var(--dim); margin-top: 2px; }
+  .cell.win .pts { color: var(--green); }
+  .cell.hand .pts { color: var(--card-ink); background: linear-gradient(135deg, var(--gold2), var(--gold)); padding: 1px 6px; border-radius: 6px; font-size: 15px; }
+  .cell.dbl .pts, .cell.no .pts { color: var(--red); }
+  /* the round just played: a soft gold wash so it is easy to find */
+  .score tbody tr.last td:not(.rn) { background: rgba(231,184,102,.08); }
+  .score tbody tr.last .rn { color: var(--gold2); }
+  .score tbody tr.last .run { color: var(--muted); }
+  /* Σ: where everyone stands now — gold rule on top, labelled, clearly not just another round */
+  .score tfoot td { border-top: 2px solid var(--gold); background: linear-gradient(180deg, rgba(231,184,102,.16), rgba(231,184,102,.04)), var(--panel2); }
+  .score tfoot .rn { color: var(--gold2); font-size: 16px; font-weight: 900; background: linear-gradient(180deg, rgba(231,184,102,.16), rgba(231,184,102,.04)), var(--panel2); }
+  .score tfoot .rn .tlbl { display: block; font-size: 8px; letter-spacing: .06em; text-transform: uppercase; color: var(--gold); margin-top: 2px; }
   .cell .dmark { position: absolute; top: 4px; left: calc(50% + 24px); font-size: 9px; font-weight: 900; color: var(--gold); opacity: .8; }
   tr.enter td { animation: rowIn .7s var(--spring) both; }
   tr.enter td:nth-child(2) { animation-delay: .05s; } tr.enter td:nth-child(3) { animation-delay: .1s; } tr.enter td:nth-child(4) { animation-delay: .15s; }
@@ -413,9 +419,49 @@
   .stat .hd .av { width: 26px; height: 26px; font-size: 11px; }
   .stat dl { margin: 0; display: grid; grid-template-columns: 1fr auto; gap: 3px 8px; font-size: 12px; }
   .stat dt { color: var(--muted); } .stat dd { margin: 0; font-weight: 800; text-align: right; }
-  .hist-item { padding: 12px 14px; border-radius: 14px; background: rgba(0,0,0,.22); border: 1px solid var(--line); display: flex; gap: 12px; align-items: center; }
-  .hist-item .meta { flex: 1; min-width: 0; }
+  /* history */
+  .modal.hist .glass { max-width: 560px; }
+  .htabs { display: flex; margin: 0 0 12px; }
+  .htabs button { flex: 1; }
+  .hist-item { padding: 12px 14px; border-radius: 14px; background: rgba(0,0,0,.22); border: 1px solid var(--line); display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; transition: border-color .2s; }
+  .hist-item:hover { border-color: var(--line2); }
+  .hist-item .meta { flex: 1; min-width: 0; display: block; }
+  .hist-item b { display: block; }
   .hist-item small { color: var(--muted); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .hist-item .go { color: var(--gold); display: grid; flex: none; }
+  .hrank { display: flex; flex-wrap: wrap; gap: 4px 10px; margin-top: 5px; font-size: 12px; font-weight: 700; color: var(--muted); }
+  .hrank .w { color: var(--gold2); }
+  .hrank .o { color: var(--dim); }
+  .hrank .me { text-decoration: underline; text-decoration-color: var(--gold); text-underline-offset: 3px; }
+  .hfilter { display: inline-flex; gap: 8px; align-items: center; margin: 0 0 10px; color: var(--gold2); }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .lb { list-style: none; margin: 0 0 8px; padding: 0; display: grid; gap: 8px; }
+  .lb-row { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 14px; background: rgba(0,0,0,.22); border: 1px solid var(--line); text-align: left; transition: border-color .2s; }
+  .lb-row:hover { border-color: var(--line2); }
+  .lb-row.top1 { border-color: var(--gold); background: linear-gradient(100deg, rgba(231,184,102,.18), rgba(0,0,0,.22) 60%); }
+  .lb-pl { width: 24px; flex: none; text-align: center; font-family: Fraunces, Georgia, serif; font-weight: 900; font-size: 18px; color: var(--muted); }
+  .top1 .lb-pl { color: var(--gold2); } .top2 .lb-pl { color: #dfe4ea; } .top3 .lb-pl { color: #e7ad7e; }
+  .lb-row .meta { flex: 1; min-width: 0; display: block; }
+  .lb-row .meta b { display: block; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lb-row small { display: block; color: var(--muted); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .lb-w { flex: none; text-align: right; min-width: 52px; }
+  .lb-w b { display: block; font-family: Fraunces, Georgia, serif; font-weight: 900; font-size: 24px; line-height: 1; color: var(--gold2); }
+  .hback { display: inline-flex; align-items: center; gap: 6px; color: var(--gold); font-weight: 800; font-size: 13px; margin: 0 0 8px; padding: 4px 0; }
+  .final-list li.w b { color: var(--gold2); }
+  .otag, .rbtag { font-size: 10px; font-weight: 800; padding: 1px 6px; border-radius: 6px; vertical-align: 2px; }
+  .otag { color: #fff; background: var(--red); } .rbtag { color: var(--gold); border: 1px solid var(--line2); }
+  /* a past game's table: plain, nothing sticky or animated (BUG-001 stays away from it) */
+  .htable-wrap { overflow-x: auto; border-radius: 14px; border: 1px solid var(--line); background: rgba(0,0,0,.18); }
+  .htable { border-collapse: collapse; width: max-content; min-width: 100%; }
+  .htable th, .htable td { padding: 6px 8px; text-align: center; border-bottom: 1px solid rgba(231,184,102,.07); }
+  .htable th { font-size: 12px; font-weight: 800; min-width: 64px; }
+  .htable th .av { margin: 0 auto 4px; }
+  .htable th .pn { max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0 auto; }
+  .htable .rn { color: var(--muted); font-size: 12px; font-weight: 800; }
+  .htable .cell .pts { font-size: 15px; }
+  .htable tfoot td { border-top: 2px solid var(--gold); border-bottom: 0; background: rgba(231,184,102,.1); font-family: Fraunces, Georgia, serif; font-size: 18px; }
+  .htable tfoot td.lead { color: var(--gold2); }
+  .btn.danger { color: #f3a094; }
 
   @media (min-width: 900px) {
     #board { padding-left: 28px; padding-right: 28px; max-width: 980px; margin: 0 auto; }
@@ -590,13 +636,21 @@ I.add({
     rebuyT: '{name} is over {limit}', rebuyS: 'Buy back in with {v} points, or leave the game?', rebuyYes: 'Buy in ({v})', rebuyNo: 'Out of the game',
     endT: 'Game over', endWin: '{name} wins!', share: 'Share', again: 'Rematch', home: 'Home', finish: 'Finish the game', finishQ: 'Finish now? The lowest score wins.',
     menu: 'Game', stats: 'Statistics', chart: 'Score over the rounds', stClose: 'Closes', stHand: 'In one hand', stAvg: 'Avg / round', stBest: 'Best round', stWorst: 'Worst round', stRebuy: 'Buy-ins',
-    histEmpty: 'Finished games will appear here.', histWin: 'Winner: {name}', del2: 'Clear history', histExport: 'Export to file', histImport: 'Import from file', histImported: 'Imported {n} games', histNothing: 'No new games in that file', histBad: 'That file is not a Remi Vita history', rematchSame: 'Play again',
+    histEmpty: 'Finished games will appear here.', histWin: 'Winner: {name}', del2: 'Clear history', histExport: 'Export to file', histImport: 'Import from file', histImported: ({ n }) => `Imported ${n} ${n === 1 ? 'game' : 'games'}`, histNothing: 'No new games in that file', histBad: 'That file is not a Remi Vita history', rematchSame: 'Play again',
     wake: 'Keep the screen on', lang: 'Language', theme: 'Table',
     themeLock: 'Watch a short ad to unlock this table', themeUnlocked: 'New table unlocked!', back: '⌂ Back to Gameroom', closeBtn: 'Close',
     t_classic: 'Classic', t_espresso: 'Espresso', t_bordo: 'Bordeaux', t_noir: 'Noir',
     howBody: '<p><b>Players.</b> Add everyone in seating order. The first player deals first; the deal then moves to the next player each round, and the app shows who deals.</p><p><b>Each round.</b> Pick who went out. Everyone else enters the points left in their hand, and the app adds them to the running total.</p><p><b>Scoring.</b> Going out is −20, going out in one hand is −40 and everyone else pays double. A player who never opened pays 100. All of it can be changed in the rules.</p><p><b>Limit.</b> Over the limit you are out, unless you buy back in with the highest score at the table. Lowest score wins.</p>',
     shareText: 'Remi Vita — {rounds} rounds\n{lines}\n🏆 {name}', copied: 'Result copied',
     startedAgo: '{players} · {rounds}',
+    totalShort: 'Total',
+    hTabBoard: 'Leaderboard', hTabGames: 'Games', hSummary: ({ n, date }) => `${n} ${n === 1 ? 'game' : 'games'} since ${date}`,
+    lbGames: ({ n }) => `${n} ${n === 1 ? 'game' : 'games'}`, lbWins: ({ n }) => (n === 1 ? 'win' : 'wins'), lbAvgPlace: 'avg place {v}', lbBest: 'best {v}', lbOuts: 'out {n}×',
+    lbHint: 'Most wins first, then win rate and average place. Tap a player to see their games.',
+    hFilter: 'Games with {name}', hAll: 'All games', hBack: 'History', hRounds: 'Round by round',
+    hNoRows: 'Round-by-round scores are kept for games finished from now on. This one has the final result only.',
+    hDelGame: 'Delete this game', hDelGameQ: 'Delete this game from the history?', hDeleted: 'Game deleted',
+    hClearQ: 'Delete the whole history? Export it to a file first if you want to keep it.',
   },
   sr: {
     tagline: 'Remi tabla, lepo vođena. Dodaj igrače, aplikacija prati ko deli i sama računa svaku partiju.',
@@ -622,13 +676,21 @@ I.add({
     rebuyT: '{name} je preko {limit}', rebuyS: 'Kupuje se sa {v} poena ili ispada iz igre?', rebuyYes: 'Kupuje se ({v})', rebuyNo: 'Ispada',
     endT: 'Kraj igre', endWin: '{name} pobeđuje!', share: 'Podeli', again: 'Revanš', home: 'Početna', finish: 'Završi igru', finishQ: 'Završiti sada? Pobeđuje najmanji rezultat.',
     menu: 'Igra', stats: 'Statistika', chart: 'Rezultat kroz partije', stClose: 'Zatvaranja', stHand: 'Ruke', stAvg: 'Prosek / partija', stBest: 'Najbolja partija', stWorst: 'Najgora partija', stRebuy: 'Kupovine',
-    histEmpty: 'Završene igre će se pojaviti ovde.', histWin: 'Pobednik: {name}', del2: 'Obriši istoriju', histExport: 'Izvezi u fajl', histImport: 'Uvezi iz fajla', histImported: 'Uvezeno igara: {n}', histNothing: 'U fajlu nema novih igara', histBad: 'Ovaj fajl nije Remi Vita istorija', rematchSame: 'Igraj ponovo',
+    histEmpty: 'Završene igre će se pojaviti ovde.', histWin: 'Pobednik: {name}', del2: 'Obriši istoriju', histExport: 'Izvezi u fajl', histImport: 'Uvezi iz fajla', histImported: ({ n }) => `Uvezeno: ${n} ${I.plural(n, 'igra', 'igre', 'igara')}`, histNothing: 'U fajlu nema novih igara', histBad: 'Ovaj fajl nije Remi Vita istorija', rematchSame: 'Igraj ponovo',
     wake: 'Ekran uvek upaljen', lang: 'Jezik', theme: 'Sto',
     themeLock: 'Pogledaj kratku reklamu i otključaj ovaj sto', themeUnlocked: 'Novi sto otključan!', back: '⌂ Nazad u Gameroom', closeBtn: 'Zatvori',
     t_classic: 'Klasik', t_espresso: 'Espreso', t_bordo: 'Bordo', t_noir: 'Noar',
     howBody: '<p><b>Igrači.</b> Dodaj sve redom kako sede. Prvi igrač deli prvi, a posle svake partije deli sledeći — aplikacija pokazuje ko deli.</p><p><b>Svaka partija.</b> Izaberi ko je zatvorio. Ostalima upiši koliko im je ostalo u ruci, a aplikacija to dodaje na zbir.</p><p><b>Bodovanje.</b> Zatvaranje je −20, ruka je −40 i svima ostalima se duplira. Ko nije otvorio dobija 100. Sve se menja u pravilima.</p><p><b>Granica.</b> Ko pređe granicu ispada, osim ako se kupi — vraća se sa najvećim rezultatom za stolom. Pobeđuje najmanji rezultat.</p>',
     shareText: 'Remi Vita — {rounds}\n{lines}\n🏆 {name}', copied: 'Rezultat kopiran',
     startedAgo: '{players} · {rounds}',
+    totalShort: 'Ukupno',
+    hTabBoard: 'Rang lista', hTabGames: 'Igre', hSummary: ({ n, date }) => `${n} ${I.plural(n, 'igra', 'igre', 'igara')} od ${date}`,
+    lbGames: ({ n }) => `${n} ${I.plural(n, 'igra', 'igre', 'igara')}`, lbWins: ({ n }) => I.plural(n, 'pobeda', 'pobede', 'pobeda'), lbAvgPlace: 'prosečno mesto {v}', lbBest: 'najbolje {v}', lbOuts: 'ispao {n}×',
+    lbHint: 'Prvo najviše pobeda, pa procenat pobeda i prosečno mesto. Dodirni igrača da vidiš njegove igre.',
+    hFilter: 'Igre sa: {name}', hAll: 'Sve igre', hBack: 'Istorija', hRounds: 'Partija po partija',
+    hNoRows: 'Rezultati partiju po partiju se čuvaju za igre završene od sada. Za ovu igru postoji samo konačan rezultat.',
+    hDelGame: 'Obriši ovu igru', hDelGameQ: 'Obrisati ovu igru iz istorije?', hDeleted: 'Igra obrisana',
+    hClearQ: 'Obrisati celu istoriju? Ako želiš da je sačuvaš, prvo je izvezi u fajl.',
   },
 });
 I.apply();
@@ -844,10 +906,11 @@ function renderBoard({ fresh = false, newRow = false, prevTotals = null } = {}) 
     const isNew = newRow && i === D.rows.length - 1;
     // a gold rule after every full turn of the deal (as many rounds as there are players)
     const cycle = (i + 1) % match.players.length === 0 && i < D.rows.length - 1;
-    h += `<tr class="${isNew ? 'enter' : ''} ${r.newlyOut.length ? 'elim' : ''} ${cycle ? 'cycle' : ''}"><td class="rn"><button data-edit="${i}" aria-label="Edit">${r.n}</button></td>`;
+    const last = i === D.rows.length - 1;
+    h += `<tr class="${isNew ? 'enter' : ''} ${last ? 'last' : ''} ${r.newlyOut.length ? 'elim' : ''} ${cycle ? 'cycle' : ''}"><td class="rn"><button data-edit="${i}" aria-label="Edit">${r.n}</button></td>`;
     for (const p of ps) {
       const s = r.e.scores[p.id];
-      if (s == null) { h += `<td class="${D.out[p.id] ? 'col-out' : ''}"><div class="cell"><span class="dl">·</span></div></td>`; continue; }
+      if (s == null) { h += `<td class="${D.out[p.id] ? 'col-out' : ''}"><div class="cell"><span class="run">·</span></div></td>`; continue; }
       const win = r.e.winner === p.id, hand = win && r.e.type === 'hand';
       const dbl = !win && ((r.e.type === 'hand' && match.rules.dblHand) || (r.e.type === 'close' && match.rules.dblClose));
       const no = r.e.no && r.e.no[p.id];
@@ -855,11 +918,12 @@ function renderBoard({ fresh = false, newRow = false, prevTotals = null } = {}) 
       const cls = ['cell', win && 'win', hand && 'hand', dbl && 'dbl', no && 'no'].filter(Boolean).join(' ');
       const tag = hand ? `${fmt(s)} ★` : no ? `${fmtD(s)} ✗` : dbl ? `${fmtD(s)} ×2` : fmtD(s);
       const outNow = r.newlyOut.includes(p.id);
-      h += `<td class="${outNow ? 'out-now col-out' : ''}"><div class="cell ${cls}">${r.e.dealer === p.id ? '<span class="dmark">D</span>' : ''}<span class="tot num">${fmt(r.after[p.id])}${rb ? ` → ${fmt(r.rebuy[p.id])}` : ''}</span><span class="dl num">${tag}</span>${outNow ? `<span class="outtag">${tr('out')}</span>` : ''}</div></td>`;
+      // the round's own points lead; the running total is the small line, so the last row never reads as a copy of the Σ row
+      h += `<td class="${outNow ? 'out-now col-out' : ''}"><div class="cell ${cls}">${r.e.dealer === p.id ? '<span class="dmark">D</span>' : ''}<span class="pts num">${tag}</span><span class="run num">Σ ${fmt(r.after[p.id])}${rb ? ` → ${fmt(r.rebuy[p.id])}` : ''}</span>${outNow ? `<span class="outtag">${tr('out')}</span>` : ''}</div></td>`;
     }
     h += '</tr>';
   });
-  h += '</tbody><tfoot><tr><td class="rn">Σ</td>';
+  h += `</tbody><tfoot><tr><td class="rn">Σ<span class="tlbl">${tr('totalShort')}</span></td>`;
   for (const p of ps) {
     const rank = D.ranked.indexOf(p.id) + 1;
     const pct = match.rules.limit > 0 ? Math.min(100, Math.max(0, D.totals[p.id] / match.rules.limit * 100)) : Math.abs(D.totals[p.id]) / maxT * 100;
@@ -1093,7 +1157,7 @@ function endMatch(manual = false) {
   // history
   const hist = load(K.hist, []);
   if (!hist.some(h => h.id === match.id)) {
-    hist.unshift({ id: match.id, ended: match.ended, rounds: D.roundNo, players: match.players.map(p => ({ name: p.name, color: p.color, suit: p.suit, total: D.totals[p.id], out: !!D.out[p.id] })), winner: winner.name });
+    hist.unshift(historyEntry(match, D));
     save(K.hist, hist.slice(0, HIST_MAX));
     try { sdk.track('level_end', { result: 'finished', rounds: D.roundNo, players: match.players.length, seconds: Math.round((Date.now() - match.started) / 1000) }); } catch (e) {}
   }
@@ -1145,16 +1209,15 @@ function openMenu() {
 $('#menuBtn').onclick = () => { openMenu(); };
 $('#statsBtn').onclick = () => { openStats(); };
 
-function openStats() {
-  const d = derive(match), ps = match.players;
+// score lines: series[k] = player k's running total, starting at 0 before the first round (null = not playing)
+function lineChart(ps, series, limit) {
   const W = 520, H = 220, pad = 16, padR = 70;
-  const series = ps.map(p => [0, ...d.rows.map(r => r.after[p.id] ?? null)]);
   const all = series.flat().filter(v => v != null);
-  const lo = Math.min(0, ...all), hi = Math.max(10, ...all), n = Math.max(1, d.rows.length);
+  const lo = Math.min(0, ...all), hi = Math.max(10, ...all), n = Math.max(1, series[0].length - 1);
   const X = i => pad + (W - pad - padR) * i / n, Y = v => H - pad - (H - 2 * pad) * (v - lo) / (hi - lo || 1);
   let svg = `<svg class="chart" viewBox="0 0 ${W} ${H}">`;
   svg += `<line x1="${pad}" x2="${W - padR}" y1="${Y(0)}" y2="${Y(0)}" stroke="rgba(255,240,210,.18)" stroke-dasharray="3 4"/>`;
-  if (match.rules.limit > 0 && hi >= match.rules.limit * 0.6) svg += `<line x1="${pad}" x2="${W - padR}" y1="${Y(match.rules.limit)}" y2="${Y(match.rules.limit)}" stroke="rgba(239,107,91,.5)" stroke-dasharray="6 4"/>`;
+  if (limit > 0 && hi >= limit * 0.6) svg += `<line x1="${pad}" x2="${W - padR}" y1="${Y(limit)}" y2="${Y(limit)}" stroke="rgba(239,107,91,.5)" stroke-dasharray="6 4"/>`;
   series.forEach((s, k) => {
     let path = '', started = false;
     s.forEach((v, i) => { if (v == null) return; path += (started ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1); started = true; });
@@ -1162,7 +1225,11 @@ function openStats() {
     const li = s.reduce((a, v, i) => (v == null ? a : i), 0);
     svg += `<circle cx="${X(li)}" cy="${Y(s[li])}" r="4" fill="${ps[k].color}"/><text x="${X(li) + 8}" y="${Y(s[li]) + 4}" fill="${ps[k].color}" font-size="12" font-weight="800">${esc(ps[k].name.slice(0, 8))}</text>`;
   });
-  svg += '</svg>';
+  return svg + '</svg>';
+}
+function openStats() {
+  const d = derive(match), ps = match.players;
+  const svg = lineChart(ps, ps.map(p => [0, ...d.rows.map(r => r.after[p.id] ?? null)]), match.rules.limit);
   const stats = ps.map(p => {
     const mine = d.rows.filter(r => r.e.scores[p.id] != null);
     const vals = mine.map(r => r.e.scores[p.id]);
@@ -1181,28 +1248,91 @@ function openStats() {
   m.querySelector('[data-close]').onclick = () => { closeSheet(); if (derive(match).over) endMatch(); };
 }
 
-function openHistory() {
+// ------------------------------------------------------------------ history: leaderboard, past games, one game's table
+// an entry: { id, ended, rounds, winner, limit?, players: [{ name, color, suit, total, out, place?, rebuys? }],
+//   rows?: [{ w: winner seat, t: 'c'|'h', s: [points | null per seat], a: [total after the round | null], r?: { seat: buy-in total } }] }
+// entries saved before 2026-10-17 (and imported old files) have no rows/place: only the final result.
+function historyEntry(m, d) {
+  const seat = Object.fromEntries(m.players.map((p, i) => [p.id, i]));
+  return { id: m.id, ended: m.ended, rounds: d.roundNo, winner: P(d.ranked[0]).name, limit: m.rules.limit,
+    players: m.players.map(p => ({ name: p.name, color: p.color, suit: p.suit, total: d.totals[p.id], out: !!d.out[p.id], place: d.ranked.indexOf(p.id) + 1, rebuys: d.rebuys[p.id] || 0 })),
+    rows: d.rows.map(r => {
+      const row = { w: seat[r.e.winner] ?? -1, t: r.e.type === 'hand' ? 'h' : 'c', s: m.players.map(p => r.e.scores[p.id] ?? null), a: m.players.map(p => (r.e.scores[p.id] == null ? null : r.after[p.id])) };
+      if (r.rebuy) row.r = Object.fromEntries(Object.entries(r.rebuy).map(([pid, v]) => [seat[pid], v]));
+      return row;
+    }) };
+}
+const nameKey = n => String(n).trim().toLocaleLowerCase();
+// seats of a past game, best first: the saved place, or (older entries) the winner, then still in by total, then out
+function histOrder(h) {
+  const ps = h.players, wi = ps.findIndex(p => p.name === h.winner);
+  return ps.map((p, i) => i).sort((a, b) => (ps[a].place && ps[b].place ? ps[a].place - ps[b].place : 0)
+    || ((b === wi) - (a === wi)) || (!!ps[a].out - !!ps[b].out) || ps[a].total - ps[b].total);
+}
+function leaderboard(hist) {
+  const by = new Map();
+  for (const h of hist) histOrder(h).forEach((i, place) => {
+    const p = h.players[i], k = nameKey(p.name);
+    let s = by.get(k);
+    if (!s) by.set(k, s = { key: k, games: 0, wins: 0, places: 0, best: Infinity, outs: 0, seen: -1 });
+    if (h.ended > s.seen) Object.assign(s, { seen: h.ended, name: p.name, color: p.color, suit: p.suit });  // latest look
+    s.games++; s.places += place + 1; s.best = Math.min(s.best, p.total);
+    if (place === 0) s.wins++;
+    if (p.out) s.outs++;
+  });
+  return [...by.values()].map(s => ({ ...s, rate: s.wins / s.games, avgPlace: s.places / s.games }))
+    .sort((a, b) => b.wins - a.wins || b.rate - a.rate || a.avgPlace - b.avgPlace || a.best - b.best);
+}
+const histDate = (t, opts = { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) => new Date(t).toLocaleDateString(I.lang === 'sr' ? 'sr-Latn-RS' : 'en-GB', opts);
+const dec1 = v => (Math.round(v * 10) / 10).toLocaleString(I.lang === 'sr' ? 'sr-Latn-RS' : 'en-GB');
+const hView = { tab: null, who: null };
+
+// no tab: a fresh look (leaderboard when there is something to rank); the game view passes its way back
+function openHistory(tab = null, who = null) {
   const hist = load(K.hist, []);
-  const m = modal(`<h3>${tr('history')}</h3>${hist.length ? '' : `<p>${tr('histEmpty')}</p>`}
-    <div class="stack">${hist.map((h, i) => {
-      const w = h.players.find(p => p.name === h.winner) || h.players[0];
-      return `<div class="hist-item">${avatar(w)}<div class="meta"><b>${esc(tr('histWin', { name: h.winner }))}</b>
-        <small>${new Date(h.ended).toLocaleDateString(I.lang === 'sr' ? 'sr-Latn-RS' : 'en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · ${esc(tr('rounds', { n: h.rounds }))}</small>
-        <small class="num">${h.players.slice().sort((a, b) => a.total - b.total).map(p => `${esc(p.name)} ${fmt(p.total)}`).join(' · ')}</small></div>
-        <button class="mini" data-again="${i}" aria-label="${tr('rematchSame')}">↻</button></div>`;
-    }).join('')}
+  if (!tab) tab = hist.length ? 'board' : 'games';
+  Object.assign(hView, { tab, who });
+  if (!openHistory.sent) { openHistory.sent = true; try { sdk.track('history_open', { games: hist.length }); } catch (e) {} }
+  const lb = leaderboard(hist);
+  const tabs = hist.length ? `<div class="seg htabs" role="tablist"><button data-tab="board" class="${tab === 'board' ? 'on' : ''}">${tr('hTabBoard')}</button><button data-tab="games" class="${tab === 'games' ? 'on' : ''}">${tr('hTabGames')}</button></div>` : '';
+  let body = '';
+  if (!hist.length) body = `<p>${tr('histEmpty')}</p>`;
+  else if (tab === 'board') {
+    body = `<ol class="lb">${lb.map((s, i) => `<li><button class="lb-row ${i < 3 ? 'top' + (i + 1) : ''}" data-who="${esc(s.key)}">
+        <span class="lb-pl">${i + 1}</span>${avatar(s)}
+        <span class="meta"><b>${esc(s.name)}</b><small>${esc(tr('lbGames', { n: s.games }))} · ${esc(tr('lbAvgPlace', { v: dec1(s.avgPlace) }))}</small>
+          <small class="num">${esc(tr('lbBest', { v: fmt(s.best) }))}${s.outs ? ` · ${esc(tr('lbOuts', { n: s.outs }))}` : ''}</small></span>
+        <span class="lb-w"><b class="num">${s.wins}</b><small>${esc(tr('lbWins', { n: s.wins }))}</small><small class="num">${Math.round(s.rate * 100)}%</small></span></button></li>`).join('')}</ol>
+      <p class="hint" style="margin:0 0 12px">${tr('lbHint')}</p>`;
+  } else {
+    const list = hist.map((h, i) => [h, i]).filter(([h]) => !who || h.players.some(p => nameKey(p.name) === who));
+    const whoName = who && (lb.find(s => s.key === who) || {}).name;
+    body = `${whoName ? `<button class="chip hfilter" id="hAll">${esc(tr('hFilter', { name: whoName }))} <span aria-hidden="true">✕</span><span class="sr">${tr('hAll')}</span></button>` : ''}
+      <div class="stack">${list.map(([h, i]) => {
+        const ord = histOrder(h), w = h.players[ord[0]];
+        return `<button class="hist-item" data-game="${i}">${avatar(w)}<span class="meta"><b>${esc(tr('histWin', { name: w.name }))}</b>
+          <small>${histDate(h.ended)} · ${esc(tr('rounds', { n: h.rounds }))}</small>
+          <span class="hrank num">${ord.map((k, place) => { const p = h.players[k]; return `<span class="${place === 0 ? 'w' : ''} ${p.out ? 'o' : ''} ${who && nameKey(p.name) === who ? 'me' : ''}">${place + 1}. ${esc(p.name)} ${fmt(p.total)}</span>`; }).join('')}</span></span>
+          <span class="go">${ic('next')}</span></button>`;
+      }).join('')}</div>`;
+  }
+  const first = hist.length ? Math.min(...hist.map(h => h.ended)) : 0;
+  const m = modal(`<h3>${tr('history')}</h3>${hist.length ? `<p>${esc(tr('hSummary', { n: hist.length, date: histDate(first, { day: 'numeric', month: 'long', year: 'numeric' }) }))}</p>` : ''}
+    ${tabs}${body}
+    <div class="stack" style="margin-top:12px">
     ${hist.length ? `<button class="btn ghost" id="hExport">${ic('download')} ${tr('histExport')}</button>` : ''}
     <button class="btn ghost" id="hImport">${ic('upload')} ${tr('histImport')}</button>
     <input type="file" id="hFile" accept=".json,application/json" hidden>
-    ${hist.length ? `<button class="btn ghost" id="hClear">${tr('del2')}</button>` : ''}
-    <button class="btn gold" data-close>${tr('closeBtn')}</button></div>`);
+    ${hist.length ? `<button class="btn ghost danger" id="hClear">${tr('del2')}</button>` : ''}
+    <button class="btn gold" data-close>${tr('closeBtn')}</button></div>`, 'hist');
   m.querySelector('[data-close]').onclick = closeSheet;
   m.addEventListener('click', e => {
-    const b = e.target.closest('[data-again]'); if (!b) return;
-    const h = hist[+b.dataset.again]; closeSheet();
-    openSetup(h.players.map(p => ({ id: uid(), name: p.name, color: p.color, suit: p.suit })));
+    const t = e.target.closest('[data-tab]'); if (t) { openHistory(t.dataset.tab, null); return; }
+    const w = e.target.closest('[data-who]'); if (w) { openHistory('games', w.dataset.who); return; }
+    const g = e.target.closest('[data-game]'); if (g) { openGame(+g.dataset.game); return; }
+    if (e.target.closest('#hAll')) openHistory('games', null);
   });
-  const c = m.querySelector('#hClear'); if (c) c.onclick = () => { save(K.hist, []); closeSheet(); openHistory(); };
+  const c = m.querySelector('#hClear'); if (c) c.onclick = () => { if (!confirm(tr('hClearQ'))) return; save(K.hist, []); hView.who = null; openHistory('games'); };
   const ex = m.querySelector('#hExport'); if (ex) ex.onclick = () => exportHistory(hist);
   m.querySelector('#hImport').onclick = () => m.querySelector('#hFile').click();
   m.querySelector('#hFile').onchange = async e => {
@@ -1210,7 +1340,42 @@ function openHistory() {
     let n = -1;
     try { n = importHistory(JSON.parse(await f.text())); } catch (err) { n = -1; }
     toast(n < 0 ? tr('histBad') : n ? tr('histImported', { n }) : tr('histNothing'));
-    if (n > 0) { closeSheet(); openHistory(); }
+    if (n > 0) openHistory('board');
+    else e.target.value = '';
+  };
+}
+
+// one past game: final ranking, the chart and the whole score table when the entry has its rounds
+function openGame(i) {
+  const hist = load(K.hist, []), h = hist[i]; if (!h) { openHistory(hView.tab, hView.who); return; }
+  const ps = h.players, ord = histOrder(h), rows = Array.isArray(h.rows) && h.rows.length ? h.rows : null;
+  const rank = `<ul class="final-list">${ord.map((k, place) => { const p = ps[k]; return `<li class="${place === 0 ? 'w' : ''}">${avatar(p)}<b>${place + 1}. ${esc(p.name)}${p.out ? ` <span class="otag">${tr('out')}</span>` : ''}${p.rebuys ? ` <span class="rbtag">↺ ${p.rebuys}</span>` : ''}</b><span class="num">${fmt(p.total)}</span></li>`; }).join('')}</ul>`;
+  let table = `<p class="hint">${tr('hNoRows')}</p>`;
+  if (rows) {
+    const chart = lineChart(ps, ps.map((p, k) => [0, ...rows.map(r => r.a[k])]), h.limit || 0);
+    let t = `<thead><tr><th>#</th>${ps.map(p => `<th>${avatar(p)}<div class="pn">${esc(p.name)}</div></th>`).join('')}</tr></thead><tbody>`;
+    rows.forEach((r, n) => {
+      t += `<tr><td class="rn">${n + 1}</td>${ps.map((p, k) => {
+        const v = r.s[k]; if (v == null) return '<td><span class="run">·</span></td>';
+        const win = r.w === k, rb = r.r && r.r[k] != null;
+        return `<td><div class="cell ${win ? 'win' : ''} ${win && r.t === 'h' ? 'hand' : ''}"><span class="pts num">${win && r.t === 'h' ? `${fmt(v)} ★` : fmtD(v)}</span><span class="run num">Σ ${fmt(r.a[k])}${rb ? ` → ${fmt(r.r[k])}` : ''}</span></div></td>`;
+      }).join('')}</tr>`;
+    });
+    t += `</tbody><tfoot><tr><td class="rn">Σ</td>${ps.map((p, k) => `<td class="${k === ord[0] ? 'lead' : ''}"><b class="num">${fmt(p.total)}</b></td>`).join('')}</tr></tfoot>`;
+    table = `${chart}<div class="eyebrow" style="margin:4px 0 6px">${tr('hRounds')}</div><div class="htable-wrap"><table class="htable">${t}</table></div>`;
+  }
+  const m = modal(`<button class="hback" id="gBack">${ic('back')} ${tr('hBack')}</button>
+    <h3>${esc(tr('histWin', { name: ps[ord[0]].name }))}</h3><p>${histDate(h.ended, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' })} · ${esc(tr('rounds', { n: h.rounds }))}</p>
+    ${rank}${table}
+    <div class="stack" style="margin-top:14px"><button class="btn gold" id="gAgain">↻ ${tr('rematchSame')}</button>
+    <button class="btn ghost danger" id="gDel">${tr('hDelGame')}</button>
+    <button class="btn ghost" id="gBack2">${ic('back')} ${tr('hBack')}</button></div>`, 'hist');
+  const back = () => openHistory(hView.tab, hView.who);
+  m.querySelector('#gBack').onclick = m.querySelector('#gBack2').onclick = back;
+  m.querySelector('#gAgain').onclick = () => { closeSheet(); openSetup(ps.map(p => ({ id: uid(), name: p.name, color: p.color, suit: p.suit }))); };
+  m.querySelector('#gDel').onclick = () => {
+    if (!confirm(tr('hDelGameQ'))) return;
+    save(K.hist, hist.filter((x, k) => k !== i)); toast(tr('hDeleted')); back();
   };
 }
 
@@ -1227,6 +1392,17 @@ function exportHistory(hist) {
 }
 // merges a file into the local history; returns how many games were new, or throws on a file that is not ours
 const histKey = h => h.id || `${h.ended}|${h.players.map(p => p.name).join(',')}`;
+const numOrNull = v => (typeof v === 'number' && isFinite(v) ? Math.round(v) : null);
+// rounds of an imported game; anything malformed drops the table (the final result still imports)
+function cleanRows(rows, n) {
+  if (!Array.isArray(rows) || !rows.length) return {};
+  if (!rows.every(r => r && Array.isArray(r.s) && Array.isArray(r.a) && r.s.length === n && r.a.length === n)) return {};
+  return { rows: rows.map(r => {
+    const row = { w: Number.isInteger(r.w) && r.w >= 0 && r.w < n ? r.w : -1, t: r.t === 'h' ? 'h' : 'c', s: r.s.map(numOrNull), a: r.a.map(numOrNull) };
+    if (r.r && typeof r.r === 'object') { const rb = {}; for (const [k, v] of Object.entries(r.r)) if (+k >= 0 && +k < n && numOrNull(v) != null) rb[+k] = numOrNull(v); if (Object.keys(rb).length) row.r = rb; }
+    return row;
+  }) };
+}
 function importHistory(data) {
   const list = Array.isArray(data) ? data : data && data.app === 'remi-vita' && Array.isArray(data.history) ? data.history : null;
   if (!list) throw new Error('not a history file');
@@ -1234,7 +1410,10 @@ function importHistory(data) {
   if (!list.every(ok)) throw new Error('bad entry');
   const hist = load(K.hist, []), seen = new Set(hist.map(histKey));
   const fresh = list.filter(h => !seen.has(histKey(h))).map(h => ({ id: h.id, ended: h.ended, rounds: +h.rounds || 0, winner: h.winner,
-    players: h.players.map(p => ({ name: String(p.name).slice(0, 16), color: /^#[0-9a-f]{6}$/i.test(p.color) ? p.color : '#e2b65c', suit: SUITS.includes(p.suit) ? p.suit : '♠', total: p.total, out: !!p.out })) }));
+    ...(+h.limit > 0 ? { limit: Math.round(+h.limit) } : {}),
+    players: h.players.map(p => ({ name: String(p.name).slice(0, 16), color: /^#[0-9a-f]{6}$/i.test(p.color) ? p.color : '#e2b65c', suit: SUITS.includes(p.suit) ? p.suit : '♠', total: p.total, out: !!p.out,
+      ...(Number.isInteger(p.place) && p.place >= 1 && p.place <= h.players.length ? { place: p.place } : {}), ...(Number.isInteger(p.rebuys) && p.rebuys > 0 ? { rebuys: p.rebuys } : {}) })),
+    ...cleanRows(h.rows, h.players.length) }));
   save(K.hist, [...hist, ...fresh].sort((a, b) => b.ended - a.ended).slice(0, HIST_MAX));
   try { sdk.track('history_import', { games: fresh.length }); } catch (e) {}
   return fresh.length;
